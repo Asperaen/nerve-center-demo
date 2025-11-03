@@ -33,8 +33,9 @@ The application is currently running and ready for demonstration.
 Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disruption):
 
 - ✅ `mockKPIs.ts` - 11 KPIs with 12-month history
+- ✅ `mockInternalPulse.ts` - Value driver framework with financial categories (Revenue, COGS, OPEX, Operating Profit), metrics, value drivers, and affecting factors
 - ✅ `mockNews.ts` - 10 external news items across 4 categories
-- ✅ `mockActions.ts` - 15 action items with decisions
+- ✅ `mockActions.ts` - 15 action items with comments
 - ✅ `mockAssumptions.ts` - 12 business assumptions with history
 - ✅ `mockConflicts.ts` - 5 assumption conflicts
 - ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios
@@ -48,7 +49,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Quick links to all modules
 - ✅ Real-time data indicators
 
-### 5. CEO Daily Digest - Module 1 ✅
+### 5. Market Pulse - Module 1 ✅
 
 #### Feature A: External Pulse Check ✅
 
@@ -63,14 +64,20 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 
 #### Feature B: Internal Pulse Check ✅
 
-- ✅ KPI dashboard grid with 11 metrics
+- ✅ Value driver framework based on financial structure (Revenue, COGS, OPEX, Operating Profit)
+- ✅ Financial category grouping with expandable sections
+- ✅ Metrics organized by financial category (e.g., Direct Labor, Indirect Labor, MFG Overhead, Material for COGS)
+- ✅ Value drivers for each metric (e.g., Volume, ASP, Product Mix for Revenue; UPPH, Production Volume, Labor Rate for Direct Labor)
+- ✅ Affecting factors with tags (Internal KPI, Internal Information, External Information, Derived)
+- ✅ Filter by factor type (All, Internal KPI Only, Internal Information Only)
 - ✅ Real-time values and trend indicators
 - ✅ Color-coded performance status (good/warning/concern)
 - ✅ Variance vs budget display
-- ✅ Mini sparkline charts for each KPI
-- ✅ Click-to-expand modal with full details
+- ✅ Mini sparkline charts for each metric
+- ✅ Click-to-expand modal with full details including all value drivers and affecting factors
 - ✅ 12-month trend chart in modal
 - ✅ Last updated timestamp
+- ✅ Comprehensive view of underlying drivers affecting financial performance
 
 #### Feature C: Root Cause Analysis ✅
 
@@ -83,16 +90,18 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Bar charts for BU/product comparisons
 - ✅ Interactive data tables with drill-down
 
-#### Feature D: Action Tracker ✅
+#### Feature D: Action Tracker (JIRA-like Agile System) ✅
 
 - ✅ Comprehensive action list table
-- ✅ Status badges (Pending/In-Progress/Completed/Overdue)
+- ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
+- ✅ Status workflow management with color-coded statuses
 - ✅ Priority indicators (High/Medium/Low)
 - ✅ Owner information with avatars
 - ✅ Reassign owner modal with notification simulation
-- ✅ CEO decision input inline
-- ✅ Decision history display
-- ✅ Filter by status (All/Pending/Overdue)
+- ✅ Comments system (replace CEO decisions)
+- ✅ Comment history display with timestamps and authors
+- ✅ Filter by status (All/TODO/In Progress/Ready for Review/Completed/Reopen)
+- ✅ JIRA-like minimal interface for task tracking
 
 ### 6. Business Assumptions - Module 2 ✅
 
@@ -281,7 +290,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 ## 📱 Pages & Routes
 
 1. ✅ `/dashboard` - Dashboard Overview
-2. ✅ `/daily-digest` - CEO Daily Digest (3 tabs)
+2. ✅ `/market-pulse` - Market Pulse (3 tabs)
 3. ✅ `/assumptions` - Business Assumptions (2 tabs)
 4. ✅ `/forecast` - Financial Forecast
 5. ✅ `/scenarios` - Scenario Simulation
@@ -291,7 +300,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 Total Features from Plan: **65+**
 Implemented Features: **65+** (100%)
 
-### Module 1: CEO Daily Digest
+### Module 1: Market Pulse
 
 - Features A.1-A.4: ✅ 100% Complete
 - Features B.1-B.4: ✅ 100% Complete
@@ -342,12 +351,12 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Show executive summary
    - Navigate to different modules
 
-2. **CEO Daily Digest** - Demonstrate:
+2. **Market Pulse** - Demonstrate:
 
    - External news filtering and AI analysis
    - KPI dashboard with drill-down
    - Root cause analysis chat
-   - Action tracker with reassignment
+   - Action tracker with JIRA-like status workflow, comments, and reassignment
 
 3. **Business Assumptions** - Demonstrate:
 

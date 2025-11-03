@@ -52,7 +52,12 @@ export interface KPIHistoryPoint {
 }
 
 // Action Tracker Types
-export type ActionStatus = 'pending' | 'in-progress' | 'completed' | 'overdue';
+export type ActionStatus =
+  | 'todo'
+  | 'in-progress'
+  | 'ready-for-review'
+  | 'completed'
+  | 'reopen';
 export type ActionPriority = 'high' | 'medium' | 'low';
 
 export interface Action {
@@ -64,10 +69,10 @@ export interface Action {
   priority: ActionPriority;
   dueDate: Date;
   createdDate: Date;
-  decisions: Decision[];
+  comments: Comment[];
 }
 
-export interface Decision {
+export interface Comment {
   id: string;
   text: string;
   createdBy: string;
@@ -263,4 +268,51 @@ export interface User {
   email: string;
   role: string;
   avatar?: string;
+}
+
+// Internal Pulse Value Driver Framework Types
+export type FinancialCategory =
+  | 'revenue'
+  | 'cogs'
+  | 'opex'
+  | 'operating-profit';
+export type AffectingFactorTag =
+  | 'internal-kpi'
+  | 'internal-information'
+  | 'external-information'
+  | 'derived';
+
+export interface AffectingFactor {
+  id: string;
+  name: string;
+  tag: AffectingFactorTag;
+  description?: string;
+}
+
+export interface ValueDriver {
+  id: string;
+  name: string;
+  description?: string;
+  affectingFactors: AffectingFactor[];
+}
+
+export interface FinancialMetric {
+  id: string;
+  name: string;
+  value: number;
+  unit: string;
+  budget: number;
+  variance: number;
+  variancePercent: number;
+  status: PerformanceStatus;
+  trend: TrendDirection;
+  lastUpdated: Date;
+  valueDrivers: ValueDriver[];
+  history: KPIHistoryPoint[];
+}
+
+export interface FinancialCategoryData {
+  category: FinancialCategory;
+  categoryName: string;
+  metrics: FinancialMetric[];
 }

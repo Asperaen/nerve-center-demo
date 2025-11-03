@@ -29,9 +29,9 @@ Shows executive summary with:
 - Priority actions
 - Quick links to all modules
 
-### 2. CEO Daily Digest
+### 2. Market Pulse
 
-**URL**: http://localhost:5173/daily-digest
+**URL**: http://localhost:5173/market-pulse
 
 Three tabs:
 
@@ -109,14 +109,14 @@ Two tabs:
 
 ### Scenario 1: US Tariff Impact
 
-1. Go to **Daily Digest** → See tariff news at top
+1. Go to **Market Pulse** → See tariff news at top
 2. Check **Business Assumptions** → See volume trend -20%
 3. View **Financial Forecast** → See $10M tariff impact in waterfall
 4. Check **Action Tracker** → See Vietnam production shift action
 
 ### Scenario 2: Rare Earth Supply
 
-1. Go to **Daily Digest** → See rare earth news
+1. Go to **Market Pulse** → See rare earth news
 2. Check **Business Assumptions** → Conflicts tab → See cost conflict
 3. View **Financial Forecast** → See $5M material cost impact
 4. Check **Action Tracker** → See alternative supplier action
@@ -190,7 +190,7 @@ Two tabs:
 
 ### Add CEO Decision to Action
 
-1. Go to Daily Digest → Action Tracker tab
+1. Go to Market Pulse → Action Tracker tab
 2. Click action title to expand
 3. Type decision in text area
 4. Click "Submit"
@@ -205,7 +205,7 @@ Two tabs:
 
 ### Drill Down in Analysis
 
-1. Go to Daily Digest → Root Cause Analysis tab
+1. Go to Market Pulse → Root Cause Analysis tab
 2. Click example prompt: "Which BU is causing our NP falls behind budget?"
 3. Click bar in chart
 4. See breadcrumb navigation

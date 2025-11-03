@@ -106,7 +106,7 @@ export default function DashboardOverview() {
               Urgent News & Alerts
             </h2>
             <Link
-              to='/daily-digest'
+              to='/market-pulse'
               className='text-sm text-primary-600 hover:text-primary-700 font-medium'>
               View All →
             </Link>
@@ -163,7 +163,7 @@ export default function DashboardOverview() {
               Priority Actions
             </h2>
             <Link
-              to='/daily-digest'
+              to='/market-pulse'
               className='text-sm text-primary-600 hover:text-primary-700 font-medium'>
               View All →
             </Link>

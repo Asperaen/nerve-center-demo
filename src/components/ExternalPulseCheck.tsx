@@ -20,10 +20,14 @@ const categories: { value: NewsCategory | 'all'; label: string }[] = [
 
 interface ExternalPulseCheckProps {
   onScheduleMeeting?: () => void;
+  onSelectionChange?: (items: NewsItem[]) => void;
+  selectedItems?: NewsItem[];
 }
 
 export default function ExternalPulseCheck({
   onScheduleMeeting,
+  onSelectionChange,
+  selectedItems = [],
 }: ExternalPulseCheckProps = {}) {
   const [selectedCategory, setSelectedCategory] = useState<
     NewsCategory | 'all'
@@ -33,14 +37,14 @@ export default function ExternalPulseCheck({
   const [showAnnotationInput, setShowAnnotationInput] = useState<string | null>(
     null
   );
-  const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>([]);
+  const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>(
+    selectedItems.map((item) => item.id)
+  );
 
-  // Reset selection when component unmounts (when switching tabs)
+  // Sync with parent selection
   useEffect(() => {
-    return () => {
-      setSelectedNewsIds([]);
-    };
-  }, []);
+    setSelectedNewsIds(selectedItems.map((item) => item.id));
+  }, [selectedItems]);
 
   const filteredNews =
     selectedCategory === 'all'
@@ -60,11 +64,20 @@ export default function ExternalPulseCheck({
     }
   };
 
-  const toggleNewsSelection = (newsId: string) => {
+  const toggleNewsSelection = (news: NewsItem) => {
     setSelectedNewsIds((prev) => {
-      const newSelection = prev.includes(newsId)
-        ? prev.filter((id) => id !== newsId)
-        : [...prev, newsId];
+      const newSelection = prev.includes(news.id)
+        ? prev.filter((id) => id !== news.id)
+        : [...prev, news.id];
+
+      // Notify parent of selection change
+      if (onSelectionChange) {
+        const selectedNewsItems = mockNews.filter((n) =>
+          newSelection.includes(n.id)
+        );
+        onSelectionChange(selectedNewsItems);
+      }
+
       return newSelection;
     });
   };
@@ -137,7 +150,7 @@ export default function ExternalPulseCheck({
               setAnnotations({ ...annotations, [news.id]: '' });
             }}
             isSelected={selectedNewsIds.includes(news.id)}
-            onToggleSelection={() => toggleNewsSelection(news.id)}
+            onToggleSelection={() => toggleNewsSelection(news)}
           />
         ))}
       </div>

@@ -6,25 +6,28 @@ import {
   UserCircleIcon,
   XMarkIcon,
   CheckIcon,
+  ChatBubbleLeftRightIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
 export default function ActionTracker() {
   const [actions, setActions] = useState(mockActions);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'overdue'>('all');
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
-  const [decisionInput, setDecisionInput] = useState('');
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
+    {}
+  );
   const [expandedActions, setExpandedActions] = useState<Set<string>>(
     new Set()
   );
 
-  const filteredActions = actions.filter((action) => {
-    if (filter === 'all') return true;
-    if (filter === 'pending') return action.status === 'pending';
-    if (filter === 'overdue') return action.status === 'overdue';
-    return true;
-  });
+  const handleStatusChange = (actionId: string, newStatus: ActionStatus) => {
+    const updatedActions = actions.map((a) =>
+      a.id === actionId ? { ...a, status: newStatus } : a
+    );
+    setActions(updatedActions);
+  };
 
   const toggleExpanded = (actionId: string) => {
     const newExpanded = new Set(expandedActions);
@@ -50,18 +53,19 @@ export default function ActionTracker() {
     }
   };
 
-  const handleSubmitDecision = (actionId: string) => {
-    if (decisionInput.trim()) {
+  const handleAddComment = (actionId: string) => {
+    const commentText = commentInputs[actionId];
+    if (commentText?.trim()) {
       const updatedActions = actions.map((a) =>
         a.id === actionId
           ? {
               ...a,
-              decisions: [
-                ...a.decisions,
+              comments: [
+                ...a.comments,
                 {
-                  id: `dec-${Date.now()}`,
-                  text: decisionInput,
-                  createdBy: 'CEO',
+                  id: `comment-${Date.now()}`,
+                  text: commentText,
+                  createdBy: 'Current User',
                   createdAt: new Date(),
                 },
               ],
@@ -69,9 +73,54 @@ export default function ActionTracker() {
           : a
       );
       setActions(updatedActions);
-      setDecisionInput('');
-      alert('Decision guidance added successfully!');
+      setCommentInputs({ ...commentInputs, [actionId]: '' });
     }
+  };
+
+  const getStatusColor = (status: ActionStatus) => {
+    switch (status) {
+      case 'todo':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'ready-for-review':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'reopen':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const getStatusLabel = (status: ActionStatus) => {
+    switch (status) {
+      case 'todo':
+        return 'TODO';
+      case 'in-progress':
+        return 'In Progress';
+      case 'ready-for-review':
+        return 'Ready for Review';
+      case 'completed':
+        return 'Completed';
+      case 'reopen':
+        return 'Reopen';
+      default:
+        return status;
+    }
+  };
+
+  const statusColumns: ActionStatus[] = [
+    'todo',
+    'in-progress',
+    'ready-for-review',
+    'completed',
+    'reopen',
+  ];
+
+  const getActionsByStatus = (status: ActionStatus) => {
+    return actions.filter((action) => action.status === status);
   };
 
   return (
@@ -85,208 +134,70 @@ export default function ActionTracker() {
                 Action Tracker
               </h2>
               <p className='mt-1 text-sm text-gray-500'>
-                Track key actions, assign owners, and provide real-time guidance
+                JIRA-like swim lane board for tracking actions and tasks
               </p>
             </div>
 
-            {/* Filters */}
-            <div className='flex space-x-2'>
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  filter === 'all'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
-                All ({actions.length})
-              </button>
-              <button
-                onClick={() => setFilter('pending')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  filter === 'pending'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
-                Pending ({actions.filter((a) => a.status === 'pending').length})
-              </button>
-              <button
-                onClick={() => setFilter('overdue')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  filter === 'overdue'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
-                Overdue ({actions.filter((a) => a.status === 'overdue').length})
-              </button>
+            {/* Summary */}
+            <div className='flex items-center space-x-4 text-sm text-gray-600'>
+              <span>Total: {actions.length}</span>
             </div>
           </div>
         </div>
 
-        {/* Actions Table */}
-        <div className='overflow-x-auto'>
-          <table className='min-w-full divide-y divide-gray-200'>
-            <thead className='bg-gray-50'>
-              <tr>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Action
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Owner
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Status
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Priority
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Due Date
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className='bg-white divide-y divide-gray-200'>
-              {filteredActions.map((action) => (
-                <>
-                  <tr
-                    key={action.id}
-                    className='hover:bg-gray-50'>
-                    <td className='px-6 py-4'>
-                      <div>
-                        <button
-                          onClick={() => toggleExpanded(action.id)}
-                          className='text-sm font-medium text-gray-900 hover:text-primary-600 text-left'>
-                          {action.title}
-                        </button>
-                        {action.decisions.length > 0 && (
-                          <span className='ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-                            {action.decisions.length} decision
-                            {action.decisions.length > 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <div className='flex items-center'>
-                        <UserCircleIcon className='w-5 h-5 text-gray-400 mr-2' />
-                        <span className='text-sm text-gray-700'>
-                          {action.owner}
-                        </span>
-                      </div>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          action.status === 'completed'
-                            ? 'bg-opportunity-100 text-opportunity-800'
-                            : action.status === 'in-progress'
-                            ? 'bg-blue-100 text-blue-800'
-                            : action.status === 'overdue'
-                            ? 'bg-risk-100 text-risk-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                        {action.status.toUpperCase().replace('-', ' ')}
+        {/* Swim Lane Board */}
+        <div className='p-6 overflow-x-auto'>
+          <div className='flex space-x-4 min-w-max'>
+            {statusColumns.map((status) => {
+              const columnActions = getActionsByStatus(status);
+              return (
+                <div
+                  key={status}
+                  className='flex-shrink-0 w-80'>
+                  {/* Column Header */}
+                  <div
+                    className={`mb-4 px-4 py-3 rounded-lg border-2 ${getStatusColor(
+                      status
+                    )}`}>
+                    <div className='flex items-center justify-between'>
+                      <h3 className='font-semibold text-sm'>
+                        {getStatusLabel(status)}
+                      </h3>
+                      <span className='text-xs font-medium bg-white/50 px-2 py-0.5 rounded-full'>
+                        {columnActions.length}
                       </span>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          action.priority === 'high'
-                            ? 'bg-red-100 text-red-800'
-                            : action.priority === 'medium'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                        {action.priority.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-700'>
-                      {format(action.dueDate, 'MMM d, yyyy')}
-                    </td>
-                    <td className='px-6 py-4'>
-                      <button
-                        onClick={() => {
+                    </div>
+                  </div>
+
+                  {/* Column Cards */}
+                  <div className='space-y-3 min-h-[400px]'>
+                    {columnActions.map((action) => (
+                      <ActionCard
+                        key={action.id}
+                        action={action}
+                        isExpanded={expandedActions.has(action.id)}
+                        onToggleExpand={() => toggleExpanded(action.id)}
+                        onStatusChange={handleStatusChange}
+                        onReassign={() => {
                           setSelectedAction(action);
                           setShowReassignModal(true);
                         }}
-                        className='text-sm text-primary-600 hover:text-primary-700 font-medium'>
-                        Reassign
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedActions.has(action.id) && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className='px-6 py-4 bg-gray-50'>
-                        <div className='space-y-4'>
-                          {/* Description */}
-                          <div>
-                            <p className='text-sm font-medium text-gray-700 mb-1'>
-                              Description:
-                            </p>
-                            <p className='text-sm text-gray-600'>
-                              {action.description}
-                            </p>
-                          </div>
-
-                          {/* Previous Decisions */}
-                          {action.decisions.length > 0 && (
-                            <div>
-                              <p className='text-sm font-medium text-gray-700 mb-2'>
-                                CEO Decisions & Guidance:
-                              </p>
-                              <div className='space-y-2'>
-                                {action.decisions.map((decision) => (
-                                  <div
-                                    key={decision.id}
-                                    className='p-3 bg-blue-50 rounded-lg border border-blue-100'>
-                                    <p className='text-sm text-gray-700'>
-                                      {decision.text}
-                                    </p>
-                                    <p className='mt-1 text-xs text-gray-500'>
-                                      {decision.createdBy} •{' '}
-                                      {format(decision.createdAt, 'PPp')}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Add Decision */}
-                          <div>
-                            <p className='text-sm font-medium text-gray-700 mb-2'>
-                              Add Decision / Guidance:
-                            </p>
-                            <div className='flex space-x-2'>
-                              <textarea
-                                value={decisionInput}
-                                onChange={(e) =>
-                                  setDecisionInput(e.target.value)
-                                }
-                                placeholder='Provide guidance or decision...'
-                                className='flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none'
-                                rows={2}
-                              />
-                              <button
-                                onClick={() => handleSubmitDecision(action.id)}
-                                disabled={!decisionInput.trim()}
-                                className='px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed'>
-                                Submit
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
-            </tbody>
-          </table>
+                        onAddComment={handleAddComment}
+                        commentInput={commentInputs[action.id] || ''}
+                        onCommentInputChange={(value) =>
+                          setCommentInputs({
+                            ...commentInputs,
+                            [action.id]: value,
+                          })
+                        }
+                        getStatusColor={getStatusColor}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -302,6 +213,193 @@ export default function ActionTracker() {
         />
       )}
     </>
+  );
+}
+
+interface ActionCardProps {
+  action: Action;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onStatusChange: (actionId: string, newStatus: ActionStatus) => void;
+  onReassign: () => void;
+  onAddComment: (actionId: string) => void;
+  commentInput: string;
+  onCommentInputChange: (value: string) => void;
+  getStatusColor: (status: ActionStatus) => string;
+}
+
+function ActionCard({
+  action,
+  isExpanded,
+  onToggleExpand,
+  onStatusChange,
+  onReassign,
+  onAddComment,
+  commentInput,
+  onCommentInputChange,
+  getStatusColor,
+}: ActionCardProps) {
+  const statusOptions: ActionStatus[] = [
+    'todo',
+    'in-progress',
+    'ready-for-review',
+    'completed',
+    'reopen',
+  ];
+
+  const getStatusLabel = (status: ActionStatus) => {
+    switch (status) {
+      case 'todo':
+        return 'TODO';
+      case 'in-progress':
+        return 'In Progress';
+      case 'ready-for-review':
+        return 'Ready for Review';
+      case 'completed':
+        return 'Completed';
+      case 'reopen':
+        return 'Reopen';
+      default:
+        return status;
+    }
+  };
+
+  return (
+    <div className='bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow'>
+      {/* Card Header */}
+      <div className='p-4'>
+        <div className='flex items-start justify-between mb-2'>
+          <button
+            onClick={onToggleExpand}
+            className='flex-1 text-left'>
+            <h4 className='text-sm font-semibold text-gray-900 hover:text-primary-600'>
+              {action.title}
+            </h4>
+          </button>
+          <select
+            value={action.status}
+            onChange={(e) =>
+              onStatusChange(action.id, e.target.value as ActionStatus)
+            }
+            onClick={(e) => e.stopPropagation()}
+            className={`ml-2 px-2 py-1 text-xs font-medium rounded border-0 focus:ring-2 focus:ring-primary-500 ${getStatusColor(
+              action.status
+            )} cursor-pointer`}>
+            {statusOptions.map((status) => (
+              <option
+                key={status}
+                value={status}>
+                {getStatusLabel(status)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Metadata */}
+        <div className='flex items-center justify-between text-xs text-gray-500 mb-2'>
+          <div className='flex items-center space-x-3'>
+            <div className='flex items-center'>
+              <UserCircleIcon className='w-4 h-4 mr-1' />
+              <span className='truncate max-w-[120px]'>{action.owner}</span>
+            </div>
+            <div className='flex items-center'>
+              <CalendarDaysIcon className='w-4 h-4 mr-1' />
+              <span>{format(action.dueDate, 'MMM d')}</span>
+            </div>
+          </div>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+              action.priority === 'high'
+                ? 'bg-red-100 text-red-800'
+                : action.priority === 'medium'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+            {action.priority.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Quick Actions */}
+        <div className='flex items-center justify-between pt-2 border-t border-gray-100'>
+          <div className='flex items-center space-x-2'>
+            {action.comments.length > 0 && (
+              <span className='inline-flex items-center text-xs text-gray-600'>
+                <ChatBubbleLeftRightIcon className='w-4 h-4 mr-1' />
+                {action.comments.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReassign();
+            }}
+            className='text-xs text-primary-600 hover:text-primary-700 font-medium'>
+            Reassign
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className='px-4 pb-4 border-t border-gray-100 pt-4 space-y-4'>
+          {/* Description */}
+          <div>
+            <p className='text-xs font-medium text-gray-700 mb-1'>
+              Description:
+            </p>
+            <p className='text-xs text-gray-600'>{action.description}</p>
+          </div>
+
+          {/* Comments */}
+          {action.comments.length > 0 && (
+            <div>
+              <p className='text-xs font-medium text-gray-700 mb-2'>
+                Comments:
+              </p>
+              <div className='space-y-2'>
+                {action.comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className='p-2 bg-gray-50 rounded border border-gray-200'>
+                    <p className='text-xs text-gray-700'>{comment.text}</p>
+                    <p className='mt-1 text-xs text-gray-500'>
+                      {comment.createdBy} • {format(comment.createdAt, 'PPp')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add Comment */}
+          <div>
+            <p className='text-xs font-medium text-gray-700 mb-2'>
+              Add Comment:
+            </p>
+            <div className='flex space-x-2'>
+              <textarea
+                value={commentInput}
+                onChange={(e) => onCommentInputChange(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder='Add a comment...'
+                className='flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none'
+                rows={2}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddComment(action.id);
+                }}
+                disabled={!commentInput.trim()}
+                className='px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed'>
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

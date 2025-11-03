@@ -10,8 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'CEO Daily Digest', href: '/daily-digest', icon: NewspaperIcon },
+  // { name: 'Dashboard', href: '/dashboard', icon: HomeIcon }, // Hidden for now
+  { name: 'Market Pulse', href: '/market-pulse', icon: NewspaperIcon },
   {
     name: 'Business Assumptions',
     href: '/assumptions',

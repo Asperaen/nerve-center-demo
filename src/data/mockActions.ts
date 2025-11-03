@@ -12,9 +12,9 @@ export const mockActions: Action[] = [
     priority: 'high',
     dueDate: addDays(new Date(), 7),
     createdDate: subDays(new Date(), 2),
-    decisions: [
+    comments: [
       {
-        id: 'dec-1-1',
+        id: 'comment-1-1',
         text: 'Priority 1. Please coordinate with sales team to understand customer timeline flexibility. We may need to accept short-term margin pressure to maintain relationships.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 1),
@@ -31,9 +31,9 @@ export const mockActions: Action[] = [
     priority: 'high',
     dueDate: addDays(new Date(), 14),
     createdDate: subDays(new Date(), 3),
-    decisions: [
+    comments: [
       {
-        id: 'dec-2-1',
+        id: 'comment-2-1',
         text: 'Approved budget increase up to $2M for supply chain diversification. Focus on long-term agreements with pricing protection.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 2),
@@ -46,11 +46,11 @@ export const mockActions: Action[] = [
     description:
       'Schedule and prepare for strategic account meeting with Tesla to discuss capacity expansion opportunities. Tesla plans to double EV production by 2026.',
     owner: 'David Park - VP Sales',
-    status: 'pending',
+    status: 'todo',
     priority: 'high',
     dueDate: addDays(new Date(), 10),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-4',
@@ -58,11 +58,11 @@ export const mockActions: Action[] = [
     description:
       'Respond to TE Connectivity acquisition of optical startup. Review and accelerate our optical connector development timeline by 6 months.',
     owner: 'Dr. Lisa Zhang - CTO',
-    status: 'pending',
+    status: 'ready-for-review',
     priority: 'medium',
     dueDate: addDays(new Date(), 21),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-5',
@@ -70,11 +70,11 @@ export const mockActions: Action[] = [
     description:
       'With global 5G infrastructure investment at $200B, increase production capacity by 25% to capture market growth. Currently at 85% utilization.',
     owner: 'Jennifer Wu - VP Operations',
-    status: 'pending',
+    status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
     createdDate: subDays(new Date(), 2),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-6',
@@ -86,7 +86,7 @@ export const mockActions: Action[] = [
     priority: 'medium',
     dueDate: addDays(new Date(), 7),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-7',
@@ -98,9 +98,9 @@ export const mockActions: Action[] = [
     priority: 'high',
     dueDate: addDays(new Date(), 14),
     createdDate: subDays(new Date(), 2),
-    decisions: [
+    comments: [
       {
-        id: 'dec-7-1',
+        id: 'comment-7-1',
         text: 'This is our top priority for AI data center business. Allocate additional engineering resources from R&D team to support this program.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 1),
@@ -113,11 +113,11 @@ export const mockActions: Action[] = [
     description:
       'With copper prices up 15%, review hedging positions with CFO. Evaluate options for additional hedging or customer price adjustments.',
     owner: 'Mark Thompson - CFO',
-    status: 'pending',
+    status: 'ready-for-review',
     priority: 'medium',
     dueDate: addDays(new Date(), 5),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-9',
@@ -125,11 +125,11 @@ export const mockActions: Action[] = [
     description:
       'Engage with Vietnamese government to understand requirements for 10-year tax holiday. Potential $3-4M annual savings.',
     owner: 'Jennifer Wu - VP Operations',
-    status: 'pending',
+    status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-10',
@@ -137,11 +137,11 @@ export const mockActions: Action[] = [
     description:
       'Meet with BYD Europe procurement team regarding their Hungary plant. Explore opportunity for local connector supply partnership.',
     owner: 'David Park - VP Sales',
-    status: 'pending',
+    status: 'completed',
     priority: 'low',
     dueDate: addDays(new Date(), 45),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-11',
@@ -153,9 +153,9 @@ export const mockActions: Action[] = [
     priority: 'high',
     dueDate: addDays(new Date(), 3),
     createdDate: subDays(new Date(), 5),
-    decisions: [
+    comments: [
       {
-        id: 'dec-11-1',
+        id: 'comment-11-1',
         text: 'UPPH directly impacts our operational efficiency and costs. Please provide daily updates on L4 initiative progress.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 3),
@@ -168,13 +168,13 @@ export const mockActions: Action[] = [
     description:
       'Currently at 47 cases vs target of 35. Focus on top 3 customers (Tesla, Apple, Amazon) and resolve their issues within 2 weeks.',
     owner: 'Sarah Johnson - VP Quality',
-    status: 'overdue',
+    status: 'reopen',
     priority: 'high',
     dueDate: subDays(new Date(), 3),
     createdDate: subDays(new Date(), 14),
-    decisions: [
+    comments: [
       {
-        id: 'dec-12-1',
+        id: 'comment-12-1',
         text: 'This is affecting our customer relationships. Please add dedicated resources to accelerate resolution. Report progress in daily standup.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 1),
@@ -187,11 +187,11 @@ export const mockActions: Action[] = [
     description:
       'Procurement cost down at 3.2% vs 5.0% target. Develop action plan to close 1.8% gap through supplier negotiations and material substitution.',
     owner: 'Michael Chen - CPO',
-    status: 'pending',
+    status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 14),
     createdDate: subDays(new Date(), 2),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-14',
@@ -203,7 +203,7 @@ export const mockActions: Action[] = [
     priority: 'medium',
     dueDate: addDays(new Date(), 60),
     createdDate: subDays(new Date(), 10),
-    decisions: [],
+    comments: [],
   },
   {
     id: 'action-15',
@@ -211,10 +211,10 @@ export const mockActions: Action[] = [
     description:
       'Revenue at $2,305M vs $2,350M budget. Develop specific actions to close $45M gap including customer order acceleration and new wins.',
     owner: 'David Park - VP Sales',
-    status: 'pending',
+    status: 'todo',
     priority: 'high',
     dueDate: addDays(new Date(), 5),
     createdDate: subDays(new Date(), 1),
-    decisions: [],
+    comments: [],
   },
 ];

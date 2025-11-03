@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-import DashboardOverview from './pages/DashboardOverview';
-import CEODailyDigest from './pages/CEODailyDigest';
+// import DashboardOverview from './pages/DashboardOverview'; // Hidden for now - kept for future use
+import MarketPulse from './pages/MarketPulse';
 import BusinessAssumptions from './pages/BusinessAssumptions';
 import FinancialForecast from './pages/FinancialForecast';
 import ScenarioSimulation from './pages/ScenarioSimulation';
@@ -17,18 +17,19 @@ function App() {
             index
             element={
               <Navigate
-                to='/dashboard'
+                to='/market-pulse'
                 replace
               />
             }
           />
-          <Route
+          {/* Dashboard hidden for now - kept for future use */}
+          {/* <Route
             path='dashboard'
             element={<DashboardOverview />}
-          />
+          /> */}
           <Route
-            path='daily-digest'
-            element={<CEODailyDigest />}
+            path='market-pulse'
+            element={<MarketPulse />}
           />
           <Route
             path='assumptions'

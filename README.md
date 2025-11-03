@@ -19,7 +19,7 @@ A comprehensive CEO dashboard mockup built with React, TypeScript, Tailwind CSS,
 - Quick links to all modules
 - Recent alerts and priority actions
 
-### 2. CEO Daily Digest
+### 2. Market Pulse
 
 #### A. External Pulse Check
 
@@ -141,7 +141,7 @@ src/
 │   └── ConflictAlertsPanel.tsx
 ├── pages/            # Page components
 │   ├── DashboardOverview.tsx
-│   ├── CEODailyDigest.tsx
+│   ├── MarketPulse.tsx
 │   ├── BusinessAssumptions.tsx
 │   ├── FinancialForecast.tsx
 │   └── ScenarioSimulation.tsx
