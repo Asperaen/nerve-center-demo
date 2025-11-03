@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ExternalPulseCheck from '../components/ExternalPulseCheck';
 import InternalPulseCheck from '../components/InternalPulseCheck';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
-import ActionTracker from '../components/ActionTracker';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import type { NewsItem } from '../types';
 import type { FinancialMetric } from '../types';
 
-export default function MarketPulse() {
-  const [activeTab, setActiveTab] = useState<
-    'external' | 'internal' | 'actions'
-  >('external');
+export default function DailyPulseCheck() {
+  const [activeTab, setActiveTab] = useState<'external' | 'internal'>(
+    'external'
+  );
   const [showToast, setShowToast] = useState(false);
   const [selectedExternalItems, setSelectedExternalItems] = useState<
     NewsItem[]
@@ -36,15 +35,22 @@ export default function MarketPulse() {
         {/* Header */}
         <div className='bg-white border-b border-gray-200'>
           <div className='px-8 py-6'>
-            <h1 className='text-3xl font-bold text-gray-900'>Market Pulse</h1>
+            <h1 className='text-3xl font-bold text-gray-900'>
+              Daily Pulse Check
+            </h1>
             <p className='mt-1 text-sm text-gray-500'>
-              Comprehensive view of external market dynamics, internal
-              performance, and key actions
+              Monitor external market dynamics and internal performance metrics
+              with quantitative insights
             </p>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs - Business Facts Book */}
           <div className='px-8'>
+            <div className='mb-2'>
+              <p className='text-xs font-semibold text-gray-600 uppercase tracking-wide'>
+                Business Facts Book
+              </p>
+            </div>
             <nav
               className='flex space-x-8'
               aria-label='Tabs'>
@@ -55,7 +61,7 @@ export default function MarketPulse() {
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}>
-                External Pulse Check
+                A.2 External Pulse Check
               </button>
               <button
                 onClick={() => setActiveTab('internal')}
@@ -64,16 +70,7 @@ export default function MarketPulse() {
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}>
-                Internal Pulse Check
-              </button>
-              <button
-                onClick={() => setActiveTab('actions')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'actions'
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}>
-                Action Tracker
+                A.1 Internal Pulse Check
               </button>
             </nav>
           </div>
@@ -94,7 +91,6 @@ export default function MarketPulse() {
               selectedItems={selectedInternalItems}
             />
           )}
-          {activeTab === 'actions' && <ActionTracker />}
         </div>
       </div>
 

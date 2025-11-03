@@ -7,18 +7,31 @@ import {
   BeakerIcon,
   BellIcon,
   UserCircleIcon,
+  CurrencyDollarIcon,
+  PresentationChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  // { name: 'Dashboard', href: '/dashboard', icon: HomeIcon }, // Hidden for now
-  { name: 'Market Pulse', href: '/market-pulse', icon: NewspaperIcon },
   {
-    name: 'Business Assumptions',
-    href: '/assumptions',
-    icon: DocumentTextIcon,
+    name: 'Annual Budget / Target',
+    href: '/annual-budget-target',
+    icon: CurrencyDollarIcon,
   },
-  { name: 'Financial Forecast', href: '/forecast', icon: ChartBarIcon },
-  { name: 'Scenario Simulation', href: '/scenarios', icon: BeakerIcon },
+  {
+    name: 'Daily Pulse Check',
+    href: '/daily-pulse-check',
+    icon: NewspaperIcon,
+  },
+  {
+    name: 'Weekly Financial Forecast',
+    href: '/weekly-forecast',
+    icon: ChartBarIcon,
+  },
+  {
+    name: 'Monthly Financial Review',
+    href: '/monthly-review',
+    icon: PresentationChartBarIcon,
+  },
 ];
 
 export default function MainLayout() {

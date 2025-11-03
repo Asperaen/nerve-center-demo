@@ -24,9 +24,10 @@ The application is currently running and ready for demonstration.
 ### 2. Core Layout & Navigation ✅
 
 - ✅ MainLayout with sidebar navigation
-- ✅ 5 main navigation items
+- ✅ 4 main navigation items (refactored structure)
 - ✅ User profile section with notification badge
 - ✅ Professional branding (NERVE logo)
+- ✅ Reorganized navigation structure aligned with CEO user journey
 
 ### 3. Mock Data Layer ✅
 
@@ -49,20 +50,11 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Quick links to all modules
 - ✅ Real-time data indicators
 
-### 5. Market Pulse - Module 1 ✅
+### 5. Daily Pulse Check - Reorganized Module ✅
 
-#### Feature A: External Pulse Check ✅
+**Business Facts Book:**
 
-- ✅ GenAI-style news feed with 10 items
-- ✅ 4-category filtering (Macro, Competitors, Customers, Suppliers)
-- ✅ Risk/Opportunity classification with badges
-- ✅ Impact level indicators (High/Medium/Low)
-- ✅ Urgency level badges (Urgent/Important/Normal)
-- ✅ AI analysis display with typing effect simulation
-- ✅ Annotation feature (add notes to news items)
-- ✅ Expandable/collapsible analysis sections
-
-#### Feature B: Internal Pulse Check ✅
+#### Feature A.1: Internal Pulse Check ✅
 
 - ✅ Value driver framework based on financial structure (Revenue, COGS, OPEX, Operating Profit)
 - ✅ Financial category grouping with expandable sections
@@ -78,34 +70,35 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ 12-month trend chart in modal
 - ✅ Last updated timestamp
 - ✅ Comprehensive view of underlying drivers affecting financial performance
+- ✅ Root Cause Analysis sidebar integration - provides quantitative insights on leading parameters
 
-#### Feature C: Root Cause Analysis ✅
+#### Feature A.2: External Pulse Check ✅
 
+- ✅ GenAI-style news feed with 10 items
+- ✅ 4-category filtering (Macro, Competitors, Customers, Suppliers)
+- ✅ Risk/Opportunity classification with badges
+- ✅ Impact level indicators (High/Medium/Low)
+- ✅ Urgency level badges (Urgent/Important/Normal)
+- ✅ AI analysis display with typing effect simulation
+- ✅ Annotation feature (add notes to news items)
+- ✅ Expandable/collapsible analysis sections
+- ✅ Root Cause Analysis sidebar integration - provides quantitative insights on external impacts
+
+#### Root Cause Analysis (Integrated into Business Facts Book) ✅
+
+- ✅ Slider sidebar accessible from both Internal and External Pulse Check tabs
 - ✅ AI-powered chat interface
-- ✅ 6 pre-populated example prompts
 - ✅ Natural language query processing
-- ✅ Drill-down visualizations
-- ✅ Breadcrumb navigation for drill-down levels
+- ✅ Impact analysis on value drivers and financials
+- ✅ Leading parameter identification (e.g., labor cost increases won't show in profit until products are sold)
+- ✅ Quantitative insights showing how external/internal changes affect financials
 - ✅ Waterfall chart for variance analysis
-- ✅ Bar charts for BU/product comparisons
-- ✅ Interactive data tables with drill-down
+- ✅ Bar charts for impact visualization
+- ✅ Context-aware analysis based on selected items
 
-#### Feature D: Action Tracker (JIRA-like Agile System) ✅
+### 6. Weekly Financial Forecast - Reorganized Module ✅
 
-- ✅ Comprehensive action list table
-- ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
-- ✅ Status workflow management with color-coded statuses
-- ✅ Priority indicators (High/Medium/Low)
-- ✅ Owner information with avatars
-- ✅ Reassign owner modal with notification simulation
-- ✅ Comments system (replace CEO decisions)
-- ✅ Comment history display with timestamps and authors
-- ✅ Filter by status (All/TODO/In Progress/Ready for Review/Completed/Reopen)
-- ✅ JIRA-like minimal interface for task tracking
-
-### 6. Business Assumptions - Module 2 ✅
-
-#### Feature G: Deriving Business Assumptions ✅
+#### Feature A: Business Assumption Management ✅
 
 - ✅ Assumptions table with 12 sample assumptions
 - ✅ 5 category filtering (Revenue/Volume/Labor/FX/Material)
@@ -114,18 +107,12 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Historical timeline visualization with Recharts
 - ✅ Change history with reasons
 - ✅ Expandable row details
-
-#### Feature H: Approving Business Assumptions ✅
-
 - ✅ Approval status badges (Pending/Approved/Rejected)
 - ✅ Approve/Reject buttons for pending items
 - ✅ Approver tracking
 - ✅ Version history display
 - ✅ Last updated timestamps
 - ✅ Authorization indicators
-
-#### Feature I: Resolving Assumption Conflicts ✅
-
 - ✅ Conflict alerts panel with 5 sample conflicts
 - ✅ Severity filtering (Critical/High/Medium/Low)
 - ✅ 3 conflict types (Obvious Error/Inconsistent/Duplication)
@@ -135,9 +122,9 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Resolution modal with form
 - ✅ Dismiss functionality
 
-### 7. Financial Forecast - Module 3 ✅
+#### Feature B: Financial Performance Review ✅
 
-#### Feature J: Driver-Based Forecast Compile ✅
+**B.1: Driver-Based Forecast Compile ✅**
 
 - ✅ Income statement display (Revenue, COGS, Gross/Op/Net Profit)
 - ✅ Breakdown view (Momentum + Pipeline - Risk + Opportunity)
@@ -147,7 +134,19 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ P&L impact display for each driver
 - ✅ Category grouping (Volume/Productivity/Cost/Price)
 
-#### Feature K: Forecast Visualizing with Actionable Insights ✅
+**B.2: Simulation Toggle - Integrated Scenario Simulation ✅**
+
+- ✅ Toggle to enable/disable simulation mode
+- ✅ When OFF: Read-only forecast drivers table
+- ✅ When ON: Editable driver inputs with real-time calculations
+- ✅ Change percentage auto-calculation based on inputs
+- ✅ Related assumptions display for each driver
+- ✅ Visual indicator banner when simulation mode is active
+- ✅ "Apply Simulation" and "Reset" buttons
+- ✅ Real-time forecast summary updates
+- ✅ Example use case: Simulate "what if labor cost increases by 10%" - shows realistic forecast impact on financials when products are sold
+
+**B.3: Forecast Visualizing with Actionable Insights ✅**
 
 - ✅ Interactive waterfall chart
 - ✅ Business events >$0.5M separated as bars
@@ -155,36 +154,23 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Implication bullet points for each event
 - ✅ Action proposals for downsides
 - ✅ Feasibility and priority indicators
-- ✅ "Accept Action" buttons
+- ✅ "Create Wave Initiative" buttons
+- ✅ Wave initiative modal with comprehensive form
 
-#### Feature L: Scenarios Simulation (Basic) ✅
+#### Feature C: Action Tracker (Slider Sidebar) ✅
 
-- ✅ 3 pre-built scenarios (Baseline, Tariff Mitigated, Aggressive)
-- ✅ Scenario selection interface
-- ✅ Forecast summary display
-- ✅ Scenario metadata (created by, date)
-
-### 8. Scenario Simulation - Dedicated Page ✅
-
-#### Feature L: Full Scenario Simulation ✅
-
-- ✅ Driver parameter list with 8 editable drivers
-- ✅ Editable input fields with validation
-- ✅ Change percentage auto-calculation
-- ✅ Related assumptions display
-- ✅ Recalculate button with simulation
-- ✅ Save scenario functionality
-- ✅ Scenario management (load/edit/save)
-- ✅ Real-time forecast updates
-
-#### Scenario Comparison ✅
-
-- ✅ Side-by-side comparison view
-- ✅ Select up to 3 scenarios to compare
-- ✅ Comparison bar charts
-- ✅ Comparison data table
-- ✅ Variance calculations
-- ✅ Visual highlighting of differences
+- ✅ Converted to slider sidebar (like Root Cause Analysis)
+- ✅ Toggle button on right side with notification badge
+- ✅ Accessible from Weekly Financial Forecast page
+- ✅ Comprehensive action list with JIRA-like swim lanes
+- ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
+- ✅ Status workflow management with color-coded statuses
+- ✅ Priority indicators (High/Medium/Low)
+- ✅ Owner information with avatars
+- ✅ Reassign owner modal with notification simulation
+- ✅ Comments system
+- ✅ Comment history display with timestamps and authors
+- ✅ Expandable action cards with full details
 
 ## 🎨 Design & UX Features
 
@@ -287,13 +273,20 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ Fast development server (<1s start)
 - ✅ README with deployment instructions
 
-## 📱 Pages & Routes
+## 📱 Pages & Routes (Refactored Structure)
 
-1. ✅ `/dashboard` - Dashboard Overview
-2. ✅ `/market-pulse` - Market Pulse (3 tabs)
-3. ✅ `/assumptions` - Business Assumptions (2 tabs)
-4. ✅ `/forecast` - Financial Forecast
-5. ✅ `/scenarios` - Scenario Simulation
+1. ✅ `/annual-budget-target` - Annual Budget / Target (skeleton page)
+2. ✅ `/daily-pulse-check` - Daily Pulse Check
+   - Business Facts Book section:
+     - A.1 Internal Pulse Check
+     - A.2 External Pulse Check
+     - Root Cause Analysis (slider sidebar)
+3. ✅ `/weekly-forecast` - Weekly Financial Forecast (3 tabs)
+   - A. Business Assumption Management
+   - B. Financial Performance Review
+     - B.1 Simulation toggle (integrated scenario simulation)
+   - C. Action Tracker (slider sidebar)
+4. ✅ `/monthly-review` - Monthly Financial Review (skeleton page)
 
 ## 🎯 Feature Completeness
 
@@ -346,34 +339,44 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 ### How to Demo
 
-1. **Start at Dashboard** (http://localhost:5173/dashboard)
+1. **Annual Budget / Target** (http://localhost:5173/annual-budget-target)
 
-   - Show executive summary
-   - Navigate to different modules
+   - Skeleton page (coming soon)
+   - Will show target vs actual settings
 
-2. **Market Pulse** - Demonstrate:
+2. **Daily Pulse Check** (http://localhost:5173/daily-pulse-check) - Demonstrate:
 
-   - External news filtering and AI analysis
-   - KPI dashboard with drill-down
-   - Root cause analysis chat
-   - Action tracker with JIRA-like status workflow, comments, and reassignment
+   - **Business Facts Book:**
+     - **A.2 External Pulse Check**: External news filtering, AI analysis, risk/opportunity classification
+     - **A.1 Internal Pulse Check**: Internal financial KPIs, value drivers, leading parameters
+     - **Root Cause Analysis** (slider sidebar): Open from toggle on right side
+       - Select items from External or Internal Pulse
+       - See quantitative impact analysis on value drivers and financials
+       - Example: Select "labor cost increase" → See leading parameter analysis explaining impact on profit when products are sold
 
-3. **Business Assumptions** - Demonstrate:
+3. **Weekly Financial Forecast** (http://localhost:5173/weekly-forecast) - Demonstrate:
 
-   - Assumption filtering and approval
-   - Timeline visualization
-   - Conflict detection and resolution
+   - **Tab A: Business Assumption Management**
 
-4. **Financial Forecast** - Demonstrate:
+     - Assumption filtering and approval
+     - Timeline visualization
+     - Conflict detection and resolution
 
-   - Driver-based forecast
-   - Waterfall analysis
-   - Business events with actions
+   - **Tab B: Financial Performance Review**
 
-5. **Scenario Simulation** - Demonstrate:
-   - Edit forecast drivers
-   - Recalculate forecasts
-   - Compare multiple scenarios
+     - Driver-based forecast table
+     - **Simulation Toggle**: Click "Enable Simulation" → Edit drivers (e.g., increase labor cost by 10%) → See real-time forecast updates
+     - Waterfall analysis
+     - Business events with actionable proposals
+     - Example use case: Hardware manufacturer scenario - increase labor cost driver to see realistic profit forecast impact
+
+   - **Tab C: Action Tracker**
+     - Open Action Tracker sidebar from header button or toggle on right
+     - JIRA-like swim lanes, status workflow, comments, reassignment
+
+4. **Monthly Financial Review** (http://localhost:5173/monthly-review)
+   - Skeleton page (coming soon)
+   - Will allow review of monthly performance and create reconcile initiatives
 
 ## 🔮 Future Enhancements (Out of Scope)
 
@@ -421,6 +424,11 @@ pnpm lint
 6. **Performant**: Fast Vite build with optimized bundle
 7. **Documented**: Extensive README and code comments
 8. **Demo-Ready**: Immediately usable for stakeholder presentations
+9. **User Journey Optimized**: Refactored navigation structure aligned with CEO workflow:
+   - Annual Budget/Target → Daily Pulse Check → Weekly Forecast → Monthly Review
+   - Root Cause Analysis integrated into Daily Pulse Check for quantitative insights
+   - Simulation mode integrated into Financial Forecast for scenario testing
+   - Action Tracker converted to slider sidebar for better UX
 
 ---
 

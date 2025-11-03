@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 // import DashboardOverview from './pages/DashboardOverview'; // Hidden for now - kept for future use
-import MarketPulse from './pages/MarketPulse';
-import BusinessAssumptions from './pages/BusinessAssumptions';
-import FinancialForecast from './pages/FinancialForecast';
-import ScenarioSimulation from './pages/ScenarioSimulation';
+import AnnualBudgetTarget from './pages/AnnualBudgetTarget';
+import DailyPulseCheck from './pages/DailyPulseCheck';
+import WeeklyFinancialForecast from './pages/WeeklyFinancialForecast';
+import MonthlyFinancialReview from './pages/MonthlyFinancialReview';
 
 function App() {
   return (
@@ -17,7 +17,7 @@ function App() {
             index
             element={
               <Navigate
-                to='/market-pulse'
+                to='/annual-budget-target'
                 replace
               />
             }
@@ -28,20 +28,20 @@ function App() {
             element={<DashboardOverview />}
           /> */}
           <Route
-            path='market-pulse'
-            element={<MarketPulse />}
+            path='annual-budget-target'
+            element={<AnnualBudgetTarget />}
           />
           <Route
-            path='assumptions'
-            element={<BusinessAssumptions />}
+            path='daily-pulse-check'
+            element={<DailyPulseCheck />}
           />
           <Route
-            path='forecast'
-            element={<FinancialForecast />}
+            path='weekly-forecast'
+            element={<WeeklyFinancialForecast />}
           />
           <Route
-            path='scenarios'
-            element={<ScenarioSimulation />}
+            path='monthly-review'
+            element={<MonthlyFinancialReview />}
           />
         </Route>
       </Routes>
