@@ -23,13 +23,15 @@ The application is currently running and ready for demonstration.
 
 ### 2. Core Layout & Navigation ✅
 
-- ✅ MainLayout without sidebar (full-width layout)
-- ✅ Header bar with N icon (links to home), page title, centered tabs navigation, and profile icon
-- ✅ Header only displayed on non-landing pages
-- ✅ Dynamic tabs navigation based on route (Pulse: External/Internal/Actions; Review: Forecast/Assumptions/Actions)
-- ✅ Landing page with two main feature entry points
+- ✅ MainLayout with right sidebar navigation
+- ✅ Right sidebar (RightSidebar component) with collapsible functionality
+- ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
+- ✅ Icon-based navigation with labels (External Pulse, Internal Pulse, Finance, Action Tracker)
+- ✅ Active state highlighting with primary color and left border
+- ✅ Profile link at bottom of sidebar
+- ✅ Main content area with dynamic right margin based on sidebar state
+- ✅ Smooth transitions for sidebar collapse/expand
 - ✅ User profile page with user information and quick actions
-- ✅ Navigation through landing page (Pulse and Review entry points)
 
 ### 3. Mock Data Layer ✅
 
@@ -44,23 +46,17 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages
 - ✅ `mockAnalysis.ts` - Root cause analysis results
 
-### 4. Dashboard Overview Page ✅
+### 4. Page Structure ✅
 
-Note: Dashboard Overview page was removed in favor of Landing Page as the entry point. All functionality is accessible through the Landing Page and main feature routes.
+The application uses a flat route structure with standalone pages for each major feature:
 
-### 5. Landing Page ✅
+- ✅ External Pulse Page - Standalone page for external pulse check
+- ✅ Internal Pulse Page - Standalone page for internal pulse check
+- ✅ Finance Page - Combined financial forecast page with all financial features
+- ✅ Action Tracker Page - Standalone page for action tracking
+- ✅ User Profile Page - User profile and settings
 
-- ✅ Premium executive design with dark gradient background
-- ✅ Full-screen cover images (pulse_cover.jpg, review_cover.jpg)
-- ✅ Large hero cards (500px height) with image backgrounds
-- ✅ Dark gradient overlays for text readability
-- ✅ Sophisticated hover effects (scale, shadow, border glow)
-- ✅ Premium typography with large, bold headings
-- ✅ Glassmorphism badges for category labels
-- ✅ Professional spacing and layout
-- ✅ Responsive grid layout (1 column on mobile, 2 columns on desktop)
-
-### 6. Daily Pulse Check - Reorganized Module ✅
+### 5. Daily Pulse Check Features ✅
 
 **Business Facts Book:**
 
@@ -94,9 +90,9 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Expandable/collapsible analysis sections
 - ✅ Root Cause Analysis sidebar integration - provides quantitative insights on external impacts
 
-#### Root Cause Analysis (Integrated into Business Facts Book) ✅
+#### Root Cause Analysis (Integrated into Pulse Pages) ✅
 
-- ✅ Slider sidebar accessible from both Internal and External Pulse Check tabs
+- ✅ Slider sidebar accessible from both Internal and External Pulse pages
 - ✅ AI-powered chat interface
 - ✅ Natural language query processing
 - ✅ Impact analysis on value drivers and financials
@@ -106,63 +102,15 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Bar charts for impact visualization
 - ✅ Context-aware analysis based on selected items
 
-### 6. Weekly Financial Forecast - Reorganized Module ✅
+### 6. Financial Forecast Features ✅
 
-#### Feature A: Business Assumption Management ✅
+**Note**: Business Assumption Management features (AssumptionsTable, ConflictAlertsPanel) have been removed from the current implementation. The Finance page focuses on financial performance review and scenario simulation.
 
-- ✅ Assumptions table with 12 sample assumptions
-- ✅ 5 category filtering (Revenue/Volume/Labor/FX/Material)
-- ✅ Source attribution (Actuals/Predictions/Initiatives)
-- ✅ Owner assignment display
-- ✅ Historical timeline visualization with Recharts
-- ✅ Change history with reasons
-- ✅ Expandable row details
-- ✅ Approval status badges (Pending/Approved/Rejected)
-- ✅ Approve/Reject buttons for pending items
-- ✅ Approver tracking
-- ✅ Version history display
-- ✅ Last updated timestamps
-- ✅ Authorization indicators
-- ✅ Conflict alerts panel with 5 sample conflicts
-- ✅ Severity filtering (Critical/High/Medium/Low)
-- ✅ 3 conflict types (Obvious Error/Inconsistent/Duplication)
-- ✅ Suggested resolution display
-- ✅ Affected assumptions linking
-- ✅ Stakeholder notification interface
-- ✅ Resolution modal with form
-- ✅ Dismiss functionality
+#### Feature A: Financial Performance Review ✅
 
-#### Feature B: Financial Performance Review ✅
+**A.1: Full Year OP Waterfall Chart ✅**
 
-**B.1: Driver-Based Forecast Compile ✅**
-
-- ✅ Income statement display (Revenue, COGS, Gross/Op/Net Profit)
-- ✅ Breakdown view (Momentum + Pipeline - Risk + Opportunity)
-- ✅ Forecast drivers table with 8 drivers
-- ✅ Latest actual vs forecast comparison
-- ✅ Change percentage calculations
-- ✅ P&L impact display for each driver
-- ✅ Category grouping (Volume/Productivity/Cost/Price)
-
-**B.2: Value Driver Scenario Simulation ✅**
-
-- ✅ Scenario Creation Modal for creating and editing scenarios
-- ✅ Value driver editing by financial category (Revenue, COGS, OPEX, Operating Profit)
-- ✅ Hierarchical value driver structure (Category → Metric → Value Driver)
-- ✅ Real-time change percentage calculation based on value driver adjustments
-- ✅ Simulated waterfall calculation showing impact on OP progression
-- ✅ Scenario management panel with create, edit, delete, and toggle visibility
-- ✅ Multiple scenario visualization on waterfall chart (overlay lines)
-- ✅ Scenario comparison panel (slider sidebar) with best/worst identification
-- ✅ Scenario statistics (average, median, range)
-- ✅ Scenario ranking and sorting (by impact, name, date)
-- ✅ Color-coded scenarios for visual distinction
-- ✅ Total OP impact calculation for each scenario
-- ✅ Example use case: Create "Labor Cost Increase" scenario → Adjust labor rate value drivers → See simulated OP waterfall showing impact when products are sold
-
-**B.3: Full Year OP Waterfall Chart ✅**
-
-- ✅ Full Year OP Waterfall visualization replacing Revenue Waterfall Analysis
+- ✅ Full Year OP Waterfall visualization prominently displayed at top of Finance page
 - ✅ 8-stage waterfall progression showing Operating Profit journey:
   - YTM Actuals (Jan-Sep OP): 210M - Baseline starting point
   - Momentum: +25M - Projected OP assuming no actions (235M)
@@ -178,9 +126,24 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Multi-scenario visualization with overlay lines (one line per visible scenario)
 - ✅ Scenario comparison controls (Compare Best/Worst, Comparison Panel)
 - ✅ Scenario management panel above chart (create, edit, delete, toggle visibility)
-- ✅ Positioned at top of Financial Performance Review for immediate visibility
 
-**B.4: Value Drivers Display ✅**
+**A.2: Value Driver Scenario Simulation ✅**
+
+- ✅ Scenario Creation Modal for creating and editing scenarios
+- ✅ Value driver editing by financial category (Revenue, COGS, OPEX, Operating Profit)
+- ✅ Hierarchical value driver structure (Category → Metric → Value Driver)
+- ✅ Real-time change percentage calculation based on value driver adjustments
+- ✅ Simulated waterfall calculation showing impact on OP progression
+- ✅ Scenario management panel with create, edit, delete, and toggle visibility
+- ✅ Multiple scenario visualization on waterfall chart (overlay lines)
+- ✅ Scenario comparison panel (slider sidebar) with best/worst identification
+- ✅ Scenario statistics (average, median, range)
+- ✅ Scenario ranking and sorting (by impact, name, date)
+- ✅ Color-coded scenarios for visual distinction
+- ✅ Total OP impact calculation for each scenario
+- ✅ Example use case: Create "Labor Cost Increase" scenario → Adjust labor rate value drivers → See simulated OP waterfall showing impact when products are sold
+
+**A.3: Value Drivers Display ✅**
 
 - ✅ Hierarchical value driver structure organized by financial category
 - ✅ Financial categories: Revenue, COGS, OPEX, Operating Profit
@@ -189,7 +152,7 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Compact grid layout with expandable sections
 - ✅ Color-coded change indicators (green for positive, red for negative)
 
-**B.5: Business Events with Actionable Insights ✅**
+**A.4: Business Events with Actionable Insights ✅**
 
 - ✅ Business events >$0.5M separated as cards
 - ✅ Color coding (green=positive, red=negative, blue=baseline)
@@ -200,10 +163,9 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Wave initiative modal with comprehensive form
 - ✅ Ready-in-Wave status tracking for created initiatives
 
-#### Feature C: Action Tracker ✅
+### 7. Action Tracker ✅
 
-- ✅ Accessible from both Daily Pulse Check and Weekly Financial Forecast pages
-- ✅ Tab navigation: "Action Tracking" tab in Daily Pulse Check, "Action Tracker" tab in Weekly Forecast
+- ✅ Standalone page accessible via sidebar navigation
 - ✅ Comprehensive action list with JIRA-like swim lanes
 - ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
 - ✅ Status workflow management with color-coded statuses
@@ -270,12 +232,11 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 
 ### Component Architecture
 
-- ✅ 8 React components:
+- ✅ 7 React components:
   - ActionTracker.tsx
-  - AssumptionsTable.tsx
-  - ConflictAlertsPanel.tsx
   - ExternalPulseCheck.tsx
   - InternalPulseCheck.tsx
+  - RightSidebar.tsx
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
@@ -293,22 +254,18 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 
 ### Routing
 
-- ✅ React Router v6 setup with nested routing
-- ✅ Landing page as index route (`/`)
-- ✅ Daily Pulse Check routes:
-  - `/daily-pulse-check` → redirects to `/daily-pulse-check/external`
-  - `/daily-pulse-check/external` - External Pulse Check tab
-  - `/daily-pulse-check/internal` - Internal Pulse Check tab
-  - `/daily-pulse-check/actions` - Action Tracker tab
-- ✅ Weekly Financial Forecast routes:
-  - `/weekly-forecast` → redirects to `/weekly-forecast/forecast`
-  - `/weekly-forecast/forecast` - Financial Performance Review tab
-  - `/weekly-forecast/assumptions` - Business Assumptions Management tab
-  - `/weekly-forecast/actions` - Action Tracker tab
-- ✅ User profile route (`/profile`)
-- ✅ Nested routing with MainLayout wrapper
-- ✅ Dynamic tab navigation based on route
-- ✅ Navigation with active states
+- ✅ React Router v7 setup with flat route structure
+- ✅ Root route (`/`) redirects to `/external-pulse`
+- ✅ Flat route structure:
+  - `/external-pulse` - External Pulse Page
+  - `/internal-pulse` - Internal Pulse Page
+  - `/finance` - Finance Page (combines all financial forecast features)
+  - `/action-tracker` - Action Tracker Page
+  - `/profile` - User Profile Page
+- ✅ MainLayout wrapper with RightSidebar navigation
+- ✅ Sidebar navigation with active state highlighting
+- ✅ Icon-based navigation with labels
+- ✅ Collapsible sidebar for space optimization
 
 ### Data Structure
 
@@ -362,57 +319,61 @@ Note: Dashboard Overview page was removed in favor of Landing Page as the entry 
 - ✅ Fast development server (<1s start)
 - ✅ README with deployment instructions
 
-## 📱 Pages & Routes (Refactored Structure)
+## 📱 Pages & Routes (Current Structure)
 
-1. ✅ `/` - Landing Page
+1. ✅ `/` - Root Route
 
-   - Two main feature entry points:
-     - Left: "Pulse" - Links to `/daily-pulse-check/external`
-     - Right: "Review" - Links to `/weekly-forecast/forecast`
-   - Professional split-screen layout with feature cards
-   - Full-screen cover images with gradient overlays
+   - Redirects to `/external-pulse` (default landing page)
+   - Right sidebar navigation always visible
 
-2. ✅ `/daily-pulse-check` - Daily Pulse Check (Pulse)
+2. ✅ `/external-pulse` - External Pulse Page
 
-   - Base route redirects to `/daily-pulse-check/external`
-   - Tab navigation: External Pulse | Internal Pulse | Action Tracking
-   - **External Pulse Check** (`/daily-pulse-check/external`):
-     - GenAI-style news feed with 4-category filtering
-     - Risk/opportunity classification
-     - AI analysis display
-     - Annotation capabilities
-   - **Internal Pulse Check** (`/daily-pulse-check/internal`):
-     - Value driver framework by financial category
-     - Metrics with value drivers and affecting factors
-     - Performance status indicators
-     - Expandable detail modals
-   - **Action Tracking** (`/daily-pulse-check/actions`):
-     - Comprehensive action list with status workflow
-     - Comments and reassignment
-   - **Root Cause Analysis** (slider sidebar):
-     - Accessible from External and Internal Pulse tabs
-     - AI-powered quantitative insights
-     - Waterfall and bar charts
+   - GenAI-style news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
+   - Risk/opportunity classification with badges
+   - Impact level indicators (High/Medium/Low)
+   - Urgency level badges (Urgent/Important/Normal)
+   - AI analysis display with typing effect simulation
+   - Annotation feature (add notes to news items)
+   - Expandable/collapsible analysis sections
+   - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
+   - Quantitative insights on external impacts
 
-3. ✅ `/weekly-forecast` - Weekly Financial Forecast (Review)
+3. ✅ `/internal-pulse` - Internal Pulse Page
 
-   - Base route redirects to `/weekly-forecast/forecast`
-   - Tab navigation: Financial Performance Review | Business Assumptions | Action Tracker
-   - **Financial Performance Review** (`/weekly-forecast/forecast`):
-     - Full Year OP Waterfall Chart (8-stage progression)
-     - Scenario Management Panel (create, edit, delete, toggle visibility)
-     - Scenario Comparison Panel (best/worst, statistics, sorting)
-     - Value Drivers display (hierarchical by financial category)
-     - Action Proposals section (business events >$0.5M)
-     - Wave Initiative creation modal
-   - **Business Assumptions** (`/weekly-forecast/assumptions`):
-     - Assumptions table with filtering and approval workflow
-     - Timeline visualization
-     - Conflict detection and resolution panel
-   - **Action Tracker** (`/weekly-forecast/actions`):
-     - Same action tracking functionality as Daily Pulse Check
+   - Value driver framework by financial category (Revenue, COGS, OPEX, Operating Profit)
+   - Metrics organized by financial category with value drivers and affecting factors
+   - Performance status indicators and variance displays
+   - Color-coded performance status (good/warning/concern)
+   - Mini sparkline charts for each metric
+   - Click-to-expand modal with full details including all value drivers and affecting factors
+   - 12-month trend chart in modal
+   - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
+   - Quantitative insights on leading parameters
 
-4. ✅ `/profile` - User Profile Page
+4. ✅ `/finance` - Finance Page
+
+   - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
+     - Interactive tooltips with cumulative OP, delta changes, and scenario values
+     - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+     - Multi-scenario visualization with overlay lines
+   - **Scenario Management Panel**: Create, edit, delete, and toggle visibility of scenarios
+   - **Scenario Comparison Panel**: Best/worst identification, statistics, sorting
+   - **Value Drivers Display**: Hierarchical structure organized by financial category
+   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - All financial forecast features combined in one page
+
+5. ✅ `/action-tracker` - Action Tracker Page
+
+   - Comprehensive action list with JIRA-like swim lanes
+   - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
+   - Priority indicators (High/Medium/Low)
+   - Owner information with avatars
+   - Reassign owner modal with notification simulation
+   - Comments system with history display
+   - Expandable action cards with full details
+
+6. ✅ `/profile` - User Profile Page
+
    - User information display
    - Profile details (email, role, member since)
    - Notification status
@@ -445,9 +406,11 @@ Implemented Features: **75+** (115%+)
 
 ### Module 2: Business Assumptions
 
-- Features G.1-G.4: ✅ 100% Complete
-- Features H.1-H.4: ✅ 100% Complete
-- Features I.1-I.4: ✅ 100% Complete
+- Features G.1-G.4: ⚠️ Removed (AssumptionsTable component deleted)
+- Features H.1-H.4: ⚠️ Removed (ConflictAlertsPanel component deleted)
+- Features I.1-I.4: ⚠️ Removed (BusinessAssumptions page deleted)
+
+**Note**: Business Assumption Management features have been removed from the current implementation. The Finance page focuses on financial performance review and scenario simulation.
 
 ### Module 3: Financial Forecast
 
@@ -470,20 +433,19 @@ This is a **frontend-only mockup** with:
 
 ## 📦 File Count
 
-- React Components: 8
+- React Components: 7
   - ActionTracker.tsx
-  - AssumptionsTable.tsx
-  - ConflictAlertsPanel.tsx
   - ExternalPulseCheck.tsx
   - InternalPulseCheck.tsx
+  - RightSidebar.tsx
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
 - Page Components: 5
-  - LandingPage.tsx
-  - DailyPulseCheck.tsx
-  - WeeklyFinancialForecast.tsx
-  - BusinessAssumptions.tsx
+  - ExternalPulsePage.tsx
+  - InternalPulsePage.tsx
+  - FinancePage.tsx
+  - ActionTrackerPage.tsx
   - UserProfile.tsx
 - Layout Components: 1
   - MainLayout.tsx
@@ -496,70 +458,84 @@ This is a **frontend-only mockup** with:
 - Type definitions: 1 (with 40+ interfaces including scenario and waterfall types)
 - Total lines of code: ~8,500+
 
+**Architecture Change**: The application has been refactored from a tab-based navigation structure to a page-based structure with right sidebar navigation. This provides better separation of concerns and a cleaner navigation experience.
+
 ## 🎉 Ready for Demo
 
 The application is **fully functional** and ready for CEO demonstration. All planned features have been implemented successfully.
 
 ### How to Demo
 
-1. **Landing Page** (http://localhost:5173/) - Entry point:
+1. **Application Entry** (http://localhost:5173/) - Default landing:
 
-   - Two feature cards displayed side-by-side
-   - Click "Pulse" card → Navigates to `/daily-pulse-check/external`
-   - Click "Review" card → Navigates to `/weekly-forecast/forecast`
-   - Profile icon in header (when on non-landing pages) → Navigates to `/profile`
+   - Root route redirects to `/external-pulse`
+   - Right sidebar navigation always visible with 4 main sections:
+     - External Pulse (Sparkles icon)
+     - Internal Pulse (Chart Bar icon)
+     - Finance (Currency Dollar icon)
+     - Action Tracker (Clipboard icon)
+   - Profile link at bottom of sidebar
+   - Sidebar can be collapsed/expanded using toggle button
 
-2. **Daily Pulse Check** (http://localhost:5173/daily-pulse-check/external) - Demonstrate:
+2. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
 
-   - **Tab Navigation**: External Pulse | Internal Pulse | Action Tracking
-   - **External Pulse Check Tab**:
-     - External news filtering (Macro, Competitors, Customers, Suppliers)
-     - AI analysis display with risk/opportunity classification
-     - Impact and urgency indicators
-     - Annotation capabilities
-   - **Internal Pulse Check Tab** (`/daily-pulse-check/internal`):
-     - Value driver framework organized by financial category
-     - Metrics with value drivers and affecting factors
-     - Performance status indicators and variance displays
-     - Expandable detail modals with trend charts
-   - **Root Cause Analysis** (slider sidebar):
-     - Toggle button on right side
-     - Select items from External or Internal Pulse tabs
+   - External news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
+   - Risk/opportunity classification with badges
+   - Impact level indicators (High/Medium/Low)
+   - Urgency level badges (Urgent/Important/Normal)
+   - AI analysis display with typing effect simulation
+   - Annotation capabilities
+   - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
+     - Select news items from the feed
      - See quantitative impact analysis on value drivers and financials
-     - Example: Select "labor cost increase" → See leading parameter analysis explaining impact on profit when products are sold
-   - **Action Tracking Tab** (`/daily-pulse-check/actions`):
-     - JIRA-like swim lanes with status workflow
-     - Comments, reassignment, and priority management
+     - Waterfall and bar charts showing external impacts
 
-3. **Weekly Financial Forecast** (http://localhost:5173/weekly-forecast/forecast) - Demonstrate:
+3. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
 
-   - **Tab Navigation**: Financial Performance Review | Business Assumptions | Action Tracker
-   - **Financial Performance Review Tab**:
-     - **Full Year OP Waterfall**: Prominently displayed at the top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
-     - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
-     - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
-     - **Scenario Management**:
-       - Click "Create Scenario" → Opens Scenario Creation Modal
-       - Adjust value drivers by category/metric (e.g., increase labor rate by 10%)
-       - See real-time change percentage calculations
-       - Save scenario → See simulated waterfall line on chart
-       - Toggle scenario visibility with checkboxes
-       - Edit/delete scenarios
-     - **Scenario Comparison**:
-       - Click "Comparison Panel" → Opens slider sidebar
-       - See best/worst scenarios with statistics
-       - Sort by impact, name, or date
-       - Compare multiple scenarios on waterfall chart
-     - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
-     - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
-   - **Business Assumptions Tab** (`/weekly-forecast/assumptions`):
-     - Assumptions table with filtering (Revenue/Volume/Labor/FX/Material)
-     - Approval workflow with timeline visualization
-     - Conflict detection and resolution panel
-   - **Action Tracker Tab** (`/weekly-forecast/actions`):
-     - Same action tracking functionality as Daily Pulse Check
+   - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
+   - Metrics with value drivers and affecting factors
+   - Performance status indicators and variance displays
+   - Color-coded performance status (good/warning/concern)
+   - Mini sparkline charts for each metric
+   - Click metrics to expand detail modals with trend charts
+   - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
+     - Select metrics from the framework
+     - See leading parameter analysis explaining impact on profit
+     - Example: Select "labor cost increase" → See analysis explaining impact when products are sold
 
-4. **User Profile** (http://localhost:5173/profile) - Access via profile icon in header:
+4. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+
+   - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
+   - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
+   - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+   - **Scenario Management**:
+     - Click "Create Scenario" → Opens Scenario Creation Modal
+     - Adjust value drivers by category/metric (e.g., increase labor rate by 10%)
+     - See real-time change percentage calculations
+     - Save scenario → See simulated waterfall line on chart
+     - Toggle scenario visibility with checkboxes in scenario panel
+     - Edit/delete scenarios
+   - **Scenario Comparison**:
+     - Click "Compare Best/Worst" → Auto-selects best and worst scenarios
+     - Click "Comparison Panel" → Opens slider sidebar
+     - See best/worst scenarios with statistics
+     - Sort by impact, name, or date
+     - Compare multiple scenarios on waterfall chart
+   - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
+   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+
+5. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
+
+   - Comprehensive action list with JIRA-like swim lanes
+   - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
+   - Priority indicators (High/Medium/Low)
+   - Owner information with avatars
+   - Reassign owner modal with notification simulation
+   - Comments system with history display
+   - Expandable action cards with full details
+
+6. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+
    - User profile information display
    - Profile details (email, role, member since)
    - Notification status
@@ -612,14 +588,14 @@ pnpm lint
 6. **Performant**: Fast Vite build with optimized bundle
 7. **Documented**: Extensive README and code comments
 8. **Demo-Ready**: Immediately usable for stakeholder presentations
-9. **User Journey Optimized**: Landing page entry point with two main features:
-   - Landing Page → Pulse (`/daily-pulse-check/external`) or Review (`/weekly-forecast/forecast`)
-   - Profile icon in header → User Profile (`/profile`)
-   - Full-width layout without sidebar for maximum screen real estate
-   - Dynamic header with N icon, page title, centered tabs, and profile icon
-   - Root Cause Analysis integrated into Daily Pulse Check for quantitative insights
-   - Scenario simulation system integrated into Financial Forecast for value driver testing
-   - Action Tracker accessible from both Pulse and Review pages via tabs
+9. **User Journey Optimized**: Right sidebar navigation with flat route structure:
+   - Root route redirects to External Pulse page
+   - Sidebar navigation provides quick access to all features
+   - Collapsible sidebar for space optimization
+   - Profile link accessible from sidebar
+   - Root Cause Analysis integrated into Pulse pages for quantitative insights
+   - Scenario simulation system integrated into Finance page for value driver testing
+   - Action Tracker as standalone page accessible via sidebar
 10. **OP Waterfall Visualization**: Full Year OP Waterfall chart prominently displayed at top of Financial Performance Review, showing 8-stage cumulative progression from actuals through forecast with color-coded positive/negative impacts and multi-scenario overlay lines
 11. **Scenario Simulation System**: Comprehensive value driver scenario management:
     - Create scenarios by adjusting value drivers

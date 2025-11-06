@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-import LandingPage from './pages/LandingPage';
-import DailyPulseCheck from './pages/DailyPulseCheck';
-import WeeklyFinancialForecast from './pages/WeeklyFinancialForecast';
+import ExternalPulsePage from './pages/ExternalPulsePage';
+import InternalPulsePage from './pages/InternalPulsePage';
+import FinancePage from './pages/FinancePage';
+import ActionTrackerPage from './pages/ActionTrackerPage';
 import UserProfile from './pages/UserProfile';
 
 function App() {
@@ -14,44 +15,29 @@ function App() {
           element={<MainLayout />}>
           <Route
             index
-            element={<LandingPage />}
+            element={
+              <Navigate
+                to='/external-pulse'
+                replace
+              />
+            }
           />
-          <Route path='daily-pulse-check'>
-            <Route
-              index
-              element={<DailyPulseCheck />}
-            />
-            <Route
-              path='external'
-              element={<DailyPulseCheck />}
-            />
-            <Route
-              path='internal'
-              element={<DailyPulseCheck />}
-            />
-            <Route
-              path='actions'
-              element={<DailyPulseCheck />}
-            />
-          </Route>
-          <Route path='weekly-forecast'>
-            <Route
-              index
-              element={<WeeklyFinancialForecast />}
-            />
-            <Route
-              path='forecast'
-              element={<WeeklyFinancialForecast />}
-            />
-            <Route
-              path='assumptions'
-              element={<WeeklyFinancialForecast />}
-            />
-            <Route
-              path='actions'
-              element={<WeeklyFinancialForecast />}
-            />
-          </Route>
+          <Route
+            path='external-pulse'
+            element={<ExternalPulsePage />}
+          />
+          <Route
+            path='internal-pulse'
+            element={<InternalPulsePage />}
+          />
+          <Route
+            path='finance'
+            element={<FinancePage />}
+          />
+          <Route
+            path='action-tracker'
+            element={<ActionTrackerPage />}
+          />
           <Route
             path='profile'
             element={<UserProfile />}
