@@ -1,6 +1,6 @@
-# CEO Dashboard - UX Mockup
+# NERVE Center - UX Mockup
 
-A comprehensive CEO dashboard mockup built with React, TypeScript, Tailwind CSS, and Recharts. This frontend-only application demonstrates an end-to-end solution for CEOs to manage business insights, forecasts, and strategic decisions.
+A comprehensive NERVE Center mockup built with React, TypeScript, Tailwind CSS, and Recharts. This frontend-only application demonstrates an end-to-end solution for CEOs to manage business insights, forecasts, and strategic decisions.
 
 ## 🚀 Tech Stack
 
@@ -229,4 +229,4 @@ This is a demonstration project for UX mockup purposes.
 
 ## 👥 Author
 
-Created for CEO dashboard mockup demonstration.
+Created for NERVE Center mockup demonstration.

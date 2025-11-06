@@ -125,7 +125,7 @@ export default function ActionTracker() {
 
   return (
     <>
-      <div className='bg-white rounded-lg border border-gray-200'>
+      <div className='bg-white rounded-lg border border-gray-200 max-w-full overflow-hidden'>
         <div className='p-6 border-b border-gray-200'>
           <div className='flex items-center justify-between'>
             <div>
@@ -146,14 +146,14 @@ export default function ActionTracker() {
         </div>
 
         {/* Swim Lane Board */}
-        <div className='p-6 overflow-x-auto'>
-          <div className='flex space-x-4 min-w-max'>
+        <div className='p-6 overflow-x-auto max-w-full'>
+          <div className='flex space-x-4'>
             {statusColumns.map((status) => {
               const columnActions = getActionsByStatus(status);
               return (
                 <div
                   key={status}
-                  className='flex-shrink-0 w-80'>
+                  className='flex-shrink-0 w-[280px] sm:w-[300px]'>
                   {/* Column Header */}
                   <div
                     className={`mb-4 px-4 py-3 rounded-lg border-2 ${getStatusColor(

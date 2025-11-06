@@ -1,10 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-// import DashboardOverview from './pages/DashboardOverview'; // Hidden for now - kept for future use
-import AnnualBudgetTarget from './pages/AnnualBudgetTarget';
+import LandingPage from './pages/LandingPage';
 import DailyPulseCheck from './pages/DailyPulseCheck';
 import WeeklyFinancialForecast from './pages/WeeklyFinancialForecast';
-import MonthlyFinancialReview from './pages/MonthlyFinancialReview';
+import UserProfile from './pages/UserProfile';
 
 function App() {
   return (
@@ -15,33 +14,47 @@ function App() {
           element={<MainLayout />}>
           <Route
             index
-            element={
-              <Navigate
-                to='/annual-budget-target'
-                replace
-              />
-            }
+            element={<LandingPage />}
           />
-          {/* Dashboard hidden for now - kept for future use */}
-          {/* <Route
-            path='dashboard'
-            element={<DashboardOverview />}
-          /> */}
+          <Route path='daily-pulse-check'>
+            <Route
+              index
+              element={<DailyPulseCheck />}
+            />
+            <Route
+              path='external'
+              element={<DailyPulseCheck />}
+            />
+            <Route
+              path='internal'
+              element={<DailyPulseCheck />}
+            />
+            <Route
+              path='actions'
+              element={<DailyPulseCheck />}
+            />
+          </Route>
+          <Route path='weekly-forecast'>
+            <Route
+              index
+              element={<WeeklyFinancialForecast />}
+            />
+            <Route
+              path='forecast'
+              element={<WeeklyFinancialForecast />}
+            />
+            <Route
+              path='assumptions'
+              element={<WeeklyFinancialForecast />}
+            />
+            <Route
+              path='actions'
+              element={<WeeklyFinancialForecast />}
+            />
+          </Route>
           <Route
-            path='annual-budget-target'
-            element={<AnnualBudgetTarget />}
-          />
-          <Route
-            path='daily-pulse-check'
-            element={<DailyPulseCheck />}
-          />
-          <Route
-            path='weekly-forecast'
-            element={<WeeklyFinancialForecast />}
-          />
-          <Route
-            path='monthly-review'
-            element={<MonthlyFinancialReview />}
+            path='profile'
+            element={<UserProfile />}
           />
         </Route>
       </Routes>

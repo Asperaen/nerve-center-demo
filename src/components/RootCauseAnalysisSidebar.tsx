@@ -9,6 +9,9 @@ import {
   ChevronRightIcon,
   GlobeAltIcon,
   ChatBubbleLeftRightIcon,
+  PlusIcon,
+  CheckCircleIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import {
   BarChart,
@@ -70,12 +73,27 @@ export default function RootCauseAnalysisSidebar({
   const [impactAnalysis, setImpactAnalysis] = useState<ImpactAnalysis | null>(
     null
   );
+  const [showToast, setShowToast] = useState(false);
+  const [isCreatingAction, setIsCreatingAction] = useState(false);
 
   // Generate impact analysis when selections change
   useEffect(() => {
     generateImpactAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedExternalItems, selectedInternalItems]);
+
+  const handleCreateAction = () => {
+    setIsCreatingAction(true);
+
+    // Simulate API call/processing delay
+    setTimeout(() => {
+      setIsCreatingAction(false);
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000); // Hide toast after 3 seconds
+    }, 1500); // Simulate 1.5 second processing time
+  };
 
   const generateImpactAnalysis = () => {
     if (
@@ -278,7 +296,7 @@ Regarding your query about "${query}", I can help analyze the impact of selected
     hasSelectedItemsProp ??
     (selectedExternalItems.length > 0 || selectedInternalItems.length > 0);
 
-  const width = isOpen ? 'w-[900px]' : 'w-0';
+  const width = isOpen ? 'w-[80vw]' : 'w-0';
   const translateX = isOpen ? 'translate-x-0' : 'translate-x-full';
 
   return (
@@ -320,13 +338,31 @@ Regarding your query about "${query}", I can help analyze the impact of selected
             <div className='flex items-center justify-between mb-3'>
               <h2 className='text-lg font-semibold text-gray-900 flex items-center'>
                 <SparklesIcon className='w-5 h-5 mr-2 text-primary-600' />
-                Root Cause Analysis
+                Analysis Assistant
               </h2>
-              <button
-                onClick={onToggle}
-                className='p-1 text-gray-400 hover:text-gray-500 rounded'>
-                <XMarkIcon className='w-5 h-5' />
-              </button>
+              <div className='flex items-center gap-2'>
+                <button
+                  onClick={handleCreateAction}
+                  disabled={isCreatingAction}
+                  className='px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 flex items-center transition-colors disabled:opacity-70 disabled:cursor-not-allowed'>
+                  {isCreatingAction ? (
+                    <>
+                      <ArrowPathIcon className='w-4 h-4 mr-1.5 animate-spin' />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon className='w-4 h-4 mr-1.5' />
+                      Create an Action
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={onToggle}
+                  className='p-1 text-gray-400 hover:text-gray-500 rounded'>
+                  <XMarkIcon className='w-5 h-5' />
+                </button>
+              </div>
             </div>
 
             {/* Sources Reference - Show when items are selected */}
@@ -421,6 +457,27 @@ Regarding your query about "${query}", I can help analyze the impact of selected
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className='fixed bottom-4 right-4 z-50 animate-fade-in'>
+          <div className='bg-white rounded-lg shadow-lg border border-gray-200 p-4 flex items-center space-x-3 min-w-[300px] max-w-md'>
+            <div className='flex-shrink-0'>
+              <CheckCircleIcon className='w-6 h-6 text-green-600' />
+            </div>
+            <div className='flex-1'>
+              <p className='text-sm font-medium text-gray-900'>
+                Your Action is ready in Action Tracking
+              </p>
+            </div>
+            <button
+              onClick={() => setShowToast(false)}
+              className='flex-shrink-0 text-gray-400 hover:text-gray-600'>
+              <XMarkIcon className='w-5 h-5' />
+            </button>
           </div>
         </div>
       )}
@@ -683,6 +740,30 @@ function ChatInterface({
   isTyping,
   hasContext = false,
 }: ChatInterfaceProps) {
+  // Define relevant questions based on context
+  const predefinedQuestions = hasContext
+    ? [
+        'What is the combined impact of these selected items?',
+        'How will this affect our revenue forecast?',
+        'What actions should we take to mitigate these risks?',
+        'Which value drivers are most affected?',
+        'What are the potential financial implications?',
+        'How do these items relate to our KPIs?',
+      ]
+    : [
+        'What are the current market trends affecting our industry?',
+        'How can we improve our financial performance?',
+        'What external factors should we monitor?',
+        'What are best practices for financial forecasting?',
+        'How do value drivers impact our business?',
+        'What strategies can help optimize our KPIs?',
+      ];
+
+  const handleQuestionClick = (question: string) => {
+    setInputValue(question);
+    onSubmit(question);
+  };
+
   return (
     <div className='flex flex-col'>
       {/* Messages */}
@@ -762,6 +843,23 @@ function ChatInterface({
 
       {/* Input */}
       <div className='p-4 border-t border-gray-200 bg-gray-50'>
+        {/* Predefined Questions */}
+        <div className='mb-3'>
+          <div className='overflow-x-auto scrollbar-hide'>
+            <div className='flex gap-2 pb-2'>
+              {predefinedQuestions.map((question, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleQuestionClick(question)}
+                  disabled={isTyping}
+                  className='flex-shrink-0 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'>
+                  {question}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className='flex gap-2'>
           <input
             type='text'

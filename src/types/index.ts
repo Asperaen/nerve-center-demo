@@ -179,6 +179,27 @@ export interface ForecastDriver {
   relatedAssumptions: string[];
 }
 
+// Hierarchical Value Driver Structure
+export interface ValueDriverItem {
+  id: string;
+  name: string;
+  value?: number;
+  unit?: string;
+  changePercent?: number;
+}
+
+export interface ForecastMetric {
+  id: string;
+  name: string;
+  valueDrivers: ValueDriverItem[];
+}
+
+export interface FinancialCategoryGroup {
+  id: string;
+  name: string;
+  metrics: ForecastMetric[];
+}
+
 export interface OperationalKPI {
   id: string;
   name: string;
@@ -239,6 +260,26 @@ export interface Scenario {
   drivers: ForecastDriver[];
   forecast: IncomeStatement;
   isBaseline: boolean;
+}
+
+// OP Waterfall Types
+export type OPWaterfallStageType =
+  | 'ytm-actual'
+  | 'momentum'
+  | 'pipeline-improvement'
+  | 'headwinds-tailwinds'
+  | 'additional-risk'
+  | 'assumed-leakage'
+  | 'leakage-recovery'
+  | 'full-year-fcst';
+
+export interface OPWaterfallStage {
+  stage: OPWaterfallStageType;
+  label: string;
+  value: number; // Cumulative OP value in millions
+  delta?: number; // Change from previous stage in millions
+  type: 'baseline' | 'positive' | 'negative'; // For color coding
+  description?: string;
 }
 
 // Initiative Types
@@ -315,4 +356,89 @@ export interface FinancialCategoryData {
   category: FinancialCategory;
   categoryName: string;
   metrics: FinancialMetric[];
+}
+
+// Value Driver Simulation Types
+export interface ValueDriverAssumption {
+  valueDriverId: string;
+  valueDriverName: string;
+  metricId: string;
+  metricName: string;
+  category: FinancialCategory;
+  baseValue: number;
+  assumptionValue: number;
+  assumptionPercent: number;
+  unit: string;
+}
+
+export interface SimulatedWaterfallStage extends OPWaterfallStage {
+  simulatedValue: number;
+  simulatedDelta?: number;
+  baselineValue: number;
+  baselineDelta?: number;
+  impact: number; // Difference between simulated and baseline
+}
+
+// Value Driver Scenario Types
+export interface ValueDriverScenarioValue {
+  valueDriverId: string;
+  value: number;
+}
+
+export interface ValueDriverScenario {
+  id: string;
+  name: string;
+  createdDate: Date;
+  createdBy: string;
+  valueDriverValues: ValueDriverScenarioValue[]; // Map of valueDriverId -> adjusted value
+  simulatedWaterfall?: SimulatedWaterfallStage[];
+  totalOPImpact?: number; // Impact at Full Year FCST stage
+  color?: string; // Color for visualization
+}
+
+export interface ScenarioComparisonState {
+  scenarios: ValueDriverScenario[];
+  visibleScenarioIds: Set<string>; // Which scenarios to show on chart
+  baselineScenarioId?: string; // ID of baseline scenario (if any)
+}
+
+// Internal Pulse Dashboard Types (Three-Column Layout)
+export interface MetricComparison {
+  vsHHtarget?: { percent: number; percentagePoints?: number };
+  vsInternalTarget?: { percent: number; percentagePoints?: number };
+  vsLastRefresh?: { percent: number; percentagePoints?: number };
+  vsLastYear?: { percent: number; percentagePoints?: number };
+  vsTarget?: { percent: number };
+  vsCurrentYearAverage?: { percent: number };
+}
+
+export interface SubMetric {
+  name: string;
+  value: number;
+  unit: string;
+  percentOfTotal?: number;
+}
+
+export interface PulseMetric {
+  id: string;
+  name: string;
+  value?: number;
+  valuePercent?: number;
+  unit?: string;
+  comparisons?: MetricComparison;
+  subMetrics?: SubMetric[];
+  hasWarning?: boolean; // For red wavy underline
+}
+
+export interface PulseSection {
+  title: string;
+  metrics: PulseMetric[];
+}
+
+export type PulseColumnType = 'financial' | 'topline' | 'operation';
+
+export interface PulseColumn {
+  type: PulseColumnType;
+  title: string;
+  sections: PulseSection[];
 }

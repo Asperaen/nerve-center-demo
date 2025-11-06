@@ -8,7 +8,7 @@
 
 ## What You Have
 
-A fully functional CEO dashboard mockup with:
+A fully functional NERVE Center mockup with:
 
 - 5 main modules
 - 65+ features implemented
@@ -260,6 +260,6 @@ Server runs on: http://localhost:5173/
 
 ---
 
-**Enjoy exploring the CEO Dashboard! 🎉**
+**Enjoy exploring the NERVE Center! 🎉**
 
 Everything is ready for your demo.

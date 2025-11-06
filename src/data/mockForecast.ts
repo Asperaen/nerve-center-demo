@@ -5,8 +5,309 @@ import type {
   BusinessEvent,
   Scenario,
   Initiative,
+  OPWaterfallStage,
+  FinancialCategoryGroup,
 } from '../types';
 import { addMonths, subDays } from 'date-fns';
+
+// Hierarchical Value Drivers matching the image structure
+export const mockValueDriverHierarchy: FinancialCategoryGroup[] = [
+  {
+    id: 'revenue',
+    name: 'Revenue',
+    metrics: [
+      {
+        id: 'revenue-metric',
+        name: 'Revenue',
+        valueDrivers: [
+          {
+            id: 'vd-rev-vol-1',
+            name: 'Volume',
+            value: 7.2,
+            unit: 'M units',
+            changePercent: -4.0,
+          },
+          {
+            id: 'vd-rev-vol-2',
+            name: 'Volume',
+            value: 7.2,
+            unit: 'M units',
+            changePercent: -4.0,
+          },
+          {
+            id: 'vd-rev-asp-1',
+            name: 'ASP (avg. selling price)',
+            value: 331.8,
+            unit: 'USD',
+            changePercent: 4.2,
+          },
+          {
+            id: 'vd-rev-asp-2',
+            name: 'ASP',
+            value: 331.8,
+            unit: 'USD',
+            changePercent: 4.2,
+          },
+          {
+            id: 'vd-rev-mix',
+            name: 'Product Mix',
+            value: 1.05,
+            unit: 'ratio',
+            changePercent: 5.0,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'cogs',
+    name: 'COGS',
+    metrics: [
+      {
+        id: 'cogs-dl',
+        name: 'Direct Labor (MVA-DL)',
+        valueDrivers: [
+          {
+            id: 'vd-dl-vol',
+            name: 'Production Volume',
+            value: 7.2,
+            unit: 'M units',
+            changePercent: -4.0,
+          },
+          {
+            id: 'vd-dl-upph-1',
+            name: 'UPPH',
+            value: 2.6,
+            unit: 'units/person/hr',
+            changePercent: 13.0,
+          },
+          {
+            id: 'vd-dl-upph-2',
+            name: 'UPPH',
+            value: 2.6,
+            unit: 'units/person/hr',
+            changePercent: 13.0,
+          },
+          {
+            id: 'vd-dl-rate-1',
+            name: 'DL Labor Rate',
+            value: 4.54,
+            unit: 'USD/hour',
+            changePercent: 8.1,
+          },
+          {
+            id: 'vd-dl-rate-2',
+            name: 'DL Labor Rate',
+            value: 4.54,
+            unit: 'USD/hour',
+            changePercent: 8.1,
+          },
+        ],
+      },
+      {
+        id: 'cogs-idl',
+        name: 'Indirect Labor (MVA-IDL)',
+        valueDrivers: [
+          {
+            id: 'vd-idl-count',
+            name: '# of IDL',
+            value: 875,
+            unit: 'people',
+            changePercent: 2.9,
+          },
+          {
+            id: 'vd-idl-rate-1',
+            name: 'IDL Labor Rate',
+            value: 6.1,
+            unit: 'USD/hour',
+            changePercent: 5.2,
+          },
+          {
+            id: 'vd-idl-rate-2',
+            name: 'IDL Labor Rate',
+            value: 6.1,
+            unit: 'USD/hour',
+            changePercent: 5.2,
+          },
+        ],
+      },
+      {
+        id: 'cogs-oh',
+        name: 'MFG Overhead (MVA-OH)',
+        valueDrivers: [
+          {
+            id: 'vd-oh-energy-1',
+            name: 'Energy Cost',
+            value: 0.135,
+            unit: 'USD/kWh',
+            changePercent: 12.5,
+          },
+          {
+            id: 'vd-oh-energy-2',
+            name: 'Energy Cost',
+            value: 0.135,
+            unit: 'USD/kWh',
+            changePercent: 12.5,
+          },
+          {
+            id: 'vd-oh-depr',
+            name: 'Depreciation',
+            value: 48.5,
+            unit: 'M USD',
+            changePercent: 7.3,
+          },
+          {
+            id: 'vd-oh-maint',
+            name: 'Maintenance Cost',
+            value: 19.2,
+            unit: 'M USD',
+            changePercent: 3.8,
+          },
+        ],
+      },
+      {
+        id: 'cogs-material',
+        name: 'Material (BOM)',
+        valueDrivers: [
+          {
+            id: 'vd-mat-indirect',
+            name: 'Indirect Materials',
+            value: 13.2,
+            unit: 'M USD',
+            changePercent: 5.6,
+          },
+          {
+            id: 'vd-mat-vol-1',
+            name: 'Material Volume',
+            value: 7.2,
+            unit: 'M units',
+            changePercent: -4.0,
+          },
+          {
+            id: 'vd-mat-vol-2',
+            name: 'Material Volume',
+            value: 7.2,
+            unit: 'M units',
+            changePercent: -4.0,
+          },
+          {
+            id: 'vd-mat-index-price-1',
+            name: 'Index-Based Material Price',
+            value: 61.0,
+            unit: 'USD/kg',
+            changePercent: 35.0,
+          },
+          {
+            id: 'vd-mat-index-price-2',
+            name: 'Index-Based Material Price',
+            value: 61.0,
+            unit: 'USD/kg',
+            changePercent: 35.0,
+          },
+          {
+            id: 'vd-mat-non-index-price',
+            name: 'Non-Index-Based Material Price',
+            value: 31.2,
+            unit: 'USD/kg',
+            changePercent: 9.5,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'opex',
+    name: 'OPEX',
+    metrics: [
+      {
+        id: 'opex-sales',
+        name: 'Sales Expense',
+        valueDrivers: [
+          {
+            id: 'vd-sales-fte',
+            name: 'FTE',
+            value: 258,
+            unit: 'people',
+            changePercent: 5.3,
+          },
+          {
+            id: 'vd-sales-non-fte',
+            name: 'Non-FTE',
+            value: 92,
+            unit: 'people',
+            changePercent: 8.2,
+          },
+        ],
+      },
+      {
+        id: 'opex-admin',
+        name: 'Admin Expense',
+        valueDrivers: [
+          {
+            id: 'vd-admin-fte',
+            name: 'FTE',
+            value: 192,
+            unit: 'people',
+            changePercent: 3.8,
+          },
+          {
+            id: 'vd-admin-non-fte',
+            name: 'Non-FTE',
+            value: 45,
+            unit: 'people',
+            changePercent: 7.1,
+          },
+        ],
+      },
+      {
+        id: 'opex-rd',
+        name: 'R&D Expense',
+        valueDrivers: [
+          {
+            id: 'vd-rd-fte',
+            name: 'FTE',
+            value: 335,
+            unit: 'people',
+            changePercent: 4.7,
+          },
+          {
+            id: 'vd-rd-non-fte',
+            name: 'Non-FTE',
+            value: 138,
+            unit: 'people',
+            changePercent: 10.4,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'operating-profit',
+    name: 'Operating Profit',
+    metrics: [
+      {
+        id: 'op-metric',
+        name: '',
+        valueDrivers: [
+          {
+            id: 'vd-op-gp',
+            name: 'Gross Profit',
+            value: 660.7,
+            unit: 'M USD',
+            changePercent: -1.9,
+          },
+          {
+            id: 'vd-op-opex',
+            name: 'OPEX',
+            value: 390.7,
+            unit: 'M USD',
+            changePercent: 0.0,
+          },
+        ],
+      },
+    ],
+  },
+];
 
 export const mockForecastDrivers: ForecastDriver[] = [
   {
@@ -422,6 +723,78 @@ export const mockScenarios: Scenario[] = [
       },
     },
     isBaseline: false,
+  },
+];
+
+export const mockOPWaterfallStages: OPWaterfallStage[] = [
+  {
+    stage: 'ytm-actual',
+    label: 'YTM Actuals Jan-Sep OP',
+    value: 210.0, // Year-to-month actual OP (baseline)
+    type: 'baseline',
+    description: 'Actual Operating Profit from January to September 2025',
+  },
+  {
+    stage: 'momentum',
+    label: 'Momentum',
+    value: 235.0, // Assumes no other actions, keep as is OP
+    delta: 25.0, // Change from YTM actual
+    type: 'positive',
+    description:
+      'Assumes no other actions, keep business as it is - projected OP based on momentum',
+  },
+  {
+    stage: 'pipeline-improvement',
+    label: 'Pipeline improvement',
+    value: 280.0, // Momentum + pipeline initiatives
+    delta: 45.0, // Existing initiative pipeline boost
+    type: 'positive',
+    description:
+      'Existing initiative pipeline that boosts OP: NVIDIA GB300 server connectors, 5G expansion, EV connector production ramp',
+  },
+  {
+    stage: 'headwinds-tailwinds',
+    label: 'Headwinds / Tailwinds',
+    value: 255.0, // After volume/price/mix impacts
+    delta: -25.0, // Mixed risks/opportunities
+    type: 'negative',
+    description:
+      'Volume/Price/Mix related impacts: US tariff on EV connectors, Apple AirPods launch delay, market demand shifts',
+  },
+  {
+    stage: 'additional-risk',
+    label: 'Additional pressure / risk',
+    value: 240.0, // After additional risks
+    delta: -15.0, // Additional risks: copper price, rare earth, Vietnam labor
+    type: 'negative',
+    description:
+      'Additional risks: Copper price surge (+15%), Rare earth supply disruption (+35% cost), Vietnam labor rate increase (+8%)',
+  },
+  {
+    stage: 'assumed-leakage',
+    label: 'Assumed pipeline leakage',
+    value: 232.0, // After accounting for leakage
+    delta: -8.0, // Pipeline initiatives under-delivered
+    type: 'negative',
+    description:
+      'Pipeline initiatives designed for higher uplift but under-delivered (e.g., designed for 3M USD profit, achieved 2M, 1M leakage)',
+  },
+  {
+    stage: 'leakage-recovery',
+    label: 'Leakage recovery',
+    value: 237.0, // After recovery initiatives
+    delta: 5.0, // Recovery initiatives
+    type: 'positive',
+    description:
+      'Additional recovery initiatives to address pipeline leakage: accelerated supplier qualification, enhanced production efficiency',
+  },
+  {
+    stage: 'full-year-fcst',
+    label: 'Full year OP FCST',
+    value: 237.0, // Final forecast
+    type: 'baseline',
+    description:
+      'Full Year Operating Profit Forecast - cumulative result of all stages',
   },
 ];
 
