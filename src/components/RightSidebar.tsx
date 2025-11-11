@@ -49,7 +49,7 @@ export default function RightSidebar({
     },
     {
       id: 'finance',
-      label: 'Finance',
+      label: 'Finance forecast',
       path: '/finance',
       icon: CurrencyDollarIcon,
     },
