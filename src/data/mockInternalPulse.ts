@@ -208,11 +208,87 @@ export const internalPulseColumns: PulseColumn[] = [
         title: 'Procurement',
         metrics: [
           {
-            id: 'cost-down',
-            name: 'Cost down',
-            comparisons: {
-              vsTarget: { percent: -3.2 },
-            },
+            id: 'critical-material-price-header',
+            name: 'Critical material price',
+            value: undefined,
+          },
+          {
+            id: 'gold-material',
+            name: 'Gold',
+            value: 2400,
+            unit: 'USD / oz',
+            subMetrics: [
+              {
+                name: 'PO price (Vs. MAP)',
+                value: 2300,
+                unit: 'USD / oz',
+                percentOfTotal: -4.17, // (2300-2400)/2400 * 100
+              },
+              {
+                name: 'GR price (Vs. MAP)',
+                value: 2350,
+                unit: 'USD / oz',
+                percentOfTotal: -2.08, // (2350-2400)/2400 * 100
+              },
+              {
+                name: 'Market price (Vs. MAP)',
+                value: 2450,
+                unit: 'USD / oz',
+                percentOfTotal: 2.08, // (2450-2400)/2400 * 100
+              },
+            ],
+          },
+          {
+            id: 'material-2',
+            name: 'xxx',
+            value: undefined,
+            unit: 'USD / oz',
+            subMetrics: [
+              {
+                name: 'PO price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+              {
+                name: 'GR price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+              {
+                name: 'Market price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+            ],
+          },
+          {
+            id: 'material-3',
+            name: 'xxx',
+            value: undefined,
+            unit: 'USD / oz',
+            subMetrics: [
+              {
+                name: 'PO price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+              {
+                name: 'GR price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+              {
+                name: 'Market price (Vs. MAP)',
+                value: 0,
+                unit: 'USD / oz',
+                percentOfTotal: 0,
+              },
+            ],
           },
         ],
       },

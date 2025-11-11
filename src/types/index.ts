@@ -16,6 +16,7 @@ export interface NewsItem {
   timestamp: Date;
   source: string;
   annotations: Annotation[];
+  analyzingBy?: string; // Employee currently analyzing this news item
 }
 
 export interface Annotation {
@@ -441,4 +442,106 @@ export interface PulseColumn {
   type: PulseColumnType;
   title: string;
   sections: PulseSection[];
+}
+
+// Calendar and Meeting Types
+export interface MeetingAttendee {
+  name: string;
+  email: string;
+  role?: string;
+  isRequired: boolean;
+  avatar?: string;
+}
+
+export type MeetingMaterialType = 'external-pulse' | 'internal-pulse';
+
+export interface MeetingMaterial {
+  id: string;
+  type: MeetingMaterialType;
+  itemId: string; // ID of the NewsItem or FinancialMetric
+  addedAt: Date;
+}
+
+export type MeetingType =
+  | 'finance-review'
+  | 'general'
+  | 'interview'
+  | 'travel'
+  | 'check-in';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  location?: string;
+  organizer: string;
+  attendees: MeetingAttendee[];
+  description?: string;
+}
+
+export interface Meeting extends CalendarEvent {
+  meetingType: MeetingType;
+  materials: MeetingMaterial[];
+}
+
+// Wave Executive Dashboard Types
+export type InitiativePhase = 'L0' | 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
+export type WeeklyStatus = 'progressing-smoothly' | 'leadership-attention';
+export type AssetType = 'yes-original' | 'yes-new' | 'no';
+
+export interface ExecutiveInitiative {
+  id: string;
+  name: string;
+  phase: InitiativePhase;
+  phaseLabel: string; // e.g., "L0(概念)", "L1(识别)", "L3(规划)"
+  weeklyStatus: WeeklyStatus;
+  owner: string;
+  responsibleWorkflow: string;
+  l4LatestEstimatedDate?: Date;
+  recurringNetBenefit: number; // in millions USD
+  isAsset: AssetType;
+  compareBP?: string;
+  exception?: boolean;
+}
+
+export interface Milestone {
+  id: string;
+  name: string;
+  endDate: Date;
+  owner: string;
+  initiativeId: string;
+}
+
+export interface WorkflowGroup {
+  workflow: string;
+  count: number;
+  initiatives: ExecutiveInitiative[];
+}
+
+export interface ExecutiveDashboardSummary {
+  overdueInitiatives: {
+    count: number;
+    netBenefit: number;
+  };
+  initiativesDueIn7Days: {
+    count: number;
+    netBenefit: number;
+  };
+  initiativesDueIn30Days: {
+    count: number;
+    netBenefit: number;
+  };
+  overdueMilestones: {
+    count: number;
+    ownerCount: number;
+  };
+  milestonesDueIn7Days: {
+    count: number;
+    ownerCount: number;
+  };
+  milestonesDueIn30Days: {
+    count: number;
+    ownerCount: number;
+  };
 }

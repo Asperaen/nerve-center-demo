@@ -7,6 +7,8 @@ import {
   UserCircleIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
+  HomeIcon,
+  PresentationChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 interface RightSidebarProps {
@@ -22,6 +24,12 @@ export default function RightSidebar({
 
   const tabs = [
     {
+      id: 'executive-summary',
+      label: 'Executive Summary',
+      path: '/',
+      icon: HomeIcon,
+    },
+    {
       id: 'external-pulse',
       label: 'External Pulse',
       path: '/external-pulse',
@@ -32,6 +40,12 @@ export default function RightSidebar({
       label: 'Internal Pulse',
       path: '/internal-pulse',
       icon: ChartBarIcon,
+    },
+    {
+      id: 'wave-executive-dashboard',
+      label: 'Wave Executive Dashboard',
+      path: '/wave-executive-dashboard',
+      icon: PresentationChartBarIcon,
     },
     {
       id: 'finance',
@@ -48,6 +62,9 @@ export default function RightSidebar({
   ];
 
   const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
     return (
       location.pathname === path || location.pathname.startsWith(path + '/')
     );

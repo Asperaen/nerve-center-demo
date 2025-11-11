@@ -26,7 +26,7 @@ The application is currently running and ready for demonstration.
 - ✅ MainLayout with right sidebar navigation
 - ✅ Right sidebar (RightSidebar component) with collapsible functionality
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
-- ✅ Icon-based navigation with labels (External Pulse, Internal Pulse, Finance, Action Tracker)
+- ✅ Icon-based navigation with labels (External Pulse, Internal Pulse, Wave Executive Dashboard, Finance, Action Tracker)
 - ✅ Active state highlighting with primary color and left border
 - ✅ Profile link at bottom of sidebar
 - ✅ Main content area with dynamic right margin based on sidebar state
@@ -45,6 +45,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockConflicts.ts` - 5 assumption conflicts
 - ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages
 - ✅ `mockAnalysis.ts` - Root cause analysis results
+- ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
 
 ### 4. Page Structure ✅
 
@@ -52,6 +53,7 @@ The application uses a flat route structure with standalone pages for each major
 
 - ✅ External Pulse Page - Standalone page for external pulse check
 - ✅ Internal Pulse Page - Standalone page for internal pulse check
+- ✅ Wave Executive Dashboard Page - Standalone page for executive dashboard with initiatives tracking and value delivery charts
 - ✅ Finance Page - Combined financial forecast page with all financial features
 - ✅ Action Tracker Page - Standalone page for action tracking
 - ✅ User Profile Page - User profile and settings
@@ -89,6 +91,27 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Annotation feature (add notes to news items)
 - ✅ Expandable/collapsible analysis sections
 - ✅ Root Cause Analysis sidebar integration - provides quantitative insights on external impacts
+
+#### Feature A.3: Wave Executive Dashboard ✅
+
+- ✅ Comprehensive executive dashboard with 4 key charts in 2x2 grid layout:
+  - **Value Progress Chart**: Net Recurring Revenue (Annualized, Million USD) vs. Top-Down Target with current vs target comparison
+  - **Value Delivery Tracking Chart**: Time-series tracking of Net Recurring Revenue vs. Bottom-Up Plan with stacked bars and target line
+  - **Variance Analysis Chart**: L4+ Actual Net Recurring Revenue variance breakdown (Accelerated, Over-delivery, Newly Added, Delayed, Lost Delivery, Moved to L3, Cancelled/Paused, Total)
+  - **Workflow Value Delivery Chart**: Value delivery per workflow with stacked bars showing contribution by workflow
+- ✅ Initiatives table with workflow grouping:
+  - Collapsible workflow groups (e.g., "Water - Integrated Management", "Water - Operations")
+  - Columns: Exception, #, Name, Phase, Weekly Status, Initiative Owner, Responsible Workflow, L4 Latest Estimated Date, Recurring Net Benefit, Is it an Asset, Compare BP
+  - Status indicators (green for "Progressing Smoothly", red for "Leadership Attention")
+  - Phase labels (L0-L5 with Chinese labels)
+  - Asset type indicators (Yes - Original, Yes - New, No)
+- ✅ Summary cards section with 6 cards in 2 rows:
+  - **Row 1 (Initiatives)**: Overdue initiatives, Initiatives due in 7 days, Initiatives due in 30 days
+  - **Row 2 (Milestones)**: Overdue milestones, Milestones due in 7 days, Milestones due in 30 days
+  - Each card shows count and net benefit/owner count metrics
+- ✅ All field labels translated to English
+- ✅ Standalone page accessible via right sidebar navigation
+- ✅ Professional styling matching the application design system
 
 #### Root Cause Analysis (Integrated into Pulse Pages) ✅
 
@@ -350,7 +373,24 @@ The application uses a flat route structure with standalone pages for each major
    - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
    - Quantitative insights on leading parameters
 
-4. ✅ `/finance` - Finance Page
+4. ✅ `/wave-executive-dashboard` - Wave Executive Dashboard Page
+
+   - **4 Key Charts in 2x2 Grid**:
+     - Value Progress: Current vs Target comparison with stacked segments
+     - Value Delivery Tracking: Monthly time-series with stacked bars and target line
+     - Variance Analysis: Waterfall-style breakdown of variance components
+     - Workflow Value Delivery: Stacked bars showing value delivery per workflow
+   - **Initiatives Table**:
+     - Grouped by workflow with collapsible sections
+     - Comprehensive columns (Exception, #, Name, Phase, Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset, Compare BP)
+     - Status indicators (Progressing Smoothly / Leadership Attention)
+     - Phase labels (L0-L5)
+   - **Summary Cards**:
+     - 6 cards showing overdue/due soon initiatives and milestones
+     - Count and net benefit/owner count metrics
+   - Standalone page accessible via right sidebar navigation
+
+5. ✅ `/finance` - Finance Page
 
    - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
@@ -362,7 +402,7 @@ The application uses a flat route structure with standalone pages for each major
    - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
    - All financial forecast features combined in one page
 
-5. ✅ `/action-tracker` - Action Tracker Page
+6. ✅ `/action-tracker` - Action Tracker Page
 
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
@@ -372,7 +412,7 @@ The application uses a flat route structure with standalone pages for each major
    - Comments system with history display
    - Expandable action cards with full details
 
-6. ✅ `/profile` - User Profile Page
+7. ✅ `/profile` - User Profile Page
 
    - User information display
    - Profile details (email, role, member since)
@@ -433,17 +473,19 @@ This is a **frontend-only mockup** with:
 
 ## 📦 File Count
 
-- React Components: 7
+- React Components: 8
   - ActionTracker.tsx
   - ExternalPulseCheck.tsx
   - InternalPulseCheck.tsx
+  - WaveExecutiveDashboard.tsx
   - RightSidebar.tsx
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
-- Page Components: 5
+- Page Components: 6
   - ExternalPulsePage.tsx
   - InternalPulsePage.tsx
+  - WaveExecutiveDashboardPage.tsx
   - FinancePage.tsx
   - ActionTrackerPage.tsx
   - UserProfile.tsx
@@ -454,7 +496,7 @@ This is a **frontend-only mockup** with:
   - scenarioComparison.ts
   - valueDriverMapping.ts
 - TypeScript files: 25+
-- Mock data files: 7 (including OP waterfall stages data)
+- Mock data files: 8 (including OP waterfall stages data and executive dashboard data)
 - Type definitions: 1 (with 40+ interfaces including scenario and waterfall types)
 - Total lines of code: ~8,500+
 
@@ -469,9 +511,10 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 1. **Application Entry** (http://localhost:5173/) - Default landing:
 
    - Root route redirects to `/external-pulse`
-   - Right sidebar navigation always visible with 4 main sections:
+   - Right sidebar navigation always visible with 5 main sections:
      - External Pulse (Sparkles icon)
      - Internal Pulse (Chart Bar icon)
+     - Wave Executive Dashboard (Presentation Chart Bar icon)
      - Finance (Currency Dollar icon)
      - Action Tracker (Clipboard icon)
    - Profile link at bottom of sidebar
@@ -503,7 +546,23 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - See leading parameter analysis explaining impact on profit
      - Example: Select "labor cost increase" → See analysis explaining impact when products are sold
 
-4. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+4. **Wave Executive Dashboard Page** (http://localhost:5173/wave-executive-dashboard) - Demonstrate:
+
+   - **4 Key Charts in 2x2 Grid**:
+     - **Value Progress Chart**: Shows current value (985.0M + 445.6M) vs target (4,792.0M) with stacked segments
+     - **Value Delivery Tracking Chart**: Monthly time-series from Jan-20 to Dec-20 with stacked bars and red target line
+     - **Variance Analysis Chart**: Waterfall-style breakdown showing positive (Accelerated, Over-delivery, Newly Added) and negative (Delayed, Lost Delivery, Moved to L3, Cancelled/Paused) variance components
+     - **Workflow Value Delivery Chart**: Stacked bars showing value delivery across 13 workflows (Water, Juice, Carbonated, Company, Finance, Information, Human Resources, Legal, Logistics, Procurement, Sales, Health, Training)
+   - **Initiatives Table**:
+     - Click workflow group headers to expand/collapse initiatives
+     - View initiative details: ID, Name, Phase (L0-L5), Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset Type
+     - Status indicators: Green square for "Progressing Smoothly", Red square for "Leadership Attention"
+   - **Summary Cards**:
+     - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
+     - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
+   - Accessible via right sidebar navigation (Presentation Chart Bar icon)
+
+5. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
 
    - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
    - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
@@ -524,7 +583,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
    - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
 
-5. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
+6. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
 
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
@@ -534,7 +593,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Comments system with history display
    - Expandable action cards with full details
 
-6. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+7. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
    - User profile information display
    - Profile details (email, role, member since)
@@ -594,6 +653,7 @@ pnpm lint
    - Collapsible sidebar for space optimization
    - Profile link accessible from sidebar
    - Root Cause Analysis integrated into Pulse pages for quantitative insights
+   - Wave Executive Dashboard as standalone page with comprehensive initiatives tracking and value delivery visualization
    - Scenario simulation system integrated into Finance page for value driver testing
    - Action Tracker as standalone page accessible via sidebar
 10. **OP Waterfall Visualization**: Full Year OP Waterfall chart prominently displayed at top of Financial Performance Review, showing 8-stage cumulative progression from actuals through forecast with color-coded positive/negative impacts and multi-scenario overlay lines
@@ -603,6 +663,12 @@ pnpm lint
     - Compare scenarios with best/worst analysis
     - Calculate simulated OP impact from value driver changes
     - Scenario statistics and ranking
+12. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
+    - 4 key charts showing value progress, delivery tracking, variance analysis, and workflow breakdown
+    - Initiatives table with workflow grouping and comprehensive tracking columns
+    - Summary cards for overdue/due soon initiatives and milestones
+    - All metrics and labels in English
+    - Standalone page accessible via right sidebar navigation
 
 ---
 

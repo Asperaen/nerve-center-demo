@@ -211,38 +211,45 @@ export default function FinancePage() {
   );
 
   return (
-    <div className='min-h-screen bg-gray-50 relative'>
-      <div className='p-8'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 relative'>
+      <div className='p-8 max-w-[1920px] mx-auto'>
         <div className='space-y-8'>
           {/* OP Waterfall Chart */}
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <div className='flex items-center justify-between mb-6'>
-              <h2 className='text-xl font-semibold text-gray-900'>
-                Full Year OP Waterfall
-              </h2>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
+            <div className='flex items-center justify-between mb-8'>
+              <div>
+                <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+                  Full Year OP Waterfall
+                </h2>
+                <p className='text-sm text-gray-500'>
+                  Visualize operating profit changes across stages
+                </p>
+              </div>
               <div className='flex items-center gap-2'>
-                {scenarios.length >= 2 && (
+                <div className='flex items-center gap-3'>
+                  {scenarios.length >= 2 && (
+                    <button
+                      onClick={handleCompareBestWorst}
+                      className='px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 flex items-center'>
+                      <ChartBarIcon className='w-4 h-4 mr-2' />
+                      Compare Best/Worst
+                    </button>
+                  )}
+                  {scenarios.length > 0 && (
+                    <button
+                      onClick={() => setIsComparisonPanelOpen(true)}
+                      className='px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 flex items-center'>
+                      <ChartBarIcon className='w-4 h-4 mr-2' />
+                      Comparison Panel
+                    </button>
+                  )}
                   <button
-                    onClick={handleCompareBestWorst}
-                    className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center'>
-                    <ChartBarIcon className='w-4 h-4 mr-2' />
-                    Compare Best/Worst
+                    onClick={handleCreateScenario}
+                    className='px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center transform hover:scale-105'>
+                    <PlusIcon className='w-5 h-5 mr-2' />
+                    Create Scenario
                   </button>
-                )}
-                {scenarios.length > 0 && (
-                  <button
-                    onClick={() => setIsComparisonPanelOpen(true)}
-                    className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center'>
-                    <ChartBarIcon className='w-4 h-4 mr-2' />
-                    Comparison Panel
-                  </button>
-                )}
-                <button
-                  onClick={handleCreateScenario}
-                  className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 flex items-center'>
-                  <PlusIcon className='w-4 h-4 mr-2' />
-                  Create Scenario
-                </button>
+                </div>
               </div>
             </div>
 
@@ -254,9 +261,9 @@ export default function FinancePage() {
                 const sortedScenarios = sortScenariosByImpact(scenarios);
 
                 return (
-                  <div className='mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200'>
-                    <div className='flex items-center justify-between mb-3'>
-                      <h3 className='text-sm font-semibold text-gray-900'>
+                  <div className='mb-6 p-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 shadow-sm'>
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-base font-bold text-gray-900'>
                         Scenarios ({scenarios.length})
                       </h3>
                     </div>
@@ -274,12 +281,18 @@ export default function FinancePage() {
                         return (
                           <div
                             key={scenario.id}
-                            className={`relative flex items-center justify-between p-3 bg-white rounded border-2 transition-all ${
+                            className={`relative flex items-center justify-between p-4 bg-white rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
                               isVisible
-                                ? 'border-primary-300 shadow-sm'
-                                : 'border-gray-200'
-                            } ${isBest ? 'ring-2 ring-opportunity-300' : ''} ${
-                              isWorst ? 'ring-2 ring-risk-300' : ''
+                                ? 'border-primary-400 shadow-md shadow-primary-100'
+                                : 'border-gray-200 hover:border-gray-300'
+                            } ${
+                              isBest
+                                ? 'ring-2 ring-opportunity-300 ring-offset-1'
+                                : ''
+                            } ${
+                              isWorst
+                                ? 'ring-2 ring-risk-300 ring-offset-1'
+                                : ''
                             }`}>
                             {/* Rank Badge */}
                             <div className='absolute top-1 right-1'>
@@ -508,11 +521,16 @@ export default function FinancePage() {
           )}
 
           {/* Value Drivers */}
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <div className='flex items-center justify-between mb-6'>
-              <h2 className='text-xl font-semibold text-gray-900'>
-                Value drivers
-              </h2>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
+            <div className='flex items-center justify-between mb-8'>
+              <div>
+                <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+                  Value Drivers
+                </h2>
+                <p className='text-sm text-gray-500'>
+                  Key metrics driving financial performance
+                </p>
+              </div>
             </div>
 
             {/* Compact Grid Layout */}
@@ -520,10 +538,10 @@ export default function FinancePage() {
               {mockValueDriverHierarchy.map((financial) => (
                 <div
                   key={financial.id}
-                  className='border border-gray-200 rounded-lg overflow-hidden'>
+                  className='border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200'>
                   {/* Financial Header */}
-                  <div className='bg-gray-50 px-4 py-2 border-b border-gray-200'>
-                    <h3 className='text-sm font-semibold text-gray-900'>
+                  <div className='bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-3 border-b border-gray-200'>
+                    <h3 className='text-base font-bold text-gray-900'>
                       {financial.name}
                     </h3>
                   </div>
@@ -536,19 +554,19 @@ export default function FinancePage() {
                         className='bg-white'>
                         {/* Metric Header */}
                         {metric.name && (
-                          <div className='px-4 py-2 bg-gray-50/50 border-b border-gray-100'>
-                            <h4 className='text-xs font-medium text-gray-700'>
+                          <div className='px-6 py-3 bg-gray-50/70 border-b border-gray-100'>
+                            <h4 className='text-sm font-semibold text-gray-800'>
                               {metric.name}
                             </h4>
                           </div>
                         )}
 
                         {/* Value Drivers Grid */}
-                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4'>
                           {metric.valueDrivers.map((driver) => (
                             <div
                               key={driver.id}
-                              className='bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition-colors'>
+                              className='bg-gradient-to-br from-white to-gray-50 rounded-lg p-4 hover:from-gray-50 hover:to-gray-100 hover:shadow-md transition-all duration-200 border border-gray-100'>
                               <div className='flex items-start justify-between mb-2'>
                                 <span className='text-xs font-medium text-gray-700 flex-1'>
                                   {driver.name}
@@ -589,18 +607,23 @@ export default function FinancePage() {
           </div>
 
           {/* Business Events with Action Proposals */}
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <div className='flex items-center justify-between mb-6'>
-              <h2 className='text-xl font-semibold text-gray-900'>
-                Action Proposals
-              </h2>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
+            <div className='flex items-center justify-between mb-8'>
+              <div>
+                <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+                  Action Proposals
+                </h2>
+                <p className='text-sm text-gray-500'>
+                  Recommended actions based on business events and opportunities
+                </p>
+              </div>
               <button
                 onClick={() => {
                   // TODO: Implement create new proposal functionality
                   alert('Create new proposal functionality coming soon');
                 }}
-                className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 flex items-center'>
-                <PlusIcon className='w-4 h-4 mr-2' />
+                className='px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center transform hover:scale-105'>
+                <PlusIcon className='w-5 h-5 mr-2' />
                 Create a new Proposal
               </button>
             </div>
@@ -610,12 +633,12 @@ export default function FinancePage() {
                 .map((event) => (
                   <div
                     key={event.id}
-                    className={`p-5 rounded-lg border-2 ${
+                    className={`p-6 rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 ${
                       event.type === 'risk'
-                        ? 'bg-risk-50 border-risk-200'
+                        ? 'bg-gradient-to-br from-risk-50 to-risk-100/50 border-risk-300'
                         : event.type === 'opportunity'
-                        ? 'bg-opportunity-50 border-opportunity-200'
-                        : 'bg-blue-50 border-blue-200'
+                        ? 'bg-gradient-to-br from-opportunity-50 to-opportunity-100/50 border-opportunity-300'
+                        : 'bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-300'
                     }`}>
                     <div className='flex items-start justify-between mb-3'>
                       <div className='flex items-center space-x-3'>
@@ -671,7 +694,7 @@ export default function FinancePage() {
                     {/* Action Proposals */}
                     {event.actionProposals &&
                       event.actionProposals.length > 0 && (
-                        <div className='mt-4 p-4 bg-white rounded-lg border border-gray-200'>
+                        <div className='mt-5 p-5 bg-white rounded-xl border border-gray-200 shadow-sm'>
                           <p className='text-sm font-medium text-gray-900 mb-3'>
                             Recommended Actions:
                           </p>
@@ -684,10 +707,10 @@ export default function FinancePage() {
                                 return (
                                   <div
                                     key={action.id}
-                                    className={`flex items-start justify-between p-3 rounded ${
+                                    className={`flex items-start justify-between p-4 rounded-lg transition-all duration-200 ${
                                       isReadyInWave
-                                        ? 'bg-blue-100 border border-blue-200'
-                                        : 'bg-gray-50'
+                                        ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 shadow-sm'
+                                        : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
                                     }`}>
                                     <div className='flex-1'>
                                       <p className='text-sm font-medium text-gray-900'>

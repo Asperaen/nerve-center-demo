@@ -15,6 +15,7 @@ export const mockNews: NewsItem[] = [
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     source: 'Reuters',
     annotations: [],
+    analyzingBy: 'Jennifer Wu - VP Operations',
   },
   {
     id: 'news-2',
@@ -30,6 +31,7 @@ export const mockNews: NewsItem[] = [
     timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
     source: 'Bloomberg',
     annotations: [],
+    analyzingBy: 'Michael Chen - CPO',
   },
   {
     id: 'news-3',

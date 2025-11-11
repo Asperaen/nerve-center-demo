@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { mockActions } from '../data/mockActions';
 import type { Action, ActionStatus } from '../types';
 import {
-  ClipboardDocumentListIcon,
   UserCircleIcon,
   XMarkIcon,
   CheckIcon,
@@ -125,20 +124,10 @@ export default function ActionTracker() {
 
   return (
     <>
-      <div className='bg-white rounded-lg border border-gray-200 max-w-full overflow-hidden'>
-        <div className='p-6 border-b border-gray-200'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h2 className='text-xl font-semibold text-gray-900 flex items-center'>
-                <ClipboardDocumentListIcon className='w-6 h-6 mr-2 text-primary-600' />
-                Action Tracker
-              </h2>
-              <p className='mt-1 text-sm text-gray-500'>
-                JIRA-like swim lane board for tracking actions and tasks
-              </p>
-            </div>
-
-            {/* Summary */}
+      <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 max-w-full overflow-hidden hover:shadow-xl transition-shadow duration-300'>
+        <div className='p-8 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50/50'>
+          {/* Summary */}
+          <div className='flex items-center justify-end'>
             <div className='flex items-center space-x-4 text-sm text-gray-600'>
               <span>Total: {actions.length}</span>
             </div>
@@ -146,24 +135,24 @@ export default function ActionTracker() {
         </div>
 
         {/* Swim Lane Board */}
-        <div className='p-6 overflow-x-auto max-w-full'>
-          <div className='flex space-x-4'>
+        <div className='p-8 overflow-x-auto max-w-full bg-gray-50/30'>
+          <div className='flex space-x-5'>
             {statusColumns.map((status) => {
               const columnActions = getActionsByStatus(status);
               return (
                 <div
                   key={status}
-                  className='flex-shrink-0 w-[280px] sm:w-[300px]'>
+                  className='flex-shrink-0 w-[300px] sm:w-[320px]'>
                   {/* Column Header */}
                   <div
-                    className={`mb-4 px-4 py-3 rounded-lg border-2 ${getStatusColor(
+                    className={`mb-5 px-5 py-4 rounded-xl border-2 shadow-md ${getStatusColor(
                       status
                     )}`}>
                     <div className='flex items-center justify-between'>
-                      <h3 className='font-semibold text-sm'>
+                      <h3 className='font-bold text-base'>
                         {getStatusLabel(status)}
                       </h3>
-                      <span className='text-xs font-medium bg-white/50 px-2 py-0.5 rounded-full'>
+                      <span className='text-xs font-bold bg-white/70 px-3 py-1 rounded-full shadow-sm'>
                         {columnActions.length}
                       </span>
                     </div>
@@ -265,7 +254,7 @@ function ActionCard({
   };
 
   return (
-    <div className='bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow'>
+    <div className='bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:border-gray-300'>
       {/* Card Header */}
       <div className='p-4'>
         <div className='flex items-start justify-between mb-2'>

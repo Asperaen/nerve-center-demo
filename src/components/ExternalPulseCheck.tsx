@@ -82,19 +82,9 @@ export default function ExternalPulseCheck({
   };
 
   return (
-    <div className='bg-white rounded-lg border border-gray-200'>
-      <div className='p-6 border-b border-gray-200'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h2 className='text-xl font-semibold text-gray-900 flex items-center'>
-              <SparklesIcon className='w-6 h-6 mr-2 text-primary-600' />
-              External Pulse
-            </h2>
-            <p className='mt-1 text-sm text-gray-500'>
-              AI-powered analysis of market news and external events
-            </p>
-          </div>
-
+    <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl transition-shadow duration-300'>
+      <div className='p-8 border-b border-gray-200 bg-gradient-to-r from-white to-purple-50/30'>
+        <div className='flex items-center justify-between mb-6'>
           {/* Insights Button - Show when items are selected */}
           {selectedNewsIds.length > 0 && (
             <div className='flex items-center space-x-4'>
@@ -125,15 +115,15 @@ export default function ExternalPulseCheck({
         </div>
 
         {/* Category Filter */}
-        <div className='mt-4 flex space-x-2'>
+        <div className='flex flex-wrap gap-3'>
           {categories.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 selectedCategory === cat.value
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-200'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
               }`}>
               {cat.label}
             </button>
@@ -196,8 +186,29 @@ function NewsCard({
   isSelected,
   onToggleSelection,
 }: NewsCardProps) {
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('materialType', 'external-pulse');
+    e.dataTransfer.setData('itemId', news.id);
+    e.dataTransfer.effectAllowed = 'move';
+    // Add visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Restore visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  };
+
   return (
-    <div className='p-6 hover:bg-gray-50 transition-colors'>
+    <div
+      className='p-6 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 transition-all duration-200 cursor-move border-b border-gray-100 last:border-b-0'
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}>
       <div className='flex items-start space-x-4'>
         {/* Checkbox */}
         <div className='flex-shrink-0 pt-1'>
@@ -271,17 +282,17 @@ function NewsCard({
 
           {/* AI Analysis */}
           {isExpanded && (
-            <div className='mt-4 p-4 bg-primary-50 rounded-lg border border-primary-100'>
-              <div className='flex items-center mb-2'>
-                <SparklesIcon className='w-4 h-4 text-primary-600 mr-2' />
-                <span className='text-sm font-medium text-primary-900'>
+            <div className='mt-5 p-5 bg-gradient-to-br from-primary-50 to-purple-50 rounded-xl border-2 border-primary-200 shadow-sm'>
+              <div className='flex items-center mb-3'>
+                <SparklesIcon className='w-5 h-5 text-primary-600 mr-2' />
+                <span className='text-sm font-bold text-primary-900'>
                   AI Analysis
                 </span>
               </div>
-              <p className='text-sm text-gray-700 whitespace-pre-line'>
+              <p className='text-sm text-gray-700 whitespace-pre-line leading-relaxed'>
                 {news.aiAnalysis}
               </p>
-              <div className='mt-2 text-xs text-gray-500'>
+              <div className='mt-3 text-xs text-gray-500 font-medium'>
                 Source: {news.source}
               </div>
             </div>
