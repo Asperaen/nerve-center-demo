@@ -547,10 +547,10 @@ export const mockCalendarEvents: Meeting[] = [
   },
   {
     id: 'meeting-14',
-    title: 'Customer Executive Meeting - Dell Technologies',
+    title: 'Executive Meeting - Vortex Technologies',
     startTime: new Date('2024-11-07T14:00:00+08:00'), // 2 PM GMT+8, Thursday
     endTime: new Date('2024-11-07T15:30:00+08:00'), // 3:30 PM GMT+8
-    location: 'Dell Headquarters, Round Rock, TX',
+    location: 'Vortext Headquarters, Round Rock, TX',
     organizer: 'CEO',
     attendees: [
       {
@@ -561,13 +561,13 @@ export const mockCalendarEvents: Meeting[] = [
       },
       {
         name: 'Michael Dell',
-        email: 'michael.dell@dell.com',
+        email: 'michael.dell@vortext.com',
         role: 'Customer CEO',
         isRequired: true,
       },
       {
         name: 'Jeff Clarke',
-        email: 'jeff.clarke@dell.com',
+        email: 'jeff.clarke@vortext.com',
         role: 'Customer COO',
         isRequired: true,
       },

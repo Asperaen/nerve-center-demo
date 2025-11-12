@@ -2,6 +2,21 @@ import type { NewsItem } from '../types';
 
 export const mockNews: NewsItem[] = [
   {
+    id: 'news-11',
+    category: 'suppliers',
+    headline: 'Vietnam sets 7.2% minimum wage hike from next year',
+    summary:
+      'The National Wage Council of Vietnam has approved a 7.2% increase in regional minimum wage for 2026, effective January 1, 2026. The new wage levels range from 3.70 million VND to 5.31 million VND per month depending on the region.',
+    aiAnalysis:
+      'Labor cost increase for Vietnam operations: Key impacts: (1) For EMS companies, minimum wage hike of 7.2% typically requires adjusting entry-level/base wages by 7%+, seniority tiers slightly below proportional, and overtime & allowances (computed off base wage), resulting in effective blended labor-rate increase of ~5%, (2) Our Vietnam operations employ 450 workers with $180M annual revenue, (3) Estimated $2-3M annual cost increase if wage structure adjustments follow typical EMS patterns, (4) May pressure gross margins by 0.3-0.5% for Vietnam-sourced products. Recommended actions: Review current Vietnam wage structure and prepare 2026 budget adjustments, assess impact on product pricing and customer contracts, explore productivity improvements to offset labor cost increases, and benchmark against industry peers.',
+    riskOrOpportunity: 'risk',
+    impactLevel: 'high',
+    urgencyLevel: 'urgent',
+    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+    source: 'VietnamNet',
+    annotations: [],
+  },
+  {
     id: 'news-1',
     category: 'macro',
     headline: 'US Announces 25% Tariff on Chinese-Made EV Connectors',
