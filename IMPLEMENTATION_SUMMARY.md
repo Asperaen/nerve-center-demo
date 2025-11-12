@@ -49,7 +49,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockActions.ts` - 15 action items with comments
 - ✅ `mockAssumptions.ts` - 12 business assumptions with history
 - ✅ `mockConflicts.ts` - 5 assumption conflicts
-- ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages
+- ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages, applied assumptions, suggested assumptions
 - ✅ `mockAnalysis.ts` - Root cause analysis results
 - ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
 
@@ -182,16 +182,97 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Compact grid layout with expandable sections
 - ✅ Color-coded change indicators (green for positive, red for negative)
 
-**A.4: Business Events with Actionable Insights ✅**
+**A.4: Action Proposals Based on Applied Assumptions ✅**
 
-- ✅ Business events >$0.5M separated as cards
-- ✅ Color coding (green=positive, red=negative, blue=baseline)
-- ✅ Implication bullet points for each event
-- ✅ Action proposals for downsides
-- ✅ Feasibility and priority indicators
-- ✅ "Create Wave Initiative" buttons
+- ✅ Action Proposals section replaced to use Applied Assumptions instead of Business Events
+- ✅ 1-to-1 mapping: Each Applied Assumption can have one Proposal
+- ✅ Multiple Actions per Proposal: Each Proposal contains multiple Actions that can be converted to Wave Initiatives
+- ✅ All Applied Assumptions displayed (regardless of whether they have proposals)
+- ✅ Color coding based on assumption impactType (green=positive/opportunity, red=negative/risk)
+- ✅ Assumption cards show name, description, impact, and impactType
+- ✅ For assumptions with proposals:
+  - Display proposal description (optional)
+  - Show all actions with descriptions, expected impact, feasibility, and priority
+  - "Create Action" button to add new actions to existing proposals
+  - Each action shows "Create Wave Initiative" button (no threshold filtering)
+- ✅ For assumptions without proposals:
+  - Show "Create Proposal" button
+  - Modal to create new proposal for the assumption
+- ✅ L-gate stage management (Wave project gates):
+  - L0: Gray - Just created in Wave (when user clicks "Create Wave Initiative")
+  - L1: Blue - First gate
+  - L2: Green - Second gate
+  - L3: Yellow - Third gate
+  - L4: Orange - Fourth gate
+  - L5: Red - Fifth gate
+- ✅ Visual badges for high feasibility (green badge) and high priority (red badge)
+- ✅ Actions with L-gate stages display colored stage badges (L0-L5)
 - ✅ Wave initiative modal with comprehensive form
-- ✅ Ready-in-Wave status tracking for created initiatives
+- ✅ When "Create Wave Initiative" is clicked, action is automatically marked with L0 stage
+- ✅ Create Proposal modal for creating new proposals
+- ✅ Create Action modal for adding actions to existing proposals
+
+**A.5: Applied Assumptions ✅**
+
+- ✅ Applied Assumptions panel positioned between waterfall chart and value drivers section
+- ✅ Three pre-configured assumptions already baked into the waterfall forecast:
+  - **AI Data Center Acceleration**: +5M impact on 'headwinds-tailwinds' (positive/tailwind) - Emerald color
+  - **Apple AirPods Launch Delay**: -5M impact on 'additional-risk' (negative/headwind) - Amber color
+  - **Copper Price Surge**: -5M impact on 'additional-risk' (negative/headwind) - Red color
+- ✅ Toggle checkboxes on the right side of each assumption card
+- ✅ All assumptions enabled by default (since they're "already baked in")
+- ✅ Real-time waterfall chart updates when assumptions are toggled on/off
+- ✅ Individual assumption impacts visualized as colored bars in waterfall chart
+- ✅ Each assumption has distinct color for visual identification:
+  - Color indicators in assumption panel cards
+  - Colored segments in waterfall bars showing individual contributions
+- ✅ Cumulative impact calculation (multiple assumptions affecting same stage are summed)
+- ✅ Cascading effect: When a stage value changes, all subsequent stages recalculate automatically
+- ✅ Assumption panel displays:
+  - Assumption name with color indicator
+  - Description
+  - Impact value (+/- with color coding)
+  - Target stage indicator
+  - Tailwind/Headwind badge
+- ✅ Waterfall chart shows:
+  - Baseline bar (without assumptions) in original colors
+  - Individual assumption impact bars stacked with distinct colors
+  - Visual breakdown of which assumption contributes how much to each stage
+- ✅ Delete button on each applied assumption card with confirmation modal
+
+**A.6: Pulse Suggested Assumptions ✅**
+
+- ✅ Pulse Suggested Assumptions panel positioned side-by-side with Applied Assumptions
+- ✅ Side-by-side layout with Applied Assumptions on left, arrow indicator in middle, Pulse Suggested on right
+- ✅ Three suggested assumptions derived from external news items:
+  - **Vietnam Minimum Wage Hike** (from news-11): -2.5M impact on 'additional-risk' stage - Orange color
+  - **US Tariff on EV Connectors** (from news-1): -10M impact on 'headwinds-tailwinds' stage - Red color
+  - **China Rare Earth Export Restrictions** (from news-2): -5M impact on 'additional-risk' stage - Orange color
+- ✅ Each suggested assumption includes:
+  - `sourceNewsId` linking to the originating news item
+  - `isSuggested: true` flag to distinguish from applied assumptions
+  - Full description with impact details from news analysis
+  - Color-coded visual indicators matching news impact type
+- ✅ Drag and drop functionality:
+  - Suggested assumptions are draggable (cursor changes to grab/grabbing)
+  - Applied Assumptions section is a drop zone with visual feedback
+  - Left arrow indicator between sections showing drag direction
+  - "Drag here" label below arrow
+  - Drop zone highlights with blue border and background when dragging over
+  - Description text changes to "Drop assumption here to apply it" during drag
+- ✅ Toggle checkboxes on suggested assumptions (unchecked by default)
+- ✅ Real-time waterfall chart updates when suggested assumptions are checked
+- ✅ Suggested assumption impacts visualized as colored bars in waterfall chart (lower opacity for distinction)
+- ✅ Delete button on each suggested assumption card with confirmation modal
+- ✅ Confirmation modal for deletion:
+  - Shows assumption name
+  - Context-specific warning message (different for suggested vs applied)
+  - Cancel and Delete buttons
+  - Properly rounded corners with overflow handling
+- ✅ Visual distinction:
+  - Suggested assumptions use distinct colors (orange/red shades)
+  - Lower opacity (0.65) in waterfall chart vs applied assumptions (0.85)
+  - "(Suggested)" suffix in chart legend
 
 ### 7. Action Tracker ✅
 
@@ -303,11 +384,13 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ 40+ TypeScript interfaces including:
   - Core types: NewsItem, KPI, Action, BusinessAssumption, Conflict
   - Forecast types: ForecastDriver, IncomeStatement, BusinessEvent, ActionProposal
+  - Proposal types: Proposal (1-to-1 mapping with AppliedAssumption, contains multiple ActionProposals)
   - Waterfall types: OPWaterfallStage, OPWaterfallStageType, SimulatedWaterfallStage
   - Scenario types: ValueDriverScenario, ValueDriverScenarioValue, ScenarioComparisonState
   - Value driver types: ValueDriverItem, ForecastMetric, FinancialCategoryGroup, ValueDriverAssumption
   - Internal pulse types: FinancialMetric, ValueDriver, AffectingFactor, FinancialCategoryData
-- ✅ Comprehensive mock data (1100+ lines including OP waterfall stages)
+  - AppliedAssumption type extended with sourceNewsId, isSuggested fields, and proposal field
+- ✅ Comprehensive mock data (1100+ lines including OP waterfall stages and proposals with actions)
 - ✅ Realistic business data based on connector manufacturer profile (EV, 5G AIoT, Audio segments)
 - ✅ Time-series data with date-fns
 - ✅ Relational data structure
@@ -404,10 +487,40 @@ The application uses a flat route structure with standalone pages for each major
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
      - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
      - Multi-scenario visualization with overlay lines
+     - Individual assumption impacts shown as colored bars (emerald, amber, red for applied; orange/red for suggested)
+   - **Applied Assumptions Panel**: Toggle assumptions on/off to see their impact on waterfall
+     - Three assumptions: AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge
+     - Color-coded assumption cards with impact values and target stages
+     - Real-time waterfall updates when toggling assumptions
+     - Delete button on each assumption with confirmation modal
+     - "Value Drivers" button to view overall value drivers in modal
+     - Click on assumption cards to view/edit their specific value driver changes
+   - **Pulse Suggested Assumptions Panel**: Side-by-side with Applied Assumptions
+     - Three suggested assumptions derived from external news: Vietnam Minimum Wage Hike, US Tariff on EV Connectors, China Rare Earth Export Restrictions
+     - Pulse AI suggested assumptions - drag to Applied Assumptions or check to see impact on waterfall
+     - Drag and drop functionality with visual arrow indicator (left arrow pointing from Suggested to Applied)
+     - Checkboxes to toggle impact on waterfall (unchecked by default)
+     - Visual distinction in waterfall chart (lower opacity, distinct colors)
+     - Delete button on each assumption with confirmation modal
+     - Click on assumption cards to view/edit their specific value driver changes
    - **Scenario Management Panel**: Create, edit, delete, and toggle visibility of scenarios
    - **Scenario Comparison Panel**: Best/worst identification, statistics, sorting
-   - **Value Drivers Display**: Hierarchical structure organized by financial category
-   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - **Value Drivers Modal**: Accessible via "Value Drivers" button in Applied Assumptions panel
+     - View overall value drivers (hierarchical structure organized by financial category)
+     - View assumption-specific value drivers (deviations from overall values)
+     - Edit mode for assumption value drivers:
+       - Edit existing value driver changes (change value, unit, change percentage)
+       - Add new value drivers manually from available drivers
+       - Remove value drivers
+       - Real-time calculation of "New Value" as changes are made
+       - Save/Cancel buttons to persist or discard changes
+     - Updated value drivers automatically affect cumulative calculations
+   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping
+     - Each assumption can have one proposal with multiple actions
+     - Actions can be converted to Wave Initiatives (marked as L0 when created)
+     - L-gate stage badges (L0-L5) with color coding
+     - Visual badges for high feasibility and high priority
+     - Create Proposal and Create Action modals
    - All financial forecast features combined in one page
 
 6. ✅ `/finance-review` - Finance Review Page
@@ -417,10 +530,18 @@ The application uses a flat route structure with standalone pages for each major
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
      - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
      - Multi-scenario visualization with overlay lines
+     - Individual assumption impacts shown as colored bars (emerald, amber, red)
+   - **Applied Assumptions Panel**: Toggle assumptions on/off to see their impact on waterfall
+     - Three assumptions: AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge
+     - Color-coded assumption cards with impact values and target stages
+     - Real-time waterfall updates when toggling assumptions
+     - "Value Drivers" button to view overall value drivers in modal
+     - Click on assumption cards to view/edit their specific value driver changes
+   - **Pulse Suggested Assumptions Panel**: Same as Finance Page
    - **Scenario Management Panel**: Create, edit, delete, and toggle visibility of scenarios
    - **Scenario Comparison Panel**: Best/worst identification, statistics, sorting
-   - **Value Drivers Display**: Hierarchical structure organized by financial category
-   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - **Value Drivers Modal**: Same as Finance Page with editing functionality
+   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping (same as Finance Page)
    - Accessible via right sidebar navigation (Finance Review)
 
 7. ✅ `/action-tracker` - Action Tracker Page
@@ -444,11 +565,25 @@ The application uses a flat route structure with standalone pages for each major
 ## 🎯 Feature Completeness
 
 Total Features from Plan: **65+**
-Implemented Features: **75+** (115%+)
+Implemented Features: **78+** (120%+)
 
 **Major Additions:**
 
 - Full Year OP Waterfall Chart with 8-stage progression
+- Applied Assumptions Feature:
+  - Toggle-able assumptions system with visual impact indicators
+  - Individual assumption impacts shown as colored bars in waterfall chart
+  - Real-time waterfall updates when assumptions are toggled
+  - Three pre-configured assumptions (AI Data Center, Apple AirPods, Copper Price)
+  - Delete functionality with confirmation modal
+- Pulse Suggested Assumptions Feature:
+  - Assumptions derived from external news items (news-11, news-1, news-2)
+  - Side-by-side layout with Applied Assumptions and visual arrow indicator
+  - Drag and drop functionality to move suggested assumptions to applied
+  - Toggle to see impact on waterfall (unchecked by default)
+  - Visual distinction in waterfall chart (lower opacity, distinct colors)
+  - Delete functionality with confirmation modal
+  - Source tracking via sourceNewsId linking to originating news items
 - Value Driver Scenario Simulation System:
   - Scenario creation and editing modal
   - Value driver adjustment by category/metric
@@ -479,6 +614,33 @@ Implemented Features: **75+** (115%+)
 - Features K.1-K.4: ✅ 100% Complete
 - Features L.1-L.9: ✅ 100% Complete
 - Features M.1-M.4: ✅ 90% Complete (Wave integration mocked)
+- **Applied Assumptions Feature**: ✅ 100% Complete
+  - Toggle-able assumptions with visual impact indicators
+  - Individual assumption impacts shown as colored bars in waterfall
+  - Real-time waterfall updates when assumptions change
+  - Cumulative impact calculation
+  - Color-coded assumption cards matching chart visualization
+  - Delete functionality with confirmation modal
+- **Pulse Suggested Assumptions Feature**: ✅ 100% Complete
+  - Assumptions derived from external news items (news-11, news-1, news-2)
+  - Side-by-side layout with Applied Assumptions
+  - Drag and drop functionality with visual arrow indicator
+  - Toggle to see impact on waterfall (unchecked by default)
+  - Visual distinction in waterfall chart (lower opacity, distinct colors)
+  - Delete functionality with confirmation modal
+  - Move to Applied via drag and drop
+- **Value Drivers Modal Feature**: ✅ 100% Complete
+  - Modal-based value drivers display (replaces inline section)
+  - "Value Drivers" button in Applied Assumptions panel to view overall value drivers
+  - Click on assumption cards to view assumption-specific value driver changes
+  - Edit mode for assumption value drivers:
+    - Edit existing value driver changes (change value, unit, change percentage)
+    - Add new value drivers manually from dropdown of available drivers
+    - Remove value drivers with delete button
+    - Real-time calculation of "New Value" as changes are made
+    - Save/Cancel buttons to persist or discard changes
+  - Updated value drivers automatically affect cumulative calculations
+  - Value driver changes stored per assumption and aggregated in cumulative view
 
 ## 🧪 Testing Notes
 
@@ -596,6 +758,37 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
    - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
    - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+   - **Applied Assumptions**:
+     - Applied Assumptions panel side-by-side with Pulse Suggested Assumptions
+     - Three assumptions with color indicators (emerald, amber, red)
+     - Toggle assumptions on/off using checkboxes on the right
+     - See individual assumption impacts as colored bars in waterfall chart
+     - Example: Uncheck "AI Data Center Acceleration" → See -5M removed from Headwinds/Tailwinds stage
+     - Example: Uncheck "Copper Price Surge" → See +5M added to Additional Risk stage
+     - Multiple assumptions affecting same stage show cumulative impact
+     - Delete assumptions with confirmation modal
+   - **Pulse Suggested Assumptions**:
+     - Side-by-side layout with Applied Assumptions (left) and Pulse Suggested (right)
+     - Left arrow indicator in middle showing drag direction
+     - Three suggested assumptions from external news (Vietnam Wage Hike, US Tariff, Rare Earth)
+     - Pulse AI suggested assumptions - drag to Applied Assumptions or check to see impact on waterfall
+     - Drag suggested assumptions and drop into Applied Assumptions section
+     - Check suggested assumptions to see their impact on waterfall (unchecked by default)
+     - Suggested assumptions show in waterfall with lower opacity and distinct colors
+     - Delete suggested assumptions with confirmation modal
+     - Click on assumption cards to view/edit their specific value driver changes
+   - **Value Drivers Modal**:
+     - Click "Value Drivers" button in Applied Assumptions panel → Opens modal with overall value drivers
+     - Click on any assumption card → Opens modal showing assumption-specific value driver changes
+     - View mode: See base value, change, and calculated new value for each affected value driver
+     - Edit mode: Click "Edit" button in modal header when viewing an assumption
+       - Edit existing value driver changes: Modify change value, unit, and change percentage
+       - Add new value drivers: Use "Add Value Driver" section with dropdown to select from available drivers
+       - Remove value drivers: Click X button on value driver cards
+       - Real-time calculation: "New Value" updates automatically as you edit
+       - Save changes: Click "Save Changes" to persist edits (affects cumulative calculations)
+       - Cancel: Click "Cancel" or "Cancel Edit" to discard changes
+     - Updated value drivers automatically affect cumulative calculations
    - **Scenario Management**:
      - Click "Create Scenario" → Opens Scenario Creation Modal
      - Adjust value drivers by category/metric (e.g., increase labor rate by 10%)
@@ -609,8 +802,12 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - See best/worst scenarios with statistics
      - Sort by impact, name, or date
      - Compare multiple scenarios on waterfall chart
-   - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
-   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping
+     - Each assumption can have one proposal with multiple actions
+     - Actions can be converted to Wave Initiatives (marked as L0 when created)
+     - L-gate stage badges (L0-L5) with color coding
+     - Visual badges for high feasibility and high priority
+     - Create Proposal and Create Action modals
 
 6. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
 
@@ -618,10 +815,20 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
    - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
    - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+   - **Applied Assumptions**: Toggle assumptions on/off to see their impact on waterfall with colored bars
+     - "Value Drivers" button to view overall value drivers in modal
+     - Click on assumption cards to view/edit their specific value driver changes
+   - **Pulse Suggested Assumptions**: Drag and drop suggested assumptions to applied, or toggle to see impact
+     - Click on assumption cards to view/edit their specific value driver changes
+   - **Value Drivers Modal**: Same as Finance Page with editing functionality
    - **Scenario Management**: Create, edit, delete, and toggle visibility of scenarios
    - **Scenario Comparison**: Compare best/worst scenarios with statistics and sorting
-   - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
-   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping
+     - Each assumption can have one proposal with multiple actions
+     - Actions can be converted to Wave Initiatives (marked as L0 when created)
+     - L-gate stage badges (L0-L5) with color coding
+     - Visual badges for high feasibility and high priority
+     - Create Proposal and Create Action modals
    - Accessible via right sidebar navigation (Finance Review)
 
 7. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
@@ -703,18 +910,54 @@ pnpm lint
    - Scenario simulation system integrated into Finance and Finance Review pages for value driver testing
    - Action Tracker as standalone page accessible via sidebar
 10. **OP Waterfall Visualization**: Full Year OP Waterfall chart prominently displayed at top of Financial Performance Review, showing 8-stage cumulative progression from actuals through forecast with color-coded positive/negative impacts and multi-scenario overlay lines
-11. **Scenario Simulation System**: Comprehensive value driver scenario management:
+11. **Applied Assumptions Feature**: Toggle-able assumptions system for waterfall forecast:
+    - Three pre-configured assumptions (AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge)
+    - Individual assumption impacts visualized as colored bars in waterfall chart
+    - Real-time waterfall updates when assumptions are toggled on/off
+    - Cumulative impact calculation for multiple assumptions affecting same stage
+    - Color-coded assumption cards with visual indicators matching chart colors
+    - Cascading recalculation of subsequent stages when assumptions change
+12. **Scenario Simulation System**: Comprehensive value driver scenario management:
     - Create scenarios by adjusting value drivers
     - Visualize multiple scenarios on waterfall chart
     - Compare scenarios with best/worst analysis
     - Calculate simulated OP impact from value driver changes
     - Scenario statistics and ranking
-12. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
+13. **Pulse Suggested Assumptions System**: Assumptions derived from external news with drag-and-drop workflow:
+    - Three suggested assumptions from external news (Vietnam Wage Hike, US Tariff, Rare Earth Restrictions)
+    - Side-by-side layout with Applied Assumptions and visual arrow indicator
+    - Drag and drop from Suggested to Applied Assumptions
+    - Toggle suggested assumptions to see impact on waterfall (unchecked by default)
+    - Visual distinction in waterfall chart (lower opacity, distinct colors)
+    - Delete functionality with confirmation modal for both suggested and applied assumptions
+    - Source tracking via sourceNewsId linking to originating news items
+14. **Value Drivers Modal System**: Modal-based value drivers with editing capabilities:
+    - Modal replaces inline value drivers section for cleaner UI
+    - "Value Drivers" button in Applied Assumptions panel to view overall value drivers
+    - Click on assumption cards to view assumption-specific value driver changes
+    - Edit mode for assumption value drivers:
+      - Edit existing value driver changes (change value, unit, change percentage)
+      - Add new value drivers manually from dropdown of available drivers
+      - Remove value drivers with delete button
+      - Real-time calculation of "New Value" as changes are made
+      - Save/Cancel buttons to persist or discard changes
+    - Updated value drivers automatically affect cumulative calculations
+    - Value driver changes stored per assumption and aggregated in cumulative view
+15. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
     - 4 key charts showing value progress, delivery tracking, variance analysis, and workflow breakdown
     - Initiatives table with workflow grouping and comprehensive tracking columns
     - Summary cards for overdue/due soon initiatives and milestones
     - All metrics and labels in English
     - Standalone page accessible via right sidebar navigation
+16. **Action Proposals Based on Applied Assumptions**: Proposal and action management system:
+    - 1-to-1 mapping between Applied Assumptions and Proposals
+    - Each Proposal contains multiple Actions that can be converted to Wave Initiatives
+    - L-gate stage management (L0-L5) with color-coded badges for Wave project gates
+    - Visual badges for high feasibility (green) and high priority (red)
+    - Create Proposal modal for assumptions without proposals
+    - Create Action modal for adding actions to existing proposals
+    - When "Create Wave Initiative" is clicked, action is automatically marked with L0 stage
+    - All Applied Assumptions displayed regardless of proposal status
 
 ---
 

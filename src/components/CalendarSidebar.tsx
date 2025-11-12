@@ -35,7 +35,7 @@ export default function CalendarSidebar({
 
   // Get current date (Nov 4, 2024)
   const currentDate = new Date('2024-11-04T00:00:00+08:00');
-  const currentTime = new Date('2024-11-04T17:07:00+08:00'); // 5:07 PM as shown in image
+  const currentTime = new Date('2024-11-04T08:07:00+08:00'); // 5:07 PM as shown in image
 
   // Generate time slots for 24 hours (midnight to 11 PM)
   const timeSlots: Date[] = [];

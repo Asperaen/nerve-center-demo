@@ -561,24 +561,73 @@ export default function ExecutiveSummaryPage() {
       const materials: CriticalMeeting['materials'] = [];
 
       // Check if deck/presentation is needed
+      const descLower = meeting.description?.toLowerCase() || '';
       const needsDeck =
-        meeting.description?.toLowerCase().includes('deck') ||
-        meeting.description?.toLowerCase().includes('presentation') ||
-        meeting.description?.toLowerCase().includes('roadmap');
+        descLower.includes('deck') ||
+        descLower.includes('presentation') ||
+        descLower.includes('roadmap') ||
+        descLower.includes('bring the');
 
       if (needsDeck) {
-        let deckType = 'Presentation deck';
-        if (meeting.description?.toLowerCase().includes('partnership')) {
-          deckType = 'Partnership deck';
-        } else if (meeting.description?.toLowerCase().includes('roadmap')) {
-          deckType = 'Product roadmap presentation';
-        } else if (meeting.description?.toLowerCase().includes('q4')) {
-          deckType = 'Q4 partnership deck';
+        // Check for multiple deck types mentioned
+        const hasQ4PartnershipDeck =
+          descLower.includes('q4 partnership deck') ||
+          (descLower.includes('q4') &&
+            descLower.includes('partnership') &&
+            descLower.includes('deck'));
+        const hasProductRoadmap =
+          descLower.includes('product roadmap') ||
+          descLower.includes('roadmap presentation');
+        const hasPartnershipDeck =
+          descLower.includes('partnership deck') && !hasQ4PartnershipDeck;
+        const hasRoadmap = descLower.includes('roadmap') && !hasProductRoadmap;
+
+        // Add multiple deck materials if both are mentioned
+        if (hasQ4PartnershipDeck && hasProductRoadmap) {
+          materials.push({
+            type: 'deck',
+            description: 'Q4 partnership deck',
+          });
+          materials.push({
+            type: 'deck',
+            description: 'Product roadmap presentation',
+          });
+        } else if (hasQ4PartnershipDeck) {
+          materials.push({
+            type: 'deck',
+            description: 'Q4 partnership deck',
+          });
+        } else if (hasProductRoadmap) {
+          materials.push({
+            type: 'deck',
+            description: 'Product roadmap presentation',
+          });
+        } else if (hasPartnershipDeck) {
+          materials.push({
+            type: 'deck',
+            description: 'Partnership deck',
+          });
+        } else if (hasRoadmap) {
+          materials.push({
+            type: 'deck',
+            description: 'Product roadmap presentation',
+          });
+        } else if (descLower.includes('q4')) {
+          materials.push({
+            type: 'deck',
+            description: 'Q4 partnership deck',
+          });
+        } else if (descLower.includes('partnership')) {
+          materials.push({
+            type: 'deck',
+            description: 'Partnership deck',
+          });
+        } else {
+          materials.push({
+            type: 'deck',
+            description: 'Presentation deck',
+          });
         }
-        materials.push({
-          type: 'deck',
-          description: deckType,
-        });
       }
 
       // Check for existing materials
@@ -615,15 +664,29 @@ export default function ExecutiveSummaryPage() {
       }
 
       // Check for specific action items
-      if (meeting.title.toLowerCase().includes('procurement')) {
-        const xiaochenCheck = meeting.description
-          ?.toLowerCase()
-          .includes('xiaochen');
-        if (xiaochenCheck) {
+      const titleLower = meeting.title.toLowerCase();
+      if (titleLower.includes('procurement')) {
+        const descLower = meeting.description?.toLowerCase() || '';
+        if (descLower.includes('xiaochen')) {
+          // Extract the specific action items mentioned
+          let actionDesc = 'Verify with Xiaochen';
+          if (descLower.includes('alternative rare earth supplier')) {
+            actionDesc =
+              'Verify with Xiaochen on alternative rare earth supplier negotiations';
+          } else if (descLower.includes('rare earth')) {
+            actionDesc = 'Verify with Xiaochen on rare earth supplier status';
+          }
+          if (descLower.includes('vietnam production shift')) {
+            if (actionDesc.includes('rare earth')) {
+              actionDesc += ' and Vietnam production shift timeline';
+            } else {
+              actionDesc =
+                'Verify with Xiaochen on Vietnam production shift timeline';
+            }
+          }
           materials.push({
             type: 'action',
-            description:
-              'Verify with Xiaochen on alternative rare earth supplier negotiations',
+            description: actionDesc,
           });
         }
       }

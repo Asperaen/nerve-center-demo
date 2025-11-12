@@ -7,6 +7,7 @@ import type {
   Initiative,
   OPWaterfallStage,
   FinancialCategoryGroup,
+  AppliedAssumption,
 } from '../types';
 import { addMonths, subDays } from 'date-fns';
 
@@ -795,6 +796,270 @@ export const mockOPWaterfallStages: OPWaterfallStage[] = [
     type: 'baseline',
     description:
       'Full Year Operating Profit Forecast - cumulative result of all stages',
+  },
+];
+
+export const mockAppliedAssumptions: AppliedAssumption[] = [
+  {
+    id: 'assum-applied-1',
+    name: 'AI Data Center Acceleration',
+    description: 'Global data center trend accelerating faster than expected',
+    impact: 5.0, // +5M impact (tailwind)
+    targetStage: 'headwinds-tailwinds',
+    impactType: 'positive',
+    isApplied: true,
+    color: '#10b981', // emerald-500 for positive/tailwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-rev-vol-1',
+        change: 0.15,
+        unit: 'M units',
+        changePercent: 2.1,
+      },
+      {
+        valueDriverId: 'vd-rev-asp-1',
+        change: 5.2,
+        unit: 'USD',
+        changePercent: 1.6,
+      },
+    ],
+    proposal: {
+      id: 'proposal-1',
+      assumptionId: 'assum-applied-1',
+      description: 'Proposal to amplify AI Data Center tailwind opportunity',
+      actions: [
+        {
+          id: 'action-1-1',
+          description:
+            'Expand data center connector production capacity by 30% to capture additional market share',
+          expectedImpact: 2.5,
+          feasibility: 'high',
+          priority: 'high',
+          stage: 'L4', // Ready in Wave - L4
+        },
+        {
+          id: 'action-1-2',
+          description:
+            'Launch new high-speed connector product line targeting hyperscale data centers',
+          expectedImpact: 1.8,
+          feasibility: 'medium',
+          priority: 'high',
+          stage: 'L2', // Ready in Wave - L2
+        },
+        {
+          id: 'action-1-3',
+          description:
+            'Strengthen partnerships with major cloud providers for exclusive supply agreements',
+          expectedImpact: 1.2,
+          feasibility: 'medium',
+          priority: 'medium',
+        },
+      ],
+      createdDate: new Date('2025-01-15'),
+      lastUpdated: new Date('2025-01-15'),
+    },
+  },
+  {
+    id: 'assum-applied-2',
+    name: 'Apple AirPods Launch Delay',
+    description: 'Affects customer facts and revenue timing',
+    impact: -5.0, // -5M impact (headwind)
+    targetStage: 'additional-risk',
+    impactType: 'negative',
+    isApplied: true,
+    color: '#f59e0b', // amber-500 for negative/headwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-rev-vol-1',
+        change: -0.12,
+        unit: 'M units',
+        changePercent: -1.7,
+      },
+      {
+        valueDriverId: 'vd-rev-mix',
+        change: -0.02,
+        unit: 'ratio',
+        changePercent: -1.9,
+      },
+    ],
+    proposal: {
+      id: 'proposal-2',
+      assumptionId: 'assum-applied-2',
+      description:
+        'Proposal to recover revenue impact from Apple AirPods delay',
+      actions: [
+        {
+          id: 'action-2-1',
+          description:
+            'Accelerate alternative customer pipeline to offset delayed AirPods revenue',
+          expectedImpact: 3.5,
+          feasibility: 'high',
+          priority: 'high',
+        },
+        {
+          id: 'action-2-2',
+          description:
+            'Negotiate partial payment or milestone payments from Apple for work completed',
+          expectedImpact: 1.5,
+          feasibility: 'medium',
+          priority: 'high',
+        },
+        {
+          id: 'action-2-3',
+          description:
+            'Repurpose AirPods production capacity for other audio product lines',
+          expectedImpact: 1.0,
+          feasibility: 'high',
+          priority: 'medium',
+          stage: 'L3', // Ready in Wave - L3
+        },
+      ],
+      createdDate: new Date('2025-01-10'),
+      lastUpdated: new Date('2025-01-12'),
+    },
+  },
+  {
+    id: 'assum-applied-3',
+    name: 'Copper Price Surge',
+    description: 'Copper price increase impacting material costs',
+    impact: -5.0, // -5M impact (headwind)
+    targetStage: 'additional-risk',
+    impactType: 'negative',
+    isApplied: true,
+    color: '#ef4444', // red-500 for negative/headwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-oh-energy-1',
+        change: 0.025,
+        unit: 'USD/kWh',
+        changePercent: 18.5,
+      },
+      {
+        valueDriverId: 'vd-mat-index-price-1',
+        change: 7.5,
+        unit: 'USD/kg',
+        changePercent: 12.3,
+      },
+    ],
+    proposal: {
+      id: 'proposal-3',
+      assumptionId: 'assum-applied-3',
+      description: 'Proposal to mitigate copper price surge impact',
+      actions: [
+        {
+          id: 'action-3-1',
+          description:
+            'Lock in copper prices through forward contracts for next 6 months',
+          expectedImpact: 2.8,
+          feasibility: 'high',
+          priority: 'high',
+        },
+        {
+          id: 'action-3-2',
+          description:
+            'Source alternative materials or copper substitutes for non-critical applications',
+          expectedImpact: 1.5,
+          feasibility: 'medium',
+          priority: 'medium',
+          stage: 'L0', // Just created in Wave - L0
+        },
+        {
+          id: 'action-3-3',
+          description:
+            'Negotiate price pass-through clauses with key customers for copper-intensive products',
+          expectedImpact: 1.2,
+          feasibility: 'low',
+          priority: 'medium',
+          stage: 'L0', // Just created in Wave - L0
+        },
+      ],
+      createdDate: new Date('2025-01-08'),
+      lastUpdated: new Date('2025-01-14'),
+    },
+  },
+];
+
+export const mockSuggestedAssumptions: AppliedAssumption[] = [
+  {
+    id: 'assum-suggested-1',
+    name: 'Vietnam Minimum Wage Hike',
+    description:
+      'Vietnam sets 7.2% minimum wage hike from next year. Estimated $2-3M annual cost increase for Vietnam operations (450 workers, $180M revenue). May pressure gross margins by 0.3-0.5% for Vietnam-sourced products.',
+    impact: -2.5, // -2.5M impact (headwind)
+    targetStage: 'additional-risk',
+    impactType: 'negative',
+    isApplied: false,
+    isSuggested: true,
+    sourceNewsId: 'news-11',
+    color: '#f97316', // orange-500 for suggested negative/headwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-dl-rate-1',
+        change: 0.33,
+        unit: 'USD/hour',
+        changePercent: 7.3,
+      },
+      {
+        valueDriverId: 'vd-idl-rate-1',
+        change: 0.44,
+        unit: 'USD/hour',
+        changePercent: 7.2,
+      },
+    ],
+  },
+  {
+    id: 'assum-suggested-2',
+    name: 'US Tariff on EV Connectors',
+    description:
+      'US announces 25% tariff on Chinese-made EV connectors. 20% of EV connector volume affected. Estimated $10M revenue impact if production cannot be shifted to Vietnam within 6 months.',
+    impact: -10.0, // -10M impact (headwind)
+    targetStage: 'headwinds-tailwinds',
+    impactType: 'negative',
+    isApplied: false,
+    isSuggested: true,
+    sourceNewsId: 'news-1',
+    color: '#dc2626', // red-600 for suggested negative/headwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-rev-vol-1',
+        change: -0.3,
+        unit: 'M units',
+        changePercent: -4.2,
+      },
+      {
+        valueDriverId: 'vd-rev-asp-1',
+        change: -8.5,
+        unit: 'USD',
+        changePercent: -2.6,
+      },
+    ],
+  },
+  {
+    id: 'assum-suggested-3',
+    name: 'China Rare Earth Export Restrictions',
+    description:
+      'China limits rare earth exports affecting connector materials. Material costs may increase by 30-40% without alternative suppliers. Estimated $5M cost increase in H2. Current inventory covers 45 days.',
+    impact: -5.0, // -5M impact (headwind)
+    targetStage: 'additional-risk',
+    impactType: 'negative',
+    isApplied: false,
+    isSuggested: true,
+    sourceNewsId: 'news-2',
+    color: '#ea580c', // orange-600 for suggested negative/headwind
+    valueDriverChanges: [
+      {
+        valueDriverId: 'vd-mat-index-price-1',
+        change: 22.0,
+        unit: 'USD/kg',
+        changePercent: 36.1,
+      },
+      {
+        valueDriverId: 'vd-idl-count',
+        change: -5,
+        unit: 'people',
+        changePercent: -0.6,
+      },
+    ],
   },
 ];
 

@@ -283,6 +283,40 @@ export interface OPWaterfallStage {
   description?: string;
 }
 
+// Proposal Types
+export interface Proposal {
+  id: string;
+  assumptionId: string; // Links to AppliedAssumption
+  description?: string; // Optional proposal description
+  actions: ActionProposal[]; // Multiple actions within the proposal
+  createdDate?: Date;
+  lastUpdated?: Date;
+}
+
+// Applied Assumption Types
+export interface AppliedAssumption {
+  id: string;
+  name: string;
+  description: string;
+  impact: number; // Impact in millions USD
+  targetStage: OPWaterfallStageType; // Which waterfall stage it affects
+  impactType: 'positive' | 'negative'; // tailwind vs headwind
+  isApplied?: boolean; // Default true, since these are "already baked in"
+  color: string; // Color for visualization in waterfall chart
+  sourceNewsId?: string; // ID of the news item this assumption was derived from
+  isSuggested?: boolean; // true if this is a suggested assumption from Pulse, false if applied
+  valueDriverChanges?: ValueDriverChange[]; // Value driver changes specific to this assumption
+  proposal?: Proposal; // 1-to-1 relationship with Proposal
+}
+
+// Value Driver Change for Assumptions
+export interface ValueDriverChange {
+  valueDriverId: string; // ID of the value driver being changed
+  change: number; // Absolute change (e.g., -5 for -5 FTE, or -0.5 for -0.5 USD/hour)
+  unit?: string; // Unit of the change (e.g., 'FTE', 'USD/hour', 'M units')
+  changePercent?: number; // Percentage change if applicable
+}
+
 // Initiative Types
 export type InitiativeStatus =
   | 'draft'
