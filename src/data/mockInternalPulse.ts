@@ -239,54 +239,54 @@ export const internalPulseColumns: PulseColumn[] = [
             ],
           },
           {
-            id: 'material-2',
-            name: 'xxx',
-            value: undefined,
-            unit: 'USD / oz',
+            id: 'copper-material',
+            name: 'Copper',
+            value: 3.75,
+            unit: 'USD / lb',
             subMetrics: [
               {
                 name: 'PO price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 3.65,
+                unit: 'USD / lb',
+                percentOfTotal: -2.67, // (3.65-3.75)/3.75 * 100
               },
               {
                 name: 'GR price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 3.7,
+                unit: 'USD / lb',
+                percentOfTotal: -1.33, // (3.70-3.75)/3.75 * 100
               },
               {
                 name: 'Market price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 3.85,
+                unit: 'USD / lb',
+                percentOfTotal: 2.67, // (3.85-3.75)/3.75 * 100
               },
             ],
           },
           {
-            id: 'material-3',
-            name: 'xxx',
-            value: undefined,
-            unit: 'USD / oz',
+            id: 'rubber-material',
+            name: 'Rubber',
+            value: 1.45,
+            unit: 'USD / lb',
             subMetrics: [
               {
                 name: 'PO price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 1.42,
+                unit: 'USD / lb',
+                percentOfTotal: -2.07, // (1.42-1.45)/1.45 * 100
               },
               {
                 name: 'GR price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 1.44,
+                unit: 'USD / lb',
+                percentOfTotal: -0.69, // (1.44-1.45)/1.45 * 100
               },
               {
                 name: 'Market price (Vs. MAP)',
-                value: 0,
-                unit: 'USD / oz',
-                percentOfTotal: 0,
+                value: 1.48,
+                unit: 'USD / lb',
+                percentOfTotal: 2.07, // (1.48-1.45)/1.45 * 100
               },
             ],
           },

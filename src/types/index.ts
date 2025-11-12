@@ -483,6 +483,7 @@ export interface CalendarEvent {
 export interface Meeting extends CalendarEvent {
   meetingType: MeetingType;
   materials: MeetingMaterial[];
+  isCritical?: boolean; // Mark critical/important meetings for visual highlighting
 }
 
 // Wave Executive Dashboard Types

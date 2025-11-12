@@ -1,14 +1,183 @@
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import {
+  useParams,
+  useNavigate,
+  useOutletContext,
+  Link,
+} from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useMemo } from 'react';
 import { mockCalendarEvents } from '../data/mockCalendar';
 import { mockNews } from '../data/mockNews';
 import { internalPulseColumns } from '../data/mockInternalPulse';
-import FinancePage from '../pages/FinancePage';
-import type { Meeting, NewsItem, PulseMetric, MeetingMaterial } from '../types';
+import { mockOPWaterfallStages } from '../data/mockForecast';
+import {
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  ComposedChart,
+  Legend,
+} from 'recharts';
+import type { NewsItem, PulseMetric, MeetingMaterial } from '../types';
 
 interface MeetingDetailViewContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
+}
+
+function WaterfallPreview() {
+  // Prepare chart data for baseline waterfall only
+  const chartData = useMemo(() => {
+    const baselineData = mockOPWaterfallStages.map((stage, index) => {
+      const prevValue = index > 0 ? mockOPWaterfallStages[index - 1].value : 0;
+      const currentValue = stage.value;
+      const delta =
+        stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
+
+      const isBaseline = stage.type === 'baseline';
+      const barValue = isBaseline ? currentValue : delta;
+      const baselineValue = isBaseline ? 0 : prevValue;
+
+      interface ChartDataPoint {
+        [key: string]: string | number | boolean | undefined;
+        name: string;
+        label: string;
+        cumulativeValue: number;
+        delta: number;
+        baselineValue: number;
+        barValue: number;
+        isPositive: boolean;
+      }
+
+      const dataPoint: ChartDataPoint = {
+        ...stage,
+        name: stage.label,
+        label: stage.label,
+        cumulativeValue: currentValue,
+        delta,
+        baselineValue,
+        barValue,
+        isPositive: delta >= 0,
+      };
+
+      return dataPoint;
+    });
+
+    return baselineData;
+  }, []);
+
+  return (
+    <div className='p-6'>
+      <div className='bg-white p-8'>
+        <div className='flex items-center justify-between mb-8'>
+          <div>
+            <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+              Full Year OP Waterfall
+            </h2>
+            <p className='text-sm text-gray-500'>
+              Visualize operating profit changes across stages
+            </p>
+          </div>
+          <Link
+            to='/finance'
+            className='px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center transform hover:scale-105'>
+            Go to Finance Forecast
+            <ArrowRightIcon className='w-5 h-5 ml-2' />
+          </Link>
+        </div>
+
+        <div className='h-96'>
+          <ResponsiveContainer
+            width='100%'
+            height='100%'>
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray='3 3' />
+              <XAxis
+                dataKey='label'
+                angle={-15}
+                textAnchor='end'
+                height={120}
+                style={{ fontSize: '11px' }}
+              />
+              <YAxis
+                style={{ fontSize: '12px' }}
+                label={{
+                  value: 'Operating Profit (M USD)',
+                  angle: -90,
+                  position: 'insideLeft',
+                  style: { fontSize: '12px' },
+                }}
+              />
+              <Tooltip
+                formatter={(
+                  value: number,
+                  _name: string,
+                  props: {
+                    payload?: {
+                      [key: string]: string | number | undefined;
+                      cumulativeValue?: number;
+                      delta?: number;
+                      label?: string;
+                    };
+                  }
+                ) => {
+                  const payload = props.payload;
+                  const cumulative = payload?.cumulativeValue ?? value;
+                  const delta = payload?.delta;
+
+                  const tooltipLines: string[] = [
+                    `${payload?.label ?? 'Stage'}: $${cumulative.toFixed(1)}M`,
+                  ];
+
+                  if (delta !== undefined && delta !== cumulative) {
+                    tooltipLines.push(
+                      `Change: ${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
+                    );
+                  }
+
+                  return tooltipLines.join('\n');
+                }}
+              />
+              <Legend />
+              {/* Baseline bars - transparent spacer to position subsequent bars */}
+              <Bar
+                dataKey='baselineValue'
+                stackId='a'
+                fill='transparent'
+              />
+              {/* Change bars - shows the delta/changes */}
+              <Bar
+                dataKey='barValue'
+                stackId='a'
+                name='Baseline'>
+                {mockOPWaterfallStages.map((stage, index) => {
+                  const isBaseline = stage.type === 'baseline';
+                  const isPositive = stage.type === 'positive';
+
+                  let fillColor = '#6b7280'; // grey for baseline
+                  if (!isBaseline) {
+                    fillColor = isPositive
+                      ? '#60a5fa' // light blue for positive
+                      : '#fb923c'; // orange/pink for negative
+                  }
+
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={fillColor}
+                    />
+                  );
+                })}
+              </Bar>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function MeetingDetailView() {
@@ -257,7 +426,7 @@ export default function MeetingDetailView() {
       {/* Meeting Content */}
       <div className='bg-gray-50'>
         {meeting.meetingType === 'finance-review' ? (
-          <FinancePage />
+          <WaterfallPreview />
         ) : (
           <div className='p-6'>
             <div className='bg-white rounded-lg border border-gray-200 p-6'>

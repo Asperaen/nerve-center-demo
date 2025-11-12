@@ -26,8 +26,14 @@ The application is currently running and ready for demonstration.
 - ✅ MainLayout with right sidebar navigation
 - ✅ Right sidebar (RightSidebar component) with collapsible functionality
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
-- ✅ Icon-based navigation with labels (External Pulse, Internal Pulse, Wave Executive Dashboard, Finance, Action Tracker)
-- ✅ Active state highlighting with primary color and left border
+- ✅ Navigation items organized into two visually distinct groups:
+  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard, Action Tracker
+  - **Meetings Section** (purple theme): Finance Forecast, Finance Review
+- ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
+- ✅ Visual separator between sections
+- ✅ Color-coded active states: blue for Real Time Pulse items, purple for Meetings items
+- ✅ Icon-based navigation with labels
+- ✅ Active state highlighting with color-coded background and left border
 - ✅ Profile link at bottom of sidebar
 - ✅ Main content area with dynamic right margin based on sidebar state
 - ✅ Smooth transitions for sidebar collapse/expand
@@ -55,6 +61,7 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Internal Pulse Page - Standalone page for internal pulse check
 - ✅ Wave Executive Dashboard Page - Standalone page for executive dashboard with initiatives tracking and value delivery charts
 - ✅ Finance Page - Combined financial forecast page with all financial features
+- ✅ Finance Review Page - Duplicate of Finance Page for finance review workflow
 - ✅ Action Tracker Page - Standalone page for action tracking
 - ✅ User Profile Page - User profile and settings
 
@@ -283,6 +290,7 @@ The application uses a flat route structure with standalone pages for each major
   - `/external-pulse` - External Pulse Page
   - `/internal-pulse` - Internal Pulse Page
   - `/finance` - Finance Page (combines all financial forecast features)
+  - `/finance-review` - Finance Review Page (duplicate of Finance Page)
   - `/action-tracker` - Action Tracker Page
   - `/profile` - User Profile Page
 - ✅ MainLayout wrapper with RightSidebar navigation
@@ -402,7 +410,20 @@ The application uses a flat route structure with standalone pages for each major
    - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
    - All financial forecast features combined in one page
 
-6. ✅ `/action-tracker` - Action Tracker Page
+6. ✅ `/finance-review` - Finance Review Page
+
+   - Duplicate of Finance Page with same features and functionality
+   - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
+     - Interactive tooltips with cumulative OP, delta changes, and scenario values
+     - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+     - Multi-scenario visualization with overlay lines
+   - **Scenario Management Panel**: Create, edit, delete, and toggle visibility of scenarios
+   - **Scenario Comparison Panel**: Best/worst identification, statistics, sorting
+   - **Value Drivers Display**: Hierarchical structure organized by financial category
+   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - Accessible via right sidebar navigation (Finance Review)
+
+7. ✅ `/action-tracker` - Action Tracker Page
 
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
@@ -412,7 +433,7 @@ The application uses a flat route structure with standalone pages for each major
    - Comments system with history display
    - Expandable action cards with full details
 
-7. ✅ `/profile` - User Profile Page
+8. ✅ `/profile` - User Profile Page
 
    - User information display
    - Profile details (email, role, member since)
@@ -482,11 +503,12 @@ This is a **frontend-only mockup** with:
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
-- Page Components: 6
+- Page Components: 7
   - ExternalPulsePage.tsx
   - InternalPulsePage.tsx
   - WaveExecutiveDashboardPage.tsx
   - FinancePage.tsx
+  - FinanceReviewPage.tsx
   - ActionTrackerPage.tsx
   - UserProfile.tsx
 - Layout Components: 1
@@ -511,12 +533,19 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 1. **Application Entry** (http://localhost:5173/) - Default landing:
 
    - Root route redirects to `/external-pulse`
-   - Right sidebar navigation always visible with 5 main sections:
-     - External Pulse (Sparkles icon)
-     - Internal Pulse (Chart Bar icon)
-     - Wave Executive Dashboard (Presentation Chart Bar icon)
-     - Finance (Currency Dollar icon)
-     - Action Tracker (Clipboard icon)
+   - Right sidebar navigation always visible with two grouped sections:
+     - **Real Time Pulse Section** (blue theme):
+       - CEO Mind Space (Home icon)
+       - External Pulse (Sparkles icon)
+       - Internal Pulse (Chart Bar icon)
+       - Wave Executive Dashboard (Presentation Chart Bar icon)
+       - Action Tracker (Clipboard icon)
+     - **Meetings Section** (purple theme):
+       - Finance Forecast (Currency Dollar icon)
+       - Finance Review (Presentation Chart Bar icon)
+   - Section headers displayed when sidebar is expanded
+   - Visual separator between sections
+   - Color-coded active states (blue for Real Time Pulse, purple for Meetings)
    - Profile link at bottom of sidebar
    - Sidebar can be collapsed/expanded using toggle button
 
@@ -583,7 +612,19 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
    - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
 
-6. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
+6. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
+
+   - Same features as Finance Page (duplicate implementation)
+   - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
+   - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
+   - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
+   - **Scenario Management**: Create, edit, delete, and toggle visibility of scenarios
+   - **Scenario Comparison**: Compare best/worst scenarios with statistics and sorting
+   - **Value Drivers Display**: Hierarchical structure showing all value drivers organized by financial category
+   - **Action Proposals**: Business events >$0.5M with actionable insights and Wave Initiative creation
+   - Accessible via right sidebar navigation (Finance Review)
+
+7. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
 
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
@@ -593,7 +634,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Comments system with history display
    - Expandable action cards with full details
 
-7. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+8. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
    - User profile information display
    - Profile details (email, role, member since)
@@ -649,12 +690,17 @@ pnpm lint
 8. **Demo-Ready**: Immediately usable for stakeholder presentations
 9. **User Journey Optimized**: Right sidebar navigation with flat route structure:
    - Root route redirects to External Pulse page
+   - Navigation items organized into two visually distinct groups:
+     - Real Time Pulse section (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard, Action Tracker
+     - Meetings section (purple theme): Finance Forecast, Finance Review
+   - Section headers and visual separators for clear organization
+   - Color-coded active states for easy identification
    - Sidebar navigation provides quick access to all features
    - Collapsible sidebar for space optimization
    - Profile link accessible from sidebar
    - Root Cause Analysis integrated into Pulse pages for quantitative insights
    - Wave Executive Dashboard as standalone page with comprehensive initiatives tracking and value delivery visualization
-   - Scenario simulation system integrated into Finance page for value driver testing
+   - Scenario simulation system integrated into Finance and Finance Review pages for value driver testing
    - Action Tracker as standalone page accessible via sidebar
 10. **OP Waterfall Visualization**: Full Year OP Waterfall chart prominently displayed at top of Financial Performance Review, showing 8-stage cumulative progression from actuals through forecast with color-coded positive/negative impacts and multi-scenario overlay lines
 11. **Scenario Simulation System**: Comprehensive value driver scenario management:

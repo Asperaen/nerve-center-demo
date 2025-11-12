@@ -410,7 +410,7 @@ function ReassignOwnerModal({
     'Jennifer Wu - VP Operations',
     'David Park - VP Sales',
     'Dr. Lisa Zhang - CTO',
-    'Michael Chen - CPO',
+    'Jack Chen - CPO',
     'Mark Thompson - CFO',
     'Sarah Johnson - VP Quality',
   ];

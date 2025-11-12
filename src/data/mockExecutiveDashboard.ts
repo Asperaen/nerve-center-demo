@@ -105,7 +105,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L3',
     phaseLabel: 'L3(Plan)',
     weeklyStatus: 'progressing-smoothly',
-    owner: 'Michael Chen',
+    owner: 'Jack Chen',
     responsibleWorkflow: 'Pipeline - Management',
     l4LatestEstimatedDate: addDays(new Date(), 5), // Due in 7 days
     recurringNetBenefit: 180.0,

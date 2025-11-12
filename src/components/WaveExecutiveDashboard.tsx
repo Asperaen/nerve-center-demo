@@ -9,7 +9,6 @@ import {
   mockVarianceAnalysisData,
   mockWorkflowValueDeliveryData,
 } from '../data/mockExecutiveDashboard';
-import type { WorkflowGroup } from '../types';
 import { format } from 'date-fns';
 import {
   ChevronDownIcon,

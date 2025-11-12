@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowTrendingUpIcon,
@@ -5,17 +6,48 @@ import {
   ArrowRightIcon,
   ChartBarIcon,
   SparklesIcon,
-  CurrencyDollarIcon,
   ClipboardDocumentListIcon,
+  InformationCircleIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, isToday } from 'date-fns';
 import { mockNews } from '../data/mockNews';
 import { mockActions } from '../data/mockActions';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import { mockKPIs } from '../data/mockKPIs';
-import type { PulseMetric } from '../types';
+import { mockVarianceAnalysisData } from '../data/mockExecutiveDashboard';
+import { mockCalendarEvents } from '../data/mockCalendar';
+import type { PulseMetric, Meeting, MeetingMaterial } from '../types';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
+import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
+import { findRelevantMeetings } from '../utils/meetingRelevance';
+import type { SelectedItem } from '../utils/meetingRelevance';
 
 export default function ExecutiveSummaryPage() {
+  // Selection state
+  const [selectedOperationMetrics, setSelectedOperationMetrics] = useState<
+    Set<string>
+  >(new Set());
+  const [selectedNewsItems, setSelectedNewsItems] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
+    Set<string>
+  >(new Set());
+
+  // Modal state
+  const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
   // Get Operation metrics from Internal Pulse (UPPH, OEE, Gold price)
   const operationColumn = internalPulseColumns.find(
     (col) => col.type === 'operation'
@@ -123,6 +155,180 @@ export default function ExecutiveSummaryPage() {
   };
 
   const financialAndToplineKPIs = getFinancialAndToplineKPIs();
+
+  // Selection handlers
+  const toggleOperationMetric = (metricId: string) => {
+    setSelectedOperationMetrics((prev) => {
+      const next = new Set(prev);
+      if (next.has(metricId)) {
+        next.delete(metricId);
+      } else {
+        next.add(metricId);
+      }
+      return next;
+    });
+  };
+
+  const toggleNewsItem = (newsId: string) => {
+    setSelectedNewsItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(newsId)) {
+        next.delete(newsId);
+      } else {
+        next.add(newsId);
+      }
+      return next;
+    });
+  };
+
+  const toggleFinancialKPI = (kpiId: string) => {
+    setSelectedFinancialKPIs((prev) => {
+      const next = new Set(prev);
+      if (next.has(kpiId)) {
+        next.delete(kpiId);
+      } else {
+        next.add(kpiId);
+      }
+      return next;
+    });
+  };
+
+  const clearAllSelections = () => {
+    setSelectedOperationMetrics(new Set());
+    setSelectedNewsItems(new Set());
+    setSelectedFinancialKPIs(new Set());
+  };
+
+  // Compute selected items for modals
+  const selectedItemsForModals = useMemo((): SelectedItem[] => {
+    const items: SelectedItem[] = [];
+
+    // Add operation metrics
+    keyOperationMetrics.forEach((metric) => {
+      if (selectedOperationMetrics.has(metric.id)) {
+        items.push({
+          type: 'operation-metric',
+          id: metric.id,
+          name: metric.name,
+          data: metric,
+        });
+      }
+    });
+
+    // Add news items
+    mockNews.forEach((news) => {
+      if (selectedNewsItems.has(news.id)) {
+        items.push({
+          type: 'news',
+          id: news.id,
+          name: news.headline,
+          data: news,
+        });
+      }
+    });
+
+    // Add financial KPIs
+    financialAndToplineKPIs.forEach((kpi) => {
+      if (selectedFinancialKPIs.has(kpi.id)) {
+        items.push({
+          type: 'financial-kpi',
+          id: kpi.id,
+          name: kpi.name,
+          data: kpi,
+        });
+      }
+    });
+
+    return items;
+  }, [
+    selectedOperationMetrics,
+    selectedNewsItems,
+    selectedFinancialKPIs,
+    keyOperationMetrics,
+    financialAndToplineKPIs,
+  ]);
+
+  // Find relevant meetings
+  const relevantMeetings = useMemo(() => {
+    if (selectedItemsForModals.length === 0) return [];
+    return findRelevantMeetings(selectedItemsForModals);
+  }, [selectedItemsForModals]);
+
+  // Get selected news items for AI sidebar
+  const selectedNewsForAI = useMemo(() => {
+    return mockNews.filter((news) => selectedNewsItems.has(news.id));
+  }, [selectedNewsItems]);
+
+  // Total selected count
+  const totalSelectedCount =
+    selectedOperationMetrics.size +
+    selectedNewsItems.size +
+    selectedFinancialKPIs.size;
+
+  // Helper function to collect all selected items for drag
+  const getAllSelectedItemsForDrag = (): Array<{
+    type: 'external-pulse' | 'internal-pulse';
+    itemId: string;
+  }> => {
+    const allSelectedItems: Array<{
+      type: 'external-pulse' | 'internal-pulse';
+      itemId: string;
+    }> = [];
+
+    // Add all selected operation metrics
+    keyOperationMetrics.forEach((m) => {
+      if (selectedOperationMetrics.has(m.id)) {
+        allSelectedItems.push({
+          type: 'internal-pulse',
+          itemId: m.id,
+        });
+      }
+    });
+
+    // Add all selected news items
+    mockNews.forEach((n) => {
+      if (selectedNewsItems.has(n.id)) {
+        allSelectedItems.push({
+          type: 'external-pulse',
+          itemId: n.id,
+        });
+      }
+    });
+
+    // Add all selected financial KPIs
+    financialAndToplineKPIs.forEach((kpi) => {
+      if (selectedFinancialKPIs.has(kpi.id)) {
+        allSelectedItems.push({
+          type: 'internal-pulse',
+          itemId: kpi.id,
+        });
+      }
+    });
+
+    return allSelectedItems;
+  };
+
+  // Meeting handlers
+  const handleScheduleNewMeeting = (meeting: Omit<Meeting, 'id'>) => {
+    // In a real app, this would create the meeting via API
+    // For now, we'll just log it
+    console.log('Schedule new meeting:', meeting);
+    // You could also update mockCalendarEvents here
+    alert(`Meeting "${meeting.title}" scheduled successfully!`);
+  };
+
+  const handleAddToMeetings = (
+    meetingIds: string[],
+    materials: MeetingMaterial[]
+  ) => {
+    // In a real app, this would update meetings via API
+    console.log('Add materials to meetings:', meetingIds, materials);
+    alert(
+      `Added ${materials.length} item${materials.length !== 1 ? 's' : ''} to ${
+        meetingIds.length
+      } meeting${meetingIds.length !== 1 ? 's' : ''}!`
+    );
+  };
 
   // Filter critical external news (urgent + high impact)
   const criticalNews = mockNews
@@ -260,18 +466,480 @@ export default function ExecutiveSummaryPage() {
     return 'No comparison data';
   };
 
+  // Generate executive briefing with today's and week's critical meetings
+  interface CriticalMeeting {
+    meeting: Meeting;
+    time: string;
+    materials: {
+      type: 'deck' | 'data' | 'action';
+      description: string;
+      items?: string[];
+    }[];
+    keyAttendees: string[];
+    priority: 'critical' | 'high' | 'medium';
+  }
+
+  const getExecutiveBriefing = (): {
+    todayMeetings: CriticalMeeting[];
+    weekMeetings: CriticalMeeting[];
+    totalActionItems: number;
+  } => {
+    const currentDate = new Date('2024-11-04T17:07:00+08:00'); // Current time as per calendar
+    const today = new Date(currentDate);
+    today.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    // Get all critical meetings (today and this week)
+    const allMeetings = mockCalendarEvents.filter((meeting) => {
+      const meetingDate = new Date(meeting.startTime);
+      meetingDate.setHours(0, 0, 0, 0);
+      return (
+        meetingDate >= today &&
+        meetingDate <= weekEnd &&
+        (meeting.isCritical ||
+          meeting.attendees.some(
+            (att) =>
+              att.role?.toLowerCase().includes('customer') ||
+              (att.role?.toLowerCase().includes('ceo') &&
+                att.email !== 'ceo@company.com')
+          ) ||
+          meeting.title.toLowerCase().includes('procurement') ||
+          meeting.meetingType === 'finance-review')
+      );
+    });
+
+    // Sort by priority: critical first, then customer meetings, then by time
+    allMeetings.sort((a, b) => {
+      if (a.isCritical && !b.isCritical) return -1;
+      if (!a.isCritical && b.isCritical) return 1;
+
+      const aHasCustomer = a.attendees.some(
+        (att) =>
+          att.role?.toLowerCase().includes('customer') ||
+          (att.role?.toLowerCase().includes('ceo') &&
+            att.email !== 'ceo@company.com')
+      );
+      const bHasCustomer = b.attendees.some(
+        (att) =>
+          att.role?.toLowerCase().includes('customer') ||
+          (att.role?.toLowerCase().includes('ceo') &&
+            att.email !== 'ceo@company.com')
+      );
+
+      if (aHasCustomer && !bHasCustomer) return -1;
+      if (!aHasCustomer && bHasCustomer) return 1;
+
+      return a.startTime.getTime() - b.startTime.getTime();
+    });
+
+    const processMeeting = (meeting: Meeting): CriticalMeeting => {
+      const meetingDate = new Date(meeting.startTime);
+      const isTodayMeeting = isToday(meetingDate);
+      const timeStr = isTodayMeeting
+        ? format(meeting.startTime, 'h:mm a')
+        : format(meeting.startTime, 'EEE, MMM d, h:mm a');
+
+      // Extract key attendees (excluding CEO)
+      const keyAttendees = meeting.attendees
+        .filter((att) => att.email !== 'ceo@company.com')
+        .map((att) => {
+          if (att.role?.toLowerCase().includes('customer ceo')) {
+            return `${att.name} (CEO)`;
+          }
+          if (att.role?.toLowerCase().includes('customer')) {
+            return att.name;
+          }
+          if (att.role?.toLowerCase().includes('ceo')) {
+            return `${att.name} (CEO)`;
+          }
+          return att.name;
+        })
+        .slice(0, 3);
+
+      // Determine materials/preparation needed
+      const materials: CriticalMeeting['materials'] = [];
+
+      // Check if deck/presentation is needed
+      const needsDeck =
+        meeting.description?.toLowerCase().includes('deck') ||
+        meeting.description?.toLowerCase().includes('presentation') ||
+        meeting.description?.toLowerCase().includes('roadmap');
+
+      if (needsDeck) {
+        let deckType = 'Presentation deck';
+        if (meeting.description?.toLowerCase().includes('partnership')) {
+          deckType = 'Partnership deck';
+        } else if (meeting.description?.toLowerCase().includes('roadmap')) {
+          deckType = 'Product roadmap presentation';
+        } else if (meeting.description?.toLowerCase().includes('q4')) {
+          deckType = 'Q4 partnership deck';
+        }
+        materials.push({
+          type: 'deck',
+          description: deckType,
+        });
+      }
+
+      // Check for existing materials
+      if (meeting.materials && meeting.materials.length > 0) {
+        const externalMaterials = meeting.materials.filter(
+          (m) => m.type === 'external-pulse'
+        );
+        const internalMaterials = meeting.materials.filter(
+          (m) => m.type === 'internal-pulse'
+        );
+
+        if (externalMaterials.length > 0 || internalMaterials.length > 0) {
+          const items: string[] = [];
+          if (externalMaterials.length > 0) {
+            items.push(
+              `${externalMaterials.length} external pulse item${
+                externalMaterials.length > 1 ? 's' : ''
+              }`
+            );
+          }
+          if (internalMaterials.length > 0) {
+            items.push(
+              `${internalMaterials.length} internal pulse metric${
+                internalMaterials.length > 1 ? 's' : ''
+              }`
+            );
+          }
+          materials.push({
+            type: 'data',
+            description: 'Review attached materials',
+            items,
+          });
+        }
+      }
+
+      // Check for specific action items
+      if (meeting.title.toLowerCase().includes('procurement')) {
+        const xiaochenCheck = meeting.description
+          ?.toLowerCase()
+          .includes('xiaochen');
+        if (xiaochenCheck) {
+          materials.push({
+            type: 'action',
+            description:
+              'Verify with Xiaochen on alternative rare earth supplier negotiations',
+          });
+        }
+      }
+
+      // Determine priority
+      let priority: 'critical' | 'high' | 'medium' = 'medium';
+      if (meeting.isCritical) {
+        priority = 'critical';
+      } else if (
+        meeting.attendees.some(
+          (att) =>
+            att.role?.toLowerCase().includes('customer ceo') ||
+            (att.role?.toLowerCase().includes('ceo') &&
+              att.email !== 'ceo@company.com')
+        )
+      ) {
+        priority = 'high';
+      }
+
+      return {
+        meeting,
+        time: timeStr,
+        materials,
+        keyAttendees,
+        priority,
+      };
+    };
+
+    const todayMeetings = allMeetings
+      .filter((m) => isToday(new Date(m.startTime)))
+      .map(processMeeting);
+
+    const weekMeetings = allMeetings
+      .filter((m) => !isToday(new Date(m.startTime)))
+      .slice(0, 5) // Top 5 for the week
+      .map(processMeeting);
+
+    const totalActionItems =
+      todayMeetings.reduce((sum, m) => sum + m.materials.length, 0) +
+      weekMeetings.reduce((sum, m) => sum + m.materials.length, 0);
+
+    return {
+      todayMeetings,
+      weekMeetings,
+      totalActionItems,
+    };
+  };
+
+  const executiveBriefing = getExecutiveBriefing();
+
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
         {/* Page Header */}
         <div className='mb-8'>
-          <h1 className='text-4xl font-bold text-gray-900 mb-2'>
-            Executive Summary
+          <h1 className='text-4xl font-bold text-gray-900 mb-6'>
+            CEO Mind Space
           </h1>
-          <p className='text-gray-600 text-lg'>
-            Key business insights at a glance
-          </p>
+
+          {/* Executive Briefing - Critical Meetings */}
+          <div className='bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden mb-6'>
+            <div className='bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <CalendarIcon className='w-7 h-7 text-white' />
+                  <h2 className='text-2xl font-bold text-white'>
+                    Meetings Briefing
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            <div className='p-6'>
+              {/* Today's Critical Meetings */}
+              {executiveBriefing.todayMeetings.length > 0 && (
+                <div className='mb-6'>
+                  <div className='flex items-center gap-2 mb-4'>
+                    <div className='w-1 h-6 bg-red-500 rounded-full'></div>
+                    <h3 className='text-lg font-bold text-gray-900'>
+                      🎯 Today's Critical Meetings
+                    </h3>
+                    <span className='text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-md'>
+                      {executiveBriefing.todayMeetings.length} Meeting
+                      {executiveBriefing.todayMeetings.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                    {executiveBriefing.todayMeetings.map((item) => (
+                      <div
+                        key={item.meeting.id}
+                        className={`border-2 rounded-xl p-4 transition-all hover:shadow-lg flex flex-col ${
+                          item.priority === 'critical'
+                            ? 'border-red-300 bg-red-50/50'
+                            : item.priority === 'high'
+                            ? 'border-orange-300 bg-orange-50/50'
+                            : 'border-blue-300 bg-blue-50/50'
+                        }`}>
+                        <div className='flex-1'>
+                          <div className='flex items-center gap-2 mb-2'>
+                            <span className='text-xs font-bold text-gray-700'>
+                              {item.time}
+                            </span>
+                            <span
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                                item.priority === 'critical'
+                                  ? 'bg-red-200 text-red-800'
+                                  : item.priority === 'high'
+                                  ? 'bg-orange-200 text-orange-800'
+                                  : 'bg-blue-200 text-blue-800'
+                              }`}>
+                              {item.priority.toUpperCase()}
+                            </span>
+                          </div>
+                          <h4 className='text-sm font-bold text-gray-900 mb-1.5 line-clamp-2'>
+                            {item.meeting.title}
+                          </h4>
+                          {item.meeting.location && (
+                            <p className='text-xs text-gray-600 mb-1.5 line-clamp-1'>
+                              📍 {item.meeting.location}
+                            </p>
+                          )}
+                          {item.keyAttendees.length > 0 && (
+                            <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
+                              <span className='font-semibold'>With:</span>{' '}
+                              {item.keyAttendees.slice(0, 2).join(', ')}
+                              {item.keyAttendees.length > 2 && ' + more'}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Materials & Action Items */}
+                        {item.materials.length > 0 && (
+                          <div className='mt-3 pt-3 border-t border-gray-200'>
+                            <p className='text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide'>
+                              📋 Prep:
+                            </p>
+                            <div className='space-y-1.5'>
+                              {item.materials.map((material, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`flex items-start gap-1.5 p-1.5 rounded-md ${
+                                    material.type === 'deck'
+                                      ? 'bg-purple-100 border border-purple-300'
+                                      : material.type === 'action'
+                                      ? 'bg-amber-100 border border-amber-300'
+                                      : 'bg-blue-100 border border-blue-300'
+                                  }`}>
+                                  <span className='text-xs mt-0.5 flex-shrink-0'>
+                                    {material.type === 'deck'
+                                      ? '📊'
+                                      : material.type === 'action'
+                                      ? '⚠️'
+                                      : '📄'}
+                                  </span>
+                                  <div className='flex-1 min-w-0'>
+                                    <p className='text-xs font-semibold text-gray-800 line-clamp-2'>
+                                      {material.description}
+                                    </p>
+                                    {material.items && (
+                                      <ul className='mt-0.5 space-y-0.5'>
+                                        {material.items.map((item, i) => (
+                                          <li
+                                            key={i}
+                                            className='text-xs text-gray-600 list-disc list-inside line-clamp-1'>
+                                            {item}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* This Week's Critical Meetings */}
+              {executiveBriefing.weekMeetings.length > 0 && (
+                <div>
+                  <div className='flex items-center gap-2 mb-4'>
+                    <div className='w-1 h-6 bg-blue-500 rounded-full'></div>
+                    <h3 className='text-lg font-bold text-gray-900'>
+                      📅 This Week's Critical Meetings
+                    </h3>
+                    <span className='text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-md'>
+                      {executiveBriefing.weekMeetings.length} Meeting
+                      {executiveBriefing.weekMeetings.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3'>
+                    {executiveBriefing.weekMeetings.map((item) => (
+                      <div
+                        key={item.meeting.id}
+                        className={`border-2 rounded-lg p-3 transition-all hover:shadow-md flex flex-col ${
+                          item.priority === 'critical'
+                            ? 'border-red-200 bg-red-50/30'
+                            : item.priority === 'high'
+                            ? 'border-orange-200 bg-orange-50/30'
+                            : 'border-blue-200 bg-blue-50/30'
+                        }`}>
+                        <div className='flex-1'>
+                          <div className='flex items-center gap-1.5 mb-1.5 flex-wrap'>
+                            <span className='text-xs font-bold text-gray-700'>
+                              {item.time}
+                            </span>
+                            <span
+                              className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                                item.priority === 'critical'
+                                  ? 'bg-red-200 text-red-800'
+                                  : item.priority === 'high'
+                                  ? 'bg-orange-200 text-orange-800'
+                                  : 'bg-blue-200 text-blue-800'
+                              }`}>
+                              {item.priority.toUpperCase()}
+                            </span>
+                          </div>
+                          <h4 className='text-xs font-bold text-gray-900 mb-1.5 line-clamp-2'>
+                            {item.meeting.title}
+                          </h4>
+                          {item.keyAttendees.length > 0 && (
+                            <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
+                              With: {item.keyAttendees.slice(0, 2).join(', ')}
+                              {item.keyAttendees.length > 2 && ' + more'}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Materials Summary */}
+                        {item.materials.length > 0 && (
+                          <div className='mt-2 pt-2 border-t border-gray-200'>
+                            <div className='flex flex-wrap gap-1.5'>
+                              {item.materials.map((material, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                    material.type === 'deck'
+                                      ? 'bg-purple-100 text-purple-700 border border-purple-300'
+                                      : material.type === 'action'
+                                      ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                                      : 'bg-blue-100 text-blue-700 border border-blue-300'
+                                  }`}>
+                                  {material.type === 'deck'
+                                    ? '📊'
+                                    : material.type === 'action'
+                                    ? '⚠️'
+                                    : '📄'}{' '}
+                                  <span className='line-clamp-1'>
+                                    {material.description}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {executiveBriefing.todayMeetings.length === 0 &&
+                executiveBriefing.weekMeetings.length === 0 && (
+                  <div className='text-center py-8 text-gray-500'>
+                    <CalendarIcon className='w-12 h-12 mx-auto mb-3 text-gray-300' />
+                    <p className='text-sm font-medium'>
+                      No critical meetings scheduled
+                    </p>
+                  </div>
+                )}
+            </div>
+          </div>
         </div>
+
+        {/* Action Bar - appears when items are selected */}
+        {totalSelectedCount > 0 && (
+          <div className='sticky top-4 z-40 mb-6 bg-white rounded-xl border-2 border-primary-500 shadow-lg p-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-sm font-medium text-gray-700'>
+                    {totalSelectedCount} item
+                    {totalSelectedCount !== 1 ? 's' : ''} selected
+                  </span>
+                  <button
+                    onClick={clearAllSelections}
+                    className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                    Clear all
+                  </button>
+                </div>
+                <p className='text-xs text-gray-500'>
+                  💡 Drag selected items directly to calendar events on the left
+                </p>
+              </div>
+              <div className='flex items-center gap-3'>
+                <button
+                  onClick={() => setIsAISidebarOpen(true)}
+                  className='flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium'>
+                  <SparklesIcon className='w-5 h-5' />
+                  AI Analysis
+                </button>
+                <button
+                  onClick={() => setIsMeetingModalOpen(true)}
+                  className='flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium'>
+                  <CalendarIcon className='w-5 h-5' />
+                  Schedule Meeting
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Key Leading parameter Section */}
         <div className='mb-8'>
@@ -298,14 +966,71 @@ export default function ExecutiveSummaryPage() {
               const valueText = formatMetricValue(metric);
               const comparisonText = getComparisonText(metric);
 
+              const isSelected = selectedOperationMetrics.has(metric.id);
+
+              const handleDragStart = (e: React.DragEvent) => {
+                // Don't start drag if clicking on checkbox
+                const target = e.target as HTMLElement;
+                if (target.closest('input[type="checkbox"]')) {
+                  e.preventDefault();
+                  return;
+                }
+
+                if (!isSelected) {
+                  e.preventDefault();
+                  return;
+                }
+
+                // Get all selected items for multi-drag
+                const allSelectedItems = getAllSelectedItemsForDrag();
+
+                // Store all selected items as JSON for multi-drag
+                e.dataTransfer.setData(
+                  'multipleItems',
+                  JSON.stringify(allSelectedItems)
+                );
+                // Also set single item for backward compatibility
+                e.dataTransfer.setData('materialType', 'internal-pulse');
+                e.dataTransfer.setData('itemId', metric.id);
+                e.dataTransfer.effectAllowed = 'move';
+                // Add visual feedback
+                if (e.currentTarget instanceof HTMLElement) {
+                  e.currentTarget.style.opacity = '0.5';
+                }
+              };
+
+              const handleDragEnd = (e: React.DragEvent) => {
+                // Restore visual feedback
+                if (e.currentTarget instanceof HTMLElement) {
+                  e.currentTarget.style.opacity = '1';
+                }
+              };
+
               return (
                 <div
                   key={metric.id}
-                  className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-4 hover:shadow-xl transition-shadow duration-300 min-w-0 relative'>
+                  draggable={isSelected}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-4 hover:shadow-xl transition-all duration-300 min-w-0 relative ${
+                    isSelected
+                      ? 'border-primary-500 bg-primary-50/30 cursor-move'
+                      : 'border-gray-200 cursor-pointer'
+                  }`}
+                  onClick={() => toggleOperationMetric(metric.id)}>
                   <div className='flex items-start justify-between mb-3 gap-2'>
-                    <h3 className='text-xs font-medium text-gray-600 break-words flex-1 min-w-0'>
-                      {metric.name}
-                    </h3>
+                    <div className='flex items-start gap-2 flex-1 min-w-0'>
+                      <input
+                        type='checkbox'
+                        checked={isSelected}
+                        onChange={() => toggleOperationMetric(metric.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className='mt-0.5 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
+                      />
+                      <h3 className='text-xs font-medium text-gray-600 break-words flex-1 min-w-0'>
+                        {metric.name}
+                      </h3>
+                    </div>
                     <span
                       className={`px-2 py-1 rounded-md text-xs font-medium border whitespace-nowrap flex-shrink-0 ${getStatusColor(
                         status
@@ -371,70 +1096,221 @@ export default function ExecutiveSummaryPage() {
           </p>
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
             {criticalNews.length > 0 ? (
-              criticalNews.map((news) => (
-                <div
-                  key={news.id}
-                  className={`bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 p-6 ${
-                    news.riskOrOpportunity === 'risk'
-                      ? 'border-red-200 bg-gradient-to-br from-red-50/50 to-white'
-                      : 'border-green-200 bg-gradient-to-br from-green-50/50 to-white'
-                  }`}>
-                  <div className='flex items-start justify-between mb-3'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-2 mb-2'>
-                        <span
-                          className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                            news.riskOrOpportunity === 'risk'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                          {news.riskOrOpportunity === 'risk'
-                            ? 'RISK'
-                            : 'OPPORTUNITY'}
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                            news.impactLevel === 'high'
-                              ? 'bg-orange-100 text-orange-800'
-                              : news.impactLevel === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {news.impactLevel.toUpperCase()} IMPACT
-                        </span>
-                        <span className='px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 capitalize'>
-                          {news.category}
-                        </span>
-                      </div>
-                      <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-                        {news.headline}
-                      </h3>
-                      <p className='text-sm text-gray-600 mb-3 line-clamp-2'>
-                        {news.summary}
-                      </p>
-                      {news.analyzingBy && (
-                        <div className='flex items-center gap-2 mt-2 mb-2'>
-                          <span className='text-xs text-gray-500'>
-                            Analyzing:
-                          </span>
-                          <span className='text-xs font-medium text-primary-600'>
-                            {news.analyzingBy}
-                          </span>
+              criticalNews.map((news) => {
+                const isSelected = selectedNewsItems.has(news.id);
+
+                const handleDragStart = (e: React.DragEvent) => {
+                  // Don't start drag if clicking on checkbox
+                  const target = e.target as HTMLElement;
+                  if (target.closest('input[type="checkbox"]')) {
+                    e.preventDefault();
+                    return;
+                  }
+
+                  if (!isSelected) {
+                    e.preventDefault();
+                    return;
+                  }
+
+                  // Get all selected items for multi-drag
+                  const allSelectedItems = getAllSelectedItemsForDrag();
+
+                  // Store all selected items as JSON for multi-drag
+                  e.dataTransfer.setData(
+                    'multipleItems',
+                    JSON.stringify(allSelectedItems)
+                  );
+                  // Also set single item for backward compatibility
+                  e.dataTransfer.setData('materialType', 'external-pulse');
+                  e.dataTransfer.setData('itemId', news.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                  // Add visual feedback
+                  if (e.currentTarget instanceof HTMLElement) {
+                    e.currentTarget.style.opacity = '0.5';
+                  }
+                };
+
+                const handleDragEnd = (e: React.DragEvent) => {
+                  // Restore visual feedback
+                  if (e.currentTarget instanceof HTMLElement) {
+                    e.currentTarget.style.opacity = '1';
+                  }
+                };
+
+                return (
+                  <div
+                    key={news.id}
+                    draggable={isSelected}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 p-6 ${
+                      isSelected
+                        ? 'border-primary-500 ring-2 ring-primary-200 cursor-move'
+                        : news.riskOrOpportunity === 'risk'
+                        ? 'border-red-200 bg-gradient-to-br from-red-50/50 to-white cursor-pointer'
+                        : 'border-green-200 bg-gradient-to-br from-green-50/50 to-white cursor-pointer'
+                    }`}
+                    onClick={() => toggleNewsItem(news.id)}>
+                    <div className='flex items-start justify-between mb-3'>
+                      <div className='flex items-start gap-2 flex-1'>
+                        <input
+                          type='checkbox'
+                          checked={isSelected}
+                          onChange={() => toggleNewsItem(news.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className='mt-1 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
+                        />
+                        <div className='flex-1'>
+                          <div className='flex items-center gap-2 mb-2'>
+                            <span
+                              className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                                news.riskOrOpportunity === 'risk'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                              {news.riskOrOpportunity === 'risk'
+                                ? 'RISK'
+                                : 'OPPORTUNITY'}
+                            </span>
+                            <span
+                              className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                                news.impactLevel === 'high'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : news.impactLevel === 'medium'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                              {news.impactLevel.toUpperCase()} IMPACT
+                            </span>
+                            <span className='px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 capitalize'>
+                              {news.category}
+                            </span>
+                          </div>
+                          <h3 className='text-lg font-semibold text-gray-900 mb-2'>
+                            {news.headline}
+                          </h3>
+                          <p className='text-sm text-gray-600 mb-3 line-clamp-2'>
+                            {news.summary}
+                          </p>
+                          {news.analyzingBy && (
+                            <div className='flex items-center gap-2 mt-2 mb-2'>
+                              <span className='text-xs text-gray-500'>
+                                Analyzing:
+                              </span>
+                              <span className='text-xs font-medium text-primary-600'>
+                                {news.analyzingBy}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    </div>
+                    <div className='flex items-center justify-between text-xs text-gray-500'>
+                      <span>{formatRelativeTime(news.timestamp)}</span>
+                      <span>{news.source}</span>
                     </div>
                   </div>
-                  <div className='flex items-center justify-between text-xs text-gray-500'>
-                    <span>{formatRelativeTime(news.timestamp)}</span>
-                    <span>{news.source}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className='col-span-2 bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500'>
                 No critical external news at this time
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Wave Status Glance Section */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+              <ChartBarIcon className='w-6 h-6 text-primary-600' />
+              Wave Status Glance
+            </h2>
+            <Link
+              to='/wave-executive-dashboard'
+              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
+              Wave Executive Dashboard
+              <ArrowRightIcon className='w-4 h-4' />
+            </Link>
+          </div>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              {/* Left: Summary */}
+              <div className='flex flex-col justify-center'>
+                <p className='text-gray-600 mb-4 text-base leading-relaxed'>
+                  The Variance Analysis shows the breakdown of L4+ Actual Net
+                  Recurring Revenue compared to the Bottom-Up Plan. Positive
+                  variances from accelerated initiatives, over-delivery, and new
+                  additions are offset by delays, delivery leakage, and
+                  initiatives moved or cancelled. The net total variance of{' '}
+                  <span className='font-semibold text-gray-900'>
+                    $
+                    {mockVarianceAnalysisData
+                      .find((d) => d.type === 'total')
+                      ?.value.toFixed(1) || '0.0'}
+                    M
+                  </span>{' '}
+                  indicates overall performance against plan.
+                </p>
+                <div className='mt-4 space-y-2'>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <div className='w-3 h-3 rounded bg-green-500'></div>
+                    <span className='text-gray-700'>
+                      Positive variances: Accelerated, Over-delivered, Added
+                      initiatives
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <div className='w-3 h-3 rounded bg-red-500'></div>
+                    <span className='text-gray-700'>
+                      Negative variances: Delayed, Leakage, Moved, Cancelled
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Right: Variance Analysis Chart */}
+              <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6'>
+                <div className='flex items-center gap-2 mb-4'>
+                  <h3 className='text-sm font-bold text-gray-900'>
+                    Variance Analysis - L4+ Actual Net Recurring Revenue
+                    (Annualized, Million USD) vs. Bottom-Up Plan
+                  </h3>
+                  <InformationCircleIcon className='w-4 h-4 text-gray-400' />
+                </div>
+                <div className='h-64'>
+                  <ResponsiveContainer
+                    width='100%'
+                    height='100%'>
+                    <BarChart data={mockVarianceAnalysisData}>
+                      <CartesianGrid strokeDasharray='3 3' />
+                      <XAxis
+                        dataKey='category'
+                        angle={-45}
+                        textAnchor='end'
+                        height={100}
+                      />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey='value'>
+                        {mockVarianceAnalysisData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              entry.type === 'positive'
+                                ? '#10b981'
+                                : entry.type === 'negative'
+                                ? '#ef4444'
+                                : '#60a5fa'
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -461,15 +1337,71 @@ export default function ExecutiveSummaryPage() {
               const trend = getMetricTrend(metric);
               const valueText = formatMetricValue(metric);
               const comparisonText = getComparisonText(metric);
+              const isSelected = selectedFinancialKPIs.has(metric.id);
+
+              const handleDragStart = (e: React.DragEvent) => {
+                // Don't start drag if clicking on checkbox
+                const target = e.target as HTMLElement;
+                if (target.closest('input[type="checkbox"]')) {
+                  e.preventDefault();
+                  return;
+                }
+
+                if (!isSelected) {
+                  e.preventDefault();
+                  return;
+                }
+
+                // Get all selected items for multi-drag
+                const allSelectedItems = getAllSelectedItemsForDrag();
+
+                // Store all selected items as JSON for multi-drag
+                e.dataTransfer.setData(
+                  'multipleItems',
+                  JSON.stringify(allSelectedItems)
+                );
+                // Also set single item for backward compatibility
+                e.dataTransfer.setData('materialType', 'internal-pulse');
+                e.dataTransfer.setData('itemId', metric.id);
+                e.dataTransfer.effectAllowed = 'move';
+                // Add visual feedback
+                if (e.currentTarget instanceof HTMLElement) {
+                  e.currentTarget.style.opacity = '0.5';
+                }
+              };
+
+              const handleDragEnd = (e: React.DragEvent) => {
+                // Restore visual feedback
+                if (e.currentTarget instanceof HTMLElement) {
+                  e.currentTarget.style.opacity = '1';
+                }
+              };
 
               return (
                 <div
                   key={metric.id}
-                  className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+                  draggable={isSelected}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 ${
+                    isSelected
+                      ? 'border-primary-500 bg-primary-50/30 cursor-move'
+                      : 'border-gray-200 cursor-pointer'
+                  }`}
+                  onClick={() => toggleFinancialKPI(metric.id)}>
                   <div className='flex items-start justify-between mb-3 gap-2'>
-                    <h3 className='text-sm font-medium text-gray-600 flex-1 min-w-0'>
-                      {metric.name}
-                    </h3>
+                    <div className='flex items-start gap-2 flex-1 min-w-0'>
+                      <input
+                        type='checkbox'
+                        checked={isSelected}
+                        onChange={() => toggleFinancialKPI(metric.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className='mt-0.5 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
+                      />
+                      <h3 className='text-sm font-medium text-gray-600 flex-1 min-w-0'>
+                        {metric.name}
+                      </h3>
+                    </div>
                     <span
                       className={`px-2 py-1 rounded-md text-xs font-medium border whitespace-nowrap flex-shrink-0 ${getStatusColor(
                         status
@@ -611,6 +1543,26 @@ export default function ExecutiveSummaryPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Analysis Sidebar */}
+      <RootCauseAnalysisSidebar
+        isOpen={isAISidebarOpen}
+        onToggle={() => setIsAISidebarOpen(!isAISidebarOpen)}
+        selectedExternalItems={selectedNewsForAI}
+        selectedInternalItems={[]} // PulseMetrics are different from FinancialMetrics, so we pass empty for now
+        activeTab={selectedNewsForAI.length > 0 ? 'external' : 'internal'}
+        hasSelectedItems={totalSelectedCount > 0}
+      />
+
+      {/* Meeting Scheduling Modal */}
+      <MeetingSchedulingModal
+        isOpen={isMeetingModalOpen}
+        onClose={() => setIsMeetingModalOpen(false)}
+        selectedItems={selectedItemsForModals}
+        relevantMeetings={relevantMeetings}
+        onScheduleNewMeeting={handleScheduleNewMeeting}
+        onAddToMeetings={handleAddToMeetings}
+      />
     </div>
   );
 }

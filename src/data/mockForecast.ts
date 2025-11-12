@@ -842,7 +842,7 @@ export const mockInitiatives: Initiative[] = [
       'Qualify and onboard Australian and US rare earth suppliers to diversify supply chain. Target: signed agreements and initial orders within 45 days.',
     estimatedImpact: 3.5,
     actualImpact: undefined,
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     status: 'in-progress',
     resourceRequirements: 'Procurement team 3 FTE, quality testing $200K',
     createdDate: subDays(new Date(), 5),

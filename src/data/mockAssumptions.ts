@@ -63,20 +63,20 @@ export const mockAssumptions: BusinessAssumption[] = [
     value: 35,
     unit: '%',
     source: 'predictions',
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     lastUpdated: subDays(new Date(), 2),
     approvalStatus: 'pending',
     history: [
       {
         date: subMonths(new Date(), 2),
         value: 10,
-        changedBy: 'Michael Chen',
+        changedBy: 'Jack Chen',
         reason: 'Normal market fluctuation',
       },
       {
         date: subDays(new Date(), 2),
         value: 35,
-        changedBy: 'Michael Chen',
+        changedBy: 'Jack Chen',
         reason: 'China export restrictions announced',
       },
     ],
@@ -89,7 +89,7 @@ export const mockAssumptions: BusinessAssumption[] = [
     value: 15,
     unit: '%',
     source: 'actuals',
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     lastUpdated: subDays(new Date(), 1),
     approvalStatus: 'approved',
     approver: 'Mark Thompson - CFO',
@@ -97,13 +97,13 @@ export const mockAssumptions: BusinessAssumption[] = [
       {
         date: subMonths(new Date(), 1),
         value: 8,
-        changedBy: 'Michael Chen',
+        changedBy: 'Jack Chen',
         reason: 'Market price increase',
       },
       {
         date: subDays(new Date(), 1),
         value: 15,
-        changedBy: 'Michael Chen',
+        changedBy: 'Jack Chen',
         reason: 'South American supply disruptions',
       },
     ],
@@ -291,17 +291,17 @@ export const mockAssumptions: BusinessAssumption[] = [
     value: 3.2,
     unit: '%',
     source: 'actuals',
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     lastUpdated: new Date(),
     approvalStatus: 'rejected',
     approver: 'CEO',
     history: [
-      { date: subMonths(new Date(), 6), value: 4.2, changedBy: 'Michael Chen' },
-      { date: subMonths(new Date(), 3), value: 3.8, changedBy: 'Michael Chen' },
+      { date: subMonths(new Date(), 6), value: 4.2, changedBy: 'Jack Chen' },
+      { date: subMonths(new Date(), 3), value: 3.8, changedBy: 'Jack Chen' },
       {
         date: new Date(),
         value: 3.2,
-        changedBy: 'Michael Chen',
+        changedBy: 'Jack Chen',
         reason: 'Raw material inflation offsetting negotiation gains',
       },
     ],
@@ -331,7 +331,7 @@ export const mockConflicts: Conflict[] = [
     affectedAssumptions: ['assum-3'],
     suggestedResolution:
       'Confirm with supplier data. If correct, escalate supply chain risk immediately. If error, correct to realistic estimate (15-20%).',
-    stakeholders: ['Michael Chen - CPO', 'Mark Thompson - CFO'],
+    stakeholders: ['Jack Chen - CPO', 'Mark Thompson - CFO'],
     status: 'open',
   },
   {
@@ -355,7 +355,7 @@ export const mockConflicts: Conflict[] = [
     affectedAssumptions: ['assum-12', 'assum-4', 'assum-3'],
     suggestedResolution:
       'Procurement cost down should be net of material inflation. Clarify if 3.2% is absolute or relative to inflation baseline.',
-    stakeholders: ['Michael Chen - CPO'],
+    stakeholders: ['Jack Chen - CPO'],
     status: 'open',
   },
   {

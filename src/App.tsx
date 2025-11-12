@@ -5,6 +5,7 @@ import ExternalPulsePage from './pages/ExternalPulsePage';
 import InternalPulsePage from './pages/InternalPulsePage';
 import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
 import FinancePage from './pages/FinancePage';
+import FinanceReviewPage from './pages/FinanceReviewPage';
 import ActionTrackerPage from './pages/ActionTrackerPage';
 import UserProfile from './pages/UserProfile';
 import MeetingDetailView from './components/MeetingDetailView';
@@ -39,6 +40,10 @@ function App() {
           <Route
             path='action-tracker'
             element={<ActionTrackerPage />}
+          />
+          <Route
+            path='finance-review'
+            element={<FinanceReviewPage />}
           />
           <Route
             path='profile'

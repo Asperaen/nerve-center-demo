@@ -26,7 +26,7 @@ export const mockActions: Action[] = [
     title: 'Secure alternative rare earth material suppliers',
     description:
       'Accelerate negotiations with Australian and US-based rare earth suppliers. Target: signed agreements within 45 days to mitigate China export restrictions.',
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 14),
@@ -186,7 +186,7 @@ export const mockActions: Action[] = [
     title: 'Procurement cost down improvement initiative',
     description:
       'Procurement cost down at 3.2% vs 5.0% target. Develop action plan to close 1.8% gap through supplier negotiations and material substitution.',
-    owner: 'Michael Chen - CPO',
+    owner: 'Jack Chen - CPO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 14),
