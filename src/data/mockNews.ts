@@ -8,7 +8,7 @@ export const mockNews: NewsItem[] = [
     summary:
       'The National Wage Council of Vietnam has approved a 7.2% increase in regional minimum wage for 2026, effective January 1, 2026. The new wage levels range from 3.70 million VND to 5.31 million VND per month depending on the region.',
     aiAnalysis:
-      'Labor cost increase for Vietnam operations: Key impacts: (1) For EMS companies, minimum wage hike of 7.2% typically requires adjusting entry-level/base wages by 7%+, seniority tiers slightly below proportional, and overtime & allowances (computed off base wage), resulting in effective blended labor-rate increase of ~5%, (2) Our Vietnam operations employ 450 workers with $180M annual revenue, (3) Estimated $2-3M annual cost increase if wage structure adjustments follow typical EMS patterns, (4) May pressure gross margins by 0.3-0.5% for Vietnam-sourced products. Recommended actions: Review current Vietnam wage structure and prepare 2026 budget adjustments, assess impact on product pricing and customer contracts, explore productivity improvements to offset labor cost increases, and benchmark against industry peers.',
+      'Vietnam increasing minimum wage causing impact to BU with footprint in Vietnam: our Must-win BU faces a 3-million-dollar impact, and our Never-lose BU is hit by 4.5 million.',
     riskOrOpportunity: 'risk',
     impactLevel: 'high',
     urgencyLevel: 'urgent',
@@ -23,7 +23,7 @@ export const mockNews: NewsItem[] = [
     summary:
       'The United States Trade Representative has announced a new 25% tariff on Chinese-manufactured electric vehicle connectors, effective in 30 days. This follows ongoing trade tensions and aims to protect domestic manufacturing.',
     aiAnalysis:
-      'This tariff announcement poses a significant risk to our EV connector business. Key impacts: (1) 20% of our EV connector volume is manufactured in China and exported to the US, (2) Estimated $10M revenue impact if we cannot shift production, (3) Customer orders from Tesla and other US automakers may be at risk. Recommended actions: Investigate feasibility of shifting production to Vietnam facility within 6 months, engage with customers to understand their timeline flexibility, and explore pricing adjustments.',
+      'For a mid-size EMS BU with $1B annual revenue: Direct labor expense is $100M (10% of revenue), indirect labor overhead portion is $50M, totaling $150M in labor-related costs. Applying a 5% blended increase translates to ~$7.5M OP hit, roughly 0.75 p.p. margin erosion on a 10% OP margin.',
     riskOrOpportunity: 'risk',
     impactLevel: 'high',
     urgencyLevel: 'urgent',

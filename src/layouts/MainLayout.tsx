@@ -1,12 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import RightSidebar from '../components/RightSidebar';
 import CalendarSidebar from '../components/CalendarSidebar';
+import ActionTrackerModal from '../components/ActionTrackerModal';
 import { mockCalendarEvents } from '../data/mockCalendar';
 import type { MeetingMaterial } from '../types';
 
 export default function MainLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isActionTrackerModalOpen, setIsActionTrackerModalOpen] =
+    useState(false);
   const location = useLocation();
   const isMeetingPage = location.pathname.startsWith('/meeting/');
   const meetingId = isMeetingPage ? location.pathname.split('/')[2] : undefined;
@@ -80,6 +84,20 @@ export default function MainLayout() {
         }`}>
         <Outlet context={{ meetingMaterials }} />
       </main>
+
+      {/* Floating Action Tracker Button */}
+      <button
+        onClick={() => setIsActionTrackerModalOpen(true)}
+        className='fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-gray-300'
+        aria-label='View Action Tracker'>
+        <ClipboardDocumentListIcon className='w-6 h-6' />
+      </button>
+
+      {/* Action Tracker Modal */}
+      <ActionTrackerModal
+        isOpen={isActionTrackerModalOpen}
+        onClose={() => setIsActionTrackerModalOpen(false)}
+      />
     </div>
   );
 }

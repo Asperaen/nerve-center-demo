@@ -9,6 +9,7 @@ import {
   ClipboardDocumentListIcon,
   InformationCircleIcon,
   CalendarIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow, format, isToday } from 'date-fns';
 import { mockNews } from '../data/mockNews';
@@ -30,6 +31,7 @@ import {
 } from 'recharts';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
+import CreateActionModal from '../components/CreateActionModal';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import type { SelectedItem } from '../utils/meetingRelevance';
 
@@ -48,6 +50,7 @@ export default function ExecutiveSummaryPage() {
   // Modal state
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
   // Get Operation metrics from Internal Pulse (UPPH, OEE, Gold price)
   const operationColumn = internalPulseColumns.find(
     (col) => col.type === 'operation'
@@ -742,9 +745,15 @@ export default function ExecutiveSummaryPage() {
       <div className='p-8 max-w-[1920px] mx-auto'>
         {/* Page Header */}
         <div className='mb-8'>
-          <h1 className='text-4xl font-bold text-gray-900 mb-6'>
-            CEO Mind Space
-          </h1>
+          <div className='flex items-center justify-between mb-6'>
+            <h1 className='text-4xl font-bold text-gray-900'>CEO Mind Space</h1>
+            <button
+              onClick={() => setIsCreateActionModalOpen(true)}
+              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+              <PlusIcon className='w-5 h-5' />
+              Create Action
+            </button>
+          </div>
 
           {/* Executive Briefing - Critical Meetings */}
           <div className='bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden mb-6'>
@@ -1293,7 +1302,7 @@ export default function ExecutiveSummaryPage() {
             <Link
               to='/wave-executive-dashboard'
               className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-              Wave Executive Dashboard
+              Wave Dashboard
               <ArrowRightIcon className='w-4 h-4' />
             </Link>
           </div>
@@ -1625,6 +1634,12 @@ export default function ExecutiveSummaryPage() {
         relevantMeetings={relevantMeetings}
         onScheduleNewMeeting={handleScheduleNewMeeting}
         onAddToMeetings={handleAddToMeetings}
+      />
+
+      {/* Create Action Modal */}
+      <CreateActionModal
+        isOpen={isCreateActionModalOpen}
+        onClose={() => setIsCreateActionModalOpen(false)}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { mockActions } from '../data/mockActions';
 import type { Action, ActionStatus } from '../types';
+import { useActions } from '../contexts/ActionsContext';
 import {
   UserCircleIcon,
   XMarkIcon,
@@ -11,7 +11,7 @@ import {
 import { format } from 'date-fns';
 
 export default function ActionTracker() {
-  const [actions, setActions] = useState(mockActions);
+  const { actions, updateAction } = useActions();
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>(
@@ -22,10 +22,7 @@ export default function ActionTracker() {
   );
 
   const handleStatusChange = (actionId: string, newStatus: ActionStatus) => {
-    const updatedActions = actions.map((a) =>
-      a.id === actionId ? { ...a, status: newStatus } : a
-    );
-    setActions(updatedActions);
+    updateAction(actionId, { status: newStatus });
   };
 
   const toggleExpanded = (actionId: string) => {
@@ -40,10 +37,7 @@ export default function ActionTracker() {
 
   const handleReassign = (newOwner: string) => {
     if (selectedAction) {
-      const updatedActions = actions.map((a) =>
-        a.id === selectedAction.id ? { ...a, owner: newOwner } : a
-      );
-      setActions(updatedActions);
+      updateAction(selectedAction.id, { owner: newOwner });
       setShowReassignModal(false);
       setSelectedAction(null);
       alert(
@@ -55,24 +49,21 @@ export default function ActionTracker() {
   const handleAddComment = (actionId: string) => {
     const commentText = commentInputs[actionId];
     if (commentText?.trim()) {
-      const updatedActions = actions.map((a) =>
-        a.id === actionId
-          ? {
-              ...a,
-              comments: [
-                ...a.comments,
-                {
-                  id: `comment-${Date.now()}`,
-                  text: commentText,
-                  createdBy: 'Current User',
-                  createdAt: new Date(),
-                },
-              ],
-            }
-          : a
-      );
-      setActions(updatedActions);
-      setCommentInputs({ ...commentInputs, [actionId]: '' });
+      const action = actions.find((a) => a.id === actionId);
+      if (action) {
+        updateAction(actionId, {
+          comments: [
+            ...action.comments,
+            {
+              id: `comment-${Date.now()}`,
+              text: commentText,
+              createdBy: 'Current User',
+              createdAt: new Date(),
+            },
+          ],
+        });
+        setCommentInputs({ ...commentInputs, [actionId]: '' });
+      }
     }
   };
 

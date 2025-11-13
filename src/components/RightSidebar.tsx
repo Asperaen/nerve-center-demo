@@ -3,12 +3,12 @@ import {
   SparklesIcon,
   ChartBarIcon,
   CurrencyDollarIcon,
-  ClipboardDocumentListIcon,
   UserCircleIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   HomeIcon,
   PresentationChartBarIcon,
+  DocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 
 interface RightSidebarProps {
@@ -44,15 +44,9 @@ export default function RightSidebar({
     },
     {
       id: 'wave-executive-dashboard',
-      label: 'Wave Executive Dashboard',
+      label: 'Wave',
       path: '/wave-executive-dashboard',
       icon: PresentationChartBarIcon,
-    },
-    {
-      id: 'action-tracker',
-      label: 'Action Tracker',
-      path: '/action-tracker',
-      icon: ClipboardDocumentListIcon,
     },
   ];
 
@@ -68,7 +62,7 @@ export default function RightSidebar({
       id: 'finance-review',
       label: 'Finance Review',
       path: '/finance-review',
-      icon: PresentationChartBarIcon,
+      icon: DocumentCheckIcon,
     },
   ];
 
@@ -101,7 +95,7 @@ export default function RightSidebar({
 
       {/* Navigation Tabs */}
       <nav className='flex flex-col py-4 flex-1 overflow-y-auto min-h-0'>
-        {/* Real Time Pulse Section */}
+        {/* Live */}
         <div className='mb-6'>
           {!isCollapsed && (
             <div className='px-4 mb-3'>

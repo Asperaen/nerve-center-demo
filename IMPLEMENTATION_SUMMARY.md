@@ -27,7 +27,7 @@ The application is currently running and ready for demonstration.
 - ✅ Right sidebar (RightSidebar component) with collapsible functionality
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
 - ✅ Navigation items organized into two visually distinct groups:
-  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard, Action Tracker
+  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard
   - **Meetings Section** (purple theme): Finance Forecast, Finance Review
 - ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
 - ✅ Visual separator between sections
@@ -38,6 +38,8 @@ The application is currently running and ready for demonstration.
 - ✅ Main content area with dynamic right margin based on sidebar state
 - ✅ Smooth transitions for sidebar collapse/expand
 - ✅ User profile page with user information and quick actions
+- ✅ Floating Action Tracker button (bottom-right) for quick access to Action Tracker modal
+- ✅ "Create Action" buttons on page headers (Executive Summary, External Pulse, Internal Pulse, Wave Dashboard, Finance, Finance Review) for context-specific action creation
 
 ### 3. Mock Data Layer ✅
 
@@ -49,20 +51,22 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockActions.ts` - 15 action items with comments
 - ✅ `mockAssumptions.ts` - 12 business assumptions with history
 - ✅ `mockConflicts.ts` - 5 assumption conflicts
-- ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages, applied assumptions, suggested assumptions
+- ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages, applied assumptions, suggested assumptions, NP deviation stages, product family data, cost impact data, MVA breakdown stages
 - ✅ `mockAnalysis.ts` - Root cause analysis results
+- ✅ `mockRootCauses.ts` - 3 root causes with title, impact, tags, and Wave ticket numbers
 - ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
 
 ### 4. Page Structure ✅
 
 The application uses a flat route structure with standalone pages for each major feature:
 
-- ✅ External Pulse Page - Standalone page for external pulse check
-- ✅ Internal Pulse Page - Standalone page for internal pulse check
-- ✅ Wave Executive Dashboard Page - Standalone page for executive dashboard with initiatives tracking and value delivery charts
-- ✅ Finance Page - Combined financial forecast page with all financial features
-- ✅ Finance Review Page - Duplicate of Finance Page for finance review workflow
-- ✅ Action Tracker Page - Standalone page for action tracking
+- ✅ External Pulse Page - Standalone page for external pulse check with "Create Action" button in header
+- ✅ Internal Pulse Page - Standalone page for internal pulse check with "Create Action" button in header
+- ✅ Wave Executive Dashboard Page - Standalone page for executive dashboard with initiatives tracking and value delivery charts, "Create Action" button in header
+- ✅ Finance Page - Combined financial forecast page with all financial features, "Create Action" button in header
+- ✅ Finance Review Page - NP Deviation Breakdown with 4-layer deep dive navigation, "Create Action" button in header
+- ✅ Executive Summary Page - CEO Mind Space page with "Create Action" button in header
+- ✅ Action Tracker - Full-screen modal accessible via floating button (bottom-right), removed from sidebar navigation
 - ✅ User Profile Page - User profile and settings
 
 ### 5. Daily Pulse Check Features ✅
@@ -211,6 +215,15 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ When "Create Wave Initiative" is clicked, action is automatically marked with L0 stage
 - ✅ Create Proposal modal for creating new proposals
 - ✅ Create Action modal for adding actions to existing proposals
+- ✅ **AI-Generated Actions Feature**:
+  - Actions can be marked as AI-generated with `isAIGenerated` flag
+  - AI-generated actions display a prominent badge (purple gradient with "AI" label) next to the action description
+  - Badge automatically hides when action is "Waved" (has a stage assigned), indicating CEO review and approval
+  - When "Vietnam Minimum Wage Hike" assumption is moved from Pulse Suggested to Applied Assumptions, a proposal is automatically created with 2 AI-generated actions:
+    - Action 1: "Improve UPPH by 2–3% through line balancing, micro-motion fixes, refreshed standard work, and smarter labor allocation" (2.5M expected impact)
+    - Action 2: "Push a 1.5–2% ASP adjustment with key accounts, anchored on the mandatory wage increase" (4.5M expected impact)
+  - AI badge uses purple gradient background (from-purple-200 via-indigo-200 to-purple-300) with purple-800 text for visibility
+  - Badge includes sparkle icon (✨) and "AI" label for clear identification
 
 **A.5: Applied Assumptions ✅**
 
@@ -260,6 +273,7 @@ The application uses a flat route structure with standalone pages for each major
   - "Drag here" label below arrow
   - Drop zone highlights with blue border and background when dragging over
   - Description text changes to "Drop assumption here to apply it" during drag
+  - **Automatic Proposal Creation**: When "Vietnam Minimum Wage Hike" is moved from Suggested to Applied, a proposal with 2 AI-generated actions is automatically created
 - ✅ Toggle checkboxes on suggested assumptions (unchecked by default)
 - ✅ Real-time waterfall chart updates when suggested assumptions are checked
 - ✅ Suggested assumption impacts visualized as colored bars in waterfall chart (lower opacity for distinction)
@@ -276,7 +290,8 @@ The application uses a flat route structure with standalone pages for each major
 
 ### 7. Action Tracker ✅
 
-- ✅ Standalone page accessible via sidebar navigation
+- ✅ Full-screen modal accessible via floating button (bottom-right corner)
+- ✅ Removed from sidebar navigation for cleaner UI
 - ✅ Comprehensive action list with JIRA-like swim lanes
 - ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
 - ✅ Status workflow management with color-coded statuses
@@ -286,6 +301,19 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Comments system
 - ✅ Comment history display with timestamps and authors
 - ✅ Expandable action cards with full details
+- ✅ Modal backdrop with click-to-close functionality
+- ✅ Escape key support for closing modal
+- ✅ Body scroll prevention when modal is open
+
+### 8. Create Action Feature ✅
+
+- ✅ "Create Action" button on page headers for context-specific action creation
+- ✅ Available on all major pages: Executive Summary, External Pulse, Internal Pulse, Wave Dashboard, Finance, Finance Review
+- ✅ Consistent button styling across all pages (primary color, PlusIcon, positioned right of title)
+- ✅ Each page manages its own modal state independently
+- ✅ CreateActionModal component for creating new actions with form fields (title, description, owner, priority, due date)
+- ✅ Actions stored in global ActionsContext for shared state management
+- ✅ Removed global floating "Create Action" button for cleaner UI
 
 ## 🎨 Design & UX Features
 
@@ -368,16 +396,18 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ React Router v7 setup with flat route structure
 - ✅ Root route (`/`) redirects to `/external-pulse`
 - ✅ Flat route structure:
+  - `/` (redirects to `/executive-summary`) - Executive Summary Page
   - `/external-pulse` - External Pulse Page
   - `/internal-pulse` - Internal Pulse Page
+  - `/wave-executive-dashboard` - Wave Executive Dashboard Page
   - `/finance` - Finance Page (combines all financial forecast features)
-  - `/finance-review` - Finance Review Page (duplicate of Finance Page)
-  - `/action-tracker` - Action Tracker Page
+  - `/finance-review` - Finance Review Page (NP Deviation Breakdown)
   - `/profile` - User Profile Page
 - ✅ MainLayout wrapper with RightSidebar navigation
 - ✅ Sidebar navigation with active state highlighting
 - ✅ Icon-based navigation with labels
 - ✅ Collapsible sidebar for space optimization
+- ✅ Action Tracker accessible via floating button (not a route)
 
 ### Data Structure
 
@@ -389,7 +419,9 @@ The application uses a flat route structure with standalone pages for each major
   - Scenario types: ValueDriverScenario, ValueDriverScenarioValue, ScenarioComparisonState
   - Value driver types: ValueDriverItem, ForecastMetric, FinancialCategoryGroup, ValueDriverAssumption
   - Internal pulse types: FinancialMetric, ValueDriver, AffectingFactor, FinancialCategoryData
+  - Root cause types: RootCause (with title, impact, tags, waveTicketNumber)
   - AppliedAssumption type extended with sourceNewsId, isSuggested fields, and proposal field
+  - ActionProposal type extended with isAIGenerated field to mark AI-generated actions
 - ✅ Comprehensive mock data (1100+ lines including OP waterfall stages and proposals with actions)
 - ✅ Realistic business data based on connector manufacturer profile (EV, 5G AIoT, Audio segments)
 - ✅ Time-series data with date-fns
@@ -521,31 +553,64 @@ The application uses a flat route structure with standalone pages for each major
      - L-gate stage badges (L0-L5) with color coding
      - Visual badges for high feasibility and high priority
      - Create Proposal and Create Action modals
+     - **AI-Generated Actions**:
+       - Drag "Vietnam Minimum Wage Hike" from Pulse Suggested to Applied Assumptions → Proposal automatically created with 2 AI-generated actions
+       - AI-generated actions display purple gradient badge with "AI" label and sparkle icon
+       - Badge automatically disappears when action is "Waved" (assigned a stage), indicating CEO review
+       - Example: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
    - All financial forecast features combined in one page
 
 6. ✅ `/finance-review` - Finance Review Page
 
-   - Duplicate of Finance Page with same features and functionality
-   - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
-     - Interactive tooltips with cumulative OP, delta changes, and scenario values
-     - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
-     - Multi-scenario visualization with overlay lines
-     - Individual assumption impacts shown as colored bars (emerald, amber, red)
-   - **Applied Assumptions Panel**: Toggle assumptions on/off to see their impact on waterfall
-     - Three assumptions: AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge
-     - Color-coded assumption cards with impact values and target stages
-     - Real-time waterfall updates when toggling assumptions
-     - "Value Drivers" button to view overall value drivers in modal
-     - Click on assumption cards to view/edit their specific value driver changes
-   - **Pulse Suggested Assumptions Panel**: Same as Finance Page
-   - **Scenario Management Panel**: Create, edit, delete, and toggle visibility of scenarios
-   - **Scenario Comparison Panel**: Best/worst identification, statistics, sorting
-   - **Value Drivers Modal**: Same as Finance Page with editing functionality
-   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping (same as Finance Page)
+   - **NP Deviation Breakdown Waterfall Chart**: Prominently displayed at top showing 9-stage NP deviation progression
+     - Stages: Budget NP (26.0M) → Vol. impact (+8.8M) → Price impact (+3.7M) → Cost impact (-7.3M) → Mix impact (-2.8M) → OPEX Deviation (-5.3M) → Other COGS (+5.3M) → Gap of non-OP and tax (+0.6M) → Actual NP (28.9M)
+     - Interactive tooltips with cumulative NP values and delta changes
+     - Color-coded stages: Green for favourable (positive), Red for adverse (negative), Grey for baseline
+     - Legend: "Favourable" (green circle) and "Adverse" (red circle)
+     - First 4 stages (Budget NP, Vol. impact, Price impact, Cost impact) are clickable for deep dive
+     - Side-by-side layout with Key Call Out panel (waterfall takes 3 columns, Key Call Out takes 1 column)
+   - **Key Call Out Section**: AI-generated insights displayed side by side with waterfall chart
+     - Section title: "Key Call Out" with AI badge (purple gradient badge with sparkle icon ✨) on the same line
+     - Positioned on right side of waterfall chart (1/4 width) matching Layers 3 and 4 layout
+     - Bullet points summarizing main drivers:
+       - Largest positive impact (volume: +8.81 Mn USD)
+       - Most significant negative drivers (cost impact: -7.32 Mn USD, OPEX deviation: -5.29 Mn USD)
+       - Actual vs Budget comparison (Actual NP: 28.94 Mn USD vs Budget NP: 25.97 Mn USD)
+     - Root Cause Analysis paragraph explaining the root cause
+     - Professional styling matching the application design system
+     - Content always visible (no toggle switches)
+   - **Multi-Layer Deep Dive Navigation** (4 layers total):
+     - **Layer 1**: NP Deviation Breakdown waterfall with Key Call Out panel side by side (main page)
+     - **Layer 2**: Product Analysis table (clickable from first 4 stages)
+       - Overall Performance Summary with GP and Revenue performance
+       - OP Impact Overview: 4 cards (Volume Impact, Price Impact, Cost Impact, Mix Impact) sorted by GP Gap to Budget
+       - Detailed Excel-like table with Product Family breakdown
+       - Columns: Product Family, GP Actual, GP Budget, GP Gap to Budget, Vol Impact, Price Impact, Cost Impact (clickable), Mix Impact
+       - Color coding: Green for positive, Red for negative
+       - Total row at bottom
+     - **Layer 3**: Cost Impact Breakdown (clickable from Cost Impact in Layer 2)
+       - Cost Component Totals section above table (Material, Labor, MOH, Outsource)
+       - Detailed table with columns: Product Family, Cost Impact (K), Vol Actual, Unit Cost Actual, Unit Cost Budget, Unit Cost Gap, Unit Cost Material Gap, Unit Cost Labor Gap, Unit Cost MOH Gap, Unit Cost Outsource Gap
+       - Labor and MOH cards are fully clickable (entire card, not just label) with hover effects to navigate to Layer 4
+       - Key Call Out panel on right side with AI badge on same line as heading (no toggle switch, content always visible)
+     - **Layer 4**: MVA Breakdown waterfall (clickable from Labor/MOH in Layer 3)
+       - 12-stage MVA waterfall chart: Budget MVA Cost → Fix impact → MVA exclu. FX impact → Vol. and mix variance → DL/IDL Hourly rate impacts → MVA exclu. external impact → DL/IDL efficiency gaps → Fixed/Variable MOH efficiency gaps → Actual MVA Cost
+       - Color coding: Green for favourable, Red for adverse, Blue for baseline/intermediate/final
+       - Key Call Out panel on right side with AI badge on same line as heading (no toggle switch, content always visible)
+   - **Executive-Focused Navigation**:
+     - Smooth slide-in/slide-out animations between layers (300ms duration)
+     - Breadcrumb navigation showing current path (e.g., "NP Deviation > Product Analysis > Cost Impact > MVA Breakdown")
+     - Back button correctly navigates to previous layer (fixed navigation stack bug)
+     - Clickable breadcrumb links for direct navigation to any layer in the path
+     - Visual hierarchy with subtle background changes and shadows
+     - Premium hover effects on clickable elements
+     - Context preservation when drilling down
+   - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals, action proposals (focused on NP Deviation Breakdown only)
    - Accessible via right sidebar navigation (Finance Review)
 
-7. ✅ `/action-tracker` - Action Tracker Page
+7. ✅ **Action Tracker** - Full-Screen Modal
 
+   - Accessible via floating button (bottom-right corner)
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
    - Priority indicators (High/Medium/Low)
@@ -553,6 +618,8 @@ The application uses a flat route structure with standalone pages for each major
    - Reassign owner modal with notification simulation
    - Comments system with history display
    - Expandable action cards with full details
+   - Modal backdrop with click-to-close
+   - Escape key support
 
 8. ✅ `/profile` - User Profile Page
 
@@ -680,8 +747,8 @@ This is a **frontend-only mockup** with:
   - scenarioComparison.ts
   - valueDriverMapping.ts
 - TypeScript files: 25+
-- Mock data files: 8 (including OP waterfall stages data and executive dashboard data)
-- Type definitions: 1 (with 40+ interfaces including scenario and waterfall types)
+- Mock data files: 9 (including OP waterfall stages data, NP deviation stages data, product family data, cost impact data, MVA breakdown stages, executive dashboard data, and root causes data)
+- Type definitions: 1 (with 40+ interfaces including scenario, waterfall, and root cause types)
 - Total lines of code: ~8,500+
 
 **Architecture Change**: The application has been refactored from a tab-based navigation structure to a page-based structure with right sidebar navigation. This provides better separation of concerns and a cleaner navigation experience.
@@ -694,14 +761,13 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 1. **Application Entry** (http://localhost:5173/) - Default landing:
 
-   - Root route redirects to `/external-pulse`
+   - Root route redirects to `/executive-summary`
    - Right sidebar navigation always visible with two grouped sections:
      - **Real Time Pulse Section** (blue theme):
        - CEO Mind Space (Home icon)
        - External Pulse (Sparkles icon)
        - Internal Pulse (Chart Bar icon)
        - Wave Executive Dashboard (Presentation Chart Bar icon)
-       - Action Tracker (Clipboard icon)
      - **Meetings Section** (purple theme):
        - Finance Forecast (Currency Dollar icon)
        - Finance Review (Presentation Chart Bar icon)
@@ -710,8 +776,18 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Color-coded active states (blue for Real Time Pulse, purple for Meetings)
    - Profile link at bottom of sidebar
    - Sidebar can be collapsed/expanded using toggle button
+   - Floating Action Tracker button (bottom-right) for quick access to action tracking
+   - "Create Action" buttons on each page header for context-specific action creation
 
-2. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
+2. **Executive Summary Page** (http://localhost:5173/) - Demonstrate:
+
+   - CEO Mind Space dashboard with executive briefing
+   - Key metrics and KPIs overview
+   - Critical meetings and action items
+   - **Create Action**: "Create Action" button in page header (top-right) for quick action creation
+   - **Root Cause Analysis**: Integrated AI sidebar for insights
+
+3. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
 
    - External news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
    - Risk/opportunity classification with badges
@@ -719,12 +795,13 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Urgency level badges (Urgent/Important/Normal)
    - AI analysis display with typing effect simulation
    - Annotation capabilities
+   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
    - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
      - Select news items from the feed
      - See quantitative impact analysis on value drivers and financials
      - Waterfall and bar charts showing external impacts
 
-3. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
+4. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
 
    - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
    - Metrics with value drivers and affecting factors
@@ -732,12 +809,15 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Color-coded performance status (good/warning/concern)
    - Mini sparkline charts for each metric
    - Click metrics to expand detail modals with trend charts
+   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
    - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
      - Select metrics from the framework
      - See leading parameter analysis explaining impact on profit
      - Example: Select "labor cost increase" → See analysis explaining impact when products are sold
 
-4. **Wave Executive Dashboard Page** (http://localhost:5173/wave-executive-dashboard) - Demonstrate:
+5. **Wave Executive Dashboard Page** (http://localhost:5173/wave-executive-dashboard) - Demonstrate:
+
+   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
    - **4 Key Charts in 2x2 Grid**:
      - **Value Progress Chart**: Shows current value (985.0M + 445.6M) vs target (4,792.0M) with stacked segments
@@ -753,7 +833,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
    - Accessible via right sidebar navigation (Presentation Chart Bar icon)
 
-5. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+6. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+
+   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
    - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
    - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
@@ -808,31 +890,53 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - L-gate stage badges (L0-L5) with color coding
      - Visual badges for high feasibility and high priority
      - Create Proposal and Create Action modals
+     - **AI-Generated Actions**:
+       - Drag "Vietnam Minimum Wage Hike" from Pulse Suggested to Applied Assumptions → Proposal automatically created with 2 AI-generated actions
+       - AI-generated actions display purple gradient badge with "AI" label and sparkle icon (✨)
+       - Badge automatically disappears when action is "Waved" (assigned a stage), indicating CEO review and approval
+       - Example actions: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
 
-6. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
+7. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
 
-   - Same features as Finance Page (duplicate implementation)
-   - **Full Year OP Waterfall**: Prominently displayed at top showing 8-stage OP progression from YTM Actuals (210M) through Momentum, Pipeline Improvement, Headwinds/Tailwinds, Additional Risks, Assumed Leakage, Leakage Recovery to Full Year FCST (237M)
-   - Interactive tooltips showing cumulative OP values, delta changes, and scenario values
-   - Color-coded stages: Grey (baseline), Light blue (positive), Orange/pink (negative)
-   - **Applied Assumptions**: Toggle assumptions on/off to see their impact on waterfall with colored bars
-     - "Value Drivers" button to view overall value drivers in modal
-     - Click on assumption cards to view/edit their specific value driver changes
-   - **Pulse Suggested Assumptions**: Drag and drop suggested assumptions to applied, or toggle to see impact
-     - Click on assumption cards to view/edit their specific value driver changes
-   - **Value Drivers Modal**: Same as Finance Page with editing functionality
-   - **Scenario Management**: Create, edit, delete, and toggle visibility of scenarios
-   - **Scenario Comparison**: Compare best/worst scenarios with statistics and sorting
-   - **Action Proposals**: Based on Applied Assumptions with 1-to-1 Proposal mapping
-     - Each assumption can have one proposal with multiple actions
-     - Actions can be converted to Wave Initiatives (marked as L0 when created)
-     - L-gate stage badges (L0-L5) with color coding
-     - Visual badges for high feasibility and high priority
-     - Create Proposal and Create Action modals
+   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
+
+   - **NP Deviation Breakdown Waterfall**: Prominently displayed at top showing 9-stage NP deviation progression
+     - Click on first 4 stages (Budget NP, Vol. impact, Price impact, Cost impact) to drill down
+     - Interactive tooltips showing cumulative NP values and delta changes
+     - Color-coded: Green for favourable, Red for adverse, Grey for baseline
+     - Legend with "Favourable" and "Adverse" indicators
+     - Side-by-side layout with Key Call Out panel (waterfall 3/4 width, Key Call Out 1/4 width)
+   - **Key Call Out Section**: AI-generated insights displayed side by side with waterfall chart
+     - AI badge (purple gradient badge with sparkle icon ✨) on same line as "Key Call Out" heading
+     - Positioned on right side matching Layers 3 and 4 layout
+     - Bullet points summarizing main drivers and root cause analysis
+     - Professional styling with clear hierarchy
+     - Content always visible (no toggle switches)
+   - **Layer 2 - Product Analysis** (click any of first 4 stages):
+     - Overall Performance Summary with GP and Revenue highlights
+     - OP Impact Overview: 4 impact cards sorted by GP Gap to Budget
+     - Detailed table with Product Family breakdown
+     - Click "Cost Impact" column or card to navigate to Layer 3
+   - **Layer 3 - Cost Impact Breakdown** (click Cost Impact from Layer 2):
+     - Cost Component Totals section: Material (-8,788), Labor (+732), MOH (+586), Outsource (+146)
+     - Detailed table with cost component gaps by Product Family
+     - Click entire "Labor" or "MOH" cards (fully clickable with hover effects) to navigate to Layer 4
+     - Key Call Out panel on right with AI badge on same line as heading (no toggle switch, content always visible)
+   - **Layer 4 - MVA Breakdown** (click Labor/MOH from Layer 3):
+     - 12-stage MVA waterfall chart showing cost breakdown
+     - Stages: Budget MVA Cost → Fix impact → Vol/mix variance → Rate impacts → Efficiency gaps → Actual MVA Cost
+     - Color-coded: Green for favourable, Red for adverse, Blue for baseline
+     - Key Call Out panel on right with AI badge on same line as heading (no toggle switch, content always visible)
+   - **Navigation Features**:
+     - Breadcrumb trail showing current path with clickable links
+     - Back button correctly navigates to previous layer (fixed navigation stack)
+     - Smooth slide-in/slide-out animations (300ms)
+     - Executive-focused premium styling
    - Accessible via right sidebar navigation (Finance Review)
 
-7. **Action Tracker Page** (http://localhost:5173/action-tracker) - Demonstrate:
+8. **Action Tracker** - Access via floating button (bottom-right corner):
 
+   - Click floating Action Tracker button (Clipboard icon) → Opens full-screen modal
    - Comprehensive action list with JIRA-like swim lanes
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
    - Priority indicators (High/Medium/Low)
@@ -840,8 +944,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Reassign owner modal with notification simulation
    - Comments system with history display
    - Expandable action cards with full details
+   - Close modal by clicking backdrop, pressing Escape, or clicking X button
 
-8. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+9. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
    - User profile information display
    - Profile details (email, role, member since)
@@ -908,22 +1013,38 @@ pnpm lint
    - Root Cause Analysis integrated into Pulse pages for quantitative insights
    - Wave Executive Dashboard as standalone page with comprehensive initiatives tracking and value delivery visualization
    - Scenario simulation system integrated into Finance and Finance Review pages for value driver testing
-   - Action Tracker as standalone page accessible via sidebar
-10. **OP Waterfall Visualization**: Full Year OP Waterfall chart prominently displayed at top of Financial Performance Review, showing 8-stage cumulative progression from actuals through forecast with color-coded positive/negative impacts and multi-scenario overlay lines
-11. **Applied Assumptions Feature**: Toggle-able assumptions system for waterfall forecast:
+   - Action Tracker as full-screen modal accessible via floating button
+   - "Create Action" buttons on page headers for context-specific action creation
+10. **NP Deviation Breakdown Visualization**: NP Deviation Breakdown waterfall chart prominently displayed at top of Finance Review page, showing 9-stage cumulative progression from Budget NP to Actual NP with color-coded favourable/adverse impacts and clickable deep dive functionality
+11. **Multi-Layer Deep Dive Navigation**: Executive-focused 4-layer navigation system:
+    - Layer 1: NP Deviation Breakdown waterfall with Key Call Out panel side by side (main page)
+    - Layer 2: Product Analysis table with impact cards and Excel-like breakdown
+    - Layer 3: Cost Impact Breakdown with cost component totals and detailed analysis
+    - Layer 4: MVA Breakdown waterfall with 12-stage cost analysis
+    - Smooth transitions, breadcrumb navigation with clickable links, and premium styling throughout
+    - Fixed back button navigation to correctly return to previous layer
+12. **Key Call Out System**: AI-generated Key Call Out sections replacing Root Cause Analysis tables:
+    - Consistent side-by-side layout across all layers (waterfall 3/4 width, Key Call Out 1/4 width)
+    - AI badge (purple gradient badge with sparkle icon ✨) displayed on same line as "Key Call Out" heading in all layers
+    - Bullet points summarizing main drivers
+    - Root cause analysis paragraphs
+    - Content always visible (toggle switches removed for cleaner UI)
+    - Professional styling matching application design system
+    - Consistent AI badge styling across all Key Call Out sections (Layer 1, Layer 3, Layer 4)
+13. **Applied Assumptions Feature**: Toggle-able assumptions system for waterfall forecast:
     - Three pre-configured assumptions (AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge)
     - Individual assumption impacts visualized as colored bars in waterfall chart
     - Real-time waterfall updates when assumptions are toggled on/off
     - Cumulative impact calculation for multiple assumptions affecting same stage
     - Color-coded assumption cards with visual indicators matching chart colors
     - Cascading recalculation of subsequent stages when assumptions change
-12. **Scenario Simulation System**: Comprehensive value driver scenario management:
+14. **Scenario Simulation System**: Comprehensive value driver scenario management:
     - Create scenarios by adjusting value drivers
     - Visualize multiple scenarios on waterfall chart
     - Compare scenarios with best/worst analysis
     - Calculate simulated OP impact from value driver changes
     - Scenario statistics and ranking
-13. **Pulse Suggested Assumptions System**: Assumptions derived from external news with drag-and-drop workflow:
+15. **Pulse Suggested Assumptions System**: Assumptions derived from external news with drag-and-drop workflow:
     - Three suggested assumptions from external news (Vietnam Wage Hike, US Tariff, Rare Earth Restrictions)
     - Side-by-side layout with Applied Assumptions and visual arrow indicator
     - Drag and drop from Suggested to Applied Assumptions
@@ -931,7 +1052,7 @@ pnpm lint
     - Visual distinction in waterfall chart (lower opacity, distinct colors)
     - Delete functionality with confirmation modal for both suggested and applied assumptions
     - Source tracking via sourceNewsId linking to originating news items
-14. **Value Drivers Modal System**: Modal-based value drivers with editing capabilities:
+16. **Value Drivers Modal System**: Modal-based value drivers with editing capabilities:
     - Modal replaces inline value drivers section for cleaner UI
     - "Value Drivers" button in Applied Assumptions panel to view overall value drivers
     - Click on assumption cards to view assumption-specific value driver changes
@@ -943,13 +1064,13 @@ pnpm lint
       - Save/Cancel buttons to persist or discard changes
     - Updated value drivers automatically affect cumulative calculations
     - Value driver changes stored per assumption and aggregated in cumulative view
-15. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
+17. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
     - 4 key charts showing value progress, delivery tracking, variance analysis, and workflow breakdown
     - Initiatives table with workflow grouping and comprehensive tracking columns
     - Summary cards for overdue/due soon initiatives and milestones
     - All metrics and labels in English
     - Standalone page accessible via right sidebar navigation
-16. **Action Proposals Based on Applied Assumptions**: Proposal and action management system:
+18. **Action Proposals Based on Applied Assumptions**: Proposal and action management system:
     - 1-to-1 mapping between Applied Assumptions and Proposals
     - Each Proposal contains multiple Actions that can be converted to Wave Initiatives
     - L-gate stage management (L0-L5) with color-coded badges for Wave project gates
@@ -958,6 +1079,26 @@ pnpm lint
     - Create Action modal for adding actions to existing proposals
     - When "Create Wave Initiative" is clicked, action is automatically marked with L0 stage
     - All Applied Assumptions displayed regardless of proposal status
+    - **AI-Generated Actions**: Actions can be marked as AI-generated with prominent purple gradient badge
+      - Badge displays "AI" label with sparkle icon for clear identification
+      - Badge automatically hides when action is "Waved" (assigned a stage), indicating CEO review
+      - When "Vietnam Minimum Wage Hike" is moved from Pulse Suggested to Applied, proposal is automatically created with 2 AI-generated actions (UPPH improvement and ASP adjustment)
+19. **Create Action Feature**: Context-specific action creation on page headers:
+    - "Create Action" buttons on all major pages (Executive Summary, External Pulse, Internal Pulse, Wave Dashboard, Finance, Finance Review)
+    - Consistent button styling (primary color, PlusIcon, positioned right of page title)
+    - Each page manages its own modal state independently
+    - CreateActionModal component with form fields (title, description, owner, priority, due date)
+    - Actions stored in global ActionsContext for shared state management
+    - Removed global floating "Create Action" button for cleaner UI
+    - Enables CEO to quickly create actions from any page context
+20. **Action Tracker Modal**: Full-screen modal for action management:
+    - Accessible via floating button (bottom-right corner) for quick access from anywhere
+    - Removed from sidebar navigation for cleaner UI
+    - Full-screen modal (95vw x 95vh) with backdrop and escape key support
+    - Comprehensive action list with JIRA-like swim lanes
+    - Status workflow management, priority indicators, owner information
+    - Comments system and expandable action cards
+    - Body scroll prevention when modal is open
 
 ---
 

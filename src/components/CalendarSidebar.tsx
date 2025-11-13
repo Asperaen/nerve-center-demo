@@ -255,29 +255,31 @@ export default function CalendarSidebar({
                   onDragOver={(e) => handleDragOver(e, meeting.id)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, meeting.id)}>
-                  <div className='flex flex-col h-full overflow-hidden'>
-                    <div
-                      className={`text-xs truncate ${
-                        isCritical ? 'font-semibold' : 'font-semibold'
-                      }`}>
-                      {meeting.title}
-                    </div>
-                    {shouldShowTime && (
+                  <div className='flex flex-row justify-between items-start h-full overflow-hidden gap-2'>
+                    <div className='flex flex-col flex-1 min-w-0'>
                       <div
-                        className={`text-xs mt-1 truncate ${
-                          isCritical ? 'opacity-90' : 'opacity-75'
+                        className={`text-xs truncate ${
+                          isCritical ? 'font-semibold' : 'font-semibold'
                         }`}>
-                        {format(meeting.startTime, 'h:mm a')} -{' '}
-                        {format(meeting.endTime, 'h:mm a')}
+                        {meeting.title}
                       </div>
-                    )}
+                      {shouldShowTime && (
+                        <div
+                          className={`text-xs mt-1 truncate ${
+                            isCritical ? 'opacity-90' : 'opacity-75'
+                          }`}>
+                          {format(meeting.startTime, 'h:mm a')} -{' '}
+                          {format(meeting.endTime, 'h:mm a')}
+                        </div>
+                      )}
+                    </div>
                     {meeting.materials.length > 0 && (
-                      <div className='text-xs mt-1 flex items-center gap-1 truncate'>
+                      <div className='text-xs flex items-center gap-1 flex-shrink-0'>
                         <span
                           className={`w-2 h-2 rounded-full flex-shrink-0 ${
                             isCritical ? 'bg-white' : 'bg-primary-500'
                           }`}></span>
-                        <span className='truncate'>
+                        <span className='whitespace-nowrap'>
                           {meeting.materials.length} material
                           {meeting.materials.length > 1 ? 's' : ''}
                         </span>

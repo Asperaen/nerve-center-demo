@@ -8,6 +8,12 @@ import type {
   OPWaterfallStage,
   FinancialCategoryGroup,
   AppliedAssumption,
+  NPDeviationStage,
+  KeyCallOut,
+  ProductFamilyData,
+  CostImpactData,
+  CostComponentTotals,
+  MVABreakdownStage,
 } from '../types';
 import { addMonths, subDays } from 'date-fns';
 
@@ -798,6 +804,374 @@ export const mockOPWaterfallStages: OPWaterfallStage[] = [
       'Full Year Operating Profit Forecast - cumulative result of all stages',
   },
 ];
+
+// NP Deviation Waterfall Stages
+export const mockNPDeviationStages: NPDeviationStage[] = [
+  {
+    stage: 'budget-np',
+    label: 'Budget NP',
+    value: 26.0, // Budget Net Profit baseline
+    type: 'baseline',
+    description: 'Budget Net Profit baseline',
+    isClickable: true,
+  },
+  {
+    stage: 'vol-impact',
+    label: 'Vol. impact',
+    value: 34.8, // Budget NP + Vol impact
+    delta: 8.8,
+    type: 'positive',
+    description: 'Volume impact on Net Profit',
+    isClickable: true,
+  },
+  {
+    stage: 'price-impact',
+    label: 'Price impact',
+    value: 38.5, // Previous + Price impact
+    delta: 3.7,
+    type: 'positive',
+    description: 'Price impact on Net Profit',
+    isClickable: true,
+  },
+  {
+    stage: 'cost-impact',
+    label: 'Cost impact',
+    value: 31.2, // Previous - Cost impact
+    delta: -7.3,
+    type: 'negative',
+    description: 'Cost impact on Net Profit',
+    isClickable: true,
+  },
+  {
+    stage: 'mix-impact',
+    label: 'Mix impact',
+    value: 28.4, // Previous - Mix impact
+    delta: -2.8,
+    type: 'negative',
+    description: 'Product mix impact on Net Profit',
+    isClickable: false,
+  },
+  {
+    stage: 'opex-deviation',
+    label: 'OPEX Deviation',
+    value: 23.1, // Previous - OPEX Deviation
+    delta: -5.3,
+    type: 'negative',
+    description: 'Operating expense deviation',
+    isClickable: false,
+  },
+  {
+    stage: 'other-cogs',
+    label: 'Other COGS (e.g., scrap, freight)',
+    value: 28.4, // Previous + Other COGS
+    delta: 5.3,
+    type: 'positive',
+    description: 'Other cost of goods sold adjustments',
+    isClickable: false,
+  },
+  {
+    stage: 'gap-non-op-tax',
+    label: 'Gap of non-OP and tax',
+    value: 29.0, // Previous + Gap
+    delta: 0.6,
+    type: 'positive',
+    description: 'Non-operating and tax adjustments',
+    isClickable: false,
+  },
+  {
+    stage: 'actual-np',
+    label: 'Actual NP',
+    value: 28.9, // Final Actual Net Profit
+    type: 'baseline',
+    description: 'Actual Net Profit',
+    isClickable: false,
+  },
+];
+
+// Key Call Out for NP Deviation
+export const mockNPDeviationKeyCallOut: KeyCallOut = {
+  id: 'key-callout-np-deviation',
+  bulletPoints: [
+    'The largest positive impact on Net Profit (NP) was from volume, contributing +8.81 Mn USD.',
+    'Cost impact and OPEX deviation were the most significant negative drivers, reducing NP by -7.32 Mn USD and -5.29 Mn USD respectively.',
+    'Actual NP exceeded Budget NP, with Actual NP at 28.94 Mn USD versus Budget NP at 25.97 Mn USD.',
+  ],
+  rootCauseAnalysis:
+    'The root cause for the positive variance appears to be strong volume performance, while increased costs and OPEX partially offset these gains. This suggests that while sales or production volumes drove profit above budget, cost management remains a key area for improvement.',
+  generatedAt: new Date(),
+};
+
+// Product Analysis Data (Layer 2)
+export const mockProductFamilyData: ProductFamilyData[] = [
+  {
+    id: 'pf-1',
+    productFamily: 'Product Fam 1',
+    gpActual: 11988.3,
+    gpBudget: 10651.7,
+    gpGapToBudget: 1336.5,
+    volImpact: 2054.4,
+    priceImpact: 1225.27,
+    costImpact: -963.81,
+    mixImpact: -979.3,
+  },
+  {
+    id: 'pf-10',
+    productFamily: 'Product Fam 10',
+    gpActual: 3456.2,
+    gpBudget: 3200.0,
+    gpGapToBudget: 256.2,
+    volImpact: 450.3,
+    priceImpact: 280.5,
+    costImpact: -320.1,
+    mixImpact: -154.5,
+  },
+  {
+    id: 'pf-11',
+    productFamily: 'Product Fam 11',
+    gpActual: 2890.5,
+    gpBudget: 2750.0,
+    gpGapToBudget: 140.5,
+    volImpact: 380.2,
+    priceImpact: 195.3,
+    costImpact: -280.5,
+    mixImpact: -154.5,
+  },
+  {
+    id: 'pf-12',
+    productFamily: 'Product Fam 12',
+    gpActual: 1274.0,
+    gpBudget: 0.0,
+    gpGapToBudget: 1274.0,
+    volImpact: 1274.0,
+    priceImpact: 0.0,
+    costImpact: 0.0,
+    mixImpact: 0.0,
+  },
+  {
+    id: 'pf-13',
+    productFamily: 'Product Fam 13',
+    gpActual: 890.2,
+    gpBudget: 850.0,
+    gpGapToBudget: 40.2,
+    volImpact: 120.5,
+    priceImpact: 85.3,
+    costImpact: -95.2,
+    mixImpact: -70.4,
+  },
+  {
+    id: 'pf-26',
+    productFamily: 'Product Fam 26',
+    gpActual: 2456.8,
+    gpBudget: 1011.6,
+    gpGapToBudget: 1445.2,
+    volImpact: 1850.3,
+    priceImpact: 890.5,
+    costImpact: -195.2,
+    mixImpact: -100.4,
+  },
+];
+
+// Calculate totals for Product Analysis
+export const mockProductFamilyTotals: ProductFamilyData = {
+  id: 'pf-total',
+  productFamily: 'Total',
+  gpActual: 23955.0,
+  gpBudget: 18463.3,
+  gpGapToBudget: 2491.7,
+  volImpact: 6129.7,
+  priceImpact: 2676.87,
+  costImpact: -1854.82,
+  mixImpact: -1458.68,
+};
+
+// Cost Impact Breakdown Data (Layer 3)
+export const mockCostImpactData: CostImpactData[] = [
+  {
+    id: 'ci-1',
+    productFamily: 'Product Fam 1',
+    costImpact: -963.81,
+    volActual: 102529,
+    unitCostActual: 0.21,
+    unitCostBudget: 0.21,
+    unitCostGap: 0.0,
+    unitCostMaterialGap: -0.01,
+    unitCostLaborGap: 0.0,
+    unitCostMOHGap: 0.01,
+    unitCostOutsourceGap: 0.0,
+  },
+  {
+    id: 'ci-2',
+    productFamily: 'Product Fam 2',
+    costImpact: -3763.64,
+    volActual: 125430,
+    unitCostActual: 0.28,
+    unitCostBudget: 0.25,
+    unitCostGap: -0.03,
+    unitCostMaterialGap: -0.05,
+    unitCostLaborGap: 0.01,
+    unitCostMOHGap: 0.01,
+    unitCostOutsourceGap: 0.0,
+  },
+  {
+    id: 'ci-8',
+    productFamily: 'Product Fam 8',
+    costImpact: 595.32,
+    volActual: 7432,
+    unitCostActual: 1.92,
+    unitCostBudget: 2.0,
+    unitCostGap: 0.08,
+    unitCostMaterialGap: 0.06,
+    unitCostLaborGap: 0.01,
+    unitCostMOHGap: 0.01,
+    unitCostOutsourceGap: 0.0,
+  },
+  {
+    id: 'ci-13',
+    productFamily: 'Product Fam 13',
+    costImpact: -321.06,
+    volActual: 220,
+    unitCostActual: 2.59,
+    unitCostBudget: 1.13,
+    unitCostGap: -1.46,
+    unitCostMaterialGap: -0.21,
+    unitCostLaborGap: -0.58,
+    unitCostMOHGap: -0.66,
+    unitCostOutsourceGap: -0.01,
+  },
+];
+
+// Cost Component Totals (Layer 3)
+export const mockCostComponentTotals: CostComponentTotals = {
+  material: -8788,
+  labor: 732,
+  moh: 586,
+  outsource: 146,
+};
+
+// Total Cost Impact
+export const mockTotalCostImpact = -7323.21;
+
+// Key Call Out for Cost Impact Breakdown
+export const mockCostImpactKeyCallOut: KeyCallOut = {
+  id: 'key-callout-cost-impact',
+  bulletPoints: [
+    'The largest negative cost impact is in Product Fam 2 with a cost impact of -3,763.64K and a unit cost gap of -0.03, driven by a material gap of -0.05.',
+    'Product Fam 8 shows a positive cost impact of 595.32K and a favorable unit cost gap of 0.08, mainly due to a material gap of 0.06.',
+    'Product Fam 13 shows a significant unit cost gap of -1.46, with main drivers being a material gap of -0.21, labor gap, and MOH gap.',
+  ],
+  rootCauseAnalysis:
+    'The cost impact breakdown reveals significant variations across product families, with material costs being the primary driver of negative impacts. Product Fam 2 and Product Fam 13 require immediate attention to address cost overruns.',
+  generatedAt: new Date(),
+};
+
+// MVA Breakdown Stages (Layer 4)
+export const mockMVABreakdownStages: MVABreakdownStage[] = [
+  {
+    stage: 'budget-mva-cost',
+    label: 'Budget MVA Cost',
+    value: 46.9,
+    type: 'baseline',
+    description: 'Budget Manufacturing Value Added Cost',
+  },
+  {
+    stage: 'fix-impact',
+    label: 'Fix impact',
+    value: 40.8,
+    delta: -6.1,
+    type: 'positive',
+    description: 'Fixed cost impact',
+  },
+  {
+    stage: 'mva-exclu-fx-impact',
+    label: 'MVA exclu. FX impact',
+    value: 40.8,
+    type: 'baseline',
+    description: 'MVA excluding FX impact',
+  },
+  {
+    stage: 'vol-mix-variance',
+    label: 'Vol. and mix variance',
+    value: 45.0,
+    delta: 4.2,
+    type: 'negative',
+    description: 'Volume and mix variance',
+  },
+  {
+    stage: 'dl-hourly-rate-impact',
+    label: 'DL Hourly rate impact',
+    value: 45.3,
+    delta: 0.3,
+    type: 'negative',
+    description: 'Direct Labor hourly rate impact',
+  },
+  {
+    stage: 'idl-hourly-rate-impact',
+    label: 'IDL Hourly rate impact',
+    value: 45.8,
+    delta: 0.5,
+    type: 'negative',
+    description: 'Indirect Labor hourly rate impact',
+  },
+  {
+    stage: 'mva-exclu-external-impact',
+    label: 'MVA exclu. external impact',
+    value: 45.8,
+    type: 'baseline',
+    description: 'MVA excluding external impact',
+  },
+  {
+    stage: 'dl-efficiency-gap',
+    label: 'DL efficiency gap',
+    value: 47.9,
+    delta: 2.1,
+    type: 'negative',
+    description: 'Direct Labor efficiency gap',
+  },
+  {
+    stage: 'idl-efficiency-gap',
+    label: 'IDL efficiency gap',
+    value: 48.4,
+    delta: 0.5,
+    type: 'negative',
+    description: 'Indirect Labor efficiency gap',
+  },
+  {
+    stage: 'fixed-moh-efficiency-gap',
+    label: 'Fixed MOH efficiency gap',
+    value: 48.7,
+    delta: 0.3,
+    type: 'negative',
+    description: 'Fixed Manufacturing Overhead efficiency gap',
+  },
+  {
+    stage: 'variable-moh-efficiency-gap',
+    label: 'Variable MOH efficiency gap',
+    value: 45.6,
+    delta: -3.1,
+    type: 'positive',
+    description: 'Variable Manufacturing Overhead efficiency gap',
+  },
+  {
+    stage: 'actual-mva-cost',
+    label: 'Actual MVA Cost',
+    value: 45.5,
+    type: 'baseline',
+    description: 'Actual Manufacturing Value Added Cost',
+  },
+];
+
+// Key Call Out for MVA Breakdown
+export const mockMVABreakdownKeyCallOut: KeyCallOut = {
+  id: 'key-callout-mva-breakdown',
+  bulletPoints: [
+    'Actual MVA Cost is 45.53, which is lower than the Budget MVA Cost of 46.85.',
+    'The largest negative impact comes from "Fix impact" at -6.10, suggesting a significant cost reduction in this area.',
+    '"Variable MOH efficiency gap" also contributed a negative variance of -3.12, indicating improved efficiency or cost savings in variable manufacturing overhead.',
+  ],
+  rootCauseAnalysis:
+    'These variances imply that cost-saving measures, particularly in fixed impacts and variable MOH efficiency, are the primary drivers for the actual costs being below budget.',
+  generatedAt: new Date(),
+};
 
 export const mockAppliedAssumptions: AppliedAssumption[] = [
   {

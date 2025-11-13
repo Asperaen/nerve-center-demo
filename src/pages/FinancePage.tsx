@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import ScenarioCreationModal from '../components/ScenarioCreationModal';
+import CreateActionModalGlobal from '../components/CreateActionModal';
 import {
   mockOPWaterfallStages,
   mockValueDriverHierarchy,
@@ -101,6 +102,8 @@ export default function FinancePage() {
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
   const [selectedProposalForAction, setSelectedProposalForAction] =
     useState<Proposal | null>(null);
+  const [isCreateActionGlobalModalOpen, setIsCreateActionGlobalModalOpen] =
+    useState(false);
 
   // Calculate simulated waterfalls for visible scenarios and update scenarios
   useEffect(() => {
@@ -252,6 +255,46 @@ export default function FinancePage() {
 
     // Add to enabled applied (checked by default)
     setEnabledAssumptionIds((prev) => new Set(prev).add(assumptionId));
+
+    // If this is the Vietnam Minimum Wage Hike assumption, create a proposal with AI-generated actions
+    if (
+      assumptionId === 'assum-suggested-1' ||
+      assumption.name === 'Vietnam Minimum Wage Hike'
+    ) {
+      const proposal: Proposal = {
+        id: `proposal-${assumptionId}`,
+        assumptionId: assumption.id,
+        description:
+          'Proposal to mitigate Vietnam minimum wage hike impact through operational efficiency and pricing adjustments',
+        actions: [
+          {
+            id: `action-${assumptionId}-1`,
+            description:
+              'Improve UPPH by 2–3% through line balancing, micro-motion fixes, refreshed standard work, and smarter labor allocation. To offsets around 2.5 million dollars of the impact',
+            expectedImpact: 2.5,
+            feasibility: 'high',
+            priority: 'high',
+            isAIGenerated: true,
+          },
+          {
+            id: `action-${assumptionId}-2`,
+            description:
+              'Push a 1.5–2% ASP adjustment with key accounts, anchored on the mandatory wage increase, to recover the remaining 4.5 million dollars through shared cost pressure',
+            expectedImpact: 4.5,
+            feasibility: 'medium',
+            priority: 'high',
+            isAIGenerated: true,
+          },
+        ],
+        createdDate: new Date(),
+        lastUpdated: new Date(),
+      };
+      setProposals((prev) => {
+        const next = new Map(prev);
+        next.set(assumption.id, proposal);
+        return next;
+      });
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, assumptionId: string) => {
@@ -613,18 +656,25 @@ export default function FinancePage() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
+        {/* Page Title */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-2'>
+            <h1 className='text-3xl font-bold text-gray-900'>
+              Finance Forecast - 2026 Week 45
+            </h1>
+            <button
+              onClick={() => setIsCreateActionGlobalModalOpen(true)}
+              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+              <PlusIcon className='w-5 h-5' />
+              Create Action
+            </button>
+          </div>
+        </div>
+
         <div className='space-y-8'>
           {/* OP Waterfall Chart */}
           <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
-            <div className='flex items-center justify-between mb-8'>
-              <div>
-                <h2 className='text-2xl font-bold text-gray-900 mb-1'>
-                  Full Year OP Waterfall
-                </h2>
-                <p className='text-sm text-gray-500'>
-                  Visualize operating profit changes across stages
-                </p>
-              </div>
+            <div className='flex items-center justify-end mb-8'>
               <div className='flex items-center gap-2'>
                 <div className='flex items-center gap-3'>
                   {scenarios.length >= 2 && (
@@ -643,12 +693,6 @@ export default function FinancePage() {
                       Comparison Panel
                     </button>
                   )}
-                  <button
-                    onClick={handleCreateScenario}
-                    className='px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center transform hover:scale-105'>
-                    <PlusIcon className='w-5 h-5 mr-2' />
-                    Create Scenario
-                  </button>
                 </div>
               </div>
             </div>
@@ -1040,15 +1084,6 @@ export default function FinancePage() {
                           </span>
                           <span>•</span>
                           <span>Affects: {stageLabel}</span>
-                          {assumption.valueDriverChanges &&
-                            assumption.valueDriverChanges.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className='text-primary-600 font-medium'>
-                                  Click to view value drivers
-                                </span>
-                              </>
-                            )}
                         </div>
                       </div>
                       <div className='flex items-center gap-3'>
@@ -1179,15 +1214,6 @@ export default function FinancePage() {
                             </span>
                             <span>•</span>
                             <span>Affects: {stageLabel}</span>
-                            {assumption.valueDriverChanges &&
-                              assumption.valueDriverChanges.length > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span className='text-primary-600 font-medium'>
-                                    Click to view value drivers
-                                  </span>
-                                </>
-                              )}
                           </div>
                         </div>
                         <div className='flex items-center gap-3'>
@@ -1217,16 +1243,16 @@ export default function FinancePage() {
             )}
           </div>
 
-          {/* Action Proposals - Based on Applied Assumptions */}
+          {/* Initiative Proposals - Based on Applied Assumptions */}
           <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
             <div className='flex items-center justify-between mb-8'>
               <div>
                 <h2 className='text-2xl font-bold text-gray-900 mb-1'>
-                  Action Proposals
+                  Initiative Proposals
                 </h2>
                 <p className='text-sm text-gray-500'>
-                  Proposals and actions to recover risks or boost tailwinds from
-                  applied assumptions
+                  Proposals and initiatives to recover risks or boost tailwinds
+                  from applied assumptions
                 </p>
               </div>
             </div>
@@ -1289,13 +1315,13 @@ export default function FinancePage() {
                         )}
                         <div className='flex items-center justify-between mb-3'>
                           <p className='text-sm font-medium text-gray-700'>
-                            Actions ({proposal.actions.length}):
+                            Initiatives ({proposal.actions.length}):
                           </p>
                           <button
                             onClick={() => handleCreateAction(proposal)}
                             className='px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors flex items-center'>
                             <PlusIcon className='w-3 h-3 mr-1' />
-                            Add Action
+                            Add Initiative
                           </button>
                         </div>
                         <div className='space-y-2'>
@@ -1331,9 +1357,17 @@ export default function FinancePage() {
                                     : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
                                 }`}>
                                 <div className='flex-1'>
-                                  <p className='text-sm font-medium text-gray-900'>
-                                    {action.description}
-                                  </p>
+                                  <div className='flex items-center gap-2 mb-1'>
+                                    <p className='text-sm font-medium text-gray-900'>
+                                      {action.description}
+                                    </p>
+                                    {action.isAIGenerated && !action.stage && (
+                                      <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                                        <span className='text-sm'>✨</span>
+                                        <span>AI</span>
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className='mt-2 flex items-center flex-wrap gap-2'>
                                     <span className='text-xs text-gray-500'>
                                       Expected Impact: $
@@ -1415,17 +1449,6 @@ export default function FinancePage() {
               })}
             </div>
           </div>
-
-          {/* Scenario Comparison Panel */}
-          <ScenarioComparisonPanel
-            scenarios={scenarios}
-            visibleScenarioIds={visibleScenarioIds}
-            onToggleScenario={handleToggleScenario}
-            onSelectAll={handleSelectAllScenarios}
-            onDeselectAll={handleDeselectAllScenarios}
-            isOpen={isComparisonPanelOpen}
-            onClose={() => setIsComparisonPanelOpen(false)}
-          />
         </div>
       </div>
 
@@ -1529,7 +1552,7 @@ export default function FinancePage() {
         />
       )}
 
-      {/* Create Action Modal */}
+      {/* Create Initiative Modal */}
       {isCreateActionModalOpen && selectedProposalForAction && (
         <CreateActionModal
           proposal={selectedProposalForAction}
@@ -1540,6 +1563,12 @@ export default function FinancePage() {
           onSave={handleSaveAction}
         />
       )}
+
+      {/* Global Create Action Modal */}
+      <CreateActionModalGlobal
+        isOpen={isCreateActionGlobalModalOpen}
+        onClose={() => setIsCreateActionGlobalModalOpen(false)}
+      />
     </div>
   );
 }
@@ -2465,10 +2494,10 @@ function CreateActionModal({
           <div className='flex items-center justify-between p-6 border-b border-gray-200'>
             <div>
               <h3 className='text-xl font-semibold text-gray-900'>
-                Add Action
+                Add Initiative
               </h3>
               <p className='mt-1 text-sm text-gray-500'>
-                Add a new action to this proposal
+                Add a new initiative to this proposal
               </p>
             </div>
             <button
@@ -2481,12 +2510,12 @@ function CreateActionModal({
           <div className='p-6 space-y-4'>
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Action Description *
+                Initiative Description *
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder='Describe the action...'
+                placeholder='Describe the initiative...'
                 className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500'
                 rows={3}
                 required
@@ -2553,7 +2582,7 @@ function CreateActionModal({
               onClick={handleSubmit}
               disabled={!description.trim() || !expectedImpact}
               className='px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors'>
-              Add Action
+              Add Initiative
             </button>
           </div>
         </div>
