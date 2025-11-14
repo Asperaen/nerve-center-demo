@@ -7,18 +7,23 @@ import {
   ChevronRightIcon,
   ChevronLeftIcon,
   HomeIcon,
-  PresentationChartBarIcon,
   DocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 
 interface RightSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  isCalendarVisible: boolean;
+  onToggleCalendar: () => void;
 }
 
 export default function RightSidebar({
   isCollapsed,
   onToggleCollapse,
+  isCalendarVisible,
+  onToggleCalendar,
 }: RightSidebarProps) {
   const location = useLocation();
 
@@ -26,7 +31,7 @@ export default function RightSidebar({
   const realTimePulseTabs = [
     {
       id: 'executive-summary',
-      label: 'CEO Mind Space',
+      label: 'Home',
       path: '/',
       icon: HomeIcon,
     },
@@ -43,10 +48,10 @@ export default function RightSidebar({
       icon: ChartBarIcon,
     },
     {
-      id: 'wave-executive-dashboard',
-      label: 'Wave',
-      path: '/wave-executive-dashboard',
-      icon: PresentationChartBarIcon,
+      id: 'action-tracker',
+      label: 'Action Tracker',
+      path: '/action-tracker',
+      icon: ClipboardDocumentListIcon,
     },
   ];
 
@@ -130,6 +135,37 @@ export default function RightSidebar({
                 </Link>
               );
             })}
+            {/* Key Meetings Toggle - Part of Real Time Pulse section */}
+            <button
+              onClick={onToggleCalendar}
+              className={`flex items-center justify-between w-full px-4 py-3 mx-2 rounded-lg transition-colors ${
+                isCalendarVisible
+                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}>
+              <div className='flex items-center'>
+                <CalendarDaysIcon
+                  className={`w-6 h-6 flex-shrink-0 ${
+                    isCalendarVisible ? 'text-blue-600' : 'text-gray-600'
+                  }`}
+                />
+                {!isCollapsed && (
+                  <span className='ml-3 font-medium text-sm'>Key Meetings</span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <div
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isCalendarVisible ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isCalendarVisible ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+              )}
+            </button>
           </div>
         </div>
 

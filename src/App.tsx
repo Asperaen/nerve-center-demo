@@ -4,9 +4,9 @@ import MainLayout from './layouts/MainLayout';
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage';
 import ExternalPulsePage from './pages/ExternalPulsePage';
 import InternalPulsePage from './pages/InternalPulsePage';
-import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
 import FinancePage from './pages/FinancePage';
 import FinanceReviewPage from './pages/FinanceReviewPage';
+import ActionTrackerPage from './pages/ActionTrackerPage';
 import UserProfile from './pages/UserProfile';
 import MeetingDetailView from './components/MeetingDetailView';
 
@@ -31,16 +31,16 @@ function App() {
               element={<InternalPulsePage />}
             />
             <Route
-              path='wave-executive-dashboard'
-              element={<WaveExecutiveDashboardPage />}
-            />
-            <Route
               path='finance'
               element={<FinancePage />}
             />
             <Route
               path='finance-review'
               element={<FinanceReviewPage />}
+            />
+            <Route
+              path='action-tracker'
+              element={<ActionTrackerPage />}
             />
             <Route
               path='profile'

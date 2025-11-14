@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import InternalPulseCheck from '../components/InternalPulseCheck';
+import WaveExecutiveDashboard from '../components/WaveExecutiveDashboard';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import CreateActionModal from '../components/CreateActionModal';
 import type { FinancialMetric } from '../types';
 
+type ActiveTab = 'kpis' | 'wave';
+
 export default function InternalPulsePage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('kpis');
   const [selectedInternalItems, setSelectedInternalItems] = useState<
     FinancialMetric[]
   >([]);
@@ -33,22 +37,54 @@ export default function InternalPulsePage() {
             Track key performance indicators and internal financial metrics
           </p>
         </div>
-        <InternalPulseCheck
-          onGenerateInsights={handleGenerateInsights}
-          onSelectionChange={setSelectedInternalItems}
-          selectedItems={selectedInternalItems}
-        />
+
+        {/* Tab Switcher */}
+        <div className='mb-6'>
+          <div className='inline-flex items-center gap-1 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50 shadow-sm'>
+            <button
+              onClick={() => setActiveTab('kpis')}
+              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                activeTab === 'kpis'
+                  ? 'bg-white text-gray-900 shadow-md shadow-gray-200/50 scale-105'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+              }`}>
+              KPIs and operational indicators
+            </button>
+            <button
+              onClick={() => setActiveTab('wave')}
+              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                activeTab === 'wave'
+                  ? 'bg-white text-gray-900 shadow-md shadow-gray-200/50 scale-105'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+              }`}>
+              Wave
+            </button>
+          </div>
+        </div>
+
+        {/* Conditional Content Rendering */}
+        {activeTab === 'kpis' ? (
+          <InternalPulseCheck
+            onGenerateInsights={handleGenerateInsights}
+            onSelectionChange={setSelectedInternalItems}
+            selectedItems={selectedInternalItems}
+          />
+        ) : (
+          <WaveExecutiveDashboard />
+        )}
       </div>
 
-      {/* Root Cause Analysis Sidebar */}
-      <RootCauseAnalysisSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        selectedExternalItems={[]}
-        selectedInternalItems={selectedInternalItems}
-        activeTab='internal'
-        hasSelectedItems={selectedInternalItems.length > 0}
-      />
+      {/* Root Cause Analysis Sidebar - Only show for KPIs tab */}
+      {activeTab === 'kpis' && (
+        <RootCauseAnalysisSidebar
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          selectedExternalItems={[]}
+          selectedInternalItems={selectedInternalItems}
+          activeTab='internal'
+          hasSelectedItems={selectedInternalItems.length > 0}
+        />
+      )}
 
       {/* Create Action Modal */}
       <CreateActionModal

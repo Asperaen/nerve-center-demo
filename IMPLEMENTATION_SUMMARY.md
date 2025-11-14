@@ -27,7 +27,7 @@ The application is currently running and ready for demonstration.
 - ✅ Right sidebar (RightSidebar component) with collapsible functionality
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
 - ✅ Navigation items organized into two visually distinct groups:
-  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard
+  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse
   - **Meetings Section** (purple theme): Finance Forecast, Finance Review
 - ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
 - ✅ Visual separator between sections
@@ -38,8 +38,8 @@ The application is currently running and ready for demonstration.
 - ✅ Main content area with dynamic right margin based on sidebar state
 - ✅ Smooth transitions for sidebar collapse/expand
 - ✅ User profile page with user information and quick actions
-- ✅ Floating Action Tracker button (bottom-right) for quick access to Action Tracker modal
-- ✅ "Create Action" buttons on page headers (Executive Summary, External Pulse, Internal Pulse, Wave Dashboard, Finance, Finance Review) for context-specific action creation
+- ✅ Action Tracker accessible as a dedicated route via sidebar navigation
+- ✅ "Create Action" buttons on page headers (Executive Summary, External Pulse, Internal Pulse, Finance, Finance Review) for context-specific action creation
 
 ### 3. Mock Data Layer ✅
 
@@ -48,7 +48,9 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockKPIs.ts` - 11 KPIs with 12-month history
 - ✅ `mockInternalPulse.ts` - Value driver framework with financial categories (Revenue, COGS, OPEX, Operating Profit), metrics, value drivers, and affecting factors
 - ✅ `mockNews.ts` - 10 external news items across 4 categories
-- ✅ `mockActions.ts` - 15 action items with comments
+- ✅ `mockActions.ts` - 45 action items with comments (17 CEO actions, 28 team member actions)
+  - CEO actions include approval tasks and executive follow-ups, distributed across all status types
+  - Team member actions assigned to various VPs and executives
 - ✅ `mockAssumptions.ts` - 12 business assumptions with history
 - ✅ `mockConflicts.ts` - 5 assumption conflicts
 - ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages, applied assumptions, suggested assumptions, NP deviation stages, product family data, cost impact data, MVA breakdown stages
@@ -61,12 +63,13 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 The application uses a flat route structure with standalone pages for each major feature:
 
 - ✅ External Pulse Page - Standalone page for external pulse check with "Create Action" button in header
-- ✅ Internal Pulse Page - Standalone page for internal pulse check with "Create Action" button in header
-- ✅ Wave Executive Dashboard Page - Standalone page for executive dashboard with initiatives tracking and value delivery charts, "Create Action" button in header
+- ✅ Internal Pulse Page - Combined page with tab switcher for KPIs/operational indicators and Wave Executive Dashboard, "Create Action" button in header
+  - **KPIs and operational indicators tab**: Value driver framework with metrics, value drivers, and affecting factors
+  - **Wave tab**: Executive dashboard with initiatives tracking and value delivery charts
 - ✅ Finance Page - Combined financial forecast page with all financial features, "Create Action" button in header
 - ✅ Finance Review Page - NP Deviation Breakdown with 4-layer deep dive navigation, "Create Action" button in header
 - ✅ Executive Summary Page - CEO Mind Space page with "Create Action" button in header
-- ✅ Action Tracker - Full-screen modal accessible via floating button (bottom-right), removed from sidebar navigation
+- ✅ Action Tracker - Dedicated route page accessible via sidebar navigation (Meetings section)
 - ✅ User Profile Page - User profile and settings
 
 ### 5. Daily Pulse Check Features ✅
@@ -75,6 +78,7 @@ The application uses a flat route structure with standalone pages for each major
 
 #### Feature A.1: Internal Pulse Check ✅
 
+- ✅ Tab switcher on Internal Pulse Page with two tabs: "KPIs and operational indicators" and "Wave"
 - ✅ Value driver framework based on financial structure (Revenue, COGS, OPEX, Operating Profit)
 - ✅ Financial category grouping with expandable sections
 - ✅ Metrics organized by financial category (e.g., Direct Labor, Indirect Labor, MFG Overhead, Material for COGS)
@@ -89,7 +93,7 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ 12-month trend chart in modal
 - ✅ Last updated timestamp
 - ✅ Comprehensive view of underlying drivers affecting financial performance
-- ✅ Root Cause Analysis sidebar integration - provides quantitative insights on leading parameters
+- ✅ Root Cause Analysis sidebar integration - provides quantitative insights on leading parameters (only available in KPIs tab)
 
 #### Feature A.2: External Pulse Check ✅
 
@@ -105,6 +109,7 @@ The application uses a flat route structure with standalone pages for each major
 
 #### Feature A.3: Wave Executive Dashboard ✅
 
+- ✅ Accessible as a tab within Internal Pulse Page (tab label: "Wave")
 - ✅ Comprehensive executive dashboard with 4 key charts in 2x2 grid layout:
   - **Value Progress Chart**: Net Recurring Revenue (Annualized, Million USD) vs. Top-Down Target with current vs target comparison
   - **Value Delivery Tracking Chart**: Time-series tracking of Net Recurring Revenue vs. Bottom-Up Plan with stacked bars and target line
@@ -121,7 +126,6 @@ The application uses a flat route structure with standalone pages for each major
   - **Row 2 (Milestones)**: Overdue milestones, Milestones due in 7 days, Milestones due in 30 days
   - Each card shows count and net benefit/owner count metrics
 - ✅ All field labels translated to English
-- ✅ Standalone page accessible via right sidebar navigation
 - ✅ Professional styling matching the application design system
 
 #### Root Cause Analysis (Integrated into Pulse Pages) ✅
@@ -290,20 +294,35 @@ The application uses a flat route structure with standalone pages for each major
 
 ### 7. Action Tracker ✅
 
-- ✅ Full-screen modal accessible via floating button (bottom-right corner)
-- ✅ Removed from sidebar navigation for cleaner UI
+- ✅ Dedicated route page accessible via sidebar navigation (Meetings section)
+- ✅ Accessible at `/action-tracker` route
+- ✅ **Tab Switch Feature**: "My Actions" and "Assign to others" tabs in page header
+  - Tab switch positioned between page title and "Create Action" button
+  - Vertically centered alignment with header elements
+  - Styled to match InternalPulseCheck tab design (gray background container with white active button)
+  - "My Actions" tab filters actions where owner = "CEO" (17+ CEO actions)
+  - "Assign to others" tab filters actions assigned to team members (25+ non-CEO actions)
+  - Default tab: "My Actions"
 - ✅ Comprehensive action list with JIRA-like swim lanes
-- ✅ Inline status dropdown (TODO/In Progress/Ready for Review/Completed/Reopen)
-- ✅ Status workflow management with color-coded statuses
+- ✅ Auto-resizing swimlanes that utilize available width
+- ✅ Status workflow management with color-coded statuses (TODO/In Progress/Ready for Review/Completed/Reopen)
+- ✅ CEO actions distributed across all status types for realistic visualization:
+  - TODO: 4 actions
+  - In Progress: 5 actions
+  - Ready for Review: 4 actions
+  - Completed: 3 actions
+  - Reopen: 1 action
 - ✅ Priority indicators (High/Medium/Low)
 - ✅ Owner information with avatars
 - ✅ Reassign owner modal with notification simulation
 - ✅ Comments system
 - ✅ Comment history display with timestamps and authors
 - ✅ Expandable action cards with full details
-- ✅ Modal backdrop with click-to-close functionality
-- ✅ Escape key support for closing modal
-- ✅ Body scroll prevention when modal is open
+- ✅ "Create Action" button in page header
+- ✅ **Enhanced Mock Data**:
+  - 17 CEO-owned actions including approval tasks and executive follow-ups
+  - 28 non-CEO actions assigned to various team members
+  - Realistic action distribution across statuses and priorities
 
 ### 8. Create Action Feature ✅
 
@@ -398,16 +417,16 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Flat route structure:
   - `/` (redirects to `/executive-summary`) - Executive Summary Page
   - `/external-pulse` - External Pulse Page
-  - `/internal-pulse` - Internal Pulse Page
-  - `/wave-executive-dashboard` - Wave Executive Dashboard Page
+  - `/internal-pulse` - Internal Pulse Page (contains tab switcher for KPIs and Wave Dashboard)
   - `/finance` - Finance Page (combines all financial forecast features)
   - `/finance-review` - Finance Review Page (NP Deviation Breakdown)
+  - `/action-tracker` - Action Tracker Page
   - `/profile` - User Profile Page
 - ✅ MainLayout wrapper with RightSidebar navigation
 - ✅ Sidebar navigation with active state highlighting
 - ✅ Icon-based navigation with labels
 - ✅ Collapsible sidebar for space optimization
-- ✅ Action Tracker accessible via floating button (not a route)
+- ✅ Action Tracker accessible as a dedicated route via sidebar navigation
 
 ### Data Structure
 
@@ -486,34 +505,33 @@ The application uses a flat route structure with standalone pages for each major
 
 3. ✅ `/internal-pulse` - Internal Pulse Page
 
-   - Value driver framework by financial category (Revenue, COGS, OPEX, Operating Profit)
-   - Metrics organized by financial category with value drivers and affecting factors
-   - Performance status indicators and variance displays
-   - Color-coded performance status (good/warning/concern)
-   - Mini sparkline charts for each metric
-   - Click-to-expand modal with full details including all value drivers and affecting factors
-   - 12-month trend chart in modal
-   - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
-   - Quantitative insights on leading parameters
+   - **Tab Switcher**: Two tabs - "KPIs and operational indicators" and "Wave"
+   - **KPIs and operational indicators tab**:
+     - Value driver framework by financial category (Revenue, COGS, OPEX, Operating Profit)
+     - Metrics organized by financial category with value drivers and affecting factors
+     - Performance status indicators and variance displays
+     - Color-coded performance status (good/warning/concern)
+     - Mini sparkline charts for each metric
+     - Click-to-expand modal with full details including all value drivers and affecting factors
+     - 12-month trend chart in modal
+     - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
+     - Quantitative insights on leading parameters
+   - **Wave tab**:
+     - **4 Key Charts in 2x2 Grid**:
+       - Value Progress: Current vs Target comparison with stacked segments
+       - Value Delivery Tracking: Monthly time-series with stacked bars and target line
+       - Variance Analysis: Waterfall-style breakdown of variance components
+       - Workflow Value Delivery: Stacked bars showing value delivery per workflow
+     - **Initiatives Table**:
+       - Grouped by workflow with collapsible sections
+       - Comprehensive columns (Exception, #, Name, Phase, Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset, Compare BP)
+       - Status indicators (Progressing Smoothly / Leadership Attention)
+       - Phase labels (L0-L5)
+     - **Summary Cards**:
+       - 6 cards showing overdue/due soon initiatives and milestones
+       - Count and net benefit/owner count metrics
 
-4. ✅ `/wave-executive-dashboard` - Wave Executive Dashboard Page
-
-   - **4 Key Charts in 2x2 Grid**:
-     - Value Progress: Current vs Target comparison with stacked segments
-     - Value Delivery Tracking: Monthly time-series with stacked bars and target line
-     - Variance Analysis: Waterfall-style breakdown of variance components
-     - Workflow Value Delivery: Stacked bars showing value delivery per workflow
-   - **Initiatives Table**:
-     - Grouped by workflow with collapsible sections
-     - Comprehensive columns (Exception, #, Name, Phase, Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset, Compare BP)
-     - Status indicators (Progressing Smoothly / Leadership Attention)
-     - Phase labels (L0-L5)
-   - **Summary Cards**:
-     - 6 cards showing overdue/due soon initiatives and milestones
-     - Count and net benefit/owner count metrics
-   - Standalone page accessible via right sidebar navigation
-
-5. ✅ `/finance` - Finance Page
+4. ✅ `/finance` - Finance Page
 
    - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
@@ -560,7 +578,7 @@ The application uses a flat route structure with standalone pages for each major
        - Example: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
    - All financial forecast features combined in one page
 
-6. ✅ `/finance-review` - Finance Review Page
+5. ✅ `/finance-review` - Finance Review Page
 
    - **NP Deviation Breakdown Waterfall Chart**: Prominently displayed at top showing 9-stage NP deviation progression
      - Stages: Budget NP (26.0M) → Vol. impact (+8.8M) → Price impact (+3.7M) → Cost impact (-7.3M) → Mix impact (-2.8M) → OPEX Deviation (-5.3M) → Other COGS (+5.3M) → Gap of non-OP and tax (+0.6M) → Actual NP (28.9M)
@@ -608,20 +626,20 @@ The application uses a flat route structure with standalone pages for each major
    - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals, action proposals (focused on NP Deviation Breakdown only)
    - Accessible via right sidebar navigation (Finance Review)
 
-7. ✅ **Action Tracker** - Full-Screen Modal
+6. ✅ **Action Tracker** - Dedicated Route Page
 
-   - Accessible via floating button (bottom-right corner)
+   - Accessible via sidebar navigation (Meetings section) at `/action-tracker`
    - Comprehensive action list with JIRA-like swim lanes
+   - Auto-resizing swimlanes that utilize available width
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
    - Priority indicators (High/Medium/Low)
    - Owner information with avatars
    - Reassign owner modal with notification simulation
    - Comments system with history display
    - Expandable action cards with full details
-   - Modal backdrop with click-to-close
-   - Escape key support
+   - "Create Action" button in page header
 
-8. ✅ `/profile` - User Profile Page
+7. ✅ `/profile` - User Profile Page
 
    - User information display
    - Profile details (email, role, member since)
@@ -766,8 +784,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - **Real Time Pulse Section** (blue theme):
        - CEO Mind Space (Home icon)
        - External Pulse (Sparkles icon)
-       - Internal Pulse (Chart Bar icon)
-       - Wave Executive Dashboard (Presentation Chart Bar icon)
+       - Internal Pulse (Chart Bar icon) - Contains tab switcher for KPIs and Wave Dashboard
      - **Meetings Section** (purple theme):
        - Finance Forecast (Currency Dollar icon)
        - Finance Review (Presentation Chart Bar icon)
@@ -776,7 +793,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Color-coded active states (blue for Real Time Pulse, purple for Meetings)
    - Profile link at bottom of sidebar
    - Sidebar can be collapsed/expanded using toggle button
-   - Floating Action Tracker button (bottom-right) for quick access to action tracking
+   - Action Tracker accessible via sidebar navigation (Meetings section)
    - "Create Action" buttons on each page header for context-specific action creation
 
 2. **Executive Summary Page** (http://localhost:5173/) - Demonstrate:
@@ -803,37 +820,35 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 4. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
 
-   - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
-   - Metrics with value drivers and affecting factors
-   - Performance status indicators and variance displays
-   - Color-coded performance status (good/warning/concern)
-   - Mini sparkline charts for each metric
-   - Click metrics to expand detail modals with trend charts
-   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
-   - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
-     - Select metrics from the framework
-     - See leading parameter analysis explaining impact on profit
-     - Example: Select "labor cost increase" → See analysis explaining impact when products are sold
+   - **Tab Switcher**: Two tabs at the top - "KPIs and operational indicators" and "Wave"
+   - **KPIs and operational indicators tab** (default):
+     - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
+     - Metrics with value drivers and affecting factors
+     - Performance status indicators and variance displays
+     - Color-coded performance status (good/warning/concern)
+     - Mini sparkline charts for each metric
+     - Click metrics to expand detail modals with trend charts
+     - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
+     - **Root Cause Analysis**: Click "Generate Insights" button → Opens slider sidebar
+       - Select metrics from the framework
+       - See leading parameter analysis explaining impact on profit
+       - Example: Select "labor cost increase" → See analysis explaining impact when products are sold
+   - **Wave tab**:
+     - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
+     - **4 Key Charts in 2x2 Grid**:
+       - **Value Progress Chart**: Shows current value (985.0M + 445.6M) vs target (4,792.0M) with stacked segments
+       - **Value Delivery Tracking Chart**: Monthly time-series from Jan-20 to Dec-20 with stacked bars and red target line
+       - **Variance Analysis Chart**: Waterfall-style breakdown showing positive (Accelerated, Over-delivery, Newly Added) and negative (Delayed, Lost Delivery, Moved to L3, Cancelled/Paused) variance components
+       - **Workflow Value Delivery Chart**: Stacked bars showing value delivery across 13 workflows (Water, Juice, Carbonated, Company, Finance, Information, Human Resources, Legal, Logistics, Procurement, Sales, Health, Training)
+     - **Initiatives Table**:
+       - Click workflow group headers to expand/collapse initiatives
+       - View initiative details: ID, Name, Phase (L0-L5), Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset Type
+       - Status indicators: Green square for "Progressing Smoothly", Red square for "Leadership Attention"
+     - **Summary Cards**:
+       - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
+       - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
 
-5. **Wave Executive Dashboard Page** (http://localhost:5173/wave-executive-dashboard) - Demonstrate:
-
-   - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
-
-   - **4 Key Charts in 2x2 Grid**:
-     - **Value Progress Chart**: Shows current value (985.0M + 445.6M) vs target (4,792.0M) with stacked segments
-     - **Value Delivery Tracking Chart**: Monthly time-series from Jan-20 to Dec-20 with stacked bars and red target line
-     - **Variance Analysis Chart**: Waterfall-style breakdown showing positive (Accelerated, Over-delivery, Newly Added) and negative (Delayed, Lost Delivery, Moved to L3, Cancelled/Paused) variance components
-     - **Workflow Value Delivery Chart**: Stacked bars showing value delivery across 13 workflows (Water, Juice, Carbonated, Company, Finance, Information, Human Resources, Legal, Logistics, Procurement, Sales, Health, Training)
-   - **Initiatives Table**:
-     - Click workflow group headers to expand/collapse initiatives
-     - View initiative details: ID, Name, Phase (L0-L5), Weekly Status, Owner, Workflow, L4 Date, Net Benefit, Asset Type
-     - Status indicators: Green square for "Progressing Smoothly", Red square for "Leadership Attention"
-   - **Summary Cards**:
-     - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
-     - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
-   - Accessible via right sidebar navigation (Presentation Chart Bar icon)
-
-6. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+5. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -896,7 +911,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - Badge automatically disappears when action is "Waved" (assigned a stage), indicating CEO review and approval
        - Example actions: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
 
-7. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
+6. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -934,19 +949,26 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Executive-focused premium styling
    - Accessible via right sidebar navigation (Finance Review)
 
-8. **Action Tracker** - Access via floating button (bottom-right corner):
+7. **Action Tracker** (http://localhost:5173/action-tracker) - Access via sidebar navigation:
 
-   - Click floating Action Tracker button (Clipboard icon) → Opens full-screen modal
+   - Click "Action Tracker" in sidebar (Meetings section) → Navigates to dedicated page
+   - **Tab Switch**: "My Actions" and "Assign to others" tabs in page header (between title and Create Action button)
+     - Default view: "My Actions" (shows 17 CEO-owned actions)
+     - Switch to "Assign to others" to view 28 actions assigned to team members
+     - Tab styling matches InternalPulseCheck design (gray container with white active button)
+     - Vertically centered with header elements
    - Comprehensive action list with JIRA-like swim lanes
+   - Auto-resizing swimlanes that utilize available width
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
+   - CEO actions distributed across all status types for realistic visualization
    - Priority indicators (High/Medium/Low)
    - Owner information with avatars
    - Reassign owner modal with notification simulation
    - Comments system with history display
    - Expandable action cards with full details
-   - Close modal by clicking backdrop, pressing Escape, or clicking X button
+   - "Create Action" button in page header
 
-9. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+8. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
    - User profile information display
    - Profile details (email, role, member since)
@@ -1003,7 +1025,7 @@ pnpm lint
 9. **User Journey Optimized**: Right sidebar navigation with flat route structure:
    - Root route redirects to External Pulse page
    - Navigation items organized into two visually distinct groups:
-     - Real Time Pulse section (blue theme): CEO Mind Space, External Pulse, Internal Pulse, Wave Executive Dashboard, Action Tracker
+     - Real Time Pulse section (blue theme): CEO Mind Space, External Pulse, Internal Pulse
      - Meetings section (purple theme): Finance Forecast, Finance Review
    - Section headers and visual separators for clear organization
    - Color-coded active states for easy identification
@@ -1011,9 +1033,9 @@ pnpm lint
    - Collapsible sidebar for space optimization
    - Profile link accessible from sidebar
    - Root Cause Analysis integrated into Pulse pages for quantitative insights
-   - Wave Executive Dashboard as standalone page with comprehensive initiatives tracking and value delivery visualization
+   - Internal Pulse Page with tab switcher: "KPIs and operational indicators" tab for value driver framework, "Wave" tab for executive dashboard with comprehensive initiatives tracking and value delivery visualization
    - Scenario simulation system integrated into Finance and Finance Review pages for value driver testing
-   - Action Tracker as full-screen modal accessible via floating button
+   - Action Tracker as dedicated route page accessible via sidebar navigation
    - "Create Action" buttons on page headers for context-specific action creation
 10. **NP Deviation Breakdown Visualization**: NP Deviation Breakdown waterfall chart prominently displayed at top of Finance Review page, showing 9-stage cumulative progression from Budget NP to Actual NP with color-coded favourable/adverse impacts and clickable deep dive functionality
 11. **Multi-Layer Deep Dive Navigation**: Executive-focused 4-layer navigation system:
@@ -1065,11 +1087,12 @@ pnpm lint
     - Updated value drivers automatically affect cumulative calculations
     - Value driver changes stored per assumption and aggregated in cumulative view
 17. **Wave Executive Dashboard**: Comprehensive executive-level dashboard for initiatives and value delivery tracking:
+    - Accessible as "Wave" tab within Internal Pulse Page
     - 4 key charts showing value progress, delivery tracking, variance analysis, and workflow breakdown
     - Initiatives table with workflow grouping and comprehensive tracking columns
     - Summary cards for overdue/due soon initiatives and milestones
     - All metrics and labels in English
-    - Standalone page accessible via right sidebar navigation
+    - Tab switcher on Internal Pulse Page allows seamless switching between KPIs and Wave Dashboard
 18. **Action Proposals Based on Applied Assumptions**: Proposal and action management system:
     - 1-to-1 mapping between Applied Assumptions and Proposals
     - Each Proposal contains multiple Actions that can be converted to Wave Initiatives
@@ -1084,21 +1107,28 @@ pnpm lint
       - Badge automatically hides when action is "Waved" (assigned a stage), indicating CEO review
       - When "Vietnam Minimum Wage Hike" is moved from Pulse Suggested to Applied, proposal is automatically created with 2 AI-generated actions (UPPH improvement and ASP adjustment)
 19. **Create Action Feature**: Context-specific action creation on page headers:
-    - "Create Action" buttons on all major pages (Executive Summary, External Pulse, Internal Pulse, Wave Dashboard, Finance, Finance Review)
+    - "Create Action" buttons on all major pages (Executive Summary, External Pulse, Internal Pulse, Finance, Finance Review)
     - Consistent button styling (primary color, PlusIcon, positioned right of page title)
     - Each page manages its own modal state independently
     - CreateActionModal component with form fields (title, description, owner, priority, due date)
     - Actions stored in global ActionsContext for shared state management
     - Removed global floating "Create Action" button for cleaner UI
     - Enables CEO to quickly create actions from any page context
-20. **Action Tracker Modal**: Full-screen modal for action management:
-    - Accessible via floating button (bottom-right corner) for quick access from anywhere
-    - Removed from sidebar navigation for cleaner UI
-    - Full-screen modal (95vw x 95vh) with backdrop and escape key support
+20. **Action Tracker Page**: Dedicated route page for action management:
+    - Accessible via sidebar navigation (Meetings section) at `/action-tracker` route
+    - Full page layout with header and "Create Action" button
+    - **Tab Switch Feature**: "My Actions" and "Assign to others" tabs in page header
+      - Tab switch positioned between page title and "Create Action" button, vertically centered
+      - Styled to match InternalPulseCheck tab design for consistency
+      - "My Actions" tab: Filters and displays 17+ CEO-owned actions (approval tasks, executive follow-ups)
+      - "Assign to others" tab: Filters and displays 28+ actions assigned to team members
+      - Default tab: "My Actions"
+      - CEO actions distributed across all status types (TODO, In Progress, Ready for Review, Completed, Reopen)
     - Comprehensive action list with JIRA-like swim lanes
+    - Auto-resizing swimlanes that utilize available width (flex-1 with min-width constraints)
     - Status workflow management, priority indicators, owner information
     - Comments system and expandable action cards
-    - Body scroll prevention when modal is open
+    - Integrated into main layout with consistent styling
 
 ---
 

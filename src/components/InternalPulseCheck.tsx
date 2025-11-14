@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { internalPulseColumns } from '../data/mockInternalPulse';
-import { mockInitiatives } from '../data/mockForecast';
 import type { PulseColumn, PulseMetric, FinancialMetric } from '../types';
 import {
   CircleStackIcon,
@@ -133,16 +132,6 @@ export default function InternalPulseCheck({
     { value: 'in-month', label: 'In-month' },
   ];
 
-  // Filter initiatives by highest impact and map status
-  const topInitiatives = mockInitiatives
-    .sort((a, b) => b.estimatedImpact - a.estimatedImpact)
-    .slice(0, 3)
-    .map((initiative) => ({
-      ...initiative,
-      displayStatus:
-        initiative.status === 'in-progress' ? 'On track' : 'Delayed',
-    }));
-
   return (
     <div className='bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-200/40 hover:shadow-2xl transition-all duration-300 overflow-hidden'>
       {/* Controls Section */}
@@ -242,90 +231,6 @@ export default function InternalPulseCheck({
             }
           />
         ))}
-      </div>
-
-      {/* Initiatives Tracking Table */}
-      <div className='border-t border-gray-200/60 bg-gradient-to-b from-gray-50/50 to-white'>
-        <div className='px-8 py-6 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white shadow-inner border-b border-blue-700/50'>
-          <h3 className='text-lg font-bold tracking-wide flex items-center gap-2'>
-            <span className='w-1 h-5 bg-white/30 rounded-full'></span>
-            Top initiatives tracking (Highest in-year impact)
-          </h3>
-        </div>
-        <div className='p-6'>
-          <div className='overflow-hidden rounded-xl border border-gray-200/60 shadow-sm'>
-            <table className='w-full'>
-              <thead>
-                <tr className='bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200'>
-                  <th className='text-left py-4 px-5 text-xs font-bold text-gray-700 uppercase tracking-wider'>
-                    Initiatives name
-                  </th>
-                  <th className='text-left py-4 px-5 text-xs font-bold text-gray-700 uppercase tracking-wider'>
-                    Owner
-                  </th>
-                  <th className='text-left py-4 px-5 text-xs font-bold text-gray-700 uppercase tracking-wider'>
-                    Target impact
-                  </th>
-                  <th className='text-left py-4 px-5 text-xs font-bold text-gray-700 uppercase tracking-wider'>
-                    Latest estimated impact
-                  </th>
-                  <th className='text-left py-4 px-5 text-xs font-bold text-gray-700 uppercase tracking-wider'>
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className='divide-y divide-gray-100/60'>
-                {topInitiatives.map((initiative, index) => (
-                  <tr
-                    key={initiative.id}
-                    className={`transition-colors duration-150 ${
-                      index % 2 === 0
-                        ? 'bg-white hover:bg-gray-50/80'
-                        : 'bg-gray-50/30 hover:bg-gray-100/50'
-                    }`}>
-                    <td className='py-4 px-5 text-sm font-semibold text-gray-900'>
-                      {initiative.title}
-                    </td>
-                    <td className='py-4 px-5 text-sm text-gray-700'>
-                      {initiative.owner}
-                    </td>
-                    <td className='py-4 px-5 text-sm font-semibold text-gray-900'>
-                      <span className='inline-flex items-center gap-1'>
-                        <span className='text-gray-500'>$</span>
-                        {initiative.estimatedImpact.toFixed(1)}
-                        <span className='text-gray-500 text-xs'>M</span>
-                      </span>
-                    </td>
-                    <td className='py-4 px-5 text-sm font-semibold text-gray-900'>
-                      <span className='inline-flex items-center gap-1'>
-                        <span className='text-gray-500'>$</span>
-                        {(
-                          initiative.actualImpact ?? initiative.estimatedImpact
-                        ).toFixed(1)}
-                        <span className='text-gray-500 text-xs'>M</span>
-                      </span>
-                    </td>
-                    <td className='py-4 px-5 text-sm'>
-                      <span
-                        className={`inline-flex items-center gap-1.5 font-semibold px-3 py-1 rounded-full ${
-                          initiative.displayStatus === 'On track'
-                            ? 'text-green-700 bg-green-50 border border-green-200'
-                            : 'text-red-700 bg-red-50 border border-red-200'
-                        }`}>
-                        {initiative.displayStatus === 'On track' ? (
-                          <span className='w-1.5 h-1.5 rounded-full bg-green-500'></span>
-                        ) : (
-                          <span className='w-1.5 h-1.5 rounded-full bg-red-500'></span>
-                        )}
-                        {initiative.displayStatus}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );

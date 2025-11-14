@@ -10,7 +10,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
-export default function ActionTracker() {
+interface ActionTrackerProps {
+  activeTab: 'my-actions' | 'assign-to-others';
+}
+
+export default function ActionTracker({ activeTab }: ActionTrackerProps) {
   const { actions, updateAction } = useActions();
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
@@ -20,10 +24,6 @@ export default function ActionTracker() {
   const [expandedActions, setExpandedActions] = useState<Set<string>>(
     new Set()
   );
-
-  const handleStatusChange = (actionId: string, newStatus: ActionStatus) => {
-    updateAction(actionId, { status: newStatus });
-  };
 
   const toggleExpanded = (actionId: string) => {
     const newExpanded = new Set(expandedActions);
@@ -109,21 +109,27 @@ export default function ActionTracker() {
     'reopen',
   ];
 
-  const getActionsByStatus = (status: ActionStatus) => {
-    return actions.filter((action) => action.status === status);
+  // Filter actions based on active tab
+  const filteredActions =
+    activeTab === 'my-actions'
+      ? actions.filter((action) => action.owner === 'CEO')
+      : actions.filter((action) => action.owner !== 'CEO');
+
+  const getFilteredActionsByStatus = (status: ActionStatus) => {
+    return filteredActions.filter((action) => action.status === status);
   };
 
   return (
     <>
       {/* Swim Lane Board */}
       <div className='w-full'>
-        <div className='flex space-x-5'>
+        <div className='flex gap-5 w-full'>
           {statusColumns.map((status) => {
-            const columnActions = getActionsByStatus(status);
+            const columnActions = getFilteredActionsByStatus(status);
             return (
               <div
                 key={status}
-                className='flex-1 min-w-0'>
+                className='flex-1 min-w-[180px]'>
                 {/* Column Header */}
                 <div
                   className={`mb-5 px-5 py-4 rounded-xl border-2 shadow-md ${getStatusColor(
@@ -147,7 +153,6 @@ export default function ActionTracker() {
                       action={action}
                       isExpanded={expandedActions.has(action.id)}
                       onToggleExpand={() => toggleExpanded(action.id)}
-                      onStatusChange={handleStatusChange}
                       onReassign={() => {
                         setSelectedAction(action);
                         setShowReassignModal(true);
@@ -160,7 +165,6 @@ export default function ActionTracker() {
                           [action.id]: value,
                         })
                       }
-                      getStatusColor={getStatusColor}
                     />
                   ))}
                 </div>
@@ -189,50 +193,21 @@ interface ActionCardProps {
   action: Action;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  onStatusChange: (actionId: string, newStatus: ActionStatus) => void;
   onReassign: () => void;
   onAddComment: (actionId: string) => void;
   commentInput: string;
   onCommentInputChange: (value: string) => void;
-  getStatusColor: (status: ActionStatus) => string;
 }
 
 function ActionCard({
   action,
   isExpanded,
   onToggleExpand,
-  onStatusChange,
   onReassign,
   onAddComment,
   commentInput,
   onCommentInputChange,
-  getStatusColor,
 }: ActionCardProps) {
-  const statusOptions: ActionStatus[] = [
-    'todo',
-    'in-progress',
-    'ready-for-review',
-    'completed',
-    'reopen',
-  ];
-
-  const getStatusLabel = (status: ActionStatus) => {
-    switch (status) {
-      case 'todo':
-        return 'TODO';
-      case 'in-progress':
-        return 'In Progress';
-      case 'ready-for-review':
-        return 'Ready for Review';
-      case 'completed':
-        return 'Completed';
-      case 'reopen':
-        return 'Reopen';
-      default:
-        return status;
-    }
-  };
-
   return (
     <div className='bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:border-gray-300'>
       {/* Card Header */}
@@ -245,27 +220,20 @@ function ActionCard({
               {action.title}
             </h4>
           </button>
-          <select
-            value={action.status}
-            onChange={(e) =>
-              onStatusChange(action.id, e.target.value as ActionStatus)
-            }
-            onClick={(e) => e.stopPropagation()}
-            className={`ml-2 px-2 py-1 text-xs font-medium rounded border-0 focus:ring-2 focus:ring-primary-500 ${getStatusColor(
-              action.status
-            )} cursor-pointer`}>
-            {statusOptions.map((status) => (
-              <option
-                key={status}
-                value={status}>
-                {getStatusLabel(status)}
-              </option>
-            ))}
-          </select>
+          <span
+            className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+              action.priority === 'high'
+                ? 'bg-red-100 text-red-800'
+                : action.priority === 'medium'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+            {action.priority.toUpperCase()}
+          </span>
         </div>
 
         {/* Metadata */}
-        <div className='flex items-center justify-between text-xs text-gray-500 mb-2'>
+        <div className='flex items-center text-xs text-gray-500 mb-2'>
           <div className='flex items-center space-x-3'>
             <div className='flex items-center'>
               <UserCircleIcon className='w-4 h-4 mr-1' />
@@ -276,16 +244,6 @@ function ActionCard({
               <span>{format(action.dueDate, 'MMM d')}</span>
             </div>
           </div>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-              action.priority === 'high'
-                ? 'bg-red-100 text-red-800'
-                : action.priority === 'medium'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-            {action.priority.toUpperCase()}
-          </span>
         </div>
 
         {/* Quick Actions */}
