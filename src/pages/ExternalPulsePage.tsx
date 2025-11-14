@@ -1,11 +1,17 @@
 import { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import ExternalPulseCheck from '../components/ExternalPulseCheck';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import CreateActionModal from '../components/CreateActionModal';
-import type { NewsItem } from '../types';
+import type { NewsItem, MeetingMaterial } from '../types';
+
+interface ExternalPulsePageContext {
+  meetingMaterials: Record<string, MeetingMaterial[]>;
+}
 
 export default function ExternalPulsePage() {
+  const { meetingMaterials } = useOutletContext<ExternalPulsePageContext>();
   const [selectedExternalItems, setSelectedExternalItems] = useState<
     NewsItem[]
   >([]);
@@ -38,6 +44,7 @@ export default function ExternalPulsePage() {
           onGenerateInsights={handleGenerateInsights}
           onSelectionChange={setSelectedExternalItems}
           selectedItems={selectedExternalItems}
+          meetingMaterials={meetingMaterials}
         />
       </div>
 

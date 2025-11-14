@@ -146,7 +146,7 @@ export const internalPulseColumns: PulseColumn[] = [
           {
             id: 'copq',
             name: 'COPQ',
-            value: 12.5,
+            value: 0.02,
             unit: 'M USD',
             subMetrics: [
               {

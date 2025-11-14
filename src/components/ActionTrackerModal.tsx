@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import ActionTracker from './ActionTracker';
 import CreateActionModal from './CreateActionModal';
+import { useActions } from '../contexts/ActionsContext';
 
 interface ActionTrackerModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export default function ActionTrackerModal({
   onClose,
 }: ActionTrackerModalProps) {
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
+  const { actions } = useActions();
 
   // Handle Escape key to close
   useEffect(() => {
@@ -56,7 +58,8 @@ export default function ActionTrackerModal({
                 Action Tracker
               </h2>
               <p className='mt-1 text-sm text-gray-600'>
-                Manage and track your team's actions and initiatives
+                Manage and track your team's actions and initiatives • Total:{' '}
+                {actions.length}
               </p>
             </div>
             <div className='flex items-center gap-3'>

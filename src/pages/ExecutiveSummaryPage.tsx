@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -34,8 +34,14 @@ import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import CreateActionModal from '../components/CreateActionModal';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import type { SelectedItem } from '../utils/meetingRelevance';
+import { getMeetingsForNewsItem } from '../utils/meetingUtils';
+
+interface ExecutiveSummaryPageContext {
+  meetingMaterials: Record<string, MeetingMaterial[]>;
+}
 
 export default function ExecutiveSummaryPage() {
+  const { meetingMaterials } = useOutletContext<ExecutiveSummaryPageContext>();
   // Selection state
   const [selectedOperationMetrics, setSelectedOperationMetrics] = useState<
     Set<string>
@@ -382,6 +388,16 @@ export default function ExecutiveSummaryPage() {
 
   // Helper to format metric value
   const formatMetricValue = (metric: PulseMetric): string => {
+    // For Gold price, show market price as the main value
+    if (metric.id === 'gold-material' && metric.subMetrics) {
+      const marketPrice = metric.subMetrics.find((m) =>
+        m.name.includes('Market price')
+      )?.value;
+      if (marketPrice !== undefined) {
+        return `${marketPrice.toLocaleString('en-US')} ${metric.unit || ''}`;
+      }
+    }
+
     // For UPPH and OEE, try to get actual value from mockKPIs as fallback
     if (
       metric.value === undefined &&
@@ -426,6 +442,9 @@ export default function ExecutiveSummaryPage() {
   const getMetricStatus = (
     metric: PulseMetric
   ): 'good' | 'warning' | 'concern' => {
+    // Gold price should show warning as it impacts overall performance
+    if (metric.id === 'gold-material') return 'warning';
+
     if (!metric.comparisons) return 'good';
 
     // Check if any comparison shows negative trend
@@ -466,7 +485,7 @@ export default function ExecutiveSummaryPage() {
       const percent = metric.comparisons.vsLastRefresh.percent;
       return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last refresh`;
     }
-    return 'No comparison data';
+    return '';
   };
 
   // Generate executive briefing with today's and week's critical meetings
@@ -720,11 +739,12 @@ export default function ExecutiveSummaryPage() {
 
     const todayMeetings = allMeetings
       .filter((m) => isToday(new Date(m.startTime)))
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime()) // Sort by time
       .map(processMeeting);
 
     const weekMeetings = allMeetings
-      .filter((m) => !isToday(new Date(m.startTime)))
-      .slice(0, 5) // Top 5 for the week
+      .filter((m) => !isToday(new Date(m.startTime)) && m.isCritical)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime()) // Sort by date
       .map(processMeeting);
 
     const totalActionItems =
@@ -1117,12 +1137,43 @@ export default function ExecutiveSummaryPage() {
                       </span>
                     </div>
                     {metric.subMetrics && metric.id === 'gold-material' && (
-                      <div className='mt-2 text-xs text-gray-500 break-words'>
-                        Market: $
-                        {metric.subMetrics
-                          .find((m) => m.name.includes('Market price'))
-                          ?.value.toLocaleString('en-US') || 'N/A'}
-                        /oz
+                      <div className='mt-2 space-y-1'>
+                        <div className='text-xs text-gray-500 break-words'>
+                          <span className='font-semibold'>
+                            Company stocked:
+                          </span>{' '}
+                          ${metric.value?.toLocaleString('en-US') || 'N/A'}
+                          /oz
+                        </div>
+                        {(() => {
+                          const marketPrice = metric.subMetrics?.find((m) =>
+                            m.name.includes('Market price')
+                          )?.value;
+                          const companyPrice = metric.value;
+                          if (
+                            marketPrice !== undefined &&
+                            companyPrice !== undefined
+                          ) {
+                            const difference = marketPrice - companyPrice;
+                            const percentDiff =
+                              (difference / companyPrice) * 100;
+                            const percentDiffFormatted = percentDiff.toFixed(1);
+                            return (
+                              <div
+                                className={`text-xs font-semibold ${
+                                  difference >= 0
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                                }`}>
+                                {difference >= 0 ? '+' : ''}
+                                {difference.toFixed(0)} USD/oz (
+                                {percentDiff >= 0 ? '+' : ''}
+                                {percentDiffFormatted}%)
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>
@@ -1264,6 +1315,38 @@ export default function ExecutiveSummaryPage() {
                           <p className='text-sm text-gray-600 mb-3 line-clamp-2'>
                             {news.summary}
                           </p>
+                          {/* Meeting Coverage */}
+                          {(() => {
+                            const meetings = getMeetingsForNewsItem(
+                              news.id,
+                              meetingMaterials
+                            );
+                            return meetings.length > 0 ? (
+                              <div className='mt-3 mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                                <div className='flex items-center gap-2 mb-2'>
+                                  <CalendarIcon className='w-5 h-5 text-primary-600' />
+                                  <span className='text-sm font-semibold text-gray-800'>
+                                    Covered in:
+                                  </span>
+                                </div>
+                                <div className='space-y-1.5'>
+                                  {meetings.map((meeting) => (
+                                    <div
+                                      key={meeting.id}
+                                      className='text-sm text-gray-700 flex items-center gap-2 pl-1'>
+                                      <span className='font-semibold text-gray-900'>
+                                        {meeting.title}
+                                      </span>
+                                      <span className='text-gray-600'>
+                                        ({format(meeting.startTime, 'MMM d')} at{' '}
+                                        {format(meeting.startTime, 'h:mm a')})
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null;
+                          })()}
                           {news.analyzingBy && (
                             <div className='flex items-center gap-2 mt-2 mb-2'>
                               <span className='text-xs text-gray-500'>

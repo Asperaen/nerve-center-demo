@@ -27,15 +27,31 @@ export default function CalendarSidebar({
   >(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Merge meeting materials with events
-  const eventsWithMaterials: Meeting[] = mockCalendarEvents.map((meeting) => ({
-    ...meeting,
-    materials: meetingMaterials[meeting.id] || meeting.materials,
-  }));
-
   // Get current date (Nov 4, 2024)
   const currentDate = new Date('2024-11-04T00:00:00+08:00');
   const currentTime = new Date('2024-11-04T08:07:00+08:00'); // 5:07 PM as shown in image
+
+  // Helper function to check if two dates are on the same day
+  const isSameDay = (date1: Date, date2: Date): boolean => {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  };
+
+  // Filter events to only show those on the current date
+  const eventsForCurrentDate = mockCalendarEvents.filter((meeting) =>
+    isSameDay(meeting.startTime, currentDate)
+  );
+
+  // Merge meeting materials with events
+  const eventsWithMaterials: Meeting[] = eventsForCurrentDate.map(
+    (meeting) => ({
+      ...meeting,
+      materials: meetingMaterials[meeting.id] || meeting.materials,
+    })
+  );
 
   // Generate time slots for 24 hours (midnight to 11 PM)
   const timeSlots: Date[] = [];
@@ -150,19 +166,13 @@ export default function CalendarSidebar({
     return (position / 60) * PIXELS_PER_HOUR;
   };
 
-  // Scroll to current time on mount
+  // Scroll to 7am at the top of the screen on mount
   useEffect(() => {
     if (scrollContainerRef.current) {
-      const hour = currentTime.getHours();
-      const minutes = currentTime.getMinutes();
-      const position = hour * 60 + minutes; // Minutes from midnight
-      const currentTimePosition = (position / 60) * PIXELS_PER_HOUR;
-      const containerHeight = scrollContainerRef.current.clientHeight;
-      // Center the current time in the viewport
-      const scrollPosition = currentTimePosition - containerHeight / 2;
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      // 7am = 7 hours * 60 minutes = 420 minutes from midnight
+      const sevenAmPosition = ((7 * 60) / 60) * PIXELS_PER_HOUR; // 420px
+      scrollContainerRef.current.scrollTop = Math.max(0, sevenAmPosition);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

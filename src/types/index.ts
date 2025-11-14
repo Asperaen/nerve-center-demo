@@ -300,6 +300,7 @@ export type NPDeviationStageType =
   | 'price-impact'
   | 'cost-impact'
   | 'mix-impact'
+  | 'mva-deviation'
   | 'opex-deviation'
   | 'other-cogs'
   | 'gap-non-op-tax'

@@ -115,8 +115,8 @@ export const mockCalendarEvents: Meeting[] = [
   {
     id: 'meeting-7',
     title: 'BU Monthly Financial Review - Q4',
-    startTime: new Date('2024-11-04T08:30:00+08:00'), // 8:30 AM GMT+8
-    endTime: new Date('2024-11-04T10:00:00+08:00'), // 9:45 AM GMT+8
+    startTime: new Date('2024-11-04T15:00:00+08:00'), // 2:30 PM GMT+8
+    endTime: new Date('2024-11-04T16:00:00+08:00'), // 4 PM GMT+8
     location: 'Executive Conference Room',
     organizer: 'CFO',
     attendees: [
@@ -166,8 +166,8 @@ export const mockCalendarEvents: Meeting[] = [
   {
     id: 'meeting-8',
     title: 'Full Year Forecast Discussion',
-    startTime: new Date('2024-11-04T15:00:00+08:00'), // 2:30 PM GMT+8
-    endTime: new Date('2024-11-04T16:00:00+08:00'), // 4 PM GMT+8
+    startTime: new Date('2024-11-04T08:30:00+08:00'), // 8:30 AM GMT+8
+    endTime: new Date('2024-11-04T10:00:00+08:00'), // 9:45 AM GMT+8
     location: 'Board Room',
     organizer: 'CFO',
     attendees: [
@@ -339,8 +339,8 @@ export const mockCalendarEvents: Meeting[] = [
   {
     id: 'meeting-14',
     title: 'Executive Meeting - Vortex Technologies',
-    startTime: new Date('2024-11-07T14:00:00+08:00'), // 2 PM GMT+8, Thursday
-    endTime: new Date('2024-11-07T15:00:00+08:00'), // 3:30 PM GMT+8
+    startTime: new Date('2024-11-04T14:00:00+08:00'), // 2 PM GMT+8
+    endTime: new Date('2024-11-04T15:00:00+08:00'), // 3:30 PM GMT+8
     location: 'Vortext Headquarters, Round Rock, TX',
     organizer: 'CEO',
     attendees: [
@@ -382,12 +382,12 @@ export const mockCalendarEvents: Meeting[] = [
     isCritical: true,
   },
   {
-    id: 'meeting-15',
-    title: 'Procurement Strategy Review - Q4 Planning',
-    startTime: new Date('2024-11-07T10:00:00+08:00'), // 10 AM GMT+8, Thursday
-    endTime: new Date('2024-11-07T11:00:00+08:00'), // 12 PM GMT+8
-    location: 'Executive Conference Room',
-    organizer: 'CPO',
+    id: 'meeting-16',
+    title: 'Board of Directors Meeting - Q4 Strategic Review',
+    startTime: new Date('2024-11-05T14:00:00+08:00'), // 2 PM GMT+8, Tuesday
+    endTime: new Date('2024-11-05T17:00:00+08:00'), // 5 PM GMT+8
+    location: 'Board Room',
+    organizer: 'CEO',
     attendees: [
       {
         name: 'CEO',
@@ -396,34 +396,91 @@ export const mockCalendarEvents: Meeting[] = [
         isRequired: true,
       },
       {
-        name: 'CPO',
-        email: 'cpo@company.com',
-        role: 'Presenter',
-        isRequired: true,
-      },
-      {
-        name: 'Xiaochen Guo',
-        email: 'xiaochen.guo@company.com',
+        name: 'CFO',
+        email: 'cfo@company.com',
         role: 'Presenter',
         isRequired: true,
       },
       {
         name: 'COO',
         email: 'coo@company.com',
+        role: 'Presenter',
+        isRequired: true,
+      },
+      {
+        name: 'Board Chair',
+        email: 'boardchair@company.com',
         role: 'Participant',
         isRequired: true,
       },
       {
-        name: 'VP Procurement',
-        email: 'vpprocurement@company.com',
+        name: 'Independent Director - Finance',
+        email: 'director.finance@company.com',
+        role: 'Participant',
+        isRequired: true,
+      },
+      {
+        name: 'Independent Director - Technology',
+        email: 'director.tech@company.com',
+        role: 'Participant',
+        isRequired: true,
+      },
+      {
+        name: 'VP Strategy',
+        email: 'vpstrategy@company.com',
         role: 'Support',
         isRequired: true,
       },
     ],
     description:
-      'Quarterly procurement strategy review covering supplier diversification, cost optimization initiatives, and supply chain risk mitigation. Double check with Xiaochen on the status of alternative rare earth supplier negotiations and Vietnam production shift timeline.',
+      'Quarterly board meeting to review Q4 strategic initiatives, financial performance, risk management, and approve 2025 strategic plan. Key agenda items include M&A pipeline review, capital allocation strategy, and executive succession planning.',
     meetingType: 'finance-review',
     materials: [],
-    isCritical: false,
+    isCritical: true,
+  },
+  {
+    id: 'meeting-17',
+    title: 'Investor Relations - Q4 Earnings Preview',
+    startTime: new Date('2024-11-07T15:00:00+08:00'), // 3 PM GMT+8, Thursday
+    endTime: new Date('2024-11-07T16:30:00+08:00'), // 4:30 PM GMT+8
+    location: 'Executive Conference Room',
+    organizer: 'CFO',
+    attendees: [
+      {
+        name: 'CEO',
+        email: 'ceo@company.com',
+        role: 'Presenter',
+        isRequired: true,
+      },
+      {
+        name: 'CFO',
+        email: 'cfo@company.com',
+        role: 'Presenter',
+        isRequired: true,
+      },
+      {
+        name: 'Head of Investor Relations',
+        email: 'ir@company.com',
+        role: 'Presenter',
+        isRequired: true,
+      },
+      {
+        name: 'VP Finance',
+        email: 'vpfinance@company.com',
+        role: 'Support',
+        isRequired: true,
+      },
+      {
+        name: 'Head of FP&A',
+        email: 'fpanda@company.com',
+        role: 'Support',
+        isRequired: true,
+      },
+    ],
+    description:
+      'Critical preparation meeting for Q4 earnings announcement. Review financial results, key metrics, forward guidance, and messaging strategy. Finalize earnings presentation deck and prepare for analyst Q&A session. Ensure alignment on revenue recognition, margin trends, and strategic initiatives to highlight.',
+    meetingType: 'finance-review',
+    materials: [],
+    isCritical: true,
   },
 ];

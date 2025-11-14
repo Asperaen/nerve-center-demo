@@ -115,69 +115,58 @@ export default function ActionTracker() {
 
   return (
     <>
-      <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 max-w-full overflow-hidden hover:shadow-xl transition-shadow duration-300'>
-        <div className='p-8 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50/50'>
-          {/* Summary */}
-          <div className='flex items-center justify-end'>
-            <div className='flex items-center space-x-4 text-sm text-gray-600'>
-              <span>Total: {actions.length}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Swim Lane Board */}
-        <div className='p-8 overflow-x-auto max-w-full bg-gray-50/30'>
-          <div className='flex space-x-5'>
-            {statusColumns.map((status) => {
-              const columnActions = getActionsByStatus(status);
-              return (
+      {/* Swim Lane Board */}
+      <div className='w-full'>
+        <div className='flex space-x-5'>
+          {statusColumns.map((status) => {
+            const columnActions = getActionsByStatus(status);
+            return (
+              <div
+                key={status}
+                className='flex-1 min-w-0'>
+                {/* Column Header */}
                 <div
-                  key={status}
-                  className='flex-shrink-0 w-[300px] sm:w-[320px]'>
-                  {/* Column Header */}
-                  <div
-                    className={`mb-5 px-5 py-4 rounded-xl border-2 shadow-md ${getStatusColor(
-                      status
-                    )}`}>
-                    <div className='flex items-center justify-between'>
-                      <h3 className='font-bold text-base'>
-                        {getStatusLabel(status)}
-                      </h3>
-                      <span className='text-xs font-bold bg-white/70 px-3 py-1 rounded-full shadow-sm'>
-                        {columnActions.length}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Column Cards */}
-                  <div className='space-y-3 min-h-[400px]'>
-                    {columnActions.map((action) => (
-                      <ActionCard
-                        key={action.id}
-                        action={action}
-                        isExpanded={expandedActions.has(action.id)}
-                        onToggleExpand={() => toggleExpanded(action.id)}
-                        onStatusChange={handleStatusChange}
-                        onReassign={() => {
-                          setSelectedAction(action);
-                          setShowReassignModal(true);
-                        }}
-                        onAddComment={handleAddComment}
-                        commentInput={commentInputs[action.id] || ''}
-                        onCommentInputChange={(value) =>
-                          setCommentInputs({
-                            ...commentInputs,
-                            [action.id]: value,
-                          })
-                        }
-                        getStatusColor={getStatusColor}
-                      />
-                    ))}
+                  className={`mb-5 px-5 py-4 rounded-xl border-2 shadow-md ${getStatusColor(
+                    status
+                  )}`}>
+                  <div className='flex items-center justify-between'>
+                    <h3 className='font-bold text-base'>
+                      {getStatusLabel(status)}
+                    </h3>
+                    <span className='text-xs font-bold bg-white/70 px-3 py-1 rounded-full shadow-sm'>
+                      {columnActions.length}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Column Cards */}
+                <div className='space-y-3 min-h-[400px]'>
+                  {columnActions.map((action) => (
+                    <ActionCard
+                      key={action.id}
+                      action={action}
+                      isExpanded={expandedActions.has(action.id)}
+                      onToggleExpand={() => toggleExpanded(action.id)}
+                      onStatusChange={handleStatusChange}
+                      onReassign={() => {
+                        setSelectedAction(action);
+                        setShowReassignModal(true);
+                      }}
+                      onAddComment={handleAddComment}
+                      commentInput={commentInputs[action.id] || ''}
+                      onCommentInputChange={(value) =>
+                        setCommentInputs({
+                          ...commentInputs,
+                          [action.id]: value,
+                        })
+                      }
+                      getStatusColor={getStatusColor}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
