@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { NewsItem, FinancialMetric } from '../types';
-import { mockInternalPulseData } from '../data/mockInternalPulse';
 import {
   SparklesIcon,
   PaperAirplaneIcon,
@@ -58,7 +57,6 @@ export default function RootCauseAnalysisSidebar({
   onToggle,
   selectedExternalItems,
   selectedInternalItems,
-  activeTab,
   hasSelectedItems: hasSelectedItemsProp,
 }: RootCauseAnalysisSidebarProps) {
   const [messages, setMessages] = useState<
@@ -396,7 +394,6 @@ Regarding your query about "${query}", I can help analyze the impact of selected
                   <ContextAwareAnalysis
                     selectedExternalItems={selectedExternalItems}
                     selectedInternalItems={selectedInternalItems}
-                    activeTab={activeTab}
                     impactAnalysis={impactAnalysis}
                   />
                 </div>
@@ -488,14 +485,12 @@ Regarding your query about "${query}", I can help analyze the impact of selected
 interface ContextAwareAnalysisProps {
   selectedExternalItems: NewsItem[];
   selectedInternalItems: FinancialMetric[];
-  activeTab: 'external' | 'internal' | 'actions';
   impactAnalysis: ImpactAnalysis | null;
 }
 
 function ContextAwareAnalysis({
   selectedExternalItems,
   selectedInternalItems,
-  activeTab,
   impactAnalysis,
 }: ContextAwareAnalysisProps) {
   return (

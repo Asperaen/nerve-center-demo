@@ -133,9 +133,6 @@ export default function ScenarioCreationModal({
 
   if (!isOpen) return null;
 
-  const allDrivers = extractValueDrivers(valueDriverHierarchy);
-  const driverMap = new Map(allDrivers.map((d) => [d.valueDriverId, d]));
-
   return (
     <div className='fixed inset-0 z-50 overflow-y-auto'>
       <div
@@ -229,7 +226,6 @@ export default function ScenarioCreationModal({
                               {metric.valueDrivers.map((driver) => {
                                 if (driver.value === undefined) return null;
 
-                                const driverInfo = driverMap.get(driver.id);
                                 const currentValue =
                                   valueDriverValues.get(driver.id) ??
                                   driver.value;

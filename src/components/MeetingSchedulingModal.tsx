@@ -4,7 +4,6 @@ import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
-  UserGroupIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
@@ -14,7 +13,6 @@ import type {
   MeetingMaterial,
   MeetingType,
 } from '../types';
-import { mockCalendarEvents } from '../data/mockCalendar';
 import type { SelectedItem, RelevantMeeting } from '../utils/meetingRelevance';
 import { generateMeetingTitle } from '../utils/meetingRelevance';
 
@@ -46,7 +44,7 @@ export default function MeetingSchedulingModal({
   const [meetingLocation, setMeetingLocation] = useState('');
   const [meetingDescription, setMeetingDescription] = useState('');
   const [meetingType, setMeetingType] = useState<MeetingType>('general');
-  const [attendees, setAttendees] = useState<MeetingAttendee[]>([
+  const [attendees] = useState<MeetingAttendee[]>([
     {
       name: 'CEO',
       email: 'ceo@company.com',

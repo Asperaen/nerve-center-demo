@@ -41,7 +41,6 @@ import {
   calculateScenarioWaterfall,
   getNextScenarioColor,
 } from '../utils/scenarioUtils';
-import ScenarioComparisonPanel from '../components/ScenarioComparisonPanel';
 import {
   getBestScenario,
   getWorstScenario,
@@ -56,7 +55,6 @@ export default function FinancePage() {
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
   const [editingScenario, setEditingScenario] =
     useState<ValueDriverScenario | null>(null);
-  const [isComparisonPanelOpen, setIsComparisonPanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
     null
@@ -135,11 +133,6 @@ export default function FinancePage() {
     });
   }, [scenarios, visibleScenarioIds]);
 
-  const handleCreateScenario = () => {
-    setEditingScenario(null);
-    setIsScenarioModalOpen(true);
-  };
-
   const handleEditScenario = (scenario: ValueDriverScenario) => {
     setEditingScenario(scenario);
     setIsScenarioModalOpen(true);
@@ -185,14 +178,6 @@ export default function FinancePage() {
     });
   };
 
-  const handleSelectAllScenarios = () => {
-    setVisibleScenarioIds(new Set(scenarios.map((s) => s.id)));
-  };
-
-  const handleDeselectAllScenarios = () => {
-    setVisibleScenarioIds(new Set());
-  };
-
   const handleCompareBestWorst = () => {
     const best = getBestScenario(scenarios);
     const worst = getWorstScenario(scenarios);
@@ -200,7 +185,6 @@ export default function FinancePage() {
     if (best) ids.add(best.id);
     if (worst) ids.add(worst.id);
     setVisibleScenarioIds(ids);
-    setIsComparisonPanelOpen(true);
   };
 
   const handleToggleAssumption = (assumptionId: string) => {
@@ -687,7 +671,7 @@ export default function FinancePage() {
                   )}
                   {scenarios.length > 0 && (
                     <button
-                      onClick={() => setIsComparisonPanelOpen(true)}
+                      onClick={() => {}}
                       className='px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 flex items-center'>
                       <ChartBarIcon className='w-4 h-4 mr-2' />
                       Comparison Panel

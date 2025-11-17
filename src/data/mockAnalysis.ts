@@ -1,4 +1,4 @@
-import type { AnalysisResult, DrillDownItem } from '../types';
+import type { AnalysisResult } from '../types';
 
 export const mockAnalysisResults: Record<string, AnalysisResult> = {
   'net-profit-by-bu': {

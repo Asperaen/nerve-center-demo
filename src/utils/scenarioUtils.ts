@@ -1,6 +1,5 @@
 import type {
   FinancialCategoryGroup,
-  ValueDriverItem,
   ValueDriverAssumption,
   ValueDriverScenario,
   ValueDriverScenarioValue,

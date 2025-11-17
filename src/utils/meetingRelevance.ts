@@ -1,4 +1,4 @@
-import type { Meeting, NewsItem, PulseMetric, MeetingMaterial } from '../types';
+import type { Meeting, NewsItem, PulseMetric } from '../types';
 import { mockCalendarEvents } from '../data/mockCalendar';
 
 export interface SelectedItem {
@@ -97,7 +97,7 @@ function isMeetingRelevant(
   let relevanceType: RelevantMeeting['relevanceType'] | null = null;
 
   // Check meeting materials first (most specific match)
-  const materialMatches = meeting.materials.some((material) => {
+  const materialMatches = meeting.materials.some(() => {
     return keywords.some((keyword) => {
       // This is a simplified check - in real app, would match against actual item IDs
       return keyword.length > 3;
