@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { Meeting, MeetingMaterial } from '../types';
 import { mockCalendarEvents } from '../data/mockCalendar';
 
@@ -13,6 +14,8 @@ interface CalendarSidebarProps {
     itemId: string
   ) => void;
   meetingMaterials?: Record<string, MeetingMaterial[]>;
+  onClose?: () => void;
+  isClosing?: boolean;
 }
 
 export default function CalendarSidebar({
@@ -20,6 +23,8 @@ export default function CalendarSidebar({
   onMeetingSelect,
   onDropMaterial,
   meetingMaterials = {},
+  onClose,
+  isClosing = false,
 }: CalendarSidebarProps) {
   const navigate = useNavigate();
   const [draggedOverMeetingId, setDraggedOverMeetingId] = useState<
@@ -27,9 +32,10 @@ export default function CalendarSidebar({
   >(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get current date (Nov 4, 2024)
-  const currentDate = new Date('2024-11-04T00:00:00+08:00');
-  const currentTime = new Date('2024-11-04T08:07:00+08:00'); // 5:07 PM as shown in image
+  // Get current date (Nov 19, 2025)
+  const currentDate = new Date('2025-11-19T00:00:00+08:00');
+  const currentTime = new Date('2025-11-19T08:07:00+08:00'); // 8:07 AM as shown in image
+  const today = new Date('2025-11-19T00:00:00+08:00'); // Today is Nov 19, 2025
 
   // Helper function to check if two dates are on the same day
   const isSameDay = (date1: Date, date2: Date): boolean => {
@@ -39,6 +45,9 @@ export default function CalendarSidebar({
       date1.getDate() === date2.getDate()
     );
   };
+
+  // Check if current date is today
+  const isToday = isSameDay(currentDate, today);
 
   // Filter events to only show those on the current date
   const eventsForCurrentDate = mockCalendarEvents.filter((meeting) =>
@@ -57,7 +66,7 @@ export default function CalendarSidebar({
   const timeSlots: Date[] = [];
   for (let hour = 0; hour <= 23; hour++) {
     timeSlots.push(
-      new Date(`2024-11-04T${hour.toString().padStart(2, '0')}:00:00+08:00`)
+      new Date(`2025-11-19T${hour.toString().padStart(2, '0')}:00:00+08:00`)
     );
   }
 
@@ -143,18 +152,18 @@ export default function CalendarSidebar({
       return 'bg-blue-600 border-2 border-blue-700 text-white font-semibold';
     }
 
-    // Regular meetings use type-based colors
+    // Regular meetings use type-based colors with dashed borders
     switch (meetingType) {
       case 'finance-review':
-        return 'bg-blue-100 border-2 border-blue-300 text-blue-900';
+        return 'bg-blue-100 border-2 border-dashed border-blue-300 text-blue-900';
       case 'interview':
-        return 'bg-purple-100 border-2 border-purple-300 text-purple-900';
+        return 'bg-purple-100 border-2 border-dashed border-purple-300 text-purple-900';
       case 'check-in':
-        return 'bg-green-100 border-2 border-green-300 text-green-900';
+        return 'bg-green-100 border-2 border-dashed border-green-300 text-green-900';
       case 'travel':
-        return 'bg-orange-100 border-2 border-orange-300 text-orange-900';
+        return 'bg-orange-100 border-2 border-dashed border-orange-300 text-orange-900';
       default:
-        return 'bg-gray-100 border-2 border-gray-300 text-gray-900';
+        return 'bg-pink-100 border-2 border-dashed border-pink-300 text-gray-900';
     }
   };
 
@@ -176,12 +185,34 @@ export default function CalendarSidebar({
   }, []);
 
   return (
-    <div className='fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 shadow-lg z-20 overflow-hidden flex flex-col'>
+    <div
+      className={`fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 shadow-lg z-20 overflow-hidden flex flex-col ${
+        isClosing ? 'animate-slide-out-left' : 'animate-slide-in-left'
+      }`}>
       {/* Header */}
-      <div className='p-4 border-b border-gray-200 bg-gray-50'>
+      <div className='p-4 border-b border-gray-200 bg-gray-50 relative'>
+        {/* Close Button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className='absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-sm'
+            aria-label='Close calendar'>
+            <XMarkIcon className='w-5 h-5' />
+          </button>
+        )}
         <div className='text-sm font-semibold text-gray-900'>GMT+8</div>
-        <div className='text-lg font-bold text-gray-900 mt-1'>
+        <div
+          className={`text-lg font-bold mt-1 ${
+            isToday
+              ? 'text-blue-700 bg-blue-200 border-2 border-blue-400 shadow-md px-3 py-2 rounded-lg'
+              : 'text-gray-900'
+          }`}>
           {format(currentDate, 'EEE d')}
+          {isToday && (
+            <span className='ml-2 text-xs font-semibold text-blue-700'>
+              (Today)
+            </span>
+          )}
         </div>
         <div className='text-xs text-gray-500 mt-1'>All Day</div>
       </div>

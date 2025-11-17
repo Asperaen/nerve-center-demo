@@ -906,7 +906,7 @@ export const mockNPDeviationKeyCallOut: KeyCallOut = {
 export const mockProductFamilyData: ProductFamilyData[] = [
   {
     id: 'pf-1',
-    productFamily: 'Modular Jack Connector',
+    productFamily: 'NexusLink RJ45',
     gpActual: 5819.276,
     gpBudget: 4374.08,
     gpGapToBudget: 1445.196,
@@ -917,7 +917,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-2',
-    productFamily: 'Edgecard Connector',
+    productFamily: 'FlexEdge Pro',
     gpActual: 11988.25,
     gpBudget: 10651.73,
     gpGapToBudget: 1336.519,
@@ -939,7 +939,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-4',
-    productFamily: 'Board to Board Connector',
+    productFamily: 'InterBoard X1',
     gpActual: 1159.983,
     gpBudget: 647.5003,
     gpGapToBudget: 512.4825,
@@ -950,7 +950,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-5',
-    productFamily: 'SFP Receptacle Connector',
+    productFamily: 'OptiLink SFP',
     gpActual: 355.4945,
     gpBudget: 187.9688,
     gpGapToBudget: 167.5256,
@@ -961,7 +961,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-6',
-    productFamily: 'USB Connector',
+    productFamily: 'UniversalLink USB',
     gpActual: 2110.074,
     gpBudget: 2064.615,
     gpGapToBudget: 45.45876,
@@ -972,7 +972,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-7',
-    productFamily: 'Circular Connector',
+    productFamily: 'RoundLink Series',
     gpActual: 28.40231,
     gpBudget: -17.0157,
     gpGapToBudget: 45.41804,
@@ -983,7 +983,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-8',
-    productFamily: 'Game Connector',
+    productFamily: 'GameLink Pro',
     gpActual: 57.07211,
     gpBudget: 28.81389,
     gpGapToBudget: 28.25822,
@@ -994,7 +994,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-9',
-    productFamily: 'DVI Connector',
+    productFamily: 'VideoLink DVI',
     gpActual: 18.26292,
     gpBudget: 12.3138,
     gpGapToBudget: 5.949113,
@@ -1005,7 +1005,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-10',
-    productFamily: 'Wire to Board Connector',
+    productFamily: 'WireBoard Connect',
     gpActual: 7.135469,
     gpBudget: 5.228405,
     gpGapToBudget: 1.907064,
@@ -1016,7 +1016,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-11',
-    productFamily: 'LED',
+    productFamily: 'LuminaLink',
     gpActual: 1.199406,
     gpBudget: 0,
     gpGapToBudget: 1.199406,
@@ -1027,7 +1027,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-12',
-    productFamily: 'Terminal Block',
+    productFamily: 'TermiBlock Plus',
     gpActual: 9.176851,
     gpBudget: 8.456919,
     gpGapToBudget: 0.719932,
@@ -1038,7 +1038,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-13',
-    productFamily: 'Ribbon Beetle Connector',
+    productFamily: 'RibbonFlex',
     gpActual: 0.336857,
     gpBudget: 0.164976,
     gpGapToBudget: 0.17188,
@@ -1049,7 +1049,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-14',
-    productFamily: 'Metal parts',
+    productFamily: 'MetalLink Components',
     gpActual: 1.038933,
     gpBudget: 1.054049,
     gpGapToBudget: -0.01512,
@@ -1060,7 +1060,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-15',
-    productFamily: 'Centronic Connector',
+    productFamily: 'CentriLink',
     gpActual: 2.265061,
     gpBudget: 2.896337,
     gpGapToBudget: -0.63128,
@@ -1071,7 +1071,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-16',
-    productFamily: 'Smart Serial Connector',
+    productFamily: 'SmartSerial Pro',
     gpActual: 4.575059,
     gpBudget: 6.941939,
     gpGapToBudget: -2.36688,
@@ -1082,7 +1082,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-17',
-    productFamily: 'IEEE 1394 Connector',
+    productFamily: 'FireLink 1394',
     gpActual: 0.298009,
     gpBudget: 2.915124,
     gpGapToBudget: -2.61711,
@@ -1093,7 +1093,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-18',
-    productFamily: 'Mini Din Connector',
+    productFamily: 'MiniDin Pro',
     gpActual: -5.96684,
     gpBudget: -1.78034,
     gpGapToBudget: -4.18651,
@@ -1104,7 +1104,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-19',
-    productFamily: 'Busbar Power',
+    productFamily: 'PowerBus Link',
     gpActual: 0,
     gpBudget: 5.5,
     gpGapToBudget: -5.5,
@@ -1115,7 +1115,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-20',
-    productFamily: 'SCSI Connector',
+    productFamily: 'SCSILink',
     gpActual: 7.768245,
     gpBudget: 14.19952,
     gpGapToBudget: -6.43127,
@@ -1126,7 +1126,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-21',
-    productFamily: 'DSUB Connector',
+    productFamily: 'DSubLink',
     gpActual: 232.5278,
     gpBudget: 249.83,
     gpGapToBudget: -17.3022,
@@ -1137,7 +1137,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-22',
-    productFamily: 'POF Connector',
+    productFamily: 'OptiFiber POF',
     gpActual: 12.38406,
     gpBudget: 40.6344,
     gpGapToBudget: -28.2503,
@@ -1148,7 +1148,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-23',
-    productFamily: 'Pogo Connector',
+    productFamily: 'PogoLink',
     gpActual: -23.1665,
     gpBudget: 13.78592,
     gpGapToBudget: -36.9524,
@@ -1159,7 +1159,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-24',
-    productFamily: 'HDMI Connector',
+    productFamily: 'VideoLink HDMI',
     gpActual: 123.5039,
     gpBudget: 172.802,
     gpGapToBudget: -49.2981,
@@ -1170,7 +1170,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-25',
-    productFamily: 'Battery Connector',
+    productFamily: 'PowerCell Link',
     gpActual: 246.6817,
     gpBudget: 297.727,
     gpGapToBudget: -51.0453,
@@ -1181,7 +1181,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-26',
-    productFamily: 'Audio Jack Connector',
+    productFamily: 'AudioLink Jack',
     gpActual: 214.868,
     gpBudget: 269.0152,
     gpGapToBudget: -54.1472,
@@ -1192,7 +1192,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-27',
-    productFamily: 'Plastic Parts',
+    productFamily: 'FlexiLink Parts',
     gpActual: 206.349,
     gpBudget: 264.8676,
     gpGapToBudget: -58.5186,
@@ -1203,7 +1203,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-28',
-    productFamily: 'DisplayPort Connector',
+    productFamily: 'VideoLink DP',
     gpActual: 737.1372,
     gpBudget: 850.6863,
     gpGapToBudget: -113.549,
@@ -1214,7 +1214,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-29',
-    productFamily: 'Power Connector',
+    productFamily: 'PowerLink Pro',
     gpActual: 254.0236,
     gpBudget: 460.4314,
     gpGapToBudget: -206.408,
@@ -1225,7 +1225,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-30',
-    productFamily: 'Foxray-s Connector',
+    productFamily: 'FoxRay Link',
     gpActual: -128.424,
     gpBudget: 174.3188,
     gpGapToBudget: -302.743,
@@ -1236,7 +1236,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-31',
-    productFamily: 'Docking Connector',
+    productFamily: 'DockLink Pro',
     gpActual: 427.9825,
     gpBudget: 898.4622,
     gpGapToBudget: -470.48,
@@ -1247,7 +1247,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-32',
-    productFamily: 'Card Connector',
+    productFamily: 'CardLink',
     gpActual: 77.75676,
     gpBudget: 587.92,
     gpGapToBudget: -510.163,
@@ -1258,7 +1258,7 @@ export const mockProductFamilyData: ProductFamilyData[] = [
   },
   {
     id: 'pf-33',
-    productFamily: 'Memory Connector',
+    productFamily: 'MemoryLink Pro',
     gpActual: 10238.99,
     gpBudget: 10833.14,
     gpGapToBudget: -594.146,
@@ -1286,7 +1286,7 @@ export const mockProductFamilyTotals: ProductFamilyData = {
 export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-1',
-    productFamily: 'Memory Connector',
+    productFamily: 'MemoryLink Pro',
     costImpact: -3763.64,
     volActual: 115320.74,
     unitCostActual: 0.396,
@@ -1299,7 +1299,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-2',
-    productFamily: 'Edgecard Connector',
+    productFamily: 'FlexEdge Pro',
     costImpact: -963.81,
     volActual: 102529.25,
     unitCostActual: 0.209,
@@ -1312,7 +1312,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-3',
-    productFamily: 'Modular Jack Connector',
+    productFamily: 'NexusLink RJ45',
     costImpact: -738.41,
     volActual: 28410.6,
     unitCostActual: 0.603,
@@ -1325,7 +1325,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-4',
-    productFamily: 'Board to Board Connector',
+    productFamily: 'InterBoard X1',
     costImpact: -637.3,
     volActual: 10201.25,
     unitCostActual: 0.328,
@@ -1338,7 +1338,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-5',
-    productFamily: 'USB Connector',
+    productFamily: 'UniversalLink USB',
     costImpact: -428.02,
     volActual: 66629.88,
     unitCostActual: 0.153,
@@ -1351,7 +1351,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-6',
-    productFamily: 'Card Connector',
+    productFamily: 'CardLink',
     costImpact: -355.41,
     volActual: 4967.38,
     unitCostActual: 0.303,
@@ -1364,7 +1364,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-7',
-    productFamily: 'Foxray-s Connector',
+    productFamily: 'FoxRay Link',
     costImpact: -321.06,
     volActual: 220.0,
     unitCostActual: 2.588,
@@ -1377,7 +1377,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-8',
-    productFamily: 'Docking Connector',
+    productFamily: 'DockLink Pro',
     costImpact: -241.48,
     volActual: 2299.24,
     unitCostActual: 0.24,
@@ -1390,7 +1390,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-9',
-    productFamily: 'HDMI Connector',
+    productFamily: 'VideoLink HDMI',
     costImpact: -188.63,
     volActual: 7858.86,
     unitCostActual: 0.195,
@@ -1403,7 +1403,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-10',
-    productFamily: 'Plastic Parts',
+    productFamily: 'FlexiLink Parts',
     costImpact: -113.23,
     volActual: 11843.3,
     unitCostActual: 0.049,
@@ -1416,7 +1416,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-11',
-    productFamily: 'DisplayPort Connector',
+    productFamily: 'VideoLink DP',
     costImpact: -90.64,
     volActual: 13559.07,
     unitCostActual: 0.212,
@@ -1429,7 +1429,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-12',
-    productFamily: 'DSUB Connector',
+    productFamily: 'DSubLink',
     costImpact: -47.08,
     volActual: 10606.44,
     unitCostActual: 0.294,
@@ -1442,7 +1442,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-13',
-    productFamily: 'Pogo Connector',
+    productFamily: 'PogoLink',
     costImpact: -31.17,
     volActual: 1260.98,
     unitCostActual: 0.09,
@@ -1455,7 +1455,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-14',
-    productFamily: 'SCSI Connector',
+    productFamily: 'SCSILink',
     costImpact: -27.49,
     volActual: 44.46,
     unitCostActual: 1.043,
@@ -1468,7 +1468,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-15',
-    productFamily: 'Battery Connector',
+    productFamily: 'PowerCell Link',
     costImpact: -27.18,
     volActual: 1698.45,
     unitCostActual: 0.204,
@@ -1481,7 +1481,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-16',
-    productFamily: 'Metal parts',
+    productFamily: 'MetalLink Components',
     costImpact: -15.32,
     volActual: 1295.68,
     unitCostActual: 0.026,
@@ -1494,7 +1494,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-17',
-    productFamily: 'Audio Jack Connector',
+    productFamily: 'AudioLink Jack',
     costImpact: -13.2,
     volActual: 18109.81,
     unitCostActual: 0.147,
@@ -1507,7 +1507,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-18',
-    productFamily: 'Mini Din Connector',
+    productFamily: 'MiniDin Pro',
     costImpact: -10.1,
     volActual: 1505.5,
     unitCostActual: 0.183,
@@ -1520,7 +1520,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-19',
-    productFamily: 'DVI Connector',
+    productFamily: 'VideoLink DVI',
     costImpact: -3.65,
     volActual: 807.96,
     unitCostActual: 0.279,
@@ -1533,7 +1533,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-20',
-    productFamily: 'Centronic Connector',
+    productFamily: 'CentriLink',
     costImpact: -1.2,
     volActual: 49.92,
     unitCostActual: 0.454,
@@ -1546,7 +1546,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-21',
-    productFamily: 'Smart Serial Connector',
+    productFamily: 'SmartSerial Pro',
     costImpact: -0.76,
     volActual: 4.8,
     unitCostActual: 0.952,
@@ -1559,7 +1559,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-22',
-    productFamily: 'IEEE 1394 Connector',
+    productFamily: 'FireLink 1394',
     costImpact: -0.05,
     volActual: 9.72,
     unitCostActual: 0.204,
@@ -1572,7 +1572,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-23',
-    productFamily: 'LED',
+    productFamily: 'LuminaLink',
     costImpact: 0.0,
     volActual: 320.3,
     unitCostActual: 0.033,
@@ -1585,7 +1585,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-24',
-    productFamily: 'Busbar Power',
+    productFamily: 'PowerBus Link',
     costImpact: 0.0,
     volActual: 0.0,
     unitCostActual: 0.0,
@@ -1611,7 +1611,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-26',
-    productFamily: 'Ribbon Beetle Connector',
+    productFamily: 'RibbonFlex',
     costImpact: 0.02,
     volActual: 4.18,
     unitCostActual: 0.806,
@@ -1624,7 +1624,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-27',
-    productFamily: 'Terminal Block',
+    productFamily: 'TermiBlock Plus',
     costImpact: 4.84,
     volActual: 38.66,
     unitCostActual: 0.262,
@@ -1637,7 +1637,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-28',
-    productFamily: 'Game Connector',
+    productFamily: 'GameLink Pro',
     costImpact: 8.38,
     volActual: 4309.6,
     unitCostActual: 0.073,
@@ -1650,7 +1650,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-29',
-    productFamily: 'Circular Connector',
+    productFamily: 'RoundLink Series',
     costImpact: 9.56,
     volActual: 9.29,
     unitCostActual: 0.921,
@@ -1663,7 +1663,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-30',
-    productFamily: 'Wire to Board Connector',
+    productFamily: 'WireBoard Connect',
     costImpact: 10.98,
     volActual: 545.12,
     unitCostActual: 0.105,
@@ -1676,7 +1676,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-31',
-    productFamily: 'POF Connector',
+    productFamily: 'OptiFiber POF',
     costImpact: 12.81,
     volActual: 330.44,
     unitCostActual: 0.167,
@@ -1689,7 +1689,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-32',
-    productFamily: 'SFP Receptacle Connector',
+    productFamily: 'OptiLink SFP',
     costImpact: 53.71,
     volActual: 3833.48,
     unitCostActual: 0.33,
@@ -1702,7 +1702,7 @@ export const mockCostImpactData: CostImpactData[] = [
   },
   {
     id: 'ci-33',
-    productFamily: 'Power Connector',
+    productFamily: 'PowerLink Pro',
     costImpact: 595.32,
     volActual: 26679.85,
     unitCostActual: 0.024,

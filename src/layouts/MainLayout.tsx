@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import RightSidebar from '../components/RightSidebar';
 import CalendarSidebar from '../components/CalendarSidebar';
 import { mockCalendarEvents } from '../data/mockCalendar';
@@ -8,8 +9,10 @@ import type { MeetingMaterial } from '../types';
 export default function MainLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+  const [isCalendarClosing, setIsCalendarClosing] = useState(false);
   const location = useLocation();
   const isMeetingPage = location.pathname.startsWith('/meeting/');
+  const isMyMeetingsPage = location.pathname === '/my-meetings';
   const meetingId = isMeetingPage ? location.pathname.split('/')[2] : undefined;
 
   // State for meeting materials (which pulse items are attached to which meetings)
@@ -56,10 +59,35 @@ export default function MainLayout() {
     []
   );
 
+  const handleCloseCalendar = () => {
+    setIsCalendarClosing(true);
+    setTimeout(() => {
+      setIsCalendarVisible(false);
+      setIsCalendarClosing(false);
+    }, 300); // Match animation duration
+  };
+
+  // Close calendar when navigating to My Meetings page
+  useEffect(() => {
+    if (isMyMeetingsPage && isCalendarVisible) {
+      handleCloseCalendar();
+    }
+  }, [isMyMeetingsPage, isCalendarVisible]);
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 relative'>
-      {/* Left Calendar Sidebar */}
-      {isCalendarVisible && (
+      {/* Floating Calendar Toggle Button - Only show when calendar is closed and not on My Meetings page */}
+      {!isCalendarVisible && !isMyMeetingsPage && (
+        <button
+          onClick={() => setIsCalendarVisible(true)}
+          className='fixed top-3 left-0 z-50 w-8 h-8 rounded-md shadow-lg transition-all duration-200 flex items-center justify-center bg-white/95 backdrop-blur-sm text-gray-600 hover:bg-white hover:text-gray-900 border border-gray-200/60 hover:border-gray-300 hover:shadow-xl'
+          aria-label='Open calendar'>
+          <CalendarDaysIcon className='w-4 h-4' />
+        </button>
+      )}
+
+      {/* Left Calendar Sidebar - Hide on My Meetings page */}
+      {isCalendarVisible && !isMyMeetingsPage && (
         <CalendarSidebar
           selectedMeetingId={meetingId}
           onMeetingSelect={() => {
@@ -67,6 +95,8 @@ export default function MainLayout() {
           }}
           onDropMaterial={handleDropMaterial}
           meetingMaterials={meetingMaterials}
+          onClose={handleCloseCalendar}
+          isClosing={isCalendarClosing}
         />
       )}
 
@@ -74,14 +104,12 @@ export default function MainLayout() {
       <RightSidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        isCalendarVisible={isCalendarVisible}
-        onToggleCalendar={() => setIsCalendarVisible(!isCalendarVisible)}
       />
 
       {/* Main content area - adjust margin for both sidebars */}
       <main
         className={`min-h-screen transition-all duration-300 ${
-          isCalendarVisible ? 'ml-80' : 'ml-0'
+          isCalendarVisible && !isMyMeetingsPage ? 'ml-80' : 'ml-0'
         } ${isSidebarCollapsed ? 'mr-16' : 'mr-64'}`}>
         <Outlet context={{ meetingMaterials }} />
       </main>

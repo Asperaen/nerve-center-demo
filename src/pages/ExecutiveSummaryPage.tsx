@@ -7,28 +7,23 @@ import {
   ChartBarIcon,
   SparklesIcon,
   ClipboardDocumentListIcon,
-  InformationCircleIcon,
   CalendarIcon,
   PlusIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow, format, isToday } from 'date-fns';
 import { mockNews } from '../data/mockNews';
 import { mockActions } from '../data/mockActions';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import { mockKPIs } from '../data/mockKPIs';
-import { mockVarianceAnalysisData } from '../data/mockExecutiveDashboard';
+import {
+  mockExecutiveInitiatives,
+  mockMilestones,
+  calculateSummaryStatistics,
+} from '../data/mockExecutiveDashboard';
 import { mockCalendarEvents } from '../data/mockCalendar';
 import type { PulseMetric, Meeting, MeetingMaterial } from '../types';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import CreateActionModal from '../components/CreateActionModal';
@@ -506,28 +501,20 @@ export default function ExecutiveSummaryPage() {
     weekMeetings: CriticalMeeting[];
     totalActionItems: number;
   } => {
-    const currentDate = new Date('2024-11-04T17:07:00+08:00'); // Current time as per calendar
+    const currentDate = new Date('2025-11-19T08:07:00+08:00'); // Current time: Nov 19, 2025 8:07 AM
     const today = new Date(currentDate);
     today.setHours(0, 0, 0, 0);
     const weekEnd = new Date(today);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    // Get all critical meetings (today and this week)
+    // Get all critical meetings (only those marked with isCritical: true)
     const allMeetings = mockCalendarEvents.filter((meeting) => {
       const meetingDate = new Date(meeting.startTime);
       meetingDate.setHours(0, 0, 0, 0);
       return (
         meetingDate >= today &&
         meetingDate <= weekEnd &&
-        (meeting.isCritical ||
-          meeting.attendees.some(
-            (att) =>
-              att.role?.toLowerCase().includes('customer') ||
-              (att.role?.toLowerCase().includes('ceo') &&
-                att.email !== 'ceo@company.com')
-          ) ||
-          meeting.title.toLowerCase().includes('procurement') ||
-          meeting.meetingType === 'finance-review')
+        meeting.isCritical === true
       );
     });
 
@@ -737,264 +724,38 @@ export default function ExecutiveSummaryPage() {
       };
     };
 
-    const todayMeetings = allMeetings
-      .filter((m) => isToday(new Date(m.startTime)))
+    // Combine all meetings and sort chronologically starting from today
+    const allProcessedMeetings = allMeetings
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime()) // Sort by time
-      .map(processMeeting);
+      .map(processMeeting)
+      .slice(0, 5); // Limit to 5 meetings
 
-    const weekMeetings = allMeetings
-      .filter((m) => !isToday(new Date(m.startTime)) && m.isCritical)
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime()) // Sort by date
-      .map(processMeeting);
-
-    const totalActionItems =
-      todayMeetings.reduce((sum, m) => sum + m.materials.length, 0) +
-      weekMeetings.reduce((sum, m) => sum + m.materials.length, 0);
+    const totalActionItems = allProcessedMeetings.reduce(
+      (sum, m) => sum + m.materials.length,
+      0
+    );
 
     return {
-      todayMeetings,
-      weekMeetings,
+      todayMeetings: allProcessedMeetings,
+      weekMeetings: [], // No longer used, kept for compatibility
       totalActionItems,
     };
   };
 
   const executiveBriefing = getExecutiveBriefing();
 
+  // Calculate Wave summary statistics
+  const waveSummary = useMemo(() => {
+    return calculateSummaryStatistics(mockExecutiveInitiatives, mockMilestones);
+  }, []);
+
+  const formatNetBenefit = (value: number): string => {
+    return `Million USD ${value.toFixed(1)}`;
+  };
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
-        {/* Page Header */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-6'>
-            <h1 className='text-4xl font-bold text-gray-900'>Home</h1>
-            <button
-              onClick={() => setIsCreateActionModalOpen(true)}
-              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
-              <PlusIcon className='w-5 h-5' />
-              Create Action
-            </button>
-          </div>
-
-          {/* Executive Briefing - Critical Meetings */}
-          <div className='bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden mb-6'>
-            <div className='bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4'>
-              <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-3'>
-                  <CalendarIcon className='w-7 h-7 text-white' />
-                  <h2 className='text-2xl font-bold text-white'>
-                    Meetings Briefing
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div className='p-6'>
-              {/* Today's Critical Meetings */}
-              {executiveBriefing.todayMeetings.length > 0 && (
-                <div className='mb-6'>
-                  <div className='flex items-center gap-2 mb-4'>
-                    <div className='w-1 h-6 bg-red-500 rounded-full'></div>
-                    <h3 className='text-lg font-bold text-gray-900'>
-                      🎯 Today's Critical Meetings
-                    </h3>
-                    <span className='text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-md'>
-                      {executiveBriefing.todayMeetings.length} Meeting
-                      {executiveBriefing.todayMeetings.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {executiveBriefing.todayMeetings.map((item) => (
-                      <div
-                        key={item.meeting.id}
-                        className={`border-2 rounded-xl p-4 transition-all hover:shadow-lg flex flex-col ${
-                          item.priority === 'critical'
-                            ? 'border-red-300 bg-red-50/50'
-                            : item.priority === 'high'
-                            ? 'border-orange-300 bg-orange-50/50'
-                            : 'border-blue-300 bg-blue-50/50'
-                        }`}>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2 mb-2'>
-                            <span className='text-xs font-bold text-gray-700'>
-                              {item.time}
-                            </span>
-                            <span
-                              className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                                item.priority === 'critical'
-                                  ? 'bg-red-200 text-red-800'
-                                  : item.priority === 'high'
-                                  ? 'bg-orange-200 text-orange-800'
-                                  : 'bg-blue-200 text-blue-800'
-                              }`}>
-                              {item.priority.toUpperCase()}
-                            </span>
-                          </div>
-                          <h4 className='text-sm font-bold text-gray-900 mb-1.5 line-clamp-2'>
-                            {item.meeting.title}
-                          </h4>
-                          {item.meeting.location && (
-                            <p className='text-xs text-gray-600 mb-1.5 line-clamp-1'>
-                              📍 {item.meeting.location}
-                            </p>
-                          )}
-                          {item.keyAttendees.length > 0 && (
-                            <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
-                              <span className='font-semibold'>With:</span>{' '}
-                              {item.keyAttendees.slice(0, 2).join(', ')}
-                              {item.keyAttendees.length > 2 && ' + more'}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Materials & Action Items */}
-                        {item.materials.length > 0 && (
-                          <div className='mt-3 pt-3 border-t border-gray-200'>
-                            <p className='text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide'>
-                              📋 Prep:
-                            </p>
-                            <div className='space-y-1.5'>
-                              {item.materials.map((material, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`flex items-start gap-1.5 p-1.5 rounded-md ${
-                                    material.type === 'deck'
-                                      ? 'bg-purple-100 border border-purple-300'
-                                      : material.type === 'action'
-                                      ? 'bg-amber-100 border border-amber-300'
-                                      : 'bg-blue-100 border border-blue-300'
-                                  }`}>
-                                  <span className='text-xs mt-0.5 flex-shrink-0'>
-                                    {material.type === 'deck'
-                                      ? '📊'
-                                      : material.type === 'action'
-                                      ? '⚠️'
-                                      : '📄'}
-                                  </span>
-                                  <div className='flex-1 min-w-0'>
-                                    <p className='text-xs font-semibold text-gray-800 line-clamp-2'>
-                                      {material.description}
-                                    </p>
-                                    {material.items && (
-                                      <ul className='mt-0.5 space-y-0.5'>
-                                        {material.items.map((item, i) => (
-                                          <li
-                                            key={i}
-                                            className='text-xs text-gray-600 list-disc list-inside line-clamp-1'>
-                                            {item}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* This Week's Critical Meetings */}
-              {executiveBriefing.weekMeetings.length > 0 && (
-                <div>
-                  <div className='flex items-center gap-2 mb-4'>
-                    <div className='w-1 h-6 bg-blue-500 rounded-full'></div>
-                    <h3 className='text-lg font-bold text-gray-900'>
-                      📅 This Week's Critical Meetings
-                    </h3>
-                    <span className='text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-md'>
-                      {executiveBriefing.weekMeetings.length} Meeting
-                      {executiveBriefing.weekMeetings.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3'>
-                    {executiveBriefing.weekMeetings.map((item) => (
-                      <div
-                        key={item.meeting.id}
-                        className={`border-2 rounded-lg p-3 transition-all hover:shadow-md flex flex-col ${
-                          item.priority === 'critical'
-                            ? 'border-red-200 bg-red-50/30'
-                            : item.priority === 'high'
-                            ? 'border-orange-200 bg-orange-50/30'
-                            : 'border-blue-200 bg-blue-50/30'
-                        }`}>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-1.5 mb-1.5 flex-wrap'>
-                            <span className='text-xs font-bold text-gray-700'>
-                              {item.time}
-                            </span>
-                            <span
-                              className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
-                                item.priority === 'critical'
-                                  ? 'bg-red-200 text-red-800'
-                                  : item.priority === 'high'
-                                  ? 'bg-orange-200 text-orange-800'
-                                  : 'bg-blue-200 text-blue-800'
-                              }`}>
-                              {item.priority.toUpperCase()}
-                            </span>
-                          </div>
-                          <h4 className='text-xs font-bold text-gray-900 mb-1.5 line-clamp-2'>
-                            {item.meeting.title}
-                          </h4>
-                          {item.keyAttendees.length > 0 && (
-                            <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
-                              With: {item.keyAttendees.slice(0, 2).join(', ')}
-                              {item.keyAttendees.length > 2 && ' + more'}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Materials Summary */}
-                        {item.materials.length > 0 && (
-                          <div className='mt-2 pt-2 border-t border-gray-200'>
-                            <div className='flex flex-wrap gap-1.5'>
-                              {item.materials.map((material, idx) => (
-                                <span
-                                  key={idx}
-                                  className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                                    material.type === 'deck'
-                                      ? 'bg-purple-100 text-purple-700 border border-purple-300'
-                                      : material.type === 'action'
-                                      ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                                      : 'bg-blue-100 text-blue-700 border border-blue-300'
-                                  }`}>
-                                  {material.type === 'deck'
-                                    ? '📊'
-                                    : material.type === 'action'
-                                    ? '⚠️'
-                                    : '📄'}{' '}
-                                  <span className='line-clamp-1'>
-                                    {material.description}
-                                  </span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {executiveBriefing.todayMeetings.length === 0 &&
-                executiveBriefing.weekMeetings.length === 0 && (
-                  <div className='text-center py-8 text-gray-500'>
-                    <CalendarIcon className='w-12 h-12 mx-auto mb-3 text-gray-300' />
-                    <p className='text-sm font-medium'>
-                      No critical meetings scheduled
-                    </p>
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
-
         {/* Action Bar - appears when items are selected */}
         {totalSelectedCount > 0 && (
           <div className='sticky top-4 z-40 mb-6 bg-white rounded-xl border-2 border-primary-500 shadow-lg p-4'>
@@ -1033,6 +794,131 @@ export default function ExecutiveSummaryPage() {
           </div>
         )}
 
+        {/* Page Header */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-6'>
+            <h1 className='text-4xl font-bold text-gray-900'>Home</h1>
+            <button
+              onClick={() => setIsCreateActionModalOpen(true)}
+              className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
+              <PlusIcon className='w-5 h-5' />
+              Create Action
+            </button>
+          </div>
+
+          {/* Executive Briefing - Critical Meetings */}
+          <div className='mb-8'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+                <CalendarIcon className='w-6 h-6 text-primary-600' />
+                🎯 Upcoming Critical Meetings{' '}
+                {executiveBriefing.todayMeetings.length} Meeting
+                {executiveBriefing.todayMeetings.length !== 1 ? 's' : ''}
+              </h2>
+            </div>
+
+            {/* Upcoming Critical Meetings (up to 5) */}
+            {executiveBriefing.todayMeetings.length > 0 && (
+              <div className='grid grid-cols-5 gap-4 overflow-x-auto'>
+                {executiveBriefing.todayMeetings.map((item) => (
+                  <div
+                    key={item.meeting.id}
+                    className='border-2 border-gray-200 bg-white rounded-xl p-4 transition-all hover:shadow-lg flex flex-col'>
+                    <div className='flex-1'>
+                      <div className='flex items-center gap-2 mb-2'>
+                        <span className='text-xs font-bold text-gray-700'>
+                          {item.time}
+                        </span>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                            item.priority === 'critical'
+                              ? 'bg-red-200 text-red-800'
+                              : item.priority === 'high'
+                              ? 'bg-orange-200 text-orange-800'
+                              : 'bg-blue-200 text-blue-800'
+                          }`}>
+                          {item.priority.toUpperCase()}
+                        </span>
+                      </div>
+                      <h4 className='text-sm font-bold text-gray-900 mb-1.5 line-clamp-2'>
+                        {item.meeting.title}
+                      </h4>
+                      {item.meeting.location && (
+                        <p className='text-xs text-gray-600 mb-1.5 line-clamp-1'>
+                          📍 {item.meeting.location}
+                        </p>
+                      )}
+                      {item.keyAttendees.length > 0 && (
+                        <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
+                          <span className='font-semibold'>With:</span>{' '}
+                          {item.keyAttendees.slice(0, 2).join(', ')}
+                          {item.keyAttendees.length > 2 && ' + more'}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Materials & Action Items */}
+                    {item.materials.length > 0 && (
+                      <div className='mt-3 pt-3 border-t border-gray-200'>
+                        <p className='text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide'>
+                          📋 Prep:
+                        </p>
+                        <div className='space-y-1.5'>
+                          {item.materials.map((material, idx) => (
+                            <div
+                              key={idx}
+                              className={`flex items-start gap-1.5 p-1.5 rounded-md ${
+                                material.type === 'deck'
+                                  ? 'bg-purple-100 border border-purple-300'
+                                  : material.type === 'action'
+                                  ? 'bg-amber-100 border border-amber-300'
+                                  : 'bg-blue-100 border border-blue-300'
+                              }`}>
+                              <span className='text-xs mt-0.5 flex-shrink-0'>
+                                {material.type === 'deck'
+                                  ? '📊'
+                                  : material.type === 'action'
+                                  ? '⚠️'
+                                  : '📄'}
+                              </span>
+                              <div className='flex-1 min-w-0'>
+                                <p className='text-xs font-semibold text-gray-800 line-clamp-2'>
+                                  {material.description}
+                                </p>
+                                {material.items && (
+                                  <ul className='mt-0.5 space-y-0.5'>
+                                    {material.items.map((item, i) => (
+                                      <li
+                                        key={i}
+                                        className='text-xs text-gray-600 list-disc list-inside line-clamp-1'>
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {executiveBriefing.todayMeetings.length === 0 && (
+              <div className='text-center py-8 text-gray-500'>
+                <CalendarIcon className='w-12 h-12 mx-auto mb-3 text-gray-300' />
+                <p className='text-sm font-medium'>
+                  No critical meetings scheduled
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Key Leading parameter Section */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
@@ -1068,20 +954,15 @@ export default function ExecutiveSummaryPage() {
                   return;
                 }
 
-                if (!isSelected) {
-                  e.preventDefault();
-                  return;
+                // If item is selected, include all selected items for multi-drag
+                if (isSelected) {
+                  const allSelectedItems = getAllSelectedItemsForDrag();
+                  e.dataTransfer.setData(
+                    'multipleItems',
+                    JSON.stringify(allSelectedItems)
+                  );
                 }
-
-                // Get all selected items for multi-drag
-                const allSelectedItems = getAllSelectedItemsForDrag();
-
-                // Store all selected items as JSON for multi-drag
-                e.dataTransfer.setData(
-                  'multipleItems',
-                  JSON.stringify(allSelectedItems)
-                );
-                // Also set single item for backward compatibility
+                // Always set single item for backward compatibility
                 e.dataTransfer.setData('materialType', 'internal-pulse');
                 e.dataTransfer.setData('itemId', metric.id);
                 e.dataTransfer.effectAllowed = 'move';
@@ -1101,13 +982,13 @@ export default function ExecutiveSummaryPage() {
               return (
                 <div
                   key={metric.id}
-                  draggable={isSelected}
+                  draggable={true}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-4 hover:shadow-xl transition-all duration-300 min-w-0 relative ${
                     isSelected
                       ? 'border-primary-500 bg-primary-50/30 cursor-move'
-                      : 'border-gray-200 cursor-pointer'
+                      : 'border-gray-200 cursor-move'
                   }`}
                   onClick={() => toggleOperationMetric(metric.id)}>
                   <div className='flex items-start justify-between mb-3 gap-2'>
@@ -1217,112 +1098,156 @@ export default function ExecutiveSummaryPage() {
             costs by $5M. These urgent, high-impact developments require
             immediate supply chain adjustments and production shifts.
           </p>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl transition-shadow duration-300'>
             {criticalNews.length > 0 ? (
-              criticalNews.map((news) => {
-                const isSelected = selectedNewsItems.has(news.id);
-
-                const handleDragStart = (e: React.DragEvent) => {
-                  // Don't start drag if clicking on checkbox
-                  const target = e.target as HTMLElement;
-                  if (target.closest('input[type="checkbox"]')) {
-                    e.preventDefault();
-                    return;
-                  }
-
-                  if (!isSelected) {
-                    e.preventDefault();
-                    return;
-                  }
-
-                  // Get all selected items for multi-drag
-                  const allSelectedItems = getAllSelectedItemsForDrag();
-
-                  // Store all selected items as JSON for multi-drag
-                  e.dataTransfer.setData(
-                    'multipleItems',
-                    JSON.stringify(allSelectedItems)
+              <div className='divide-y divide-gray-200 max-h-[800px] overflow-y-auto'>
+                {criticalNews.map((news) => {
+                  const isSelected = selectedNewsItems.has(news.id);
+                  const meetings = getMeetingsForNewsItem(
+                    news.id,
+                    meetingMaterials
                   );
-                  // Also set single item for backward compatibility
-                  e.dataTransfer.setData('materialType', 'external-pulse');
-                  e.dataTransfer.setData('itemId', news.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                  // Add visual feedback
-                  if (e.currentTarget instanceof HTMLElement) {
-                    e.currentTarget.style.opacity = '0.5';
-                  }
-                };
 
-                const handleDragEnd = (e: React.DragEvent) => {
-                  // Restore visual feedback
-                  if (e.currentTarget instanceof HTMLElement) {
-                    e.currentTarget.style.opacity = '1';
-                  }
-                };
+                  const handleDragStart = (e: React.DragEvent) => {
+                    // Don't start drag if clicking on checkbox
+                    const target = e.target as HTMLElement;
+                    if (target.closest('input[type="checkbox"]')) {
+                      e.preventDefault();
+                      return;
+                    }
 
-                return (
-                  <div
-                    key={news.id}
-                    draggable={isSelected}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    className={`bg-white rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 p-6 ${
-                      isSelected
-                        ? 'border-primary-500 ring-2 ring-primary-200 cursor-move'
-                        : news.riskOrOpportunity === 'risk'
-                        ? 'border-red-200 bg-gradient-to-br from-red-50/50 to-white cursor-pointer'
-                        : 'border-green-200 bg-gradient-to-br from-green-50/50 to-white cursor-pointer'
-                    }`}
-                    onClick={() => toggleNewsItem(news.id)}>
-                    <div className='flex items-start justify-between mb-3'>
-                      <div className='flex items-start gap-2 flex-1'>
-                        <input
-                          type='checkbox'
-                          checked={isSelected}
-                          onChange={() => toggleNewsItem(news.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className='mt-1 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
-                        />
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2 mb-2'>
-                            <span
-                              className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                                news.riskOrOpportunity === 'risk'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}>
-                              {news.riskOrOpportunity === 'risk'
-                                ? 'RISK'
-                                : 'OPPORTUNITY'}
-                            </span>
-                            <span
-                              className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                                news.impactLevel === 'high'
-                                  ? 'bg-orange-100 text-orange-800'
-                                  : news.impactLevel === 'medium'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                              {news.impactLevel.toUpperCase()} IMPACT
-                            </span>
-                            <span className='px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 capitalize'>
-                              {news.category}
-                            </span>
+                    // Get all selected items for multi-drag if item is selected
+                    if (isSelected) {
+                      const allSelectedItems = getAllSelectedItemsForDrag();
+                      e.dataTransfer.setData(
+                        'multipleItems',
+                        JSON.stringify(allSelectedItems)
+                      );
+                    }
+                    // Also set single item for backward compatibility
+                    e.dataTransfer.setData('materialType', 'external-pulse');
+                    e.dataTransfer.setData('itemId', news.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                    // Add visual feedback
+                    if (e.currentTarget instanceof HTMLElement) {
+                      e.currentTarget.style.opacity = '0.5';
+                    }
+                  };
+
+                  const handleDragEnd = (e: React.DragEvent) => {
+                    // Restore visual feedback
+                    if (e.currentTarget instanceof HTMLElement) {
+                      e.currentTarget.style.opacity = '1';
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={news.id}
+                      className='p-6 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 transition-all duration-200 cursor-move border-b border-gray-100 last:border-b-0'
+                      draggable={true}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}>
+                      <div className='flex items-start space-x-4'>
+                        {/* Checkbox */}
+                        <div className='flex-shrink-0 pt-1'>
+                          <input
+                            type='checkbox'
+                            checked={isSelected}
+                            onChange={() => toggleNewsItem(news.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2'
+                          />
+                        </div>
+
+                        {/* Risk/Opportunity Icon */}
+                        <div
+                          className={`flex-shrink-0 p-2 rounded-full ${
+                            news.riskOrOpportunity === 'risk'
+                              ? 'bg-red-100'
+                              : 'bg-green-100'
+                          }`}>
+                          {news.riskOrOpportunity === 'risk' ? (
+                            <ExclamationTriangleIcon className='w-6 h-6 text-red-600' />
+                          ) : (
+                            <CheckCircleIcon className='w-6 h-6 text-green-600' />
+                          )}
+                        </div>
+
+                        <div className='flex-1 min-w-0'>
+                          {/* Header */}
+                          <div className='flex items-start justify-between'>
+                            <div className='flex-1'>
+                              <h3 className='text-lg font-semibold text-gray-900'>
+                                {news.headline}
+                              </h3>
+                              <div className='mt-2 flex items-center space-x-3'>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    news.riskOrOpportunity === 'risk'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                  {news.riskOrOpportunity.toUpperCase()}
+                                </span>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    news.impactLevel === 'high'
+                                      ? 'bg-red-100 text-red-800'
+                                      : news.impactLevel === 'medium'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}>
+                                  {news.impactLevel.toUpperCase()} IMPACT
+                                </span>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    news.urgencyLevel === 'urgent'
+                                      ? 'bg-red-100 text-red-800'
+                                      : news.urgencyLevel === 'important'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                  {news.urgencyLevel.toUpperCase()}
+                                </span>
+                                <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize'>
+                                  {news.category}
+                                </span>
+                              </div>
+                            </div>
+                            <div className='ml-4 flex-shrink-0 text-sm text-gray-500'>
+                              {format(news.timestamp, 'PPp')}
+                            </div>
                           </div>
-                          <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-                            {news.headline}
-                          </h3>
-                          <p className='text-sm text-gray-600 mb-3 line-clamp-2'>
-                            {news.summary}
-                          </p>
-                          {/* Meeting Coverage */}
-                          {(() => {
-                            const meetings = getMeetingsForNewsItem(
-                              news.id,
-                              meetingMaterials
-                            );
-                            return meetings.length > 0 ? (
-                              <div className='mt-3 mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+
+                          {/* Summary and Meeting Coverage - Side by Side */}
+                          <div className='mt-3 flex items-start gap-4'>
+                            {/* Summary - Left Side */}
+                            <div className='flex-1 min-w-0'>
+                              <p className='text-sm text-gray-700'>
+                                {news.summary}
+                              </p>
+                              {news.analyzingBy && (
+                                <div className='flex items-center gap-2 mt-2'>
+                                  <span className='text-xs text-gray-500'>
+                                    Analyzing:
+                                  </span>
+                                  <span className='text-xs font-medium text-primary-600'>
+                                    {news.analyzingBy}
+                                  </span>
+                                </div>
+                              )}
+                              <div className='flex items-center justify-between text-xs text-gray-500 mt-2'>
+                                <span>
+                                  {formatRelativeTime(news.timestamp)}
+                                </span>
+                                <span>{news.source}</span>
+                              </div>
+                            </div>
+
+                            {/* Meeting Coverage - Right Side */}
+                            {meetings.length > 0 && (
+                              <div className='flex-shrink-0 w-80 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
                                 <div className='flex items-center gap-2 mb-2'>
                                   <CalendarIcon className='w-5 h-5 text-primary-600' />
                                   <span className='text-sm font-semibold text-gray-800'>
@@ -1345,30 +1270,16 @@ export default function ExecutiveSummaryPage() {
                                   ))}
                                 </div>
                               </div>
-                            ) : null;
-                          })()}
-                          {news.analyzingBy && (
-                            <div className='flex items-center gap-2 mt-2 mb-2'>
-                              <span className='text-xs text-gray-500'>
-                                Analyzing:
-                              </span>
-                              <span className='text-xs font-medium text-primary-600'>
-                                {news.analyzingBy}
-                              </span>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className='flex items-center justify-between text-xs text-gray-500'>
-                      <span>{formatRelativeTime(news.timestamp)}</span>
-                      <span>{news.source}</span>
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             ) : (
-              <div className='col-span-2 bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500'>
+              <div className='p-8 text-center text-gray-500'>
                 No critical external news at this time
               </div>
             )}
@@ -1383,86 +1294,96 @@ export default function ExecutiveSummaryPage() {
               Wave Status Glance
             </h2>
             <Link
-              to='/wave-executive-dashboard'
+              to='/internal-pulse?tab=wave'
               className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
               Wave Dashboard
               <ArrowRightIcon className='w-4 h-4' />
             </Link>
           </div>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              {/* Left: Summary */}
-              <div className='flex flex-col justify-center'>
-                <p className='text-gray-600 mb-4 text-base leading-relaxed'>
-                  The Variance Analysis shows the breakdown of L4+ Actual Net
-                  Recurring Revenue compared to the Bottom-Up Plan. Positive
-                  variances from accelerated initiatives, over-delivery, and new
-                  additions are offset by delays, delivery leakage, and
-                  initiatives moved or cancelled. The net total variance of{' '}
-                  <span className='font-semibold text-gray-900'>
-                    $
-                    {mockVarianceAnalysisData
-                      .find((d) => d.type === 'total')
-                      ?.value.toFixed(1) || '0.0'}
-                    M
-                  </span>{' '}
-                  indicates overall performance against plan.
-                </p>
-                <div className='mt-4 space-y-2'>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <div className='w-3 h-3 rounded bg-green-500'></div>
-                    <span className='text-gray-700'>
-                      Positive variances: Accelerated, Over-delivered, Added
-                      initiatives
-                    </span>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            {/* Card 1: Overdue Initiatives */}
+            <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6 hover:shadow-md transition-shadow'>
+              <h3 className='text-sm font-bold text-gray-900 mb-4'>
+                Overdue Initiatives (Next Phase Date Passed)
+              </h3>
+              <div className='space-y-3'>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Initiative Count
                   </div>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <div className='w-3 h-3 rounded bg-red-500'></div>
-                    <span className='text-gray-700'>
-                      Negative variances: Delayed, Leakage, Moved, Cancelled
-                    </span>
+                  <div className='text-2xl font-bold text-gray-900'>
+                    {waveSummary.overdueInitiatives.count}
+                  </div>
+                </div>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Recurring Net Benefit(...)
+                  </div>
+                  <div className='text-lg font-semibold text-gray-900'>
+                    {waveSummary.overdueInitiatives.netBenefit > 0
+                      ? formatNetBenefit(
+                          waveSummary.overdueInitiatives.netBenefit
+                        )
+                      : ''}
                   </div>
                 </div>
               </div>
-              {/* Right: Variance Analysis Chart */}
-              <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6'>
-                <div className='flex items-center gap-2 mb-4'>
-                  <h3 className='text-sm font-bold text-gray-900'>
-                    Variance Analysis - L4+ Actual Net Recurring Revenue
-                    (Annualized, Million USD) vs. Bottom-Up Plan
-                  </h3>
-                  <InformationCircleIcon className='w-4 h-4 text-gray-400' />
+            </div>
+
+            {/* Card 2: Initiatives Due in 7 Days */}
+            <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6 hover:shadow-md transition-shadow'>
+              <h3 className='text-sm font-bold text-gray-900 mb-4'>
+                Initiatives Due Soon (Reaching L4 in Next 7 Days)
+              </h3>
+              <div className='space-y-3'>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Initiative Count
+                  </div>
+                  <div className='text-2xl font-bold text-gray-900'>
+                    {waveSummary.initiativesDueIn7Days.count}
+                  </div>
                 </div>
-                <div className='h-64'>
-                  <ResponsiveContainer
-                    width='100%'
-                    height='100%'>
-                    <BarChart data={mockVarianceAnalysisData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis
-                        dataKey='category'
-                        angle={-45}
-                        textAnchor='end'
-                        height={100}
-                      />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey='value'>
-                        {mockVarianceAnalysisData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              entry.type === 'positive'
-                                ? '#10b981'
-                                : entry.type === 'negative'
-                                ? '#ef4444'
-                                : '#60a5fa'
-                            }
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Recurring Net Benefit(...)
+                  </div>
+                  <div className='text-lg font-semibold text-gray-900'>
+                    {waveSummary.initiativesDueIn7Days.netBenefit > 0
+                      ? formatNetBenefit(
+                          waveSummary.initiativesDueIn7Days.netBenefit
+                        )
+                      : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Initiatives Due in 30 Days */}
+            <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6 hover:shadow-md transition-shadow'>
+              <h3 className='text-sm font-bold text-gray-900 mb-4'>
+                Initiatives Due Soon (Reaching L4 in Next 30 Days)
+              </h3>
+              <div className='space-y-3'>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Initiative Count
+                  </div>
+                  <div className='text-2xl font-bold text-gray-900'>
+                    {waveSummary.initiativesDueIn30Days.count}
+                  </div>
+                </div>
+                <div>
+                  <div className='text-xs text-gray-500 mb-1'>
+                    Recurring Net Benefit(...)
+                  </div>
+                  <div className='text-lg font-semibold text-gray-900'>
+                    {waveSummary.initiativesDueIn30Days.netBenefit > 0
+                      ? formatNetBenefit(
+                          waveSummary.initiativesDueIn30Days.netBenefit
+                        )
+                      : ''}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1502,20 +1423,15 @@ export default function ExecutiveSummaryPage() {
                   return;
                 }
 
-                if (!isSelected) {
-                  e.preventDefault();
-                  return;
+                // If item is selected, include all selected items for multi-drag
+                if (isSelected) {
+                  const allSelectedItems = getAllSelectedItemsForDrag();
+                  e.dataTransfer.setData(
+                    'multipleItems',
+                    JSON.stringify(allSelectedItems)
+                  );
                 }
-
-                // Get all selected items for multi-drag
-                const allSelectedItems = getAllSelectedItemsForDrag();
-
-                // Store all selected items as JSON for multi-drag
-                e.dataTransfer.setData(
-                  'multipleItems',
-                  JSON.stringify(allSelectedItems)
-                );
-                // Also set single item for backward compatibility
+                // Always set single item for backward compatibility
                 e.dataTransfer.setData('materialType', 'internal-pulse');
                 e.dataTransfer.setData('itemId', metric.id);
                 e.dataTransfer.effectAllowed = 'move';
@@ -1535,13 +1451,13 @@ export default function ExecutiveSummaryPage() {
               return (
                 <div
                   key={metric.id}
-                  draggable={isSelected}
+                  draggable={true}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 ${
                     isSelected
                       ? 'border-primary-500 bg-primary-50/30 cursor-move'
-                      : 'border-gray-200 cursor-pointer'
+                      : 'border-gray-200 cursor-move'
                   }`}
                   onClick={() => toggleFinancialKPI(metric.id)}>
                   <div className='flex items-start justify-between mb-3 gap-2'>

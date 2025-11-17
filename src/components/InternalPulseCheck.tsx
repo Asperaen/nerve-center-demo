@@ -4,14 +4,13 @@ import type { PulseColumn, PulseMetric, FinancialMetric } from '../types';
 import {
   CircleStackIcon,
   ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   CogIcon,
-  SparklesIcon,
 } from '@heroicons/react/24/outline';
 
 interface InternalPulseCheckProps {
   onSelectionChange?: (items: FinancialMetric[]) => void;
   selectedItems?: FinancialMetric[];
-  onGenerateInsights?: () => void;
 }
 
 // Helper function to get all metrics from all columns
@@ -77,7 +76,6 @@ type TimePeriod =
 export default function InternalPulseCheck({
   onSelectionChange,
   selectedItems = [],
-  onGenerateInsights,
 }: InternalPulseCheckProps = {}) {
   const [selectedMetricIds, setSelectedMetricIds] = useState<string[]>(
     selectedItems.map((item) => item.id)
@@ -186,36 +184,6 @@ export default function InternalPulseCheck({
             </button>
           </div>
         </div>
-
-        {/* Generate AI Insights Button */}
-        {selectedMetricIds.length > 0 && (
-          <div className='flex items-center justify-end'>
-            <div className='flex items-center space-x-4'>
-              <div className='text-sm font-medium text-gray-700 bg-gray-100/80 px-4 py-2 rounded-lg border border-gray-200/50'>
-                {selectedMetricIds.length} item
-                {selectedMetricIds.length > 1 ? 's' : ''} selected
-              </div>
-              <button
-                onClick={onGenerateInsights}
-                className='group relative flex items-center px-7 py-3.5 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 active:scale-95 overflow-hidden border border-purple-500/20'>
-                {/* Animated gradient overlay */}
-                <div className='absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse'></div>
-
-                {/* Shimmer effect */}
-                <div className='absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent'></div>
-
-                {/* Content */}
-                <span className='relative flex items-center z-10'>
-                  <SparklesIcon className='w-5 h-5 mr-2 group-hover:animate-spin transition-transform duration-300' />
-                  <span className='text-base'>Generate AI Insights</span>
-                </span>
-
-                {/* Glow effect */}
-                <div className='absolute -inset-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300 -z-10'></div>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Three Column Layout - Operations takes 50%, Finance and Topline each take 25% */}
@@ -253,22 +221,18 @@ function PulseColumnComponent({
     <div
       className={`border-r border-gray-200/60 last:border-r-0 bg-gradient-to-b from-white to-gray-50/30 transition-all duration-300 hover:bg-gradient-to-b hover:from-white hover:to-gray-50/50 ${className}`}>
       {/* Column Header */}
-      <div className='px-8 py-6 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 border-b border-blue-700/50 shadow-inner'>
-        <div className='flex items-center justify-between'>
-          <h3 className='text-lg font-bold text-white tracking-wide'>
-            {column.title}
-          </h3>
-          <div className='p-2.5 bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg transition-transform duration-200 hover:scale-110'>
-            {column.type === 'financial' && (
-              <CircleStackIcon className='w-5 h-5 text-white drop-shadow-sm' />
-            )}
-            {column.type === 'topline' && (
-              <ArrowTrendingUpIcon className='w-5 h-5 text-white drop-shadow-sm' />
-            )}
-            {column.type === 'operation' && (
-              <CogIcon className='w-5 h-5 text-white drop-shadow-sm' />
-            )}
-          </div>
+      <div className='px-8 py-6 bg-white border-b border-gray-200'>
+        <div className='flex items-center gap-2'>
+          {column.type === 'financial' && (
+            <CircleStackIcon className='w-6 h-6 text-primary-600' />
+          )}
+          {column.type === 'topline' && (
+            <ArrowTrendingUpIcon className='w-6 h-6 text-primary-600' />
+          )}
+          {column.type === 'operation' && (
+            <CogIcon className='w-6 h-6 text-primary-600' />
+          )}
+          <h3 className='text-2xl font-bold text-gray-900'>{column.title}</h3>
         </div>
       </div>
 
@@ -299,25 +263,19 @@ function PulseColumnComponent({
                             <span className='w-1 h-4 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full'></span>
                             {qualitySection.title}
                           </h4>
-                          <div className='space-y-0'>
-                            {qualitySection.metrics.map(
-                              (metric, metricIndex) => (
-                                <MetricDisplay
-                                  key={metric.id}
-                                  metric={metric}
-                                  isLast={
-                                    metricIndex ===
-                                    qualitySection.metrics.length - 1
-                                  }
-                                  isSelected={selectedMetricIds.includes(
-                                    metric.id
-                                  )}
-                                  onToggleSelection={() =>
-                                    onToggleSelection(metric)
-                                  }
-                                />
-                              )
-                            )}
+                          <div className='grid grid-cols-1 gap-4'>
+                            {qualitySection.metrics.map((metric) => (
+                              <MetricDisplay
+                                key={metric.id}
+                                metric={metric}
+                                isSelected={selectedMetricIds.includes(
+                                  metric.id
+                                )}
+                                onToggleSelection={() =>
+                                  onToggleSelection(metric)
+                                }
+                              />
+                            ))}
                           </div>
                         </div>
                       )}
@@ -329,25 +287,19 @@ function PulseColumnComponent({
                             <span className='w-1 h-4 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full'></span>
                             {procurementSection.title}
                           </h4>
-                          <div className='space-y-0'>
-                            {procurementSection.metrics.map(
-                              (metric, metricIndex) => (
-                                <MetricDisplay
-                                  key={metric.id}
-                                  metric={metric}
-                                  isLast={
-                                    metricIndex ===
-                                    procurementSection.metrics.length - 1
-                                  }
-                                  isSelected={selectedMetricIds.includes(
-                                    metric.id
-                                  )}
-                                  onToggleSelection={() =>
-                                    onToggleSelection(metric)
-                                  }
-                                />
-                              )
-                            )}
+                          <div className='grid grid-cols-1 gap-4'>
+                            {procurementSection.metrics.map((metric) => (
+                              <MetricDisplay
+                                key={metric.id}
+                                metric={metric}
+                                isSelected={selectedMetricIds.includes(
+                                  metric.id
+                                )}
+                                onToggleSelection={() =>
+                                  onToggleSelection(metric)
+                                }
+                              />
+                            ))}
                           </div>
                         </div>
                       )}
@@ -370,12 +322,11 @@ function PulseColumnComponent({
                       </h4>
 
                       {/* Section Metrics */}
-                      <div className='space-y-0'>
-                        {section.metrics.map((metric, metricIndex) => (
+                      <div className='grid grid-cols-1 gap-4'>
+                        {section.metrics.map((metric) => (
                           <MetricDisplay
                             key={metric.id}
                             metric={metric}
-                            isLast={metricIndex === section.metrics.length - 1}
                             isSelected={selectedMetricIds.includes(metric.id)}
                             onToggleSelection={() => onToggleSelection(metric)}
                           />
@@ -400,12 +351,11 @@ function PulseColumnComponent({
                 </h4>
 
                 {/* Section Metrics */}
-                <div className='space-y-0'>
-                  {section.metrics.map((metric, metricIndex) => (
+                <div className='grid grid-cols-1 gap-4'>
+                  {section.metrics.map((metric) => (
                     <MetricDisplay
                       key={metric.id}
                       metric={metric}
-                      isLast={metricIndex === section.metrics.length - 1}
                       isSelected={selectedMetricIds.includes(metric.id)}
                       onToggleSelection={() => onToggleSelection(metric)}
                     />
@@ -418,20 +368,131 @@ function PulseColumnComponent({
   );
 }
 
+// Helper functions for metric display (matching ExecutiveSummaryPage style)
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'good':
+      return 'bg-green-100 text-green-800 border-green-300';
+    case 'warning':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    case 'concern':
+      return 'bg-red-100 text-red-800 border-red-300';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+  }
+};
+
+const getTrendIcon = (trend: string) => {
+  switch (trend) {
+    case 'up':
+      return <ArrowTrendingUpIcon className='w-5 h-5 text-green-600' />;
+    case 'down':
+      return <ArrowTrendingDownIcon className='w-5 h-5 text-red-600' />;
+    default:
+      return null;
+  }
+};
+
+const getMetricStatus = (
+  metric: PulseMetric
+): 'good' | 'warning' | 'concern' => {
+  // Gold price should show warning as it impacts overall performance
+  if (metric.id === 'gold-material') return 'warning';
+
+  if (!metric.comparisons) return 'good';
+
+  // Check if any comparison shows negative trend
+  const hasNegative = Object.values(metric.comparisons).some(
+    (comp) => comp.percent < 0
+  );
+
+  if (hasNegative) {
+    // Check severity
+    const worstComparison = Math.min(
+      ...Object.values(metric.comparisons).map((c) => c.percent)
+    );
+    if (worstComparison < -5) return 'concern';
+    return 'warning';
+  }
+
+  return 'good';
+};
+
+const getMetricTrend = (metric: PulseMetric): 'up' | 'down' | 'flat' => {
+  if (metric.comparisons?.vsLastRefresh) {
+    return metric.comparisons.vsLastRefresh.percent >= 0 ? 'up' : 'down';
+  }
+  if (metric.comparisons?.vsLastYear) {
+    return metric.comparisons.vsLastYear.percent >= 0 ? 'up' : 'down';
+  }
+  return 'flat';
+};
+
+const getComparisonText = (metric: PulseMetric): string => {
+  if (metric.comparisons?.vsLastYear) {
+    const percent = metric.comparisons.vsLastYear.percent;
+    return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
+  }
+  if (metric.comparisons?.vsLastRefresh) {
+    const percent = metric.comparisons.vsLastRefresh.percent;
+    return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last refresh`;
+  }
+  return '';
+};
+
+const formatMetricValue = (metric: PulseMetric): string => {
+  // For Gold price, show market price as the main value
+  if (metric.id === 'gold-material' && metric.subMetrics) {
+    const marketPrice = metric.subMetrics.find((m) =>
+      m.name.includes('Market price')
+    )?.value;
+    if (marketPrice !== undefined) {
+      return `${marketPrice.toLocaleString('en-US')} ${metric.unit || ''}`;
+    }
+  }
+
+  // For Inventory Turnover, use valuePercent as the actual rate value
+  if (metric.id === 'inventory-turnover' && metric.valuePercent !== undefined) {
+    return `${metric.valuePercent.toFixed(1)} times/year`;
+  }
+
+  if (metric.value !== undefined) {
+    if (metric.valuePercent !== undefined) {
+      return `$${metric.value.toFixed(1)}M (${metric.valuePercent}%)`;
+    }
+    // Format with comma for thousands
+    return `${metric.value.toLocaleString('en-US')} ${metric.unit || ''}`;
+  }
+  if (metric.valuePercent !== undefined) {
+    return `${metric.valuePercent}%`;
+  }
+  // For metrics without value, show comparison if available
+  if (metric.comparisons?.vsLastYear) {
+    const percent = metric.comparisons.vsLastYear.percent;
+    return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
+  }
+  return 'N/A';
+};
+
 interface MetricDisplayProps {
   metric: PulseMetric;
-  isLast?: boolean;
   isSelected: boolean;
   onToggleSelection: () => void;
 }
 
 function MetricDisplay({
   metric,
-  isLast = false,
   isSelected,
   onToggleSelection,
 }: MetricDisplayProps) {
   const handleDragStart = (e: React.DragEvent) => {
+    // Don't start drag if clicking on checkbox
+    const target = e.target as HTMLElement;
+    if (target.closest('input[type="checkbox"]')) {
+      e.preventDefault();
+      return;
+    }
+
     e.dataTransfer.setData('materialType', 'internal-pulse');
     e.dataTransfer.setData('itemId', metric.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -448,69 +509,12 @@ function MetricDisplay({
     }
   };
 
-  const formatValue = () => {
-    if (metric.value !== undefined) {
-      if (metric.valuePercent !== undefined) {
-        return `$${formatNumber(metric.value)}M (${metric.valuePercent}%)`;
-      }
-      // Format with comma for thousands
-      return `${formatNumberWithComma(metric.value)} ${metric.unit || ''}`;
-    }
-    if (metric.valuePercent !== undefined) {
-      return `${metric.valuePercent}%`;
-    }
-    return null;
-  };
-
-  const formatNumber = (num: number) => {
-    // Format with one decimal place if needed
-    return num % 1 === 0 ? num.toString() : num.toFixed(1);
-  };
-
-  const formatNumberWithComma = (num: number) => {
-    // Format with comma for thousands
-    return num.toLocaleString('en-US');
-  };
-
-  const formatComparison = (
-    label: string,
-    comparison: { percent: number; percentagePoints?: number }
-  ) => {
-    const isPositive = comparison.percent >= 0;
-    const colorClass = isPositive ? 'text-green-600' : 'text-red-600';
-
-    let valueStr = `${comparison.percent > 0 ? '+' : ''}${comparison.percent}%`;
-    if (comparison.percentagePoints !== undefined) {
-      const ppValue = comparison.percentagePoints;
-      valueStr += ` (${ppValue > 0 ? '+' : ''}${ppValue} p.p.)`;
-    }
-
-    return (
-      <div className='pl-4 py-1 flex items-center gap-1.5 hover:bg-gray-50/50 rounded transition-colors duration-150'>
-        <span className='text-gray-500 text-xs font-medium'>{label}:</span>
-        <span
-          className={`text-xs font-semibold ${colorClass} flex items-center gap-1.5`}>
-          {isPositive && <span className='text-green-500 font-bold'>↑</span>}
-          {!isPositive && <span className='text-red-500 font-bold'>↓</span>}
-          {valueStr}
-        </span>
-      </div>
-    );
-  };
-
-  const hasMainValue = formatValue() !== null;
-  const hasComparisons =
-    metric.comparisons && Object.keys(metric.comparisons).length > 0;
+  const status = getMetricStatus(metric);
+  const trend = getMetricTrend(metric);
+  const valueText = formatMetricValue(metric);
+  const comparisonText = getComparisonText(metric);
   const hasSubMetrics = metric.subMetrics && metric.subMetrics.length > 0;
   const isCriticalMaterialHeader = metric.name === 'Critical material price';
-  const isMaterialMetric =
-    hasSubMetrics &&
-    metric.subMetrics!.some(
-      (sm) =>
-        sm.name.includes('PO price') ||
-        sm.name.includes('GR price') ||
-        sm.name.includes('Market price')
-    );
 
   // Special rendering for "Critical material price" header
   if (isCriticalMaterialHeader) {
@@ -523,160 +527,89 @@ function MetricDisplay({
 
   return (
     <div
-      className={`flex items-start space-x-3 py-4 px-3 hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-emerald-50/50 transition-all duration-200 cursor-move rounded-lg group ${
-        !isLast ? 'border-b border-gray-100/60' : ''
-      } ${isSelected ? 'bg-blue-50/50 border-l-2 border-l-primary-500' : ''}`}
+      className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 cursor-move ${
+        isSelected ? 'border-primary-500 bg-primary-50/30' : 'border-gray-200'
+      }`}
       draggable={true}
       onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}>
-      {/* Checkbox */}
-      <div className='flex-shrink-0 pt-0.5'>
-        <input
-          type='checkbox'
-          checked={isSelected}
-          onChange={onToggleSelection}
-          className='w-4 h-4 text-primary-600 bg-white border-2 border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 cursor-pointer transition-all duration-200 hover:border-primary-400 checked:bg-primary-600 checked:border-primary-600'
-        />
-      </div>
-
-      {/* Metric Content */}
-      <div className='flex-1 min-w-0'>
-        {/* Metric Name */}
-        <div className='mb-2'>
-          <h5
-            className={`text-gray-900 font-bold text-sm group-hover:text-primary-700 transition-colors duration-200 ${
-              metric.hasWarning
-                ? 'underline decoration-red-500 decoration-wavy decoration-2'
-                : ''
-            }`}>
+      onDragEnd={handleDragEnd}
+      onClick={onToggleSelection}>
+      <div className='flex items-start justify-between mb-3 gap-2'>
+        <div className='flex items-start gap-2 flex-1 min-w-0'>
+          <input
+            type='checkbox'
+            checked={isSelected}
+            onChange={onToggleSelection}
+            onClick={(e) => e.stopPropagation()}
+            className='mt-0.5 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
+          />
+          <h3 className='text-sm font-medium text-gray-600 flex-1 min-w-0'>
             {metric.name}
-          </h5>
+          </h3>
         </div>
-
-        {/* Main Metric Value */}
-        {(hasMainValue || (isMaterialMetric && metric.value === undefined)) && (
-          <div className='mb-2.5'>
-            {isMaterialMetric ? (
-              <div className='flex items-center gap-2'>
-                <span className='text-gray-700 text-xs font-medium'>
-                  Inv. moving avg. price:
-                </span>
-                <span className='text-gray-900 font-bold text-base tracking-tight inline-flex items-baseline gap-1'>
-                  {hasMainValue ? formatValue() : `xxx ${metric.unit || ''}`}
+        <span
+          className={`px-2 py-1 rounded-md text-xs font-medium border whitespace-nowrap flex-shrink-0 ${getStatusColor(
+            status
+          )}`}>
+          {status.toUpperCase()}
+        </span>
+      </div>
+      <div className='mb-4 min-w-0'>
+        <div className='break-words'>
+          <span className='text-3xl font-bold text-gray-900 leading-tight'>
+            {valueText}
+          </span>
+        </div>
+        {metric.valuePercent !== undefined &&
+          metric.id !== 'working-capital' && (
+            <div className='mt-1 text-xs text-gray-500'>
+              {metric.valuePercent.toFixed(1)}% of revenue
+            </div>
+          )}
+        {/* Sub-metrics - show in compact format */}
+        {hasSubMetrics && (
+          <div className='mt-3 space-y-1 pt-3 border-t border-gray-200'>
+            {metric.subMetrics!.slice(0, 3).map((subMetric, idx) => (
+              <div
+                key={idx}
+                className='flex items-center justify-between text-xs'>
+                <span className='text-gray-600'>{subMetric.name}:</span>
+                <span className='text-gray-900 font-semibold'>
+                  {subMetric.value > 0
+                    ? subMetric.unit === 'M USD'
+                      ? `$${subMetric.value.toFixed(1)}M`
+                      : `${subMetric.value.toLocaleString('en-US')} ${
+                          subMetric.unit || ''
+                        }`
+                    : 'N/A'}
                 </span>
               </div>
-            ) : (
-              <span className='text-gray-900 font-bold text-base tracking-tight inline-flex items-baseline gap-1'>
-                {formatValue()}
-              </span>
+            ))}
+            {metric.subMetrics!.length > 3 && (
+              <div className='text-xs text-gray-500 italic'>
+                +{metric.subMetrics!.length - 3} more
+              </div>
             )}
           </div>
         )}
-
-        {/* Sub-metrics - Special handling for Procurement materials */}
-        {hasSubMetrics && (
-          <div className='pl-4 mb-2 space-y-1 border-l-2 border-gray-200/50'>
-            {metric.subMetrics!.map((subMetric, idx) => {
-              // For Procurement materials, show price comparisons with color indicators
-              if (isMaterialMetric) {
-                const isFavorable =
-                  subMetric.percentOfTotal !== undefined &&
-                  subMetric.percentOfTotal < 0;
-                const isUnfavorable =
-                  subMetric.percentOfTotal !== undefined &&
-                  subMetric.percentOfTotal > 0;
-                const percentValue = subMetric.percentOfTotal || 0;
-                const absPercent = Math.abs(percentValue);
-
-                return (
-                  <div
-                    key={idx}
-                    className='flex items-center justify-between py-0.5'>
-                    <span className='text-gray-700 text-xs font-medium'>
-                      {subMetric.name}:
-                    </span>
-                    <span className='text-gray-900 text-xs font-semibold flex items-center gap-1.5'>
-                      {subMetric.value > 0
-                        ? formatNumberWithComma(subMetric.value)
-                        : 'xxx'}{' '}
-                      {subMetric.value > 0 && (
-                        <span
-                          className={`text-xs font-semibold ${
-                            isFavorable
-                              ? 'text-green-600'
-                              : isUnfavorable
-                              ? 'text-red-600'
-                              : 'text-gray-500'
-                          }`}>
-                          {subMetric.value > 0 && (
-                            <span>
-                              {isFavorable ? '-' : '+'}
-                              {absPercent.toFixed(1)}%
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                );
-              }
-
-              // Regular sub-metric display
-              return (
-                <div
-                  key={idx}
-                  className='flex items-center justify-between py-0.5'>
-                  <span className='text-gray-700 text-xs font-medium'>
-                    {subMetric.name}:
-                  </span>
-                  <span className='text-gray-900 text-xs font-semibold'>
-                    {subMetric.unit === 'M USD'
-                      ? `$${formatNumber(subMetric.value)}M`
-                      : subMetric.value > 0
-                      ? `${formatNumberWithComma(subMetric.value)} ${
-                          subMetric.unit || ''
-                        }`
-                      : 'xxx'}{' '}
-                    {subMetric.percentOfTotal !== undefined &&
-                      subMetric.percentOfTotal !== 0 &&
-                      !isMaterialMetric && (
-                        <span className='text-gray-500 font-normal'>
-                          ({subMetric.percentOfTotal}% Total)
-                        </span>
-                      )}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Comparison Values */}
-        {hasComparisons && (
-          <div className='mt-2 space-y-0.5'>
-            {metric.comparisons!.vsHHtarget &&
-              formatComparison('Vs. HH target', metric.comparisons!.vsHHtarget)}
-            {metric.comparisons!.vsInternalTarget &&
-              formatComparison(
-                'Vs. Internal target',
-                metric.comparisons!.vsInternalTarget
-              )}
-            {metric.comparisons!.vsTarget &&
-              formatComparison('Vs. target', metric.comparisons!.vsTarget)}
-            {metric.comparisons!.vsLastRefresh &&
-              formatComparison(
-                'Vs. last refresh',
-                metric.comparisons!.vsLastRefresh
-              )}
-            {metric.comparisons!.vsLastYear &&
-              formatComparison('Vs. last year', metric.comparisons!.vsLastYear)}
-            {metric.comparisons!.vsCurrentYearAverage &&
-              formatComparison(
-                'Vs. current year average',
-                metric.comparisons!.vsCurrentYearAverage
-              )}
-          </div>
-        )}
+      </div>
+      <div className='flex items-center gap-1.5 min-w-0'>
+        {getTrendIcon(trend)}
+        <span
+          className={`text-xs font-semibold truncate ${
+            metric.comparisons?.vsLastYear?.percent !== undefined
+              ? metric.comparisons.vsLastYear.percent >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+              : metric.comparisons?.vsLastRefresh?.percent !== undefined
+              ? metric.comparisons.vsLastRefresh.percent >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+              : 'text-gray-600'
+          }`}
+          title={comparisonText}>
+          {comparisonText}
+        </span>
       </div>
     </div>
   );

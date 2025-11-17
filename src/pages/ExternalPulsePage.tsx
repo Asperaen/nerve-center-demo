@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import ExternalPulseCheck from '../components/ExternalPulseCheck';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import CreateActionModal from '../components/CreateActionModal';
@@ -22,9 +22,47 @@ export default function ExternalPulsePage() {
     setSidebarOpen(true);
   };
 
+  const totalSelectedCount = selectedExternalItems.length;
+
+  const clearAllSelections = () => {
+    setSelectedExternalItems([]);
+  };
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
+        {/* Action Bar - appears when items are selected */}
+        {totalSelectedCount > 0 && (
+          <div className='sticky top-4 z-40 mb-6 bg-white rounded-xl border-2 border-primary-500 shadow-lg p-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-sm font-medium text-gray-700'>
+                    {totalSelectedCount} item
+                    {totalSelectedCount !== 1 ? 's' : ''} selected
+                  </span>
+                  <button
+                    onClick={clearAllSelections}
+                    className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                    Clear all
+                  </button>
+                </div>
+                <p className='text-xs text-gray-500'>
+                  💡 Drag selected items directly to calendar events on the left
+                </p>
+              </div>
+              <div className='flex items-center gap-3'>
+                <button
+                  onClick={handleGenerateInsights}
+                  className='flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium'>
+                  <SparklesIcon className='w-5 h-5' />
+                  AI Analysis
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className='mb-6'>
           <div className='flex items-center justify-between mb-2'>
             <h1 className='text-3xl font-bold text-gray-900'>External Pulse</h1>
@@ -41,7 +79,6 @@ export default function ExternalPulsePage() {
           </p>
         </div>
         <ExternalPulseCheck
-          onGenerateInsights={handleGenerateInsights}
           onSelectionChange={setSelectedExternalItems}
           selectedItems={selectedExternalItems}
           meetingMaterials={meetingMaterials}

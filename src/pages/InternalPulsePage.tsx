@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { PlusIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import InternalPulseCheck from '../components/InternalPulseCheck';
 import WaveExecutiveDashboard from '../components/WaveExecutiveDashboard';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
@@ -9,7 +10,19 @@ import type { FinancialMetric } from '../types';
 type ActiveTab = 'kpis' | 'wave';
 
 export default function InternalPulsePage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('kpis');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const initialTab: ActiveTab = tabParam === 'wave' ? 'wave' : 'kpis';
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialTab);
+
+  // Update tab when URL param changes
+  useEffect(() => {
+    if (tabParam === 'wave') {
+      setActiveTab('wave');
+    } else if (tabParam === 'kpis' || !tabParam) {
+      setActiveTab('kpis');
+    }
+  }, [tabParam]);
   const [selectedInternalItems, setSelectedInternalItems] = useState<
     FinancialMetric[]
   >([]);
@@ -20,9 +33,47 @@ export default function InternalPulsePage() {
     setSidebarOpen(true);
   };
 
+  const totalSelectedCount = selectedInternalItems.length;
+
+  const clearAllSelections = () => {
+    setSelectedInternalItems([]);
+  };
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
+        {/* Action Bar - appears when items are selected and KPIs tab is active */}
+        {activeTab === 'kpis' && totalSelectedCount > 0 && (
+          <div className='sticky top-4 z-40 mb-6 bg-white rounded-xl border-2 border-primary-500 shadow-lg p-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-sm font-medium text-gray-700'>
+                    {totalSelectedCount} item
+                    {totalSelectedCount !== 1 ? 's' : ''} selected
+                  </span>
+                  <button
+                    onClick={clearAllSelections}
+                    className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                    Clear all
+                  </button>
+                </div>
+                <p className='text-xs text-gray-500'>
+                  💡 Drag selected items directly to calendar events on the left
+                </p>
+              </div>
+              <div className='flex items-center gap-3'>
+                <button
+                  onClick={handleGenerateInsights}
+                  className='flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium'>
+                  <SparklesIcon className='w-5 h-5' />
+                  AI Analysis
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className='mb-6'>
           <div className='flex items-center justify-between'>
             {/* Left: Title and Description */}
@@ -39,7 +90,10 @@ export default function InternalPulsePage() {
             <div className='flex-1 flex justify-center'>
               <div className='inline-flex items-center gap-1 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50 shadow-sm'>
                 <button
-                  onClick={() => setActiveTab('kpis')}
+                  onClick={() => {
+                    setActiveTab('kpis');
+                    setSearchParams({ tab: 'kpis' });
+                  }}
                   className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                     activeTab === 'kpis'
                       ? 'bg-white text-gray-900 shadow-md shadow-gray-200/50 scale-105'
@@ -48,7 +102,10 @@ export default function InternalPulsePage() {
                   KPIs and operational indicators
                 </button>
                 <button
-                  onClick={() => setActiveTab('wave')}
+                  onClick={() => {
+                    setActiveTab('wave');
+                    setSearchParams({ tab: 'wave' });
+                  }}
                   className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                     activeTab === 'wave'
                       ? 'bg-white text-gray-900 shadow-md shadow-gray-200/50 scale-105'
@@ -72,7 +129,6 @@ export default function InternalPulsePage() {
         {/* Conditional Content Rendering */}
         {activeTab === 'kpis' ? (
           <InternalPulseCheck
-            onGenerateInsights={handleGenerateInsights}
             onSelectionChange={setSelectedInternalItems}
             selectedItems={selectedInternalItems}
           />

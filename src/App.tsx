@@ -9,6 +9,7 @@ import FinanceReviewPage from './pages/FinanceReviewPage';
 import ActionTrackerPage from './pages/ActionTrackerPage';
 import UserProfile from './pages/UserProfile';
 import MeetingDetailView from './components/MeetingDetailView';
+import MyMeetingsPage from './pages/MyMeetingsPage';
 
 function App() {
   return (
@@ -41,6 +42,10 @@ function App() {
             <Route
               path='action-tracker'
               element={<ActionTrackerPage />}
+            />
+            <Route
+              path='my-meetings'
+              element={<MyMeetingsPage />}
             />
             <Route
               path='profile'

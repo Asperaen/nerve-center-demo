@@ -20,14 +20,12 @@ const categories: { value: NewsCategory | 'all'; label: string }[] = [
 ];
 
 interface ExternalPulseCheckProps {
-  onGenerateInsights?: () => void;
   onSelectionChange?: (items: NewsItem[]) => void;
   selectedItems?: NewsItem[];
   meetingMaterials?: Record<string, MeetingMaterial[]>;
 }
 
 export default function ExternalPulseCheck({
-  onGenerateInsights,
   onSelectionChange,
   selectedItems = [],
   meetingMaterials = {},
@@ -88,36 +86,6 @@ export default function ExternalPulseCheck({
   return (
     <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl transition-shadow duration-300'>
       <div className='p-8 border-b border-gray-200 bg-gradient-to-r from-white to-purple-50/30'>
-        <div className='flex items-center justify-between mb-6'>
-          {/* Insights Button - Show when items are selected */}
-          {selectedNewsIds.length > 0 && (
-            <div className='flex items-center space-x-4'>
-              <div className='text-sm text-gray-600'>
-                {selectedNewsIds.length} item
-                {selectedNewsIds.length > 1 ? 's' : ''} selected
-              </div>
-              <button
-                onClick={onGenerateInsights}
-                className='group relative flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 active:scale-95 overflow-hidden'>
-                {/* Animated gradient overlay */}
-                <div className='absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse'></div>
-
-                {/* Shimmer effect */}
-                <div className='absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent'></div>
-
-                {/* Content */}
-                <span className='relative flex items-center z-10'>
-                  <SparklesIcon className='w-5 h-5 mr-2 group-hover:animate-spin transition-transform duration-300' />
-                  <span className='text-base'>Generate AI Insights</span>
-                </span>
-
-                {/* Glow effect */}
-                <div className='absolute -inset-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300 -z-10'></div>
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Category Filter */}
         <div className='flex flex-wrap gap-3'>
           {categories.map((cat) => (
@@ -286,35 +254,40 @@ function NewsCard({
             </div>
           </div>
 
-          {/* Summary */}
-          <p className='mt-3 text-sm text-gray-700'>{news.summary}</p>
-
-          {/* Meeting Coverage */}
-          {meetings.length > 0 && (
-            <div className='mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-              <div className='flex items-center gap-2 mb-2'>
-                <CalendarIcon className='w-5 h-5 text-primary-600' />
-                <span className='text-sm font-semibold text-gray-800'>
-                  Covered in:
-                </span>
-              </div>
-              <div className='space-y-1.5'>
-                {meetings.map((meeting) => (
-                  <div
-                    key={meeting.id}
-                    className='text-sm text-gray-700 flex items-center gap-2 pl-1'>
-                    <span className='font-semibold text-gray-900'>
-                      {meeting.title}
-                    </span>
-                    <span className='text-gray-600'>
-                      ({format(meeting.startTime, 'MMM d')} at{' '}
-                      {format(meeting.startTime, 'h:mm a')})
-                    </span>
-                  </div>
-                ))}
-              </div>
+          {/* Summary and Meeting Coverage - Side by Side */}
+          <div className='mt-3 flex items-start gap-4'>
+            {/* Summary - Left Side */}
+            <div className='flex-1 min-w-0'>
+              <p className='text-sm text-gray-700'>{news.summary}</p>
             </div>
-          )}
+
+            {/* Meeting Coverage - Right Side */}
+            {meetings.length > 0 && (
+              <div className='flex-shrink-0 w-80 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                <div className='flex items-center gap-2 mb-2'>
+                  <CalendarIcon className='w-5 h-5 text-primary-600' />
+                  <span className='text-sm font-semibold text-gray-800'>
+                    Covered in:
+                  </span>
+                </div>
+                <div className='space-y-1.5'>
+                  {meetings.map((meeting) => (
+                    <div
+                      key={meeting.id}
+                      className='text-sm text-gray-700 flex items-center gap-2 pl-1'>
+                      <span className='font-semibold text-gray-900'>
+                        {meeting.title}
+                      </span>
+                      <span className='text-gray-600'>
+                        ({format(meeting.startTime, 'MMM d')} at{' '}
+                        {format(meeting.startTime, 'h:mm a')})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* AI Analysis */}
           {isExpanded && (
