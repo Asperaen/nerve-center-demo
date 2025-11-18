@@ -343,7 +343,7 @@ export const mockCalendarEvents: Meeting[] = [
   },
   {
     id: 'meeting-2',
-    title: '[McK] Nerve Center PS',
+    title: 'Nerve Center Problem Solving',
     startTime: new Date('2025-11-19T17:15:00+08:00'), // 5 PM GMT+8
     endTime: new Date('2025-11-19T18:30:00+08:00'), // 5:30 PM GMT+8
     location: 'Conference Room A',
@@ -372,37 +372,6 @@ export const mockCalendarEvents: Meeting[] = [
     meetingType: 'check-in',
     materials: [
       // External Pulse Materials
-      {
-        id: 'material-nerve-1',
-        type: 'external-pulse',
-        itemId: 'news-1', // US Announces 25% Tariff on Chinese-Made EV Connectors
-        addedAt: new Date('2025-11-19T16:30:00+08:00'),
-      },
-      {
-        id: 'material-nerve-2',
-        type: 'external-pulse',
-        itemId: 'news-3', // Tesla Q3 Earnings Beat Expectations
-        addedAt: new Date('2025-11-19T16:35:00+08:00'),
-      },
-      {
-        id: 'material-nerve-3',
-        type: 'external-pulse',
-        itemId: 'news-5', // Global 5G Infrastructure Investment
-        addedAt: new Date('2025-11-19T16:40:00+08:00'),
-      },
-      // Internal Pulse Materials
-      {
-        id: 'material-nerve-4',
-        type: 'internal-pulse',
-        itemId: 'operating-profit', // Operating Profit metric
-        addedAt: new Date('2025-11-19T16:45:00+08:00'),
-      },
-      {
-        id: 'material-nerve-5',
-        type: 'internal-pulse',
-        itemId: 'net-profit', // Net Profit metric
-        addedAt: new Date('2025-11-19T16:50:00+08:00'),
-      },
       {
         id: 'material-nerve-6',
         type: 'internal-pulse',
@@ -556,7 +525,39 @@ export const mockCalendarEvents: Meeting[] = [
     description:
       'Strategic discussion on full year forecast, scenario planning, and key assumptions for 2025 planning',
     meetingType: 'finance-review',
-    materials: [],
+    materials: [
+      {
+        id: 'material-nerve-1',
+        type: 'external-pulse',
+        itemId: 'news-1', // US Announces 25% Tariff on Chinese-Made EV Connectors
+        addedAt: new Date('2025-11-19T16:30:00+08:00'),
+      },
+      {
+        id: 'material-nerve-2',
+        type: 'external-pulse',
+        itemId: 'news-3', // Tesla Q3 Earnings Beat Expectations
+        addedAt: new Date('2025-11-19T16:35:00+08:00'),
+      },
+      {
+        id: 'material-nerve-3',
+        type: 'external-pulse',
+        itemId: 'news-5', // Global 5G Infrastructure Investment
+        addedAt: new Date('2025-11-19T16:40:00+08:00'),
+      },
+      // Internal Pulse Materials
+      {
+        id: 'material-nerve-4',
+        type: 'internal-pulse',
+        itemId: 'operating-profit', // Operating Profit metric
+        addedAt: new Date('2025-11-19T16:45:00+08:00'),
+      },
+      {
+        id: 'material-nerve-5',
+        type: 'internal-pulse',
+        itemId: 'net-profit', // Net Profit metric
+        addedAt: new Date('2025-11-19T16:50:00+08:00'),
+      },
+    ],
     isCritical: true,
   },
   {
@@ -638,7 +639,7 @@ export const mockCalendarEvents: Meeting[] = [
   },
   {
     id: 'meeting-13',
-    title: '[McK] 1 on 1 with Jack',
+    title: '[Catch up] 1 on 1 with Jack',
     startTime: new Date('2025-11-19T13:00:00+08:00'), // 12:45 PM GMT+8
     endTime: new Date('2025-11-19T13:30:00+08:00'), // 1:15 PM GMT+8
     location: 'Virtual',

@@ -812,8 +812,6 @@ export default function ExecutiveSummaryPage() {
               <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
                 <CalendarIcon className='w-6 h-6 text-primary-600' />
                 🎯 Upcoming Critical Meetings{' '}
-                {executiveBriefing.todayMeetings.length} Meeting
-                {executiveBriefing.todayMeetings.length !== 1 ? 's' : ''}
               </h2>
             </div>
 
