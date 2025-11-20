@@ -70,6 +70,7 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Finance Review Page - NP Deviation Breakdown with 4-layer deep dive navigation, "Create Action" button in header
 - ✅ Executive Summary Page - CEO Mind Space page with "Create Action" button in header
 - ✅ Action Tracker - Dedicated route page accessible via sidebar navigation (Meetings section)
+- ✅ My Meetings Page - Weekly calendar view with meeting management and materials display
 - ✅ User Profile Page - User profile and settings
 
 ### 5. Daily Pulse Check Features ✅
@@ -488,7 +489,7 @@ The application uses a flat route structure with standalone pages for each major
 
 1. ✅ `/` - Root Route
 
-   - Redirects to `/external-pulse` (default landing page)
+   - Redirects to Executive Summary Page (CEO Mind Space)
    - Right sidebar navigation always visible
 
 2. ✅ `/external-pulse` - External Pulse Page
@@ -623,7 +624,15 @@ The application uses a flat route structure with standalone pages for each major
      - Visual hierarchy with subtle background changes and shadows
      - Premium hover effects on clickable elements
      - Context preservation when drilling down
-   - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals, action proposals (focused on NP Deviation Breakdown only)
+   - **Initiative Proposals Section**: Proposals and initiatives for leakage recovery
+     - Display proposal with actions/initiatives
+     - Actions can be converted to Wave Initiatives (marked as L0 when created)
+     - "Wave It!" button to create Wave initiatives
+     - L-gate stage badges (L0-L5) with color coding
+     - Visual badges for high feasibility and high priority
+     - "Add Initiative" button to add new actions to proposals
+     - Wave Initiative modal for creating initiatives
+   - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals (focused on NP Deviation Breakdown and Initiative Proposals)
    - Accessible via right sidebar navigation (Finance Review)
 
 6. ✅ **Action Tracker** - Dedicated Route Page
@@ -639,7 +648,24 @@ The application uses a flat route structure with standalone pages for each major
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-7. ✅ `/profile` - User Profile Page
+7. ✅ `/my-meetings` - My Meetings Page
+
+   - Weekly calendar view (Monday-Friday grid layout)
+   - Week navigation controls (previous/next/today buttons)
+   - Time slots display (7 AM - 8 PM, 30-minute intervals)
+   - Meeting event cards with color coding by meeting type
+   - Critical meeting highlighting (blue background with border)
+   - Meeting detail modal with comprehensive information:
+     - Meeting title, time, location, organizer
+     - Attendees list (required and optional)
+     - Meeting materials display (External Pulse and Internal Pulse items)
+     - Description and details
+   - Today highlighting in calendar grid
+   - Week number and date range display
+   - HKT (GMT+8) timezone indicator
+   - Click on meeting events to view details in modal
+
+8. ✅ `/profile` - User Profile Page
 
    - User information display
    - Profile details (email, role, member since)
@@ -750,13 +776,14 @@ This is a **frontend-only mockup** with:
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
-- Page Components: 7
+- Page Components: 8
+  - ExecutiveSummaryPage.tsx
   - ExternalPulsePage.tsx
   - InternalPulsePage.tsx
-  - WaveExecutiveDashboardPage.tsx
   - FinancePage.tsx
   - FinanceReviewPage.tsx
   - ActionTrackerPage.tsx
+  - MyMeetingsPage.tsx
   - UserProfile.tsx
 - Layout Components: 1
   - MainLayout.tsx
@@ -798,11 +825,38 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 2. **Executive Summary Page** (http://localhost:5173/) - Demonstrate:
 
-   - CEO Mind Space dashboard with executive briefing
-   - Key metrics and KPIs overview
-   - Critical meetings and action items
+   - **Upcoming Critical Meetings**: Up to 5 critical meetings displayed in grid layout
+     - Each meeting card shows time, priority badge, title, location, key attendees
+     - Materials and preparation items displayed (decks, data, action items)
+     - Priority indicators: Critical (red), High (orange), Medium (blue)
+   - **Operational Leading Parameters**: 5 key metrics displayed as cards
+     - COPQ (Cost of Poor Quality), UPPH (Units Per Person Hour), OEE (Overall Equipment Effectiveness)
+     - Gold price (with company stocked vs market price comparison)
+     - Inventory Turnover rate
+     - Each metric shows value, status badge (good/warning/concern), and trend indicators
+     - Checkbox selection for multi-select and drag-to-calendar functionality
+   - **Critical News**: External news feed showing urgent + high impact news items
+     - Risk/opportunity badges, impact level, urgency level
+     - Meeting coverage indicator showing which meetings include this news
+     - Checkbox selection for multi-select and drag-to-calendar functionality
+   - **Wave Status Glance**: 3 summary cards showing:
+     - Overdue initiatives (count + net benefit)
+     - Initiatives due in 7 days (count + net benefit)
+     - Initiatives due in 30 days (count + net benefit)
+   - **Financial & Topline KPIs**: 4 key financial metrics
+     - Net Profit, Operating Profit, Working Capital, Total Revenue
+     - Status badges and trend indicators
+     - Checkbox selection for multi-select and drag-to-calendar functionality
+   - **Action Items Requiring Attention**: Summary of urgent high-priority actions
+     - Count cards for urgent actions, high-priority actions, and total actions
+     - Top 3 urgent actions displayed with details
+   - **Selection System**: Multi-select items across all sections with action bar
+     - Action bar appears when items are selected
+     - "AI Analysis" button opens Root Cause Analysis sidebar
+     - "Schedule Meeting" button opens meeting scheduling modal
+     - Drag selected items directly to calendar events
    - **Create Action**: "Create Action" button in page header (top-right) for quick action creation
-   - **Root Cause Analysis**: Integrated AI sidebar for insights
+   - **Root Cause Analysis**: Integrated AI sidebar for insights on selected items
 
 3. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
 
@@ -947,6 +1001,13 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Back button correctly navigates to previous layer (fixed navigation stack)
      - Smooth slide-in/slide-out animations (300ms)
      - Executive-focused premium styling
+   - **Initiative Proposals Section**: Located below NP Deviation Breakdown waterfall
+     - Displays proposals with actions/initiatives for leakage recovery
+     - Each action shows description, expected impact, feasibility, and priority
+     - "Wave It!" button to convert actions to Wave Initiatives (automatically marked as L0)
+     - L-gate stage badges (L0-L5) displayed when action is "Waved"
+     - "Add Initiative" button to add new actions to existing proposals
+     - Wave Initiative modal for comprehensive initiative creation
    - Accessible via right sidebar navigation (Finance Review)
 
 7. **Action Tracker** (http://localhost:5173/action-tracker) - Access via sidebar navigation:
@@ -968,7 +1029,28 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-8. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+8. **My Meetings** (http://localhost:5173/my-meetings) - Access via route:
+
+   - **Weekly Calendar View**: Monday-Friday grid layout with time slots (7 AM - 8 PM)
+   - **Week Navigation**: Use previous/next buttons to navigate between weeks, or click "Today" to jump to current week
+   - **Meeting Events**: Color-coded meeting cards displayed on calendar grid:
+     - Critical meetings: Blue background with solid border
+     - Finance review meetings: Blue dashed border
+     - Interview meetings: Purple dashed border
+     - Check-in meetings: Green dashed border
+     - Travel meetings: Orange dashed border
+     - Other meetings: Pink dashed border
+   - **Today Highlighting**: Current day highlighted with blue background and border
+   - **Meeting Details**: Click on any meeting event to open detail modal:
+     - View meeting title, time, location, and organizer
+     - See attendees list (required and optional with role information)
+     - Review meeting materials (External Pulse and Internal Pulse items attached)
+     - View meeting description
+   - **Week Display**: Shows week number and date range (e.g., "18 November - 22 November 2025 (Week 47)")
+   - **Timezone**: HKT (GMT+8) indicator in top navigation bar
+   - **Time Slots**: 30-minute intervals from 7 AM to 8 PM with visual grid lines
+
+9. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
    - User profile information display
    - Profile details (email, role, member since)
