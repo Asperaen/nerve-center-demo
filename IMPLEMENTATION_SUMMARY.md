@@ -947,6 +947,8 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Save scenario → See simulated waterfall line on chart
      - Toggle scenario visibility with checkboxes in scenario panel
      - Edit/delete scenarios
+     - Publish scenario version
+     - Ability to save multiple versions of financial forecasts
    - **Scenario Comparison**:
      - Click "Compare Best/Worst" → Auto-selects best and worst scenarios
      - Click "Comparison Panel" → Opens slider sidebar
@@ -1019,7 +1021,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Tab styling matches InternalPulseCheck design (gray container with white active button)
      - Vertically centered with header elements
    - Comprehensive action list with JIRA-like swim lanes
-   - Auto-resizing swimlanes that utilize available width
+   - Auto-resizing swimlanes **that** utilize available width
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
    - CEO actions distributed across all status types for realistic visualization
    - Priority indicators (High/Medium/Low)
@@ -1070,6 +1072,122 @@ These were intentionally NOT implemented as this is a UX mockup:
 - Email/Slack notifications
 - Excel/PDF export
 - Real-time WebSocket updates
+
+## 🔧 Non-Functional Features & Infrastructure Requirements
+
+The following non-functional features and infrastructure components are required for production deployment. These backend/infrastructure features would transform the current UX mockup into a fully functional production system.
+
+### 1. AI-Powered News Feed System
+
+- **Agentic AI News Feed**: Intelligent news aggregation and filtering for external pulse
+- **Real-time News Aggregation**: Continuous monitoring and ingestion of news from multiple sources
+- **Internal Knowledge Agent**: Cross-checking mechanism that validates news against internal knowledge base
+- **GraphRAG as Core RAG Stack**: Graph-based Retrieval Augmented Generation for knowledge graph construction
+  - Ability to "remember" CEO's preferences and context
+  - Personalized insights based on historical interactions
+- **Deeper Insights Generation**: Advanced analysis from news items
+  - Potential for model fine-tuning to improve relevance
+  - Context-aware analysis that considers business impact
+- **Action Approval Workflows**: Multi-stage approval processes
+
+### 2. Authentication & User Management
+
+- **User Role Management**: Role-based access control (RBAC) system
+- **Session Management**: Secure session handling and token management
+- **Permission System**: Granular permissions for different features and data access
+
+### 3. Calendar Integration
+
+- **One-way Calendar Sync**: Integration with Outlook/Exchange and Google Calendar
+  - Automatic synchronization of calendar events
+  - Real-time updates from calendar systems
+- **Meeting Materials Update**: Ability to create and update meetings from the application
+
+### 4. Data Integration & Sync
+
+- **Real-time Database Synchronization**: Customer database sync via big data platform
+  - High-throughput data pipeline
+  - Event-driven architecture for real-time updates
+- **API Integrations**: Connections to external systems (ERP, CRM, BI tools)
+- **ETL Pipeline Architecture**: Extract, Transform, Load processes for data migration
+- **Unstructured Data Pipeline**: Processing pipeline for design documents and non-structured content
+  - Document parsing and extraction
+  - Content indexing and searchability
+- **Document Processing & Ingestion**: Automated ingestion of business documents
+  - Metadata extraction
+  - Content classification
+- **Asynchronous Job Processing**: Background processing for news feed aggregation
+- **Scheduled/Cron Tasks**: Automated data synchronization jobs
+- **Background AI Processing**: Non-blocking AI insight generation
+- **Task Queue Management**: Message queue system (e.g., RabbitMQ, Celery)
+- **Job Monitoring & Retry Mechanisms**:
+  - Job status tracking
+  - Automatic retry on failure
+  - Dead letter queue handling
+
+### 5. Model Accuracy & Quality Assurance
+
+- **Guiderail Design**: Framework for evaluating model accuracy
+  - Recall rate monitoring and evaluation
+  - Precision metrics tracking
+  - F1-score calculations
+- **Model Performance Metrics Tracking**: Integration with MLFlow or similar MLOps platform
+  - Model versioning and tracking
+  - Performance comparison across model versions
+  - Quality scoring and alerting
+- **Full-text Search Engine**: Integration with Elasticsearch, Vector database, or PostgreSQL full-text search
+- **Search Indexing**: Comprehensive indexing for news, documents, and actions
+- **Advanced Search Filters**: Faceted search with multiple filter options
+- **Search Relevance Tuning**:
+  - Hybrid search (keyword + semantic)
+  - Re-ranking algorithms
+  - Personalized search results
+- **Validation Mechanisms**: User feedback system for AI outputs
+  - Thumb up/down with reasoning collection
+
+### 6. [Optional] Notification & Communication System
+
+- **Email Notifications**: Automated email alerts for:
+  - Action assignments and updates
+  - Meeting reminders
+  - Critical alerts and warnings
+- **Slack/Teams Integration**: Real-time notifications via collaboration platforms
+  - Channel-based notifications
+  - Rich message formatting
+  - Interactive message actions
+
+### 7. Monitoring & Observability
+
+- **Application Performance Monitoring (APM)**: Real-time application health monitoring
+- **Error Tracking & Alerting**: Integration with error tracking tools (e.g., Sentry)
+- **Distributed Tracing**: End-to-end request tracing for microservices
+- **Log Aggregation & Analysis**: Centralized logging system (e.g., ELK stack)
+- **Health Check Endpoints**: System health monitoring endpoints
+- **Metrics Dashboard**: Real-time metrics visualization (CPU, memory, request rates)
+
+### 8. Security
+
+- **Data Backup Strategies**: Automated backup schedules (daily, weekly, monthly)
+  - Point-in-time recovery capabilities
+  - Cross-region backup replication
+- **API Rate Limiting & Throttling**: Protection against API abuse
+- **API Authentication & Authorization**: Secure API access control
+- **Data Encryption**: Encryption at rest and in transit
+- **Audit Logging**: Comprehensive audit trail for security compliance
+
+### 9. Testing & Quality Assurance Infrastructure
+
+- **CI/CD Pipeline**: Automated deployment pipelines (GitHub Actions, Azure DevOps)
+- **Automated Testing**: Comprehensive test suite (unit, integration, e2e)
+- **Security Scanning**: Automated vulnerability assessment
+- **Test Data Management**: Test data generation and management
+
+### 10. Internationalization & Localization
+
+- **Multi-language Support (i18n)**: Support for multiple languages
+- **Timezone Handling**: Automatic timezone conversion and display
+- **Currency and Number Formatting**: Localized number and currency formats
+- **Date/Time Localization**: Region-specific date and time formats
 
 ## 📄 Documentation
 
