@@ -26,8 +26,8 @@ function extractKeywords(item: SelectedItem): string[] {
 
   if (item.type === 'news') {
     const news = item.data as NewsItem;
-    // Extract keywords from headline and summary
-    const text = `${news.headline} ${news.summary}`.toLowerCase();
+    // Extract keywords from title and summary
+    const text = `${news.title} ${news.summary}`.toLowerCase();
     // Split by common words and extract meaningful terms
     const words = text
       .split(/\s+/)
@@ -219,9 +219,9 @@ export function generateMeetingTitle(selectedItems: SelectedItem[]): string {
     if (item.type === 'news') {
       const news = item.data as NewsItem;
       categories.add(news.category);
-      // Extract key topic from headline (first few words)
-      const headlineWords = news.headline.split(' ').slice(0, 3).join(' ');
-      topics.push(headlineWords);
+      // Extract key topic from title (first few words)
+      const titleWords = news.title.split(' ').slice(0, 3).join(' ');
+      topics.push(titleWords);
     } else {
       topics.push(item.name);
     }

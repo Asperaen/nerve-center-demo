@@ -207,7 +207,7 @@ function MeetingDetailModal({
                             key={news.id}
                             className='p-3 bg-gray-50 rounded-lg border border-gray-200'>
                             <h5 className='text-sm font-medium text-gray-900'>
-                              {news.headline}
+                              {news.title}
                             </h5>
                             <p className='text-xs text-gray-500 mt-1 line-clamp-2'>
                               {news.summary}

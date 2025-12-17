@@ -79,7 +79,7 @@ export default function MeetingSchedulingModal({
       const itemDescriptions = selectedItems.map((item) => {
         if (item.type === 'news') {
           const news = item.data as any;
-          return `- ${news.headline}: ${news.summary}`;
+          return `- ${news.title}: ${news.summary}`;
         }
         return `- ${item.name}`;
       });

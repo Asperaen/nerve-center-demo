@@ -380,7 +380,7 @@ export default function MeetingDetailView() {
                       <div className='flex items-start justify-between'>
                         <div className='flex-1'>
                           <h4 className='text-sm font-medium text-gray-900'>
-                            {news.headline}
+                            {news.title}
                           </h4>
                           <p className='text-xs text-gray-500 mt-1 line-clamp-2'>
                             {news.summary}

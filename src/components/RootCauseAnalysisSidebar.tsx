@@ -112,8 +112,8 @@ export default function RootCauseAnalysisSidebar({
     // Analyze External Pulse items
     selectedExternalItems.forEach((news) => {
       if (
-        news.headline.includes('Tariff') ||
-        news.headline.includes('tariff')
+        news.title.includes('Tariff') ||
+        news.title.includes('tariff')
       ) {
         analysis.affectedValueDrivers.push({
           driverName: 'Volume',
@@ -138,8 +138,8 @@ export default function RootCauseAnalysisSidebar({
       }
 
       if (
-        news.headline.includes('Rare Earth') ||
-        news.headline.includes('Material')
+        news.title.includes('Rare Earth') ||
+        news.title.includes('Material')
       ) {
         analysis.affectedValueDrivers.push({
           driverName: 'Index-Based Material Price',
@@ -171,7 +171,7 @@ export default function RootCauseAnalysisSidebar({
           'Rare Earth Supply Disruption: Material costs may increase by 30-40%, leading to $5M COGS increase and $5M gross profit impact. ';
       }
 
-      if (news.headline.includes('Copper')) {
+      if (news.title.includes('Copper')) {
         analysis.affectedValueDrivers.push({
           driverName: 'Index-Based Material Price',
           metricName: 'Material (BOM)',
@@ -510,7 +510,7 @@ function ContextAwareAnalysis({
                 <div
                   key={item.id}
                   className='text-xs text-gray-700 truncate px-2 py-1 bg-white rounded border border-gray-200'>
-                  {item.headline}
+                  {item.title}
                 </div>
               ))}
               {selectedExternalItems.length > 3 && (

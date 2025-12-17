@@ -10,6 +10,7 @@ import {
   DocumentCheckIcon,
   ClipboardDocumentListIcon,
   CalendarDaysIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 
 interface RightSidebarProps {
@@ -70,6 +71,12 @@ export default function RightSidebar({
       label: 'Finance Review',
       path: '/finance-review',
       icon: DocumentCheckIcon,
+    },
+    {
+      id: 'powerbi',
+      label: 'Power BI',
+      path: '/powerbi',
+      icon: PresentationChartLineIcon,
     },
   ];
 

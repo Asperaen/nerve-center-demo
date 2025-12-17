@@ -10,6 +10,7 @@ import ActionTrackerPage from './pages/ActionTrackerPage';
 import UserProfile from './pages/UserProfile';
 import MeetingDetailView from './components/MeetingDetailView';
 import MyMeetingsPage from './pages/MyMeetingsPage';
+import PowerBIPage from './pages/PowerBIPage';
 
 function App() {
   return (
@@ -54,6 +55,10 @@ function App() {
             <Route
               path='meeting/:meetingId'
               element={<MeetingDetailView />}
+            />
+            <Route
+              path='powerbi'
+              element={<PowerBIPage />}
             />
           </Route>
         </Routes>

@@ -1,22 +1,36 @@
 // News and External Pulse Check Types
-export type NewsCategory = 'macro' | 'competitors' | 'customers' | 'suppliers';
-export type ImpactLevel = 'high' | 'medium' | 'low';
-export type UrgencyLevel = 'urgent' | 'important' | 'normal';
+// Backend enum values
+export type NewsCategory = 
+  | 'Macro & Geopolitics'
+  | 'Competitors & Industry'
+  | 'Suppliers & Supply Chain'
+  | 'Customer & End-market';
+
+export type UrgencyLevel = 'short_term' | 'mid_term' | 'long_term';
+export type PriorityLevel = 'high' | 'medium' | 'low';
 export type RiskOpportunity = 'risk' | 'opportunity';
+
+// Legacy types for backward compatibility
+export type ImpactLevel = PriorityLevel; // Alias for backward compatibility
 
 export interface NewsItem {
   id: string;
   category: NewsCategory;
-  headline: string;
+  title: string;
   summary: string;
-  aiAnalysis: string;
-  riskOrOpportunity: RiskOpportunity;
-  impactLevel: ImpactLevel;
-  urgencyLevel: UrgencyLevel;
+  reasoning: string;
+  riskOrOpportunity?: RiskOpportunity; // Optional - removed from backend
+  priority: PriorityLevel;
+  urgency: UrgencyLevel;
   timestamp: Date;
   source: string;
-  annotations: Annotation[];
-  analyzingBy?: string; // Employee currently analyzing this news item
+  annotations?: Annotation[]; // Optional - removed from backend
+  analyzingBy?: string; // Optional - removed from backend
+  hit_count?: number; // Optional hit count field
+  // Backend API fields
+  url?: string;
+  dimension?: string | boolean;
+  recommendation?: string;
 }
 
 export interface Annotation {
@@ -61,6 +75,14 @@ export type ActionStatus =
   | 'reopen';
 export type ActionPriority = 'high' | 'medium' | 'low';
 
+export interface ActionAttachment {
+  id: string;
+  name: string;
+  url: string; // base64 数据 URL 或服务器 URL
+  type: 'image' | 'file';
+  uploadedAt: Date;
+}
+
 export interface Action {
   id: string;
   title: string;
@@ -71,6 +93,7 @@ export interface Action {
   dueDate: Date;
   createdDate: Date;
   comments: Comment[];
+  attachments?: ActionAttachment[];
 }
 
 export interface Comment {

@@ -225,7 +225,7 @@ export default function ExecutiveSummaryPage() {
         items.push({
           type: 'news',
           id: news.id,
-          name: news.headline,
+          name: news.title,
           data: news,
         });
       }
@@ -337,7 +337,7 @@ export default function ExecutiveSummaryPage() {
   // Filter critical external news (urgent + high impact)
   const criticalNews = mockNews
     .filter(
-      (news) => news.urgencyLevel === 'urgent' && news.impactLevel === 'high'
+      (news) => news.urgency === 'short_term' && news.priority === 'high'
     )
     .slice(0, 5)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -1177,36 +1177,42 @@ export default function ExecutiveSummaryPage() {
                           <div className='flex items-start justify-between'>
                             <div className='flex-1'>
                               <h3 className='text-lg font-semibold text-gray-900'>
-                                {news.headline}
+                                {news.title}
                               </h3>
                               <div className='mt-2 flex items-center space-x-3'>
+                                {news.riskOrOpportunity && (
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      news.riskOrOpportunity === 'risk'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-green-100 text-green-800'
+                                    }`}>
+                                    {news.riskOrOpportunity.toUpperCase()}
+                                  </span>
+                                )}
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    news.riskOrOpportunity === 'risk'
+                                    news.priority === 'high'
                                       ? 'bg-red-100 text-red-800'
-                                      : 'bg-green-100 text-green-800'
-                                  }`}>
-                                  {news.riskOrOpportunity.toUpperCase()}
-                                </span>
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    news.impactLevel === 'high'
-                                      ? 'bg-red-100 text-red-800'
-                                      : news.impactLevel === 'medium'
+                                      : news.priority === 'medium'
                                       ? 'bg-yellow-100 text-yellow-800'
                                       : 'bg-blue-100 text-blue-800'
                                   }`}>
-                                  {news.impactLevel.toUpperCase()} IMPACT
+                                  {news.priority.toUpperCase()} PRIORITY
                                 </span>
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    news.urgencyLevel === 'urgent'
+                                    news.urgency === 'short_term'
                                       ? 'bg-red-100 text-red-800'
-                                      : news.urgencyLevel === 'important'
+                                      : news.urgency === 'mid_term'
                                       ? 'bg-orange-100 text-orange-800'
                                       : 'bg-gray-100 text-gray-800'
                                   }`}>
-                                  {news.urgencyLevel.toUpperCase()}
+                                  {news.urgency === 'short_term'
+                                    ? 'SHORT TERM'
+                                    : news.urgency === 'mid_term'
+                                    ? 'MID TERM'
+                                    : 'LONG TERM'}
                                 </span>
                                 <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize'>
                                   {news.category}
