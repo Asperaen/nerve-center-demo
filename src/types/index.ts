@@ -1,10 +1,6 @@
 // News and External Pulse Check Types
-// Backend enum values
-export type NewsCategory = 
-  | 'Macro & Geopolitics'
-  | 'Competitors & Industry'
-  | 'Suppliers & Supply Chain'
-  | 'Customer & End-market';
+// Backend enum values - now using dynamic categories from backend
+export type NewsCategory = string; // Allow any category string from backend
 
 export type UrgencyLevel = 'short_term' | 'mid_term' | 'long_term';
 export type PriorityLevel = 'high' | 'medium' | 'low';
@@ -15,22 +11,32 @@ export type ImpactLevel = PriorityLevel; // Alias for backward compatibility
 
 export interface NewsItem {
   id: string;
-  category: NewsCategory;
+  category: NewsCategory; // Now accepts any string from backend
   title: string;
   summary: string;
   reasoning: string;
-  riskOrOpportunity?: RiskOpportunity; // Optional - removed from backend
+  riskOrOpportunity?: RiskOpportunity;
   priority: PriorityLevel;
   urgency: UrgencyLevel;
   timestamp: Date;
   source: string;
-  annotations?: Annotation[]; // Optional - removed from backend
-  analyzingBy?: string; // Optional - removed from backend
-  hit_count?: number; // Optional hit count field
+  annotations?: Annotation[];
+  analyzingBy?: string;
+  hit_count?: number;
   // Backend API fields
   url?: string;
   dimension?: string | boolean;
   recommendation?: string;
+  // New backend fields
+  content?: string;
+  keywords?: string[];
+  reasons?: string[];
+  importance_score?: number;
+  importance_label?: string;
+  urgency_score?: number;
+  urgency_label?: string;
+  overall_score?: number;
+  impact_analysis?: string[];
 }
 
 export interface Annotation {

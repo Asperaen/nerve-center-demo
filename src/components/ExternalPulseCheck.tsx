@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { mockNews } from "../data/mockNews";
 import type {
-  NewsCategory,
   NewsItem,
   MeetingMaterial,
   PriorityLevel,
@@ -16,14 +15,6 @@ import {
 import { format } from "date-fns";
 import { getMeetingsForNewsItem } from "../utils/meetingUtils";
 
-const categories: { value: NewsCategory | "all"; label: string }[] = [
-  { value: "all", label: "All News" },
-  { value: "Macro & Geopolitics", label: "Macro & Geopolitics" },
-  { value: "Competitors & Industry", label: "Competitors & Industry" },
-  { value: "Customer & End-market", label: "Customer & End-market" },
-  { value: "Suppliers & Supply Chain", label: "Suppliers & Supply Chain" },
-];
-
 interface ExternalPulseCheckProps {
   onSelectionChange?: (items: NewsItem[]) => void;
   selectedItems?: NewsItem[];
@@ -37,44 +28,29 @@ interface BackendNewsItem {
   date: string;
   url?: string;
   category: string;
+  content?: string;
   summary: string;
+  source: string;
+  keywords?: string[];
+  reasons?: string[];
+  importance_score?: number;
+  importance_label?: string;
+  urgency_score?: number;
+  urgency_label?: string;
+  overall_score?: number;
+  impact_analysis?: string[];
   urgency: string;
-  dimension?: string | boolean;
-  hit_count?: number;
   priority: string;
   reasoning: string;
-  recommendation?: string;
-  source: string;
+  dimension?: string | boolean | null;
+  hit_count?: number | null;
+  recommendation?: string | null;
+  riskOrOpportunity?: string;
+  annotations?: any[];
+  analyzingBy?: string;
 }
 
-// Map backend category to NewsCategory (using exact backend values)
-function mapCategory(category: string): NewsCategory {
-  // Use exact backend enum values
-  const validCategories: NewsCategory[] = [
-    "Macro & Geopolitics",
-    "Competitors & Industry",
-    "Suppliers & Supply Chain",
-    "Customer & End-market",
-  ];
-  
-  // Check if category matches exactly
-  if (validCategories.includes(category as NewsCategory)) {
-    return category as NewsCategory;
-  }
-  
-  // Fallback mapping for any variations
-  const lower = category.toLowerCase();
-  if (lower.includes("supplier") || lower.includes("supply chain")) {
-    return "Suppliers & Supply Chain";
-  }
-  if (lower.includes("customer") || lower.includes("end-market") || lower.includes("end market")) {
-    return "Customer & End-market";
-  }
-  if (lower.includes("competitor") || lower.includes("industry")) {
-    return "Competitors & Industry";
-  }
-  return "Macro & Geopolitics"; // default
-}
+// No category mapping needed - use backend category directly
 
 // Map backend priority to PriorityLevel (using exact backend values)
 function mapPriority(priority: string): PriorityLevel {
@@ -98,7 +74,7 @@ function mapUrgency(urgency: string): UrgencyLevel {
 function transformBackendNews(backendNews: BackendNewsItem): NewsItem {
   return {
     id: backendNews.id,
-    category: mapCategory(backendNews.category),
+    category: backendNews.category?.trim() || "Uncategorized", // Trim whitespace and ensure category exists
     title: backendNews.title,
     summary: backendNews.summary,
     reasoning: backendNews.reasoning,
@@ -106,10 +82,23 @@ function transformBackendNews(backendNews: BackendNewsItem): NewsItem {
     urgency: mapUrgency(backendNews.urgency),
     timestamp: new Date(backendNews.date),
     source: backendNews.source || "Unknown",
-    hit_count: backendNews.hit_count,
+    hit_count: backendNews.hit_count ?? undefined,
     url: backendNews.url,
-    dimension: backendNews.dimension,
-    recommendation: backendNews.recommendation,
+    dimension: backendNews.dimension ?? undefined,
+    recommendation: backendNews.recommendation ?? undefined,
+    riskOrOpportunity: backendNews.riskOrOpportunity as "risk" | "opportunity" | undefined,
+    annotations: backendNews.annotations,
+    analyzingBy: backendNews.analyzingBy,
+    // New backend fields
+    content: backendNews.content,
+    keywords: backendNews.keywords,
+    reasons: backendNews.reasons,
+    importance_score: backendNews.importance_score,
+    importance_label: backendNews.importance_label,
+    urgency_score: backendNews.urgency_score,
+    urgency_label: backendNews.urgency_label,
+    overall_score: backendNews.overall_score,
+    impact_analysis: backendNews.impact_analysis,
   };
 }
 
@@ -118,9 +107,7 @@ export default function ExternalPulseCheck({
   selectedItems = [],
   meetingMaterials = {},
 }: ExternalPulseCheckProps = {}) {
-  const [selectedCategory, setSelectedCategory] = useState<
-    NewsCategory | "all"
-  >("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [expandedNews, setExpandedNews] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<Record<string, string>>({});
   const [showAnnotationInput, setShowAnnotationInput] = useState<string | null>(
@@ -132,6 +119,17 @@ export default function ExternalPulseCheck({
   const [newsItems, setNewsItems] = useState<NewsItem[]>(mockNews);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Dynamically extract unique categories from news items
+  const categories = [
+    { value: "all", label: "All News" },
+    ...Array.from(new Set(newsItems.map((item) => item.category)))
+      .sort()
+      .map((category) => ({
+        value: category,
+        label: category,
+      })),
+  ];
 
   // Fetch news from backend API
   useEffect(() => {
@@ -147,7 +145,12 @@ export default function ExternalPulseCheck({
         }
         const data: BackendNewsItem[] = await response.json();
         const transformedNews = data.map(transformBackendNews);
-        setNewsItems(transformedNews);
+        
+        // Remove duplicates based on ID (keep the first occurrence)
+        const uniqueNews = Array.from(
+          new Map(transformedNews.map((item) => [item.id, item])).values()
+        );
+        setNewsItems(uniqueNews);
       } catch (err) {
         console.error("Error fetching external pulse:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch news");
