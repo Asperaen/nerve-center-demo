@@ -742,6 +742,7 @@ export interface FactoryInitiative {
   stageLabel: string;
   isDelayed: boolean;
   expectedImpact: number; // in thousands
+  actualImpact: number; // in thousands - actual realized impact (may be less if delayed)
   owner: string;
 }
 

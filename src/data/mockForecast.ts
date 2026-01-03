@@ -1776,6 +1776,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: true,
       expectedImpact: 1500,
+      actualImpact: 600, // 40% realized due to delay
       owner: 'Chen Wei',
     },
     {
@@ -1785,6 +1786,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: true,
       expectedImpact: 800,
+      actualImpact: 320, // 40% realized due to delay
       owner: 'Li Ming',
     },
     {
@@ -1794,6 +1796,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L1(Identify)',
       isDelayed: true,
       expectedImpact: 650,
+      actualImpact: 195, // 30% realized due to delay
       owner: 'Wang Fang',
     },
     {
@@ -1803,6 +1806,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: false,
       expectedImpact: 420,
+      actualImpact: 420, // 100% realized
       owner: 'Zhang Lei',
     },
     {
@@ -1812,6 +1816,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L0(Concept)',
       isDelayed: false,
       expectedImpact: 300,
+      actualImpact: 300, // 100% realized
       owner: 'Liu Yan',
     },
   ],
@@ -1823,6 +1828,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: false,
       expectedImpact: 450,
+      actualImpact: 450, // 100% realized
       owner: 'Huang Wei',
     },
     {
@@ -1832,6 +1838,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: true,
       expectedImpact: 280,
+      actualImpact: 140, // 50% realized due to delay
       owner: 'Lin Mei',
     },
     {
@@ -1841,6 +1848,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: false,
       expectedImpact: 190,
+      actualImpact: 190, // 100% realized
       owner: 'Chen Jie',
     },
   ],
@@ -1852,6 +1860,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L5(Sustain)',
       isDelayed: false,
       expectedImpact: 520,
+      actualImpact: 520, // 100% realized
       owner: 'Wu Tao',
     },
     {
@@ -1861,6 +1870,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: true,
       expectedImpact: 380,
+      actualImpact: 190, // 50% realized due to delay
       owner: 'Yang Ling',
     },
     {
@@ -1870,6 +1880,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: false,
       expectedImpact: 210,
+      actualImpact: 210, // 100% realized
       owner: 'Zhao Min',
     },
     {
@@ -1879,6 +1890,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L1(Identify)',
       isDelayed: false,
       expectedImpact: 150,
+      actualImpact: 150, // 100% realized
       owner: 'Sun Qiang',
     },
   ],
@@ -1890,6 +1902,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: true,
       expectedImpact: 340,
+      actualImpact: 136, // 40% realized due to delay
       owner: 'Xu Feng',
     },
     {
@@ -1899,6 +1912,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: false,
       expectedImpact: 180,
+      actualImpact: 180, // 100% realized
       owner: 'Ma Li',
     },
   ],
@@ -1910,6 +1924,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: false,
       expectedImpact: 290,
+      actualImpact: 290, // 100% realized
       owner: 'Guo Hua',
     },
     {
@@ -1919,6 +1934,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L1(Identify)',
       isDelayed: true,
       expectedImpact: 220,
+      actualImpact: 88, // 40% realized due to delay
       owner: 'He Xin',
     },
     {
@@ -1928,6 +1944,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L0(Concept)',
       isDelayed: false,
       expectedImpact: 130,
+      actualImpact: 130, // 100% realized
       owner: 'Jiang Bo',
     },
   ],
@@ -1939,6 +1956,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: true,
       expectedImpact: 410,
+      actualImpact: 205, // 50% realized due to delay
       owner: 'Liang Yu',
     },
     {
@@ -1948,6 +1966,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: false,
       expectedImpact: 160,
+      actualImpact: 160, // 100% realized
       owner: 'Deng Wei',
     },
   ],
@@ -1959,6 +1978,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L1(Identify)',
       isDelayed: false,
       expectedImpact: 380,
+      actualImpact: 380, // 100% realized
       owner: 'Xiao Ming',
     },
     {
@@ -1968,6 +1988,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: true,
       expectedImpact: 250,
+      actualImpact: 100, // 40% realized due to delay
       owner: 'Tang Jing',
     },
     {
@@ -1977,6 +1998,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L5(Sustain)',
       isDelayed: false,
       expectedImpact: 120,
+      actualImpact: 120, // 100% realized
       owner: 'Zeng Rui',
     },
   ],
@@ -1988,6 +2010,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: false,
       expectedImpact: 320,
+      actualImpact: 320, // 100% realized
       owner: 'Pan Lei',
     },
     {
@@ -1997,6 +2020,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: true,
       expectedImpact: 270,
+      actualImpact: 135, // 50% realized due to delay
       owner: 'Cao Jun',
     },
     {
@@ -2006,6 +2030,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L0(Concept)',
       isDelayed: false,
       expectedImpact: 90,
+      actualImpact: 90, // 100% realized
       owner: 'Feng Lan',
     },
     {
@@ -2015,6 +2040,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L1(Identify)',
       isDelayed: false,
       expectedImpact: 180,
+      actualImpact: 180, // 100% realized
       owner: 'Ye Hao',
     },
   ],
@@ -2026,6 +2052,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: false,
       expectedImpact: 350,
+      actualImpact: 350, // 100% realized
       owner: 'Shi Wen',
     },
     {
@@ -2035,6 +2062,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L5(Sustain)',
       isDelayed: false,
       expectedImpact: 200,
+      actualImpact: 200, // 100% realized
       owner: 'Qiu Yang',
     },
     {
@@ -2044,6 +2072,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L2(Assess)',
       isDelayed: true,
       expectedImpact: 440,
+      actualImpact: 176, // 40% realized due to delay
       owner: 'Ren Xia',
     },
   ],
@@ -2055,6 +2084,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L4(Execute)',
       isDelayed: false,
       expectedImpact: 280,
+      actualImpact: 280, // 100% realized
       owner: 'Tian Chen',
     },
     {
@@ -2064,6 +2094,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       stageLabel: 'L3(Plan)',
       isDelayed: true,
       expectedImpact: 190,
+      actualImpact: 95, // 50% realized due to delay
       owner: 'Bai Xue',
     },
   ],

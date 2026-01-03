@@ -472,11 +472,32 @@ export default function BusinessGroupPerformancePage() {
       <div className='max-w-[1920px] mx-auto px-8 py-8'>
         {/* Financial Overview Section */}
         <div className='mb-8'>
-          <div className='flex items-center gap-2 mb-4'>
-            <ChartBarIcon className='w-5 h-5 text-primary-600' />
-            <h2 className='text-lg font-semibold text-gray-700 italic'>
-              Financial overview – {getSectionTitle()}
-            </h2>
+          <div className='flex items-center justify-between mb-2'>
+            <div className='flex items-center gap-2'>
+              <ChartBarIcon className='w-5 h-5 text-primary-600' />
+              <h2 className='text-lg font-semibold text-gray-700 italic'>
+                Financial overview – {getSectionTitle()}
+              </h2>
+            </div>
+            <a
+              href='/business-group-performance'
+              className='text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline transition-colors flex items-center gap-1'>
+              Business Group Performance
+              <span className='text-xs'>→</span>
+            </a>
+          </div>
+          <div className='flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200'>
+            <p className='text-sm text-gray-700'>
+              <span className='font-medium'>
+                Strong revenue growth across all BUs (+8.2% YoY), but margin
+                compression in Consumer Electronics (-1.2pp) due to elevated
+                material costs requires attention.
+              </span>
+            </p>
+            <span className='flex-shrink-0 ml-4 px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+              <span className='text-sm'>✨</span>
+              <span>AI</span>
+            </span>
           </div>
 
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>

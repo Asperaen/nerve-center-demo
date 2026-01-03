@@ -66,7 +66,11 @@ function FactoryInitiativeTooltip({
   onViewWave,
 }: FactoryInitiativeTooltipProps) {
   const delayedCount = initiatives.filter((i) => i.isDelayed).length;
-  const totalImpact = initiatives.reduce((sum, i) => sum + i.expectedImpact, 0);
+  const totalExpected = initiatives.reduce(
+    (sum, i) => sum + i.expectedImpact,
+    0
+  );
+  const totalActual = initiatives.reduce((sum, i) => sum + i.actualImpact, 0);
 
   return (
     <div className='absolute left-full top-0 ml-2 z-50 w-80 bg-white rounded-xl border border-gray-200 shadow-xl p-4 animate-in fade-in slide-in-from-left-2 duration-200'>
@@ -85,9 +89,13 @@ function FactoryInitiativeTooltip({
               </span>
             </>
           )}
-          <span className='text-xs text-gray-400'>•</span>
-          <span className='text-xs text-gray-600'>
-            ${(totalImpact / 1000).toFixed(1)}M total impact
+        </div>
+        <div className='flex items-center gap-3 mt-2 text-xs'>
+          <span className='text-blue-600'>
+            Expected: ${(totalExpected / 1000).toFixed(2)}M
+          </span>
+          <span className='text-green-600'>
+            Actual: ${(totalActual / 1000).toFixed(2)}M
           </span>
         </div>
       </div>
@@ -122,7 +130,21 @@ function FactoryInitiativeTooltip({
                   {initiative.name}
                 </p>
                 <p className='text-xs text-gray-500 mt-0.5'>
-                  Owner: {initiative.owner} • ${initiative.expectedImpact}K
+                  Owner: {initiative.owner}
+                </p>
+                <p className='text-xs mt-0.5'>
+                  <span className='text-blue-600'>
+                    Exp: ${initiative.expectedImpact}K
+                  </span>
+                  <span className='text-gray-400 mx-1'>→</span>
+                  <span
+                    className={
+                      initiative.actualImpact < initiative.expectedImpact
+                        ? 'text-orange-600'
+                        : 'text-green-600'
+                    }>
+                    Act: ${initiative.actualImpact}K
+                  </span>
                 </p>
               </div>
             </div>
@@ -348,7 +370,16 @@ export default function CostImpactBreakdownLayer({
                   Factory
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                  MVA cost impact (K)
+                  MVA Impact (K)
+                </th>
+                <th className='text-center py-3 px-4 text-sm font-semibold text-gray-700'>
+                  # of Initiatives
+                </th>
+                <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
+                  Expected Initiative Impact (K)
+                </th>
+                <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
+                  Actual Initiative Impact (K)
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
                   Vol_Actual (KPCS)
@@ -437,11 +468,6 @@ export default function CostImpactBreakdownLayer({
                         )}
                         <span>{row.factory}</span>
                         <span className='text-xs text-gray-400'>⋮⋮</span>
-                        {factoryInitiatives.length > 0 && (
-                          <span className='text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded'>
-                            {factoryInitiatives.length} initiatives
-                          </span>
-                        )}
                       </div>
                       {/* Factory Initiative Tooltip */}
                       {isHovered && factoryInitiatives.length > 0 && (
@@ -460,6 +486,57 @@ export default function CostImpactBreakdownLayer({
                       }`}>
                       {row.costImpact >= 0 ? '+' : ''}
                       {row.costImpact.toFixed(2)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-center text-gray-700'>
+                      {factoryInitiatives.length > 0 ? (
+                        <span className='inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 bg-gray-100 rounded font-medium'>
+                          {factoryInitiatives.length}
+                        </span>
+                      ) : (
+                        <span className='text-gray-400'>-</span>
+                      )}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        factoryInitiatives.length > 0
+                          ? 'text-blue-600'
+                          : 'text-gray-400'
+                      }`}>
+                      {factoryInitiatives.length > 0 ? (
+                        <>
+                          +
+                          {(
+                            factoryInitiatives.reduce(
+                              (sum, i) => sum + i.expectedImpact,
+                              0
+                            ) / 1000
+                          ).toFixed(2)}
+                          M
+                        </>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        factoryInitiatives.length > 0
+                          ? 'text-green-600'
+                          : 'text-gray-400'
+                      }`}>
+                      {factoryInitiatives.length > 0 ? (
+                        <>
+                          +
+                          {(
+                            factoryInitiatives.reduce(
+                              (sum, i) => sum + i.actualImpact,
+                              0
+                            ) / 1000
+                          ).toFixed(2)}
+                          M
+                        </>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
                       {row.volActual.toLocaleString(undefined, {
@@ -542,6 +619,19 @@ export default function CostImpactBreakdownLayer({
                     ? mockCostComponentTotals.outsource / totalVol
                     : 0;
 
+                // Calculate total initiatives and expected/actual impact
+                const totalInitiatives = Object.values(
+                  mockFactoryInitiatives
+                ).flat().length;
+                const totalExpectedImpact = Object.values(
+                  mockFactoryInitiatives
+                )
+                  .flat()
+                  .reduce((sum, i) => sum + i.expectedImpact, 0);
+                const totalActualImpact = Object.values(mockFactoryInitiatives)
+                  .flat()
+                  .reduce((sum, i) => sum + i.actualImpact, 0);
+
                 return (
                   <tr className='bg-gray-50 font-semibold'>
                     <td className='py-3 px-4 text-sm font-bold text-gray-900'>
@@ -555,6 +645,17 @@ export default function CostImpactBreakdownLayer({
                       }`}>
                       {mockTotalCostImpact >= 0 ? '+' : ''}
                       {mockTotalCostImpact.toFixed(2)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-center font-bold text-gray-700'>
+                      <span className='inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 bg-gray-200 rounded'>
+                        {totalInitiatives}
+                      </span>
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right font-bold text-blue-600'>
+                      +{(totalExpectedImpact / 1000).toFixed(2)}M
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right font-bold text-green-600'>
+                      +{(totalActualImpact / 1000).toFixed(2)}M
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
                       {totalVol.toLocaleString(undefined, {
