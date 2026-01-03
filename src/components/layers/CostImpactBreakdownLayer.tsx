@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -9,8 +10,9 @@ import {
   mockCostComponentTotals,
   mockTotalCostImpact,
   mockCostImpactKeyCallOut,
+  mockFactoryInitiatives,
 } from '../../data/mockForecast';
-import type { BreadcrumbItem } from '../../types';
+import type { BreadcrumbItem, FactoryInitiative } from '../../types';
 
 // Aggregated factory data type
 interface FactoryAggregatedData {
@@ -31,11 +33,127 @@ interface CostImpactBreakdownLayerProps {
   onLaborMOHClick: () => void;
 }
 
+// Stage badge color mapping
+const getStageColor = (stage: string): string => {
+  switch (stage) {
+    case 'L0':
+      return 'bg-gray-500 text-white';
+    case 'L1':
+      return 'bg-blue-500 text-white';
+    case 'L2':
+      return 'bg-indigo-500 text-white';
+    case 'L3':
+      return 'bg-yellow-500 text-white';
+    case 'L4':
+      return 'bg-orange-500 text-white';
+    case 'L5':
+      return 'bg-green-500 text-white';
+    default:
+      return 'bg-gray-400 text-white';
+  }
+};
+
+// Factory Initiative Tooltip Component
+interface FactoryInitiativeTooltipProps {
+  factoryName: string;
+  initiatives: FactoryInitiative[];
+  onViewWave: () => void;
+}
+
+function FactoryInitiativeTooltip({
+  factoryName,
+  initiatives,
+  onViewWave,
+}: FactoryInitiativeTooltipProps) {
+  const delayedCount = initiatives.filter((i) => i.isDelayed).length;
+  const totalImpact = initiatives.reduce((sum, i) => sum + i.expectedImpact, 0);
+
+  return (
+    <div className='absolute left-full top-0 ml-2 z-50 w-80 bg-white rounded-xl border border-gray-200 shadow-xl p-4 animate-in fade-in slide-in-from-left-2 duration-200'>
+      {/* Header */}
+      <div className='mb-3 pb-3 border-b border-gray-200'>
+        <h4 className='text-sm font-bold text-gray-900'>{factoryName}</h4>
+        <div className='flex items-center gap-2 mt-1'>
+          <span className='text-xs text-gray-600'>
+            {initiatives.length} initiative{initiatives.length !== 1 ? 's' : ''}
+          </span>
+          {delayedCount > 0 && (
+            <>
+              <span className='text-xs text-gray-400'>•</span>
+              <span className='text-xs text-red-600 font-medium'>
+                {delayedCount} delayed
+              </span>
+            </>
+          )}
+          <span className='text-xs text-gray-400'>•</span>
+          <span className='text-xs text-gray-600'>
+            ${(totalImpact / 1000).toFixed(1)}M total impact
+          </span>
+        </div>
+      </div>
+
+      {/* Initiative List */}
+      <div className='space-y-2 max-h-48 overflow-y-auto'>
+        {initiatives.map((initiative) => (
+          <div
+            key={initiative.id}
+            className={`p-2 rounded-lg border ${
+              initiative.isDelayed
+                ? 'bg-red-50 border-red-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+            <div className='flex items-start justify-between gap-2'>
+              <div className='flex-1 min-w-0'>
+                <div className='flex items-center gap-2'>
+                  <span
+                    className={`px-1.5 py-0.5 text-xs font-bold rounded ${getStageColor(
+                      initiative.stage
+                    )}`}>
+                    {initiative.stage}
+                  </span>
+                  {initiative.isDelayed && (
+                    <span className='flex items-center gap-1 text-xs text-red-600 font-medium'>
+                      <span className='w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse' />
+                      Delayed
+                    </span>
+                  )}
+                </div>
+                <p className='text-xs font-medium text-gray-900 mt-1 truncate'>
+                  {initiative.name}
+                </p>
+                <p className='text-xs text-gray-500 mt-0.5'>
+                  Owner: {initiative.owner} • ${initiative.expectedImpact}K
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* View Wave Button */}
+      <div className='mt-3 pt-3 border-t border-gray-200'>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewWave();
+          }}
+          className='w-full px-3 py-2 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2'>
+          <span>View in Wave Dashboard</span>
+          <ArrowRightIcon className='w-3.5 h-3.5' />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CostImpactBreakdownLayer({
   breadcrumbs,
   onBack,
   onLaborMOHClick,
 }: CostImpactBreakdownLayerProps) {
+  const navigate = useNavigate();
+  const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
+
   // Aggregate data by factory
   const aggregatedByFactory = useMemo(() => {
     const factoryMap = new Map<string, FactoryAggregatedData>();
@@ -295,24 +413,46 @@ export default function CostImpactBreakdownLayer({
                   e.dataTransfer.effectAllowed = 'copy';
                 };
 
+                // Get factory initiatives for tooltip
+                const factoryInitiatives =
+                  mockFactoryInitiatives[row.factory] || [];
+                const isHovered = hoveredFactory === row.factory;
+
                 return (
                   <tr
                     key={row.factory}
                     draggable
                     onDragStart={handleDragStart}
+                    onMouseEnter={() => setHoveredFactory(row.factory)}
+                    onMouseLeave={() => setHoveredFactory(null)}
                     className={`transition-colors cursor-grab active:cursor-grabbing ${
                       isMostNegative
                         ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500'
                         : 'hover:bg-gray-50'
                     }`}>
-                    <td className='py-3 px-4 text-sm font-medium text-gray-900'>
+                    <td className='py-3 px-4 text-sm font-medium text-gray-900 relative'>
                       <div className='flex items-center gap-2'>
                         {isMostNegative && (
                           <span className='flex-shrink-0 w-2 h-2 bg-red-500 rounded-full animate-pulse' />
                         )}
                         <span>{row.factory}</span>
                         <span className='text-xs text-gray-400'>⋮⋮</span>
+                        {factoryInitiatives.length > 0 && (
+                          <span className='text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded'>
+                            {factoryInitiatives.length} initiatives
+                          </span>
+                        )}
                       </div>
+                      {/* Factory Initiative Tooltip */}
+                      {isHovered && factoryInitiatives.length > 0 && (
+                        <FactoryInitiativeTooltip
+                          factoryName={row.factory}
+                          initiatives={factoryInitiatives}
+                          onViewWave={() =>
+                            navigate('/internal-pulse?tab=wave')
+                          }
+                        />
+                      )}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${

@@ -731,3 +731,20 @@ export interface ExecutiveDashboardSummary {
     ownerCount: number;
   };
 }
+
+// Factory Initiative Types (for Cost Impact Layer tooltips)
+export type InitiativeStage = 'L0' | 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
+
+export interface FactoryInitiative {
+  id: string;
+  name: string;
+  stage: InitiativeStage;
+  stageLabel: string;
+  isDelayed: boolean;
+  expectedImpact: number; // in thousands
+  owner: string;
+}
+
+export interface FactoryInitiativesMap {
+  [factoryName: string]: FactoryInitiative[];
+}

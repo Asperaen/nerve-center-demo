@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { PlusIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import ExternalPulseCheck from '../components/ExternalPulseCheck';
+import CriticalInsights from '../components/CriticalInsights';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import CreateActionModal from '../components/CreateActionModal';
 import type { NewsItem, MeetingMaterial } from '../types';
@@ -65,7 +65,7 @@ export default function ExternalPulsePage() {
 
         <div className='mb-6'>
           <div className='flex items-center justify-between mb-2'>
-            <h1 className='text-3xl font-bold text-gray-900'>External Pulse</h1>
+            <h1 className='text-3xl font-bold text-gray-900'>Critical Insights</h1>
             <button
               onClick={() => setIsCreateActionModalOpen(true)}
               className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
@@ -74,11 +74,10 @@ export default function ExternalPulsePage() {
             </button>
           </div>
           <p className='text-gray-600'>
-            Monitor market trends, news, and external factors affecting your
-            business
+            Executive insights on market trends, risks, and opportunities with quantified business impact
           </p>
         </div>
-        <ExternalPulseCheck
+        <CriticalInsights
           onSelectionChange={setSelectedExternalItems}
           selectedItems={selectedExternalItems}
           meetingMaterials={meetingMaterials}

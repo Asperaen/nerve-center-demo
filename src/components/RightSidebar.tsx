@@ -34,13 +34,13 @@ export default function RightSidebar({
     },
     {
       id: 'business-group-performance',
-      label: 'BG Performance',
+      label: 'Business Group Performance',
       path: '/business-group-performance',
       icon: BuildingOffice2Icon,
     },
     {
       id: 'external-pulse',
-      label: 'External Pulse',
+      label: 'Critical Insights',
       path: '/external-pulse',
       icon: SparklesIcon,
     },

@@ -6,9 +6,9 @@ export const mockNews: NewsItem[] = [
     category: 'Suppliers & Supply Chain',
     title: 'Vietnam sets 7.2% minimum wage hike from next year',
     summary:
-      'The National Wage Council of Vietnam has approved a 7.2% increase in regional minimum wage for 2026, effective January 1, 2026. The new wage levels range from 3.70 million VND to 5.31 million VND per month depending on the region.',
+      'Vietnam 7.2% minimum wage hike (effective Jan 2026) may increase DL cost by $7.5M across Vietnam operations, impacting Must-win BU ($3M) and Never-lose BU ($4.5M).',
     reasoning:
-      'Vietnam increasing minimum wage causing impact to BU with footprint in Vietnam: our Must-win BU faces a 3-million-dollar impact, and our Never-lose BU is hit by 4.5 million.',
+      'The National Wage Council approved regional minimum wage increases ranging from 3.70M to 5.31M VND per month. Direct labor expense typically represents 10% of revenue; applying a 5% blended increase translates to ~0.75pp margin erosion on a 10% OP margin.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
@@ -21,9 +21,9 @@ export const mockNews: NewsItem[] = [
     category: 'Macro & Geopolitics',
     title: 'US Announces 25% Tariff on Chinese-Made EV Connectors',
     summary:
-      'The United States Trade Representative has announced a new 25% tariff on Chinese-manufactured electric vehicle connectors, effective in 30 days. This follows ongoing trade tensions and aims to protect domestic manufacturing.',
+      'New 25% US tariff on Chinese EV connectors (effective in 30 days) may cause $7.5M OP hit and 0.75pp margin erosion for mid-size EMS BUs with China exposure.',
     reasoning:
-      'For a mid-size EMS BU with $1B annual revenue: Direct labor expense is $100M (10% of revenue), indirect labor overhead portion is $50M, totaling $150M in labor-related costs. Applying a 5% blended increase translates to ~$7.5M OP hit, roughly 0.75 p.p. margin erosion on a 10% OP margin.',
+      'For a mid-size EMS BU with $1B annual revenue: Direct labor expense is $100M (10% of revenue), indirect labor overhead portion is $50M, totaling $150M in labor-related costs. This follows ongoing US-China trade tensions aimed at protecting domestic manufacturing.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
@@ -37,9 +37,9 @@ export const mockNews: NewsItem[] = [
     category: 'Suppliers & Supply Chain',
     title: 'China Limits Rare Earth Exports Affecting Connector Materials',
     summary:
-      'China has announced export restrictions on rare earth elements critical for high-performance connectors, citing national security concerns. The restrictions will take effect in 60 days.',
+      'China rare earth export restrictions may increase material costs by 30-40%, driving estimated $5M cost increase in H2. Current inventory covers only 45 days.',
     reasoning:
-      'Supply chain disruption alert: Rare earth materials account for 15% of our connector component costs. Key impacts: (1) Material costs may increase by 30-40% without alternative suppliers, (2) Estimated $5M cost increase in H2, (3) Production capacity may be constrained if supply is limited. Current inventory covers 45 days. Recommended actions: Accelerate negotiations with Australian and US rare earth suppliers, increase safety stock to 90 days, and explore material substitution opportunities with R&D.',
+      'Rare earth materials account for 15% of our connector component costs. China has announced export restrictions citing national security concerns, effective in 60 days. Recommended actions: Accelerate negotiations with Australian and US rare earth suppliers, increase safety stock to 90 days, and explore material substitution opportunities with R&D.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
@@ -51,12 +51,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-3',
     category: 'Customer & End-market',
-    title:
-      'Tesla Q3 Earnings Beat Expectations, Plans to Double EV Production',
+    title: 'Tesla Q3 Earnings Beat Expectations, Plans to Double EV Production',
     summary:
-      'Tesla reported stronger-than-expected Q3 earnings and announced plans to double electric vehicle production by 2026, requiring significant expansion of supplier partnerships.',
+      'Tesla production doubling by 2026 creates $25M revenue opportunity for high-voltage connectors. Current Tesla volume: $45M annually (#2 customer).',
     reasoning:
-      'Major opportunity: Tesla is our #2 customer for high-voltage connectors. Key implications: (1) Potential to increase Tesla business by 80-100% over next 2 years, (2) Estimated $25M additional revenue opportunity, (3) Will require capacity expansion at our Shenzhen and Vietnam facilities. Current Tesla volume: $45M annually. Recommended actions: Schedule strategic account review with Tesla procurement within 2 weeks, prepare capacity expansion proposal, and assess competitive positioning.',
+      'Tesla reported stronger-than-expected Q3 earnings and announced plans to double electric vehicle production by 2026. Potential to increase Tesla business by 80-100% over next 2 years. Will require capacity expansion at our Shenzhen and Vietnam facilities. Recommended actions: Schedule strategic account review with Tesla procurement within 2 weeks.',
     riskOrOpportunity: 'opportunity',
     priority: 'high',
     urgency: 'mid_term',
@@ -69,9 +68,9 @@ export const mockNews: NewsItem[] = [
     category: 'Competitors & Industry',
     title: 'TE Connectivity Acquires Optical Connector Startup for $380M',
     summary:
-      'Major competitor TE Connectivity has acquired a Silicon Valley-based optical connector startup, strengthening their position in the copper-to-optical transition market.',
+      'TE Connectivity optical acquisition may threaten our $120M optical connector business (5% of total revenue). Risk of reduced win rate with data center customers.',
     reasoning:
-      'Competitive threat in our strategic direction: TE is accelerating their optical connector capabilities. Key impacts: (1) TE may now compete more aggressively in our target optical market segment, (2) Could affect our win rate with data center customers, (3) Market may consolidate faster than expected. Our optical connector revenue: $120M (5% of total). Recommended actions: Accelerate our own optical connector roadmap, review M&A pipeline for similar targets, and strengthen relationships with key data center customers.',
+      'Major competitor TE Connectivity has acquired a Silicon Valley-based optical connector startup for $380M, strengthening their position in the copper-to-optical transition market. Market may consolidate faster than expected. Recommended actions: Accelerate our own optical connector roadmap, review M&A pipeline for similar targets, and strengthen relationships with key data center customers.',
     riskOrOpportunity: 'risk',
     priority: 'medium',
     urgency: 'mid_term',
@@ -84,9 +83,9 @@ export const mockNews: NewsItem[] = [
     category: 'Macro & Geopolitics',
     title: 'Global 5G Infrastructure Investment Reaches $200B in 2025',
     summary:
-      'Worldwide 5G infrastructure spending has reached record levels, with telecommunications companies investing heavily in network expansion and upgrades.',
+      '5G infrastructure boom drives 30% YoY connector demand growth. Our $420M 5G business positioned for expansion in India and Southeast Asia.',
     reasoning:
-      'Positive macro trend supporting our 5G AIoT business unit: Key opportunities: (1) 5G connector demand is growing 30% YoY, (2) Our 5G business currently $420M annually with strong margins, (3) Major telco customers are increasing capex budgets. Recommended actions: Increase production capacity for 5G antenna connectors, prioritize R&D for next-gen 5G products, and expand sales team in high-growth regions (India, Southeast Asia).',
+      'Worldwide 5G infrastructure spending has reached record levels at $200B in 2025, with telecommunications companies investing heavily in network expansion and upgrades. Recommended actions: Increase production capacity for 5G antenna connectors, prioritize R&D for next-gen 5G products, and expand sales team in high-growth regions.',
     riskOrOpportunity: 'opportunity',
     priority: 'medium',
     urgency: 'long_term',
@@ -99,9 +98,9 @@ export const mockNews: NewsItem[] = [
     category: 'Customer & End-market',
     title: 'Apple Delays New AirPods Pro Launch to Q2 2026',
     summary:
-      'Apple has postponed the launch of its next-generation AirPods Pro from Q1 to Q2 2026, citing supply chain optimization and feature enhancements.',
+      'Apple AirPods Pro delay shifts $8M revenue from Q1 to Q2 2026. Production planning adjustment needed to avoid excess inventory. Apple TWS business: $95M annually (23% of audio segment).',
     reasoning:
-      'Volume timing shift for our TWS earphone connector business: Key impacts: (1) $8M revenue will shift from Q1 to Q2 2026, (2) Production planning needs adjustment to avoid excess inventory, (3) Opportunity to reallocate capacity to other customers in Q1. Apple TWS business: $95M annually, 23% of our audio segment. Recommended actions: Confirm revised schedule with Apple directly, adjust Q1 production plan by 15%, and explore opportunity to accelerate other TWS customer projects.',
+      'Apple has postponed the launch of its next-generation AirPods Pro from Q1 to Q2 2026, citing supply chain optimization and feature enhancements. Recommended actions: Confirm revised schedule with Apple directly, adjust Q1 production plan by 15%, and explore opportunity to accelerate other TWS customer projects.',
     riskOrOpportunity: 'risk',
     priority: 'medium',
     urgency: 'long_term',
@@ -114,9 +113,9 @@ export const mockNews: NewsItem[] = [
     category: 'Competitors & Industry',
     title: 'Amphenol Reports Strong Q3 Results Driven by Data Center Growth',
     summary:
-      "Amphenol, the world's second-largest connector manufacturer, reported 18% YoY revenue growth in Q3, primarily driven by AI data center applications.",
+      'Amphenol 18% YoY data center growth validates AI connector market opportunity. Our data center business: $354M in H1 2025 (+35.7% YoY) - outpacing key competitor.',
     reasoning:
-      "Competitive intelligence - data center opportunity validation: Key insights: (1) AI data center connector market is growing faster than anticipated, (2) Amphenol's success validates our strategic focus on Nvidia/Amazon supply chain, (3) Market pricing remains strong. Our data center business: $354M in H1 2025 (+35.7% YoY). Recommended actions: Benchmark our growth rate vs Amphenol, accelerate engagement with Nvidia GB300 program, and ensure competitive pricing remains intact.",
+      "Amphenol, the world's second-largest connector manufacturer, reported 18% YoY revenue growth in Q3, primarily driven by AI data center applications. This validates our strategic focus on Nvidia/Amazon supply chain. Recommended actions: Benchmark our growth rate vs Amphenol, accelerate engagement with Nvidia GB300 program, and ensure competitive pricing remains intact.",
     riskOrOpportunity: 'opportunity',
     priority: 'low',
     urgency: 'long_term',
@@ -129,9 +128,9 @@ export const mockNews: NewsItem[] = [
     category: 'Suppliers & Supply Chain',
     title: 'Global Copper Prices Surge 15% Amid Supply Concerns',
     summary:
-      'Copper prices have increased 15% over the past month due to supply disruptions in South American mines and strong demand from renewable energy projects.',
+      'Copper price surge (+15%) may increase costs by $7M and erode gross margins by 0.8-1.0pp. Copper accounts for 28% of material costs across our $920M copper cable business.',
     reasoning:
-      'Cost pressure on copper-based products: Key impacts: (1) Copper accounts for 28% of our material costs, (2) Estimated $7M cost increase if prices sustain at current levels, (3) May pressure gross margins by 0.8-1.0%. Our copper cable revenue: $920M annually (40% of total, market leading position). Recommended actions: Review copper hedging strategy with CFO, initiate customer discussions on potential price adjustments, and accelerate copper recycling initiatives.',
+      'Copper prices have increased 15% over the past month due to supply disruptions in South American mines and strong demand from renewable energy projects. Our copper cable revenue represents 40% of total (market leading position). Recommended actions: Review copper hedging strategy with CFO, initiate customer discussions on potential price adjustments, and accelerate copper recycling initiatives.',
     riskOrOpportunity: 'risk',
     priority: 'medium',
     urgency: 'mid_term',
@@ -144,9 +143,9 @@ export const mockNews: NewsItem[] = [
     category: 'Macro & Geopolitics',
     title: 'Vietnam Offers Tax Incentives for Advanced Manufacturing',
     summary:
-      'Vietnamese government announces new 10-year tax holiday for advanced manufacturing facilities, targeting electronics and automotive supply chain companies.',
+      'Vietnam 10-year tax holiday could save $3-4M annually on our $180M Vietnam operations. Strategic opportunity to shift production from China amid US tariffs.',
     reasoning:
-      'Strategic opportunity for capacity expansion: Key opportunities: (1) Could significantly reduce tax burden on our Vietnam operations, (2) Perfect timing given need to shift production from China due to US tariffs, (3) Estimated $3-4M annual tax savings if we qualify. Current Vietnam operations: $180M revenue, 450 employees. Recommended actions: Engage with Vietnam government officials to understand qualification requirements, accelerate Vietnam capacity expansion plans, and evaluate ROI for additional facility investment.',
+      'Vietnamese government announces new 10-year tax holiday for advanced manufacturing facilities, targeting electronics and automotive supply chain companies. Current Vietnam operations: 450 employees. Recommended actions: Engage with Vietnam government officials to understand qualification requirements, accelerate Vietnam capacity expansion plans, and evaluate ROI for additional facility investment.',
     riskOrOpportunity: 'opportunity',
     priority: 'medium',
     urgency: 'long_term',
@@ -159,9 +158,9 @@ export const mockNews: NewsItem[] = [
     category: 'Customer & End-market',
     title: 'BYD Expands European EV Production with New Hungary Plant',
     summary:
-      'Chinese EV giant BYD announces €800M investment in new Hungarian manufacturing facility, expected to produce 200,000 vehicles annually by 2027.',
+      'BYD €800M Hungary plant (200K vehicles/year by 2027) creates European connector supply opportunity. Current BYD volume: $38M annually (#3 EV customer).',
     reasoning:
-      'Geographic expansion opportunity with key customer: Key implications: (1) BYD is our #3 EV customer, current volume $38M annually, (2) European expansion creates opportunity for local connector supply, (3) May require establishing local inventory or production presence. Recommended actions: Schedule meeting with BYD Europe procurement team, assess feasibility of European distribution hub, and evaluate potential partnership with local connector distributors.',
+      'Chinese EV giant BYD announces €800M investment in new Hungarian manufacturing facility, expected to produce 200,000 vehicles annually by 2027. European expansion creates opportunity for local connector supply. May require establishing local inventory or production presence. Recommended actions: Schedule meeting with BYD Europe procurement team and assess feasibility of European distribution hub.',
     riskOrOpportunity: 'opportunity',
     priority: 'low',
     urgency: 'long_term',
