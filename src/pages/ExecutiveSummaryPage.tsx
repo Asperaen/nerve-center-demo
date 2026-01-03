@@ -9,11 +9,8 @@ import {
   ClipboardDocumentListIcon,
   CalendarIcon,
   PlusIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { formatDistanceToNow, format, isToday } from 'date-fns';
-import { mockNews } from '../data/mockNews';
+import { format, isToday } from 'date-fns';
 import { mockActions } from '../data/mockActions';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import { mockKPIs } from '../data/mockKPIs';
@@ -29,21 +26,14 @@ import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import CreateActionModal from '../components/CreateActionModal';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import type { SelectedItem } from '../utils/meetingRelevance';
-import { getMeetingsForNewsItem } from '../utils/meetingUtils';
 
 interface ExecutiveSummaryPageContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
 }
 
 export default function ExecutiveSummaryPage() {
-  const { meetingMaterials } = useOutletContext<ExecutiveSummaryPageContext>();
+  useOutletContext<ExecutiveSummaryPageContext>();
   // Selection state
-  const [selectedOperationMetrics, setSelectedOperationMetrics] = useState<
-    Set<string>
-  >(new Set());
-  const [selectedNewsItems, setSelectedNewsItems] = useState<Set<string>>(
-    new Set()
-  );
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
     Set<string>
   >(new Set());
@@ -52,60 +42,6 @@ export default function ExecutiveSummaryPage() {
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
-  // Get Operation metrics from Internal Pulse (UPPH, OEE, Gold price)
-  const operationColumn = internalPulseColumns.find(
-    (col) => col.type === 'operation'
-  );
-
-  const getOperationMetrics = (): PulseMetric[] => {
-    if (!operationColumn) return [];
-
-    const metrics: PulseMetric[] = [];
-
-    // Get COPQ from Quality section
-    const qualitySection = operationColumn.sections.find(
-      (s) => s.title === 'Quality'
-    );
-    if (qualitySection) {
-      const copq = qualitySection.metrics.find((m) => m.id === 'copq');
-      if (copq) metrics.push(copq);
-    }
-
-    // Get UPPH and OEE from MFG section
-    const mfgSection = operationColumn.sections.find((s) => s.title === 'MFG');
-    if (mfgSection) {
-      const upph = mfgSection.metrics.find((m) => m.id === 'upph');
-      const oee = mfgSection.metrics.find((m) => m.id === 'oee');
-      if (upph) metrics.push(upph);
-      if (oee) metrics.push(oee);
-    }
-
-    // Get Gold price from Procurement section
-    const procurementSection = operationColumn.sections.find(
-      (s) => s.title === 'Procurement'
-    );
-    if (procurementSection) {
-      const gold = procurementSection.metrics.find(
-        (m) => m.id === 'gold-material'
-      );
-      if (gold) metrics.push(gold);
-    }
-
-    // Get Inventory Turnover rate from Supply Chain section
-    const supplyChainSection = operationColumn.sections.find(
-      (s) => s.title === 'Supply Chain'
-    );
-    if (supplyChainSection) {
-      const inventoryTurnover = supplyChainSection.metrics.find(
-        (m) => m.id === 'inventory-turnover'
-      );
-      if (inventoryTurnover) metrics.push(inventoryTurnover);
-    }
-
-    return metrics;
-  };
-
-  const keyOperationMetrics = getOperationMetrics();
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -161,30 +97,6 @@ export default function ExecutiveSummaryPage() {
   const financialAndToplineKPIs = getFinancialAndToplineKPIs();
 
   // Selection handlers
-  const toggleOperationMetric = (metricId: string) => {
-    setSelectedOperationMetrics((prev) => {
-      const next = new Set(prev);
-      if (next.has(metricId)) {
-        next.delete(metricId);
-      } else {
-        next.add(metricId);
-      }
-      return next;
-    });
-  };
-
-  const toggleNewsItem = (newsId: string) => {
-    setSelectedNewsItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(newsId)) {
-        next.delete(newsId);
-      } else {
-        next.add(newsId);
-      }
-      return next;
-    });
-  };
-
   const toggleFinancialKPI = (kpiId: string) => {
     setSelectedFinancialKPIs((prev) => {
       const next = new Set(prev);
@@ -198,38 +110,12 @@ export default function ExecutiveSummaryPage() {
   };
 
   const clearAllSelections = () => {
-    setSelectedOperationMetrics(new Set());
-    setSelectedNewsItems(new Set());
     setSelectedFinancialKPIs(new Set());
   };
 
   // Compute selected items for modals
   const selectedItemsForModals = useMemo((): SelectedItem[] => {
     const items: SelectedItem[] = [];
-
-    // Add operation metrics
-    keyOperationMetrics.forEach((metric) => {
-      if (selectedOperationMetrics.has(metric.id)) {
-        items.push({
-          type: 'operation-metric',
-          id: metric.id,
-          name: metric.name,
-          data: metric,
-        });
-      }
-    });
-
-    // Add news items
-    mockNews.forEach((news) => {
-      if (selectedNewsItems.has(news.id)) {
-        items.push({
-          type: 'news',
-          id: news.id,
-          name: news.title,
-          data: news,
-        });
-      }
-    });
 
     // Add financial KPIs
     financialAndToplineKPIs.forEach((kpi) => {
@@ -244,13 +130,7 @@ export default function ExecutiveSummaryPage() {
     });
 
     return items;
-  }, [
-    selectedOperationMetrics,
-    selectedNewsItems,
-    selectedFinancialKPIs,
-    keyOperationMetrics,
-    financialAndToplineKPIs,
-  ]);
+  }, [selectedFinancialKPIs, financialAndToplineKPIs]);
 
   // Find relevant meetings
   const relevantMeetings = useMemo(() => {
@@ -258,16 +138,8 @@ export default function ExecutiveSummaryPage() {
     return findRelevantMeetings(selectedItemsForModals);
   }, [selectedItemsForModals]);
 
-  // Get selected news items for AI sidebar
-  const selectedNewsForAI = useMemo(() => {
-    return mockNews.filter((news) => selectedNewsItems.has(news.id));
-  }, [selectedNewsItems]);
-
   // Total selected count
-  const totalSelectedCount =
-    selectedOperationMetrics.size +
-    selectedNewsItems.size +
-    selectedFinancialKPIs.size;
+  const totalSelectedCount = selectedFinancialKPIs.size;
 
   // Helper function to collect all selected items for drag
   const getAllSelectedItemsForDrag = (): Array<{
@@ -278,26 +150,6 @@ export default function ExecutiveSummaryPage() {
       type: 'external-pulse' | 'internal-pulse';
       itemId: string;
     }> = [];
-
-    // Add all selected operation metrics
-    keyOperationMetrics.forEach((m) => {
-      if (selectedOperationMetrics.has(m.id)) {
-        allSelectedItems.push({
-          type: 'internal-pulse',
-          itemId: m.id,
-        });
-      }
-    });
-
-    // Add all selected news items
-    mockNews.forEach((n) => {
-      if (selectedNewsItems.has(n.id)) {
-        allSelectedItems.push({
-          type: 'external-pulse',
-          itemId: n.id,
-        });
-      }
-    });
 
     // Add all selected financial KPIs
     financialAndToplineKPIs.forEach((kpi) => {
@@ -334,14 +186,6 @@ export default function ExecutiveSummaryPage() {
     );
   };
 
-  // Filter critical external news (urgent + high impact)
-  const criticalNews = mockNews
-    .filter(
-      (news) => news.urgency === 'short_term' && news.priority === 'high'
-    )
-    .slice(0, 5)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
   // Count high-priority actions
   const highPriorityActions = mockActions.filter(
     (action) => action.priority === 'high'
@@ -375,10 +219,6 @@ export default function ExecutiveSummaryPage() {
       default:
         return null;
     }
-  };
-
-  const formatRelativeTime = (date: Date) => {
-    return formatDistanceToNow(date, { addSuffix: true });
   };
 
   // Helper to format metric value
@@ -917,379 +757,6 @@ export default function ExecutiveSummaryPage() {
           </div>
         </div>
 
-        {/* Key Leading parameter Section */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-              <ChartBarIcon className='w-6 h-6 text-primary-600' />
-              Operational Leading Parameters
-            </h2>
-            <Link
-              to='/internal-pulse'
-              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-              Internal Pulse
-              <ArrowRightIcon className='w-4 h-4' />
-            </Link>
-          </div>
-          <p className='text-gray-600 mb-4'>
-            Critical leading operational parameters directly impact operational
-            performance and profitability.
-          </p>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
-            {keyOperationMetrics.map((metric) => {
-              const status = getMetricStatus(metric);
-              const trend = getMetricTrend(metric);
-              const valueText = formatMetricValue(metric);
-              const comparisonText = getComparisonText(metric);
-
-              const isSelected = selectedOperationMetrics.has(metric.id);
-
-              const handleDragStart = (e: React.DragEvent) => {
-                // Don't start drag if clicking on checkbox
-                const target = e.target as HTMLElement;
-                if (target.closest('input[type="checkbox"]')) {
-                  e.preventDefault();
-                  return;
-                }
-
-                // If item is selected, include all selected items for multi-drag
-                if (isSelected) {
-                  const allSelectedItems = getAllSelectedItemsForDrag();
-                  e.dataTransfer.setData(
-                    'multipleItems',
-                    JSON.stringify(allSelectedItems)
-                  );
-                }
-                // Always set single item for backward compatibility
-                e.dataTransfer.setData('materialType', 'internal-pulse');
-                e.dataTransfer.setData('itemId', metric.id);
-                e.dataTransfer.effectAllowed = 'move';
-                // Add visual feedback
-                if (e.currentTarget instanceof HTMLElement) {
-                  e.currentTarget.style.opacity = '0.5';
-                }
-              };
-
-              const handleDragEnd = (e: React.DragEvent) => {
-                // Restore visual feedback
-                if (e.currentTarget instanceof HTMLElement) {
-                  e.currentTarget.style.opacity = '1';
-                }
-              };
-
-              return (
-                <div
-                  key={metric.id}
-                  draggable={true}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  className={`bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-4 hover:shadow-xl transition-all duration-300 min-w-0 relative ${
-                    isSelected
-                      ? 'border-primary-500 bg-primary-50/30 cursor-move'
-                      : 'border-gray-200 cursor-move'
-                  }`}
-                  onClick={() => toggleOperationMetric(metric.id)}>
-                  <div className='flex items-start justify-between mb-3 gap-2'>
-                    <div className='flex items-start gap-2 flex-1 min-w-0'>
-                      <input
-                        type='checkbox'
-                        checked={isSelected}
-                        onChange={() => toggleOperationMetric(metric.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className='mt-0.5 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer'
-                      />
-                      <h3 className='text-xs font-medium text-gray-600 break-words flex-1 min-w-0'>
-                        {metric.name}
-                      </h3>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-md text-xs font-medium border whitespace-nowrap flex-shrink-0 ${getStatusColor(
-                        status
-                      )}`}>
-                      {status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className='mb-3 min-w-0'>
-                    <div className='break-words'>
-                      <span className='text-2xl xl:text-xl 2xl:text-2xl font-bold text-gray-900 leading-tight'>
-                        {valueText}
-                      </span>
-                    </div>
-                    {metric.subMetrics && metric.id === 'gold-material' && (
-                      <div className='mt-2 space-y-1'>
-                        <div className='text-xs text-gray-500 break-words'>
-                          <span className='font-semibold'>
-                            Company stocked:
-                          </span>{' '}
-                          ${metric.value?.toLocaleString('en-US') || 'N/A'}
-                          /oz
-                        </div>
-                        {(() => {
-                          const marketPrice = metric.subMetrics?.find((m) =>
-                            m.name.includes('Market price')
-                          )?.value;
-                          const companyPrice = metric.value;
-                          if (
-                            marketPrice !== undefined &&
-                            companyPrice !== undefined
-                          ) {
-                            const difference = marketPrice - companyPrice;
-                            const percentDiff =
-                              (difference / companyPrice) * 100;
-                            const percentDiffFormatted = percentDiff.toFixed(1);
-                            return (
-                              <div
-                                className={`text-xs font-semibold ${
-                                  difference >= 0
-                                    ? 'text-green-600'
-                                    : 'text-red-600'
-                                }`}>
-                                {difference >= 0 ? '+' : ''}
-                                {difference.toFixed(0)} USD/oz (
-                                {percentDiff >= 0 ? '+' : ''}
-                                {percentDiffFormatted}%)
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                  <div className='flex items-center gap-1.5 min-w-0'>
-                    {getTrendIcon(trend)}
-                    <span
-                      className={`text-xs font-semibold truncate ${
-                        metric.comparisons?.vsLastYear?.percent !== undefined
-                          ? metric.comparisons.vsLastYear.percent >= 0
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                          : 'text-gray-600'
-                      }`}
-                      title={comparisonText}>
-                      {comparisonText}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Critical External News Section */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-              <SparklesIcon className='w-6 h-6 text-primary-600' />
-              Critical News
-            </h2>
-            <Link
-              to='/external-pulse'
-              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-              External Pulse
-              <ArrowRightIcon className='w-4 h-4' />
-            </Link>
-          </div>
-          <p className='text-gray-600 mb-4'>
-            US tariff on Chinese-made EV connectors threatens $10M revenue
-            impact, while China's rare earth export restrictions could increase
-            costs by $5M. These urgent, high-impact developments require
-            immediate supply chain adjustments and production shifts.
-          </p>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 hover:shadow-xl transition-shadow duration-300'>
-            {criticalNews.length > 0 ? (
-              <div className='divide-y divide-gray-200 max-h-[800px] overflow-y-auto'>
-                {criticalNews.map((news) => {
-                  const isSelected = selectedNewsItems.has(news.id);
-                  const meetings = getMeetingsForNewsItem(
-                    news.id,
-                    meetingMaterials
-                  );
-
-                  const handleDragStart = (e: React.DragEvent) => {
-                    // Don't start drag if clicking on checkbox
-                    const target = e.target as HTMLElement;
-                    if (target.closest('input[type="checkbox"]')) {
-                      e.preventDefault();
-                      return;
-                    }
-
-                    // Get all selected items for multi-drag if item is selected
-                    if (isSelected) {
-                      const allSelectedItems = getAllSelectedItemsForDrag();
-                      e.dataTransfer.setData(
-                        'multipleItems',
-                        JSON.stringify(allSelectedItems)
-                      );
-                    }
-                    // Also set single item for backward compatibility
-                    e.dataTransfer.setData('materialType', 'external-pulse');
-                    e.dataTransfer.setData('itemId', news.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                    // Add visual feedback
-                    if (e.currentTarget instanceof HTMLElement) {
-                      e.currentTarget.style.opacity = '0.5';
-                    }
-                  };
-
-                  const handleDragEnd = (e: React.DragEvent) => {
-                    // Restore visual feedback
-                    if (e.currentTarget instanceof HTMLElement) {
-                      e.currentTarget.style.opacity = '1';
-                    }
-                  };
-
-                  return (
-                    <div
-                      key={news.id}
-                      className='p-6 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 transition-all duration-200 cursor-move border-b border-gray-100 last:border-b-0'
-                      draggable={true}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}>
-                      <div className='flex items-start space-x-4'>
-                        {/* Checkbox */}
-                        <div className='flex-shrink-0 pt-1'>
-                          <input
-                            type='checkbox'
-                            checked={isSelected}
-                            onChange={() => toggleNewsItem(news.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2'
-                          />
-                        </div>
-
-                        {/* Risk/Opportunity Icon */}
-                        <div
-                          className={`flex-shrink-0 p-2 rounded-full ${
-                            news.riskOrOpportunity === 'risk'
-                              ? 'bg-red-100'
-                              : 'bg-green-100'
-                          }`}>
-                          {news.riskOrOpportunity === 'risk' ? (
-                            <ExclamationTriangleIcon className='w-6 h-6 text-red-600' />
-                          ) : (
-                            <CheckCircleIcon className='w-6 h-6 text-green-600' />
-                          )}
-                        </div>
-
-                        <div className='flex-1 min-w-0'>
-                          {/* Header */}
-                          <div className='flex items-start justify-between'>
-                            <div className='flex-1'>
-                              <h3 className='text-lg font-semibold text-gray-900'>
-                                {news.title}
-                              </h3>
-                              <div className='mt-2 flex items-center space-x-3'>
-                                {news.riskOrOpportunity && (
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                      news.riskOrOpportunity === 'risk'
-                                        ? 'bg-red-100 text-red-800'
-                                        : 'bg-green-100 text-green-800'
-                                    }`}>
-                                    {news.riskOrOpportunity.toUpperCase()}
-                                  </span>
-                                )}
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    news.priority === 'high'
-                                      ? 'bg-red-100 text-red-800'
-                                      : news.priority === 'medium'
-                                      ? 'bg-yellow-100 text-yellow-800'
-                                      : 'bg-blue-100 text-blue-800'
-                                  }`}>
-                                  {news.priority.toUpperCase()} PRIORITY
-                                </span>
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    news.urgency === 'short_term'
-                                      ? 'bg-red-100 text-red-800'
-                                      : news.urgency === 'mid_term'
-                                      ? 'bg-orange-100 text-orange-800'
-                                      : 'bg-gray-100 text-gray-800'
-                                  }`}>
-                                  {news.urgency === 'short_term'
-                                    ? 'SHORT TERM'
-                                    : news.urgency === 'mid_term'
-                                    ? 'MID TERM'
-                                    : 'LONG TERM'}
-                                </span>
-                                <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize'>
-                                  {news.category}
-                                </span>
-                              </div>
-                            </div>
-                            <div className='ml-4 flex-shrink-0 text-sm text-gray-500'>
-                              {format(news.timestamp, 'PPp')}
-                            </div>
-                          </div>
-
-                          {/* Summary and Meeting Coverage - Side by Side */}
-                          <div className='mt-3 flex items-start gap-4'>
-                            {/* Summary - Left Side */}
-                            <div className='flex-1 min-w-0'>
-                              <p className='text-sm text-gray-700'>
-                                {news.summary}
-                              </p>
-                              {news.analyzingBy && (
-                                <div className='flex items-center gap-2 mt-2'>
-                                  <span className='text-xs text-gray-500'>
-                                    Analyzing:
-                                  </span>
-                                  <span className='text-xs font-medium text-primary-600'>
-                                    {news.analyzingBy}
-                                  </span>
-                                </div>
-                              )}
-                              <div className='flex items-center justify-between text-xs text-gray-500 mt-2'>
-                                <span>
-                                  {formatRelativeTime(news.timestamp)}
-                                </span>
-                                <span>{news.source}</span>
-                              </div>
-                            </div>
-
-                            {/* Meeting Coverage - Right Side */}
-                            {meetings.length > 0 && (
-                              <div className='flex-shrink-0 w-80 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-                                <div className='flex items-center gap-2 mb-2'>
-                                  <CalendarIcon className='w-5 h-5 text-primary-600' />
-                                  <span className='text-sm font-semibold text-gray-800'>
-                                    Covered in:
-                                  </span>
-                                </div>
-                                <div className='space-y-1.5'>
-                                  {meetings.map((meeting) => (
-                                    <div
-                                      key={meeting.id}
-                                      className='text-sm text-gray-700 flex items-center gap-2 pl-1'>
-                                      <span className='font-semibold text-gray-900'>
-                                        {meeting.title}
-                                      </span>
-                                      <span className='text-gray-600'>
-                                        ({format(meeting.startTime, 'MMM d')} at{' '}
-                                        {format(meeting.startTime, 'h:mm a')})
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className='p-8 text-center text-gray-500'>
-                No critical external news at this time
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Wave Status Glance Section */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
@@ -1623,9 +1090,9 @@ export default function ExecutiveSummaryPage() {
       <RootCauseAnalysisSidebar
         isOpen={isAISidebarOpen}
         onToggle={() => setIsAISidebarOpen(!isAISidebarOpen)}
-        selectedExternalItems={selectedNewsForAI}
-        selectedInternalItems={[]} // PulseMetrics are different from FinancialMetrics, so we pass empty for now
-        activeTab={selectedNewsForAI.length > 0 ? 'external' : 'internal'}
+        selectedExternalItems={[]}
+        selectedInternalItems={[]}
+        activeTab='internal'
         hasSelectedItems={totalSelectedCount > 0}
       />
 

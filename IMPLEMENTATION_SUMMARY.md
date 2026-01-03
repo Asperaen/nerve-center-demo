@@ -829,16 +829,6 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Each meeting card shows time, priority badge, title, location, key attendees
      - Materials and preparation items displayed (decks, data, action items)
      - Priority indicators: Critical (red), High (orange), Medium (blue)
-   - **Operational Leading Parameters**: 5 key metrics displayed as cards
-     - COPQ (Cost of Poor Quality), UPPH (Units Per Person Hour), OEE (Overall Equipment Effectiveness)
-     - Gold price (with company stocked vs market price comparison)
-     - Inventory Turnover rate
-     - Each metric shows value, status badge (good/warning/concern), and trend indicators
-     - Checkbox selection for multi-select and drag-to-calendar functionality
-   - **Critical News**: External news feed showing urgent + high impact news items
-     - Risk/opportunity badges, impact level, urgency level
-     - Meeting coverage indicator showing which meetings include this news
-     - Checkbox selection for multi-select and drag-to-calendar functionality
    - **Wave Status Glance**: 3 summary cards showing:
      - Overdue initiatives (count + net benefit)
      - Initiatives due in 7 days (count + net benefit)
@@ -850,7 +840,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Action Items Requiring Attention**: Summary of urgent high-priority actions
      - Count cards for urgent actions, high-priority actions, and total actions
      - Top 3 urgent actions displayed with details
-   - **Selection System**: Multi-select items across all sections with action bar
+   - **Selection System**: Multi-select items with action bar
      - Action bar appears when items are selected
      - "AI Analysis" button opens Root Cause Analysis sidebar
      - "Schedule Meeting" button opens meeting scheduling modal
