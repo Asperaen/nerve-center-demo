@@ -175,6 +175,7 @@ export default function CostImpactBreakdownLayer({
 }: CostImpactBreakdownLayerProps) {
   const navigate = useNavigate();
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Aggregate data by factory
   const aggregatedByFactory = useMemo(() => {
@@ -429,6 +430,41 @@ export default function CostImpactBreakdownLayer({
 
                 // Drag handler for factory
                 const handleDragStart = (e: React.DragEvent) => {
+                  // Hide tooltip and mark as dragging
+                  setHoveredFactory(null);
+                  setIsDragging(true);
+
+                  // Create a custom drag image (compact representation)
+                  const dragImage = document.createElement('div');
+                  dragImage.className =
+                    'bg-white border border-gray-300 rounded-lg shadow-lg px-4 py-2 text-sm font-medium';
+                  dragImage.style.position = 'absolute';
+                  dragImage.style.top = '-1000px';
+                  dragImage.style.left = '-1000px';
+                  dragImage.style.zIndex = '9999';
+                  dragImage.style.maxWidth = '250px';
+                  dragImage.innerHTML = `
+                    <div class="flex items-center gap-2">
+                      <span class="text-gray-900 font-semibold">${
+                        row.factory
+                      }</span>
+                      <span class="${
+                        row.costImpact >= 0 ? 'text-green-600' : 'text-red-600'
+                      }">
+                        ${
+                          row.costImpact >= 0 ? '+' : ''
+                        }${row.costImpact.toFixed(2)}K
+                      </span>
+                    </div>
+                  `;
+                  document.body.appendChild(dragImage);
+                  e.dataTransfer.setDragImage(dragImage, 125, 20);
+
+                  // Clean up the drag image element after a short delay
+                  setTimeout(() => {
+                    document.body.removeChild(dragImage);
+                  }, 0);
+
                   e.dataTransfer.setData('materialType', 'cost-impact-factory');
                   e.dataTransfer.setData('itemId', row.factory);
                   e.dataTransfer.setData(
@@ -444,6 +480,10 @@ export default function CostImpactBreakdownLayer({
                   e.dataTransfer.effectAllowed = 'copy';
                 };
 
+                const handleDragEnd = () => {
+                  setIsDragging(false);
+                };
+
                 // Get factory initiatives for tooltip
                 const factoryInitiatives =
                   mockFactoryInitiatives[row.factory] || [];
@@ -454,7 +494,10 @@ export default function CostImpactBreakdownLayer({
                     key={row.factory}
                     draggable
                     onDragStart={handleDragStart}
-                    onMouseEnter={() => setHoveredFactory(row.factory)}
+                    onDragEnd={handleDragEnd}
+                    onMouseEnter={() =>
+                      !isDragging && setHoveredFactory(row.factory)
+                    }
                     onMouseLeave={() => setHoveredFactory(null)}
                     className={`transition-colors cursor-grab active:cursor-grabbing ${
                       isMostNegative
@@ -469,16 +512,18 @@ export default function CostImpactBreakdownLayer({
                         <span>{row.factory}</span>
                         <span className='text-xs text-gray-400'>⋮⋮</span>
                       </div>
-                      {/* Factory Initiative Tooltip */}
-                      {isHovered && factoryInitiatives.length > 0 && (
-                        <FactoryInitiativeTooltip
-                          factoryName={row.factory}
-                          initiatives={factoryInitiatives}
-                          onViewWave={() =>
-                            navigate('/internal-pulse?tab=wave')
-                          }
-                        />
-                      )}
+                      {/* Factory Initiative Tooltip - hidden during drag */}
+                      {isHovered &&
+                        !isDragging &&
+                        factoryInitiatives.length > 0 && (
+                          <FactoryInitiativeTooltip
+                            factoryName={row.factory}
+                            initiatives={factoryInitiatives}
+                            onViewWave={() =>
+                              navigate('/internal-pulse?tab=wave')
+                            }
+                          />
+                        )}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
