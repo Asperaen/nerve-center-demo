@@ -57,6 +57,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockAnalysis.ts` - Root cause analysis results
 - ✅ `mockRootCauses.ts` - 3 root causes with title, impact, tags, and Wave ticket numbers
 - ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
+- ✅ `mockBusinessGroupPerformance.ts` - Business group performance data (HH, FII, FIH, FIT, Others) with 12-month trend data and AI-generated insights for Revenue, GP, OP, NP metrics
 
 ### 4. Page Structure ✅
 
@@ -792,9 +793,9 @@ This is a **frontend-only mockup** with:
   - scenarioComparison.ts
   - valueDriverMapping.ts
 - TypeScript files: 25+
-- Mock data files: 9 (including OP waterfall stages data, NP deviation stages data, product family data, cost impact data, MVA breakdown stages, executive dashboard data, and root causes data)
+- Mock data files: 10 (including OP waterfall stages data, NP deviation stages data, product family data, cost impact data, MVA breakdown stages, executive dashboard data, root causes data, and business group performance data with 12-month trends and AI insights)
 - Type definitions: 1 (with 40+ interfaces including scenario, waterfall, and root cause types)
-- Total lines of code: ~8,500+
+- Total lines of code: ~8,800+
 
 **Architecture Change**: The application has been refactored from a tab-based navigation structure to a page-based structure with right sidebar navigation. This provides better separation of concerns and a cleaner navigation experience.
 
@@ -829,6 +830,17 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Each meeting card shows time, priority badge, title, location, key attendees
      - Materials and preparation items displayed (decks, data, action items)
      - Priority indicators: Critical (red), High (orange), Medium (blue)
+   - **Business Group Performance**: Table showing financial metrics by business group
+     - Business groups: HH, FII, FIH, FIT, Others, Overall consolidated
+     - Metrics: Revenue, Gross Profit, Operating Profit, Net Profit
+     - Each cell displays absolute value (e.g., "$14.8B") with comparison ("vs $14.2B")
+     - Percentage badges with color coding (green for positive, red for negative, gray for flat)
+     - Hover tooltip on each metric cell showing:
+       - 12-month trend sparkline chart with SVG visualization
+       - AI-generated insights explaining the metric performance
+       - Color-coded trend line matching performance direction
+     - Vertical grid lines for clear column separation
+     - Overall consolidated row with calculated totals highlighted in primary color
    - **Wave Status Glance**: 3 summary cards showing:
      - Overdue initiatives (count + net benefit)
      - Initiatives due in 7 days (count + net benefit)
@@ -1319,6 +1331,18 @@ pnpm lint
     - Status workflow management, priority indicators, owner information
     - Comments system and expandable action cards
     - Integrated into main layout with consistent styling
+21. **Business Group Performance Section**: Comprehensive business group financial overview on Executive Summary:
+    - Table layout with 6 business groups: HH, FII, FIH, FIT, Others, Overall consolidated
+    - 4 financial metrics per group: Revenue, Gross Profit, Operating Profit, Net Profit
+    - Each cell shows absolute value (e.g., "$14.8B") with comparison baseline ("vs $14.2B")
+    - Color-coded percentage badges (green positive, red negative, gray flat)
+    - Hover tooltips with rich content:
+      - 12-month trend sparkline chart (SVG visualization)
+      - Color-coded trend line matching performance direction
+      - AI-generated insights explaining metric performance
+    - Vertical grid lines for clear column separation
+    - Overall consolidated row with calculated totals and primary color highlighting
+    - Mock data includes realistic 12-month trend generation and contextual AI insights per business group/metric
 
 ---
 
