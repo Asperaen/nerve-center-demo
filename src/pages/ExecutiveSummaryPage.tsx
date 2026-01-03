@@ -13,6 +13,10 @@ import {
 import { format, isToday } from 'date-fns';
 import { mockActions } from '../data/mockActions';
 import { internalPulseColumns } from '../data/mockInternalPulse';
+import {
+  getAllBusinessGroupData,
+  type BusinessGroupMetricWithTrend,
+} from '../data/mockBusinessGroupPerformance';
 import { mockKPIs } from '../data/mockKPIs';
 import {
   mockExecutiveInitiatives,
@@ -754,6 +758,221 @@ export default function ExecutiveSummaryPage() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Business Group Performance Section */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+              <ChartBarIcon className='w-6 h-6 text-primary-600' />
+              Business Group Performance
+            </h2>
+          </div>
+          <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
+            <table className='w-full'>
+              <thead>
+                <tr className='bg-gray-50 rounded-t-xl'>
+                  <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-semibold text-gray-700'>
+                      Business Group
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Revenue
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Gross Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Operating Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Net Profit
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {getAllBusinessGroupData().map((group) => {
+                  const isLastRow = group.id === 'overall';
+                  const renderMetricCell = (
+                    metric: BusinessGroupMetricWithTrend,
+                    metricName: string,
+                    isLast: boolean = false
+                  ) => {
+                    const percentColor =
+                      metric.percent > 0
+                        ? 'bg-green-100 text-green-700'
+                        : metric.percent < 0
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-600';
+                    const percentSign = metric.percent > 0 ? '+' : '';
+
+                    // Calculate trend line for sparkline
+                    const trendValues = metric.trend.map((t) => t.value);
+                    const minVal = Math.min(...trendValues);
+                    const maxVal = Math.max(...trendValues);
+                    const range = maxVal - minVal || 1;
+
+                    // Generate SVG path for trend line
+                    const pathPoints = metric.trend
+                      .map((t, i) => {
+                        const x = (i / (metric.trend.length - 1)) * 180;
+                        const y = 40 - ((t.value - minVal) / range) * 35;
+                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      })
+                      .join(' ');
+
+                    const trendColor =
+                      metric.percent > 0
+                        ? '#22c55e'
+                        : metric.percent < 0
+                        ? '#ef4444'
+                        : '#6b7280';
+
+                    return (
+                      <td
+                        className={`px-4 py-3 border-b border-gray-200 ${
+                          !isLast ? 'border-r' : ''
+                        } relative group`}>
+                        <div className='flex items-center justify-center gap-2 cursor-pointer'>
+                          <div className='text-center'>
+                            <div className='text-base font-bold text-gray-900'>
+                              ${metric.value.toFixed(1)}B
+                            </div>
+                            <div className='text-xs text-gray-500'>
+                              vs ${metric.baseline.toFixed(1)}B
+                            </div>
+                          </div>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+                            {percentSign}
+                            {metric.percent.toFixed(1)}%
+                          </span>
+                        </div>
+
+                        {/* Hover Tooltip */}
+                        <div className='absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto'>
+                          <div className='bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-72'>
+                            {/* Header */}
+                            <div className='flex items-center justify-between mb-3 pb-2 border-b border-gray-100'>
+                              <span className='text-sm font-bold text-gray-900'>
+                                {group.name} - {metricName}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+                                {percentSign}
+                                {metric.percent.toFixed(1)}%
+                              </span>
+                            </div>
+
+                            {/* 12-Month Trend Chart */}
+                            <div className='mb-3'>
+                              <div className='text-xs font-semibold text-gray-600 mb-2'>
+                                12-Month Trend
+                              </div>
+                              <div className='bg-gray-50 rounded-lg p-2'>
+                                <svg
+                                  viewBox='0 0 180 50'
+                                  className='w-full h-12'>
+                                  {/* Grid lines */}
+                                  <line
+                                    x1='0'
+                                    y1='25'
+                                    x2='180'
+                                    y2='25'
+                                    stroke='#e5e7eb'
+                                    strokeWidth='1'
+                                    strokeDasharray='4'
+                                  />
+                                  {/* Trend line */}
+                                  <path
+                                    d={pathPoints}
+                                    fill='none'
+                                    stroke={trendColor}
+                                    strokeWidth='2'
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                  />
+                                  {/* End point */}
+                                  <circle
+                                    cx='180'
+                                    cy={
+                                      40 -
+                                      ((trendValues[trendValues.length - 1] -
+                                        minVal) /
+                                        range) *
+                                        35
+                                    }
+                                    r='3'
+                                    fill={trendColor}
+                                  />
+                                </svg>
+                                <div className='flex justify-between text-xs text-gray-400 mt-1'>
+                                  <span>{metric.trend[0].month}</span>
+                                  <span>
+                                    {
+                                      metric.trend[metric.trend.length - 1]
+                                        .month
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* AI Insights */}
+                            <div>
+                              <div className='flex items-center gap-1.5 mb-2'>
+                                <SparklesIcon className='w-4 h-4 text-primary-500' />
+                                <span className='text-xs font-semibold text-gray-600'>
+                                  AI Insight
+                                </span>
+                              </div>
+                              <p className='text-xs text-gray-600 leading-relaxed'>
+                                {metric.aiInsight}
+                              </p>
+                            </div>
+                          </div>
+                          {/* Arrow */}
+                          <div className='absolute left-1/2 -translate-x-1/2 -top-2 w-4 h-4 bg-white border-l border-t border-gray-200 rotate-45'></div>
+                        </div>
+                      </td>
+                    );
+                  };
+
+                  return (
+                    <tr
+                      key={group.id}
+                      className={`${
+                        isLastRow
+                          ? 'bg-primary-50/50'
+                          : 'hover:bg-gray-50 transition-colors'
+                      }`}>
+                      <td className='px-6 py-3 border-b border-r border-gray-200'>
+                        <span
+                          className={`text-sm font-semibold ${
+                            isLastRow ? 'text-primary-700' : 'text-gray-900'
+                          }`}>
+                          {group.name}
+                        </span>
+                      </td>
+                      {renderMetricCell(group.rev, 'Revenue')}
+                      {renderMetricCell(group.gp, 'Gross Profit')}
+                      {renderMetricCell(group.op, 'Operating Profit')}
+                      {renderMetricCell(group.np, 'Net Profit', true)}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
