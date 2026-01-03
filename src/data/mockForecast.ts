@@ -872,7 +872,7 @@ export const mockNPDeviationStages: NPDeviationStage[] = [
   },
   {
     stage: 'other-cogs',
-    label: 'Others (e.g., scrap)',
+    label: 'Others',
     value: 11.05626532, // Previous + Others
     delta: 4.43084482,
     type: 'positive',
@@ -1720,7 +1720,7 @@ export const mockCostImpactData: CostImpactData[] = [
 export const mockCostComponentTotals: CostComponentTotals = {
   material: -7920.0, // -0.0182 * 435347.93 in thousands
   labor: 1001.3, // 0.0023 * 435347.93 in thousands
-  moh: 2916.8, // 0.0067 * 435347.93 in thousands
+  moh: -2916.8, // 0.0067 * 435347.93 in thousands
   outsource: 957.8, // 0.0022 * 435347.93 in thousands
 };
 

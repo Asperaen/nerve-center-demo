@@ -10,7 +10,7 @@ import {
   DocumentCheckIcon,
   ClipboardDocumentListIcon,
   CalendarDaysIcon,
-  PresentationChartLineIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 
 interface RightSidebarProps {
@@ -31,6 +31,12 @@ export default function RightSidebar({
       label: 'Home',
       path: '/',
       icon: HomeIcon,
+    },
+    {
+      id: 'business-group-performance',
+      label: 'BG Performance',
+      path: '/business-group-performance',
+      icon: BuildingOffice2Icon,
     },
     {
       id: 'external-pulse',
@@ -71,12 +77,6 @@ export default function RightSidebar({
       label: 'Finance Review',
       path: '/finance-review',
       icon: DocumentCheckIcon,
-    },
-    {
-      id: 'powerbi',
-      label: 'Power BI',
-      path: '/powerbi',
-      icon: PresentationChartLineIcon,
     },
   ];
 

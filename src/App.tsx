@@ -11,6 +11,7 @@ import UserProfile from './pages/UserProfile';
 import MeetingDetailView from './components/MeetingDetailView';
 import MyMeetingsPage from './pages/MyMeetingsPage';
 import PowerBIPage from './pages/PowerBIPage';
+import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
 
 function App() {
   return (
@@ -59,6 +60,10 @@ function App() {
             <Route
               path='powerbi'
               element={<PowerBIPage />}
+            />
+            <Route
+              path='business-group-performance'
+              element={<BusinessGroupPerformancePage />}
             />
           </Route>
         </Routes>

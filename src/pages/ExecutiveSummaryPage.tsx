@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -37,6 +37,8 @@ interface ExecutiveSummaryPageContext {
 
 export default function ExecutiveSummaryPage() {
   useOutletContext<ExecutiveSummaryPageContext>();
+  const navigate = useNavigate();
+
   // Selection state
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
     Set<string>
@@ -768,6 +770,12 @@ export default function ExecutiveSummaryPage() {
               <ChartBarIcon className='w-6 h-6 text-primary-600' />
               Business Group Performance
             </h2>
+            <Link
+              to='/business-group-performance?bu=all'
+              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
+              Business Group Details
+              <ArrowRightIcon className='w-4 h-4' />
+            </Link>
           </div>
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
             <table className='w-full'>
@@ -948,13 +956,19 @@ export default function ExecutiveSummaryPage() {
                     );
                   };
 
+                  const handleRowClick = () => {
+                    const buParam = isLastRow ? 'all' : group.id;
+                    navigate(`/business-group-performance?bu=${buParam}`);
+                  };
+
                   return (
                     <tr
                       key={group.id}
-                      className={`${
+                      onClick={handleRowClick}
+                      className={`cursor-pointer ${
                         isLastRow
-                          ? 'bg-primary-50/50'
-                          : 'hover:bg-gray-50 transition-colors'
+                          ? 'bg-primary-50/50 hover:bg-primary-100/50'
+                          : 'hover:bg-gray-100 transition-colors'
                       }`}>
                       <td className='px-6 py-3 border-b border-r border-gray-200'>
                         <span

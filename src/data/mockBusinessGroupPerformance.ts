@@ -354,3 +354,148 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
 export const getAllBusinessGroupData = (): BusinessGroupData[] => {
   return [...mockBusinessGroupData, calculateOverallConsolidated()];
 };
+
+// ============================================
+// Sub-Business Group Data (for drill-down)
+// ============================================
+
+export interface SubBusinessGroupData extends BusinessGroupData {
+  parentBgId: string;
+}
+
+// AI insights for sub-business groups
+const subGroupAiInsights: Record<string, Record<string, string>> = {
+  ipbg: {
+    rev: 'IPBG revenue driven by industrial power solutions demand. Key wins in renewable energy sector contributing to growth.',
+    gp: 'GP margins expanding with shift to higher-value integrated solutions. Component cost optimization ongoing.',
+    op: 'Operating efficiency improving with lean manufacturing initiatives. Capacity utilization at 82%.',
+    np: 'Net profit growth reflects successful pricing strategy and operational discipline.',
+  },
+  cnsbg: {
+    rev: 'CNSBG revenue growth from consumer electronics refresh cycles and new product introductions.',
+    gp: 'GP stable despite competitive pressure. Premium product mix providing margin support.',
+    op: 'Operating costs well-managed. Marketing investments in Q4 for product launches.',
+    np: 'Net profit benefiting from favorable tax positions and working capital improvements.',
+  },
+  cesbg: {
+    rev: 'CESBG revenue accelerating with cloud infrastructure expansion. Data center demand robust.',
+    gp: 'GP margins expanding on high-value server and networking solutions. Scale benefits emerging.',
+    op: 'Operating leverage improving as fixed costs spread across larger revenue base.',
+    np: 'Strong net profit growth reflecting market leadership in enterprise solutions.',
+  },
+  others_sub: {
+    rev: 'Other segments showing mixed performance. New ventures in pilot phase with growth potential.',
+    gp: 'GP margins vary by segment. Focus on higher-margin opportunities in emerging categories.',
+    op: 'Operating investments in new capabilities. Some units approaching break-even.',
+    np: 'Net profit recovering as startup costs normalize. Strategic patience required.',
+  },
+};
+
+// Generate sub-business group data for a parent BG
+const generateSubGroupData = (
+  parentBgId: string,
+  parentBgName: string,
+  parentData: BusinessGroupData
+): SubBusinessGroupData[] => {
+  // Distribute parent values across sub-groups (roughly 35%, 30%, 25%, 10%)
+  const distributions = [
+    { id: 'ipbg', name: 'IPBG', factor: 0.35, trend: 'up' as const },
+    { id: 'cnsbg', name: 'CNSBG', factor: 0.30, trend: 'flat' as const },
+    { id: 'cesbg', name: 'CESBG', factor: 0.25, trend: 'up' as const },
+    { id: 'others_sub', name: 'Others', factor: 0.10, trend: 'down' as const },
+  ];
+
+  return distributions.map((dist) => {
+    const revValue = parentData.rev.value * dist.factor;
+    const revBaseline = parentData.rev.baseline * dist.factor;
+    const gpValue = parentData.gp.value * dist.factor;
+    const gpBaseline = parentData.gp.baseline * dist.factor;
+    const opValue = parentData.op.value * dist.factor;
+    const opBaseline = parentData.op.baseline * dist.factor;
+    const npValue = parentData.np.value * dist.factor;
+    const npBaseline = parentData.np.baseline * dist.factor;
+
+    const calcPercent = (val: number, base: number) =>
+      base === 0 ? 0 : ((val - base) / base) * 100;
+
+    // Add some variance to percentages to make it more realistic
+    const variance = (Math.random() - 0.5) * 2; // -1 to +1
+
+    return {
+      id: `${parentBgId}-${dist.id}`,
+      parentBgId,
+      name: dist.name,
+      rev: {
+        value: revValue,
+        baseline: revBaseline,
+        percent: calcPercent(revValue, revBaseline) + variance,
+        trend: generateTrend(revValue, 0.08, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].rev,
+      },
+      gp: {
+        value: gpValue,
+        baseline: gpBaseline,
+        percent: calcPercent(gpValue, gpBaseline) + variance,
+        trend: generateTrend(gpValue, 0.06, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].gp,
+      },
+      op: {
+        value: opValue,
+        baseline: opBaseline,
+        percent: calcPercent(opValue, opBaseline) + variance,
+        trend: generateTrend(opValue, 0.1, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].op,
+      },
+      np: {
+        value: npValue,
+        baseline: npBaseline,
+        percent: calcPercent(npValue, npBaseline) + variance,
+        trend: generateTrend(npValue, 0.12, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].np,
+      },
+    };
+  });
+};
+
+// Get sub-business groups for a given parent BG (without overall row)
+export const getSubBusinessGroups = (
+  parentBgId: string
+): SubBusinessGroupData[] => {
+  const parentBg = mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+  if (!parentBg) return [];
+  return generateSubGroupData(parentBgId, parentBg.name, parentBg);
+};
+
+// Get sub-business groups with overall for a given parent BG
+export const getSubBusinessGroupsWithOverall = (
+  parentBgId: string
+): BusinessGroupData[] => {
+  const parentBg = mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+  if (!parentBg) return [];
+
+  const subGroups = generateSubGroupData(parentBgId, parentBg.name, parentBg);
+
+  // Create overall row for this BG
+  const overall: BusinessGroupData = {
+    id: `${parentBgId}-overall`,
+    name: `${parentBg.name} overall`,
+    rev: { ...parentBg.rev },
+    gp: { ...parentBg.gp },
+    op: { ...parentBg.op },
+    np: { ...parentBg.np },
+  };
+
+  return [...subGroups, overall];
+};
+
+// Get parent BG info by ID
+export const getParentBusinessGroup = (
+  parentBgId: string
+): BusinessGroupData | undefined => {
+  return mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+};
+
+// Get list of all main BU IDs and names for filter options
+export const getMainBusinessGroupOptions = (): { id: string; name: string }[] => {
+  return mockBusinessGroupData.map((bg) => ({ id: bg.id, name: bg.name }));
+};
