@@ -386,6 +386,7 @@ export interface ProductFamilyData {
 export interface CostImpactData {
   id: string;
   productFamily: string;
+  factory: string; // Factory producing this product
   costImpact: number; // in thousands
   volActual: number; // in thousands of pieces
   unitCostActual: number;
@@ -632,12 +633,17 @@ export interface MeetingAttendee {
   avatar?: string;
 }
 
-export type MeetingMaterialType = 'external-pulse' | 'internal-pulse';
+export type MeetingMaterialType =
+  | 'external-pulse'
+  | 'internal-pulse'
+  | 'cost-impact-factory';
 
 export interface MeetingMaterial {
   id: string;
   type: MeetingMaterialType;
-  itemId: string; // ID of the NewsItem or FinancialMetric
+  itemId: string; // ID of the NewsItem, FinancialMetric, or Factory name
+  title?: string; // Optional title for the material
+  description?: string; // Optional description
   addedAt: Date;
 }
 

@@ -10,8 +10,10 @@ interface CalendarSidebarProps {
   onMeetingSelect?: (meetingId: string) => void;
   onDropMaterial?: (
     meetingId: string,
-    materialType: 'external-pulse' | 'internal-pulse',
-    itemId: string
+    materialType: 'external-pulse' | 'internal-pulse' | 'cost-impact-factory',
+    itemId: string,
+    itemTitle?: string,
+    itemDescription?: string
   ) => void;
   meetingMaterials?: Record<string, MeetingMaterial[]>;
   onClose?: () => void;
@@ -114,11 +116,14 @@ export default function CalendarSidebar({
     // Fallback to single item (backward compatibility)
     const materialType = e.dataTransfer.getData('materialType') as
       | 'external-pulse'
-      | 'internal-pulse';
+      | 'internal-pulse'
+      | 'cost-impact-factory';
     const itemId = e.dataTransfer.getData('itemId');
+    const itemTitle = e.dataTransfer.getData('itemTitle');
+    const itemDescription = e.dataTransfer.getData('itemDescription');
 
     if (materialType && itemId && onDropMaterial) {
-      onDropMaterial(meetingId, materialType, itemId);
+      onDropMaterial(meetingId, materialType, itemId, itemTitle, itemDescription);
     }
   };
 

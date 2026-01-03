@@ -1283,10 +1283,13 @@ export const mockProductFamilyTotals: ProductFamilyData = {
 };
 
 // Cost Impact Breakdown Data (Layer 3)
+// 10 Factories: Suzhou Plant, Dongguan Plant, Shenzhen Plant, Kunshan Plant, Wuxi Plant,
+// Tianjin Plant, Chengdu Plant, Zhongshan Plant, Xiamen Plant, Ningbo Plant
 export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-1',
     productFamily: 'MemoryLink Pro',
+    factory: 'Suzhou Plant',
     costImpact: -3763.64,
     volActual: 115320.74,
     unitCostActual: 0.396,
@@ -1300,6 +1303,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-2',
     productFamily: 'FlexEdge Pro',
+    factory: 'Dongguan Plant',
     costImpact: -963.81,
     volActual: 102529.25,
     unitCostActual: 0.209,
@@ -1313,6 +1317,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-3',
     productFamily: 'NexusLink RJ45',
+    factory: 'Shenzhen Plant',
     costImpact: -738.41,
     volActual: 28410.6,
     unitCostActual: 0.603,
@@ -1326,6 +1331,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-4',
     productFamily: 'InterBoard X1',
+    factory: 'Kunshan Plant',
     costImpact: -637.3,
     volActual: 10201.25,
     unitCostActual: 0.328,
@@ -1339,6 +1345,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-5',
     productFamily: 'UniversalLink USB',
+    factory: 'Wuxi Plant',
     costImpact: -428.02,
     volActual: 66629.88,
     unitCostActual: 0.153,
@@ -1352,6 +1359,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-6',
     productFamily: 'CardLink',
+    factory: 'Tianjin Plant',
     costImpact: -355.41,
     volActual: 4967.38,
     unitCostActual: 0.303,
@@ -1365,6 +1373,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-7',
     productFamily: 'FoxRay Link',
+    factory: 'Chengdu Plant',
     costImpact: -321.06,
     volActual: 220.0,
     unitCostActual: 2.588,
@@ -1378,6 +1387,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-8',
     productFamily: 'DockLink Pro',
+    factory: 'Zhongshan Plant',
     costImpact: -241.48,
     volActual: 2299.24,
     unitCostActual: 0.24,
@@ -1391,6 +1401,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-9',
     productFamily: 'VideoLink HDMI',
+    factory: 'Xiamen Plant',
     costImpact: -188.63,
     volActual: 7858.86,
     unitCostActual: 0.195,
@@ -1404,6 +1415,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-10',
     productFamily: 'FlexiLink Parts',
+    factory: 'Ningbo Plant',
     costImpact: -113.23,
     volActual: 11843.3,
     unitCostActual: 0.049,
@@ -1417,6 +1429,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-11',
     productFamily: 'VideoLink DP',
+    factory: 'Suzhou Plant',
     costImpact: -90.64,
     volActual: 13559.07,
     unitCostActual: 0.212,
@@ -1430,6 +1443,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-12',
     productFamily: 'DSubLink',
+    factory: 'Dongguan Plant',
     costImpact: -47.08,
     volActual: 10606.44,
     unitCostActual: 0.294,
@@ -1443,6 +1457,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-13',
     productFamily: 'PogoLink',
+    factory: 'Shenzhen Plant',
     costImpact: -31.17,
     volActual: 1260.98,
     unitCostActual: 0.09,
@@ -1456,6 +1471,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-14',
     productFamily: 'SCSILink',
+    factory: 'Kunshan Plant',
     costImpact: -27.49,
     volActual: 44.46,
     unitCostActual: 1.043,
@@ -1469,6 +1485,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-15',
     productFamily: 'PowerCell Link',
+    factory: 'Wuxi Plant',
     costImpact: -27.18,
     volActual: 1698.45,
     unitCostActual: 0.204,
@@ -1482,6 +1499,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-16',
     productFamily: 'MetalLink Components',
+    factory: 'Tianjin Plant',
     costImpact: -15.32,
     volActual: 1295.68,
     unitCostActual: 0.026,
@@ -1495,6 +1513,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-17',
     productFamily: 'AudioLink Jack',
+    factory: 'Chengdu Plant',
     costImpact: -13.2,
     volActual: 18109.81,
     unitCostActual: 0.147,
@@ -1508,6 +1527,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-18',
     productFamily: 'MiniDin Pro',
+    factory: 'Zhongshan Plant',
     costImpact: -10.1,
     volActual: 1505.5,
     unitCostActual: 0.183,
@@ -1521,6 +1541,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-19',
     productFamily: 'VideoLink DVI',
+    factory: 'Xiamen Plant',
     costImpact: -3.65,
     volActual: 807.96,
     unitCostActual: 0.279,
@@ -1534,6 +1555,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-20',
     productFamily: 'CentriLink',
+    factory: 'Ningbo Plant',
     costImpact: -1.2,
     volActual: 49.92,
     unitCostActual: 0.454,
@@ -1547,6 +1569,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-21',
     productFamily: 'SmartSerial Pro',
+    factory: 'Suzhou Plant',
     costImpact: -0.76,
     volActual: 4.8,
     unitCostActual: 0.952,
@@ -1560,6 +1583,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-22',
     productFamily: 'FireLink 1394',
+    factory: 'Dongguan Plant',
     costImpact: -0.05,
     volActual: 9.72,
     unitCostActual: 0.204,
@@ -1573,6 +1597,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-23',
     productFamily: 'LuminaLink',
+    factory: 'Shenzhen Plant',
     costImpact: 0.0,
     volActual: 320.3,
     unitCostActual: 0.033,
@@ -1586,6 +1611,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-24',
     productFamily: 'PowerBus Link',
+    factory: 'Kunshan Plant',
     costImpact: 0.0,
     volActual: 0.0,
     unitCostActual: 0.0,
@@ -1599,6 +1625,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-25',
     productFamily: 'Others',
+    factory: 'Wuxi Plant',
     costImpact: 0.0,
     volActual: 43.72,
     unitCostActual: 0.005,
@@ -1612,6 +1639,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-26',
     productFamily: 'RibbonFlex',
+    factory: 'Tianjin Plant',
     costImpact: 0.02,
     volActual: 4.18,
     unitCostActual: 0.806,
@@ -1625,6 +1653,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-27',
     productFamily: 'TermiBlock Plus',
+    factory: 'Chengdu Plant',
     costImpact: 4.84,
     volActual: 38.66,
     unitCostActual: 0.262,
@@ -1638,6 +1667,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-28',
     productFamily: 'GameLink Pro',
+    factory: 'Zhongshan Plant',
     costImpact: 8.38,
     volActual: 4309.6,
     unitCostActual: 0.073,
@@ -1651,6 +1681,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-29',
     productFamily: 'RoundLink Series',
+    factory: 'Xiamen Plant',
     costImpact: 9.56,
     volActual: 9.29,
     unitCostActual: 0.921,
@@ -1664,6 +1695,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-30',
     productFamily: 'WireBoard Connect',
+    factory: 'Ningbo Plant',
     costImpact: 10.98,
     volActual: 545.12,
     unitCostActual: 0.105,
@@ -1677,6 +1709,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-31',
     productFamily: 'OptiFiber POF',
+    factory: 'Suzhou Plant',
     costImpact: 12.81,
     volActual: 330.44,
     unitCostActual: 0.167,
@@ -1690,6 +1723,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-32',
     productFamily: 'OptiLink SFP',
+    factory: 'Dongguan Plant',
     costImpact: 53.71,
     volActual: 3833.48,
     unitCostActual: 0.33,
@@ -1703,6 +1737,7 @@ export const mockCostImpactData: CostImpactData[] = [
   {
     id: 'ci-33',
     productFamily: 'PowerLink Pro',
+    factory: 'Shenzhen Plant',
     costImpact: 595.32,
     volActual: 26679.85,
     unitCostActual: 0.024,

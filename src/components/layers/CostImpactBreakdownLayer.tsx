@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -11,6 +12,19 @@ import {
 } from '../../data/mockForecast';
 import type { BreadcrumbItem } from '../../types';
 
+// Aggregated factory data type
+interface FactoryAggregatedData {
+  factory: string;
+  costImpact: number;
+  volActual: number;
+  totalCostActual: number; // weighted sum for average calculation
+  totalCostBudget: number; // weighted sum for average calculation
+  materialGapTotal: number;
+  laborGapTotal: number;
+  mohGapTotal: number;
+  outsourceGapTotal: number;
+}
+
 interface CostImpactBreakdownLayerProps {
   breadcrumbs: BreadcrumbItem[];
   onBack: () => void;
@@ -22,7 +36,41 @@ export default function CostImpactBreakdownLayer({
   onBack,
   onLaborMOHClick,
 }: CostImpactBreakdownLayerProps) {
-  const sortedData = [...mockCostImpactData].sort(
+  // Aggregate data by factory
+  const aggregatedByFactory = useMemo(() => {
+    const factoryMap = new Map<string, FactoryAggregatedData>();
+
+    mockCostImpactData.forEach((item) => {
+      const existing = factoryMap.get(item.factory);
+      if (existing) {
+        existing.costImpact += item.costImpact;
+        existing.volActual += item.volActual;
+        existing.totalCostActual += item.unitCostActual * item.volActual;
+        existing.totalCostBudget += item.unitCostBudget * item.volActual;
+        existing.materialGapTotal += item.unitCostMaterialGap * item.volActual;
+        existing.laborGapTotal += item.unitCostLaborGap * item.volActual;
+        existing.mohGapTotal += item.unitCostMOHGap * item.volActual;
+        existing.outsourceGapTotal +=
+          item.unitCostOutsourceGap * item.volActual;
+      } else {
+        factoryMap.set(item.factory, {
+          factory: item.factory,
+          costImpact: item.costImpact,
+          volActual: item.volActual,
+          totalCostActual: item.unitCostActual * item.volActual,
+          totalCostBudget: item.unitCostBudget * item.volActual,
+          materialGapTotal: item.unitCostMaterialGap * item.volActual,
+          laborGapTotal: item.unitCostLaborGap * item.volActual,
+          mohGapTotal: item.unitCostMOHGap * item.volActual,
+          outsourceGapTotal: item.unitCostOutsourceGap * item.volActual,
+        });
+      }
+    });
+
+    return Array.from(factoryMap.values());
+  }, []);
+
+  const sortedData = [...aggregatedByFactory].sort(
     (a, b) => a.costImpact - b.costImpact
   );
 
@@ -55,7 +103,9 @@ export default function CostImpactBreakdownLayer({
         <div className='flex items-center gap-2 text-sm text-gray-600'>
           <span>NP Deviation</span>
           {breadcrumbs.map((crumb, index) => (
-            <div key={index} className='flex items-center gap-2'>
+            <div
+              key={index}
+              className='flex items-center gap-2'>
               <ChevronRightIcon className='w-4 h-4' />
               <button
                 onClick={crumb.onClick}
@@ -177,10 +227,10 @@ export default function CostImpactBreakdownLayer({
             <thead className='bg-gray-50'>
               <tr>
                 <th className='text-left py-3 px-4 text-sm font-semibold text-gray-700'>
-                  {' '}
+                  Factory
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                  U/C Impact
+                  MVA cost impact (K)
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
                   Vol_Actual (KPCS)
@@ -209,217 +259,214 @@ export default function CostImpactBreakdownLayer({
               </tr>
             </thead>
             <tbody className='divide-y divide-gray-100'>
-              {sortedData.map((row) => (
-                <tr
-                  key={row.id}
-                  className='hover:bg-gray-50 transition-colors'>
-                  <td className='py-3 px-4 text-sm font-medium text-gray-900'>
-                    {row.productFamily}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right font-semibold ${
-                      row.costImpact >= 0 ? 'text-green-600' : 'text-red-600'
+              {sortedData.map((row, index) => {
+                // Calculate weighted averages for this factory
+                const unitCostActual =
+                  row.volActual > 0 ? row.totalCostActual / row.volActual : 0;
+                const unitCostBudget =
+                  row.volActual > 0 ? row.totalCostBudget / row.volActual : 0;
+                const unitCostGap = unitCostActual - unitCostBudget;
+                const unitMaterialGap =
+                  row.volActual > 0 ? row.materialGapTotal / row.volActual : 0;
+                const unitLaborGap =
+                  row.volActual > 0 ? row.laborGapTotal / row.volActual : 0;
+                const unitMOHGap =
+                  row.volActual > 0 ? row.mohGapTotal / row.volActual : 0;
+                const unitOutsourceGap =
+                  row.volActual > 0 ? row.outsourceGapTotal / row.volActual : 0;
+
+                // First row is the most negative (sorted ascending)
+                const isMostNegative = index === 0 && row.costImpact < 0;
+
+                // Drag handler for factory
+                const handleDragStart = (e: React.DragEvent) => {
+                  e.dataTransfer.setData('materialType', 'cost-impact-factory');
+                  e.dataTransfer.setData('itemId', row.factory);
+                  e.dataTransfer.setData(
+                    'itemTitle',
+                    `${row.factory} Cost Review`
+                  );
+                  e.dataTransfer.setData(
+                    'itemDescription',
+                    `MVA Cost Impact: ${
+                      row.costImpact >= 0 ? '+' : ''
+                    }${row.costImpact.toFixed(2)}K`
+                  );
+                  e.dataTransfer.effectAllowed = 'copy';
+                };
+
+                return (
+                  <tr
+                    key={row.factory}
+                    draggable
+                    onDragStart={handleDragStart}
+                    className={`transition-colors cursor-grab active:cursor-grabbing ${
+                      isMostNegative
+                        ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500'
+                        : 'hover:bg-gray-50'
                     }`}>
-                    {row.costImpact >= 0 ? '+' : ''}
-                    {row.costImpact.toFixed(2)}
-                  </td>
-                  <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                    {row.volActual.toLocaleString()}
-                  </td>
-                  <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                    {row.unitCostActual.toFixed(3)}
-                  </td>
-                  <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                    {row.unitCostBudget.toFixed(3)}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right font-semibold ${
-                      row.unitCostGap >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {row.unitCostGap >= 0 ? '+' : ''}
-                    {row.unitCostGap.toFixed(4)}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right border-l-2 border-gray-300 ${
-                      row.unitCostMaterialGap >= 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}>
-                    {row.unitCostMaterialGap >= 0 ? '+' : ''}
-                    {row.unitCostMaterialGap.toFixed(4)}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right ${
-                      row.unitCostLaborGap >= 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}>
-                    {row.unitCostLaborGap >= 0 ? '+' : ''}
-                    {row.unitCostLaborGap.toFixed(4)}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right ${
-                      row.unitCostMOHGap >= 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}>
-                    {row.unitCostMOHGap >= 0 ? '+' : ''}
-                    {row.unitCostMOHGap.toFixed(4)}
-                  </td>
-                  <td
-                    className={`py-3 px-4 text-sm text-right ${
-                      row.unitCostOutsourceGap >= 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}>
-                    {row.unitCostOutsourceGap >= 0 ? '+' : ''}
-                    {row.unitCostOutsourceGap.toFixed(4)}
-                  </td>
-                </tr>
-              ))}
-              <tr className='bg-gray-50 font-semibold'>
-                <td className='py-3 px-4 text-sm font-bold text-gray-900'>
-                  Grand Total
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right ${
-                    mockTotalCostImpact >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {mockTotalCostImpact >= 0 ? '+' : ''}
-                  {mockTotalCostImpact.toFixed(2)}
-                </td>
-                <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                  {mockCostImpactData
-                    .reduce((sum, row) => sum + row.volActual, 0)
-                    .toLocaleString()}
-                </td>
-                <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                  {(
-                    mockCostImpactData.reduce(
-                      (sum, row) => sum + row.unitCostActual * row.volActual,
-                      0
-                    ) /
-                    mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    )
-                  ).toFixed(3)}
-                </td>
-                <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                  {(
-                    mockCostImpactData.reduce(
-                      (sum, row) => sum + row.unitCostBudget * row.volActual,
-                      0
-                    ) /
-                    mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    )
-                  ).toFixed(3)}
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right font-semibold ${(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const avgActual =
-                      mockCostImpactData.reduce(
-                        (sum, row) => sum + row.unitCostActual * row.volActual,
-                        0
-                      ) / totalVol;
-                    const avgBudget =
-                      mockCostImpactData.reduce(
-                        (sum, row) => sum + row.unitCostBudget * row.volActual,
-                        0
-                      ) / totalVol;
-                    return avgActual - avgBudget >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600';
-                  })()}`}>
-                  {(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const avgActual =
-                      mockCostImpactData.reduce(
-                        (sum, row) => sum + row.unitCostActual * row.volActual,
-                        0
-                      ) / totalVol;
-                    const avgBudget =
-                      mockCostImpactData.reduce(
-                        (sum, row) => sum + row.unitCostBudget * row.volActual,
-                        0
-                      ) / totalVol;
-                    const delta = avgActual - avgBudget;
-                    return `${delta >= 0 ? '+' : ''}${delta.toFixed(4)}`;
-                  })()}
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right font-semibold border-l-2 border-gray-300 ${
-                    mockCostComponentTotals.material >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const unitGap = mockCostComponentTotals.material / totalVol;
-                    return `${unitGap >= 0 ? '+' : ''}${unitGap.toFixed(4)}`;
-                  })()}
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right font-semibold ${
-                    mockCostComponentTotals.labor >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const unitGap = mockCostComponentTotals.labor / totalVol;
-                    return `${unitGap >= 0 ? '+' : ''}${unitGap.toFixed(4)}`;
-                  })()}
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right font-semibold ${
-                    mockCostComponentTotals.moh >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const unitGap = mockCostComponentTotals.moh / totalVol;
-                    return `${unitGap >= 0 ? '+' : ''}${unitGap.toFixed(4)}`;
-                  })()}
-                </td>
-                <td
-                  className={`py-3 px-4 text-sm text-right font-semibold ${
-                    mockCostComponentTotals.outsource >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {(() => {
-                    const totalVol = mockCostImpactData.reduce(
-                      (sum, row) => sum + row.volActual,
-                      0
-                    );
-                    const unitGap =
-                      mockCostComponentTotals.outsource / totalVol;
-                    return `${unitGap >= 0 ? '+' : ''}${unitGap.toFixed(4)}`;
-                  })()}
-                </td>
-              </tr>
+                    <td className='py-3 px-4 text-sm font-medium text-gray-900'>
+                      <div className='flex items-center gap-2'>
+                        {isMostNegative && (
+                          <span className='flex-shrink-0 w-2 h-2 bg-red-500 rounded-full animate-pulse' />
+                        )}
+                        <span>{row.factory}</span>
+                        <span className='text-xs text-gray-400'>⋮⋮</span>
+                      </div>
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        row.costImpact >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {row.costImpact >= 0 ? '+' : ''}
+                      {row.costImpact.toFixed(2)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {row.volActual.toLocaleString(undefined, {
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {unitCostActual.toFixed(3)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {unitCostBudget.toFixed(3)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        unitCostGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitCostGap >= 0 ? '+' : ''}
+                      {unitCostGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right border-l-2 border-gray-300 ${
+                        unitMaterialGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitMaterialGap >= 0 ? '+' : ''}
+                      {unitMaterialGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right ${
+                        unitLaborGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitLaborGap >= 0 ? '+' : ''}
+                      {unitLaborGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right ${
+                        unitMOHGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitMOHGap >= 0 ? '+' : ''}
+                      {unitMOHGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right ${
+                        unitOutsourceGap >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
+                      {unitOutsourceGap >= 0 ? '+' : ''}
+                      {unitOutsourceGap.toFixed(4)}
+                    </td>
+                  </tr>
+                );
+              })}
+              {(() => {
+                // Calculate grand totals from aggregated factory data
+                const totalVol = aggregatedByFactory.reduce(
+                  (sum, row) => sum + row.volActual,
+                  0
+                );
+                const totalCostActual = aggregatedByFactory.reduce(
+                  (sum, row) => sum + row.totalCostActual,
+                  0
+                );
+                const totalCostBudget = aggregatedByFactory.reduce(
+                  (sum, row) => sum + row.totalCostBudget,
+                  0
+                );
+                const avgActual = totalVol > 0 ? totalCostActual / totalVol : 0;
+                const avgBudget = totalVol > 0 ? totalCostBudget / totalVol : 0;
+                const avgDelta = avgActual - avgBudget;
+                const unitMaterialGap =
+                  totalVol > 0
+                    ? mockCostComponentTotals.material / totalVol
+                    : 0;
+                const unitLaborGap =
+                  totalVol > 0 ? mockCostComponentTotals.labor / totalVol : 0;
+                const unitMOHGap =
+                  totalVol > 0 ? mockCostComponentTotals.moh / totalVol : 0;
+                const unitOutsourceGap =
+                  totalVol > 0
+                    ? mockCostComponentTotals.outsource / totalVol
+                    : 0;
+
+                return (
+                  <tr className='bg-gray-50 font-semibold'>
+                    <td className='py-3 px-4 text-sm font-bold text-gray-900'>
+                      Grand Total
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right ${
+                        mockTotalCostImpact >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
+                      {mockTotalCostImpact >= 0 ? '+' : ''}
+                      {mockTotalCostImpact.toFixed(2)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {totalVol.toLocaleString(undefined, {
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {avgActual.toFixed(3)}
+                    </td>
+                    <td className='py-3 px-4 text-sm text-right text-gray-700'>
+                      {avgBudget.toFixed(3)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        avgDelta >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {avgDelta >= 0 ? '+' : ''}
+                      {avgDelta.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold border-l-2 border-gray-300 ${
+                        unitMaterialGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitMaterialGap >= 0 ? '+' : ''}
+                      {unitMaterialGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        unitLaborGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitLaborGap >= 0 ? '+' : ''}
+                      {unitLaborGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        unitMOHGap >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                      {unitMOHGap >= 0 ? '+' : ''}
+                      {unitMOHGap.toFixed(4)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-sm text-right font-semibold ${
+                        unitOutsourceGap >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
+                      {unitOutsourceGap >= 0 ? '+' : ''}
+                      {unitOutsourceGap.toFixed(4)}
+                    </td>
+                  </tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>
@@ -427,4 +474,3 @@ export default function CostImpactBreakdownLayer({
     </div>
   );
 }
-
