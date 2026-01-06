@@ -664,7 +664,25 @@ export default function BusinessGroupPerformancePage() {
                     angle={-15}
                     textAnchor='end'
                     height={120}
-                    style={{ fontSize: '11px' }}
+                    tick={(props) => {
+                      const { x, y, payload } = props;
+                      const isHighlighted = ['Vol. impact', 'Price impact', 'Cost impact', 'Mix impact', 'MVA Deviation'].includes(payload.value);
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor="end"
+                          transform={`rotate(-15, ${x}, ${y})`}
+                          style={{
+                            fontSize: '11px',
+                            fill: isHighlighted ? '#1e3a8a' : '#374151',
+                            fontWeight: isHighlighted ? 'bold' : 'normal'
+                          }}
+                        >
+                          {payload.value}
+                        </text>
+                      );
+                    }}
                   />
                   <YAxis
                     style={{ fontSize: '12px' }}
@@ -678,9 +696,9 @@ export default function BusinessGroupPerformancePage() {
                   <ReferenceArea
                     x1="Vol. impact"
                     x2="MVA Deviation"
-                    fill="#fef3c7"
-                    fillOpacity={0.3}
-                    stroke="#f59e0b"
+                    fill="#3b82f6"
+                    fillOpacity={0.2}
+                    stroke="#1e40af"
                     strokeDasharray="5 5"
                   />
                   <Tooltip
