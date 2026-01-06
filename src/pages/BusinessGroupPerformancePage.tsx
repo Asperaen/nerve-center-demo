@@ -17,6 +17,8 @@ import {
   Cell,
   ComposedChart,
   Legend,
+  LabelList,
+  ReferenceArea,
 } from 'recharts';
 import {
   getAllBusinessGroupData,
@@ -673,6 +675,14 @@ export default function BusinessGroupPerformancePage() {
                       style: { fontSize: '12px' },
                     }}
                   />
+                  <ReferenceArea
+                    x1="Vol. impact"
+                    x2="MVA Deviation"
+                    fill="#fef3c7"
+                    fillOpacity={0.3}
+                    stroke="#f59e0b"
+                    strokeDasharray="5 5"
+                  />
                   <Tooltip
                     formatter={(
                       value: number,
@@ -721,6 +731,12 @@ export default function BusinessGroupPerformancePage() {
                     dataKey='barValue'
                     stackId='a'
                     name='NP Deviation'>
+                    <LabelList
+                      dataKey="cumulativeValue"
+                      position="top"
+                      formatter={(value: any) => `$${Number(value).toFixed(1)}M`}
+                      style={{ fontSize: '11px', fill: '#374151', fontWeight: 'bold' }}
+                    />
                     {mockNPDeviationStages.map((stage, index) => {
                       const isBaseline = stage.type === 'baseline';
                       const isPositive = stage.type === 'positive';
