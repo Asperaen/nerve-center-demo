@@ -524,12 +524,6 @@ export default function BusinessGroupPerformancePage() {
                     }`} />
                 </button>
               </div>
-              <a
-                href='/business-group-performance'
-                className='text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline transition-colors flex items-center gap-1'>
-                Business Group Performance
-                <span className='text-xs'>→</span>
-              </a>
             </div>
           </div>
           <div className='flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200'>
