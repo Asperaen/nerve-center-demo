@@ -298,7 +298,7 @@ export default function BusinessGroupPerformancePage() {
               vs budget ${metric.baseline.toFixed(1)}M
             </div>
             <div className='text-xs text-gray-500'>
-              vs Last Year ${metric.baseline.toFixed(1)}M
+              vs Last Year ${metric.stly.toFixed(1)}M
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>

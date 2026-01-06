@@ -6,6 +6,7 @@ export interface MonthlyTrendPoint {
 export interface BusinessGroupMetric {
   value: number; // e.g., 14.8 (in billions)
   baseline: number; // e.g., 14.2 (comparison value)
+  stly: number; // e.g., 14.2 (comparison value)
   percent: number; // e.g., 4.2
 }
 
@@ -101,28 +102,32 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     name: 'HH',
     rev: {
       value: 148,
-      baseline: 142,
+      baseline: 120.3,
+      stly: 142,
       percent: 4.2,
       trend: generateTrend(14.5, 0.08, 'up'),
       aiInsight: aiInsights.hh.rev,
     },
     gp: {
       value: 148,
-      baseline: 142,
+      baseline: 120.3,
+      stly: 142,
       percent: 4.2,
       trend: generateTrend(14.5, 0.06, 'up'),
       aiInsight: aiInsights.hh.gp,
     },
     op: {
       value: 148,
-      baseline: 142,
+      baseline: 120.3,
+      stly: 142,
       percent: 4.2,
       trend: generateTrend(14.5, 0.1, 'up'),
       aiInsight: aiInsights.hh.op,
     },
     np: {
       value: 148,
-      baseline: 142,
+      baseline: 120.3,
+      stly: 142,
       percent: 4.2,
       trend: generateTrend(14.5, 0.12, 'up'),
       aiInsight: aiInsights.hh.np,
@@ -133,28 +138,32 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     name: 'FII',
     rev: {
       value: 129,
-      baseline: 129,
+      baseline: 120.3,
+      stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.05, 'flat'),
       aiInsight: aiInsights.fii.rev,
     },
     gp: {
       value: 129,
-      baseline: 129,
+      baseline: 120.3,
+      stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.04, 'flat'),
       aiInsight: aiInsights.fii.gp,
     },
     op: {
       value: 129,
-      baseline: 129,
+      baseline: 120.3,
+      stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.06, 'flat'),
       aiInsight: aiInsights.fii.op,
     },
     np: {
       value: 129,
-      baseline: 129,
+      baseline: 120.3,
+      stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.07, 'flat'),
       aiInsight: aiInsights.fii.np,
@@ -165,28 +174,32 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     name: 'FIH',
     rev: {
       value: 183,
-      baseline: 178,
+      baseline: 120.3,
+      stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.07, 'up'),
       aiInsight: aiInsights.fih.rev,
     },
     gp: {
       value: 183,
-      baseline: 17.8,
+      baseline: 120.3,
+      stly: 17.8,
       percent: 2.8,
       trend: generateTrend(18.0, 0.06, 'up'),
       aiInsight: aiInsights.fih.gp,
     },
     op: {
       value: 183,
-      baseline: 178,
+      baseline: 120.3,
+      stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.08, 'up'),
       aiInsight: aiInsights.fih.op,
     },
     np: {
       value: 183,
-      baseline: 178,
+      baseline: 120.3,
+      stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.09, 'up'),
       aiInsight: aiInsights.fih.np,
@@ -197,28 +210,32 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     name: 'FIT',
     rev: {
       value: 1349,
-      baseline: 1203,
+      baseline: 1547,
+      stly: 1203,
       percent: 4.1,
       trend: generateTrend(10.0, 0.09, 'up'),
       aiInsight: aiInsights.fit.rev,
     },
     gp: {
       value: 276,
-      baseline: 215,
+      baseline: 344,
+      stly: 215,
       percent: 4.1,
       trend: generateTrend(10.0, 0.07, 'up'),
       aiInsight: aiInsights.fit.gp,
     },
     op: {
       value: 55,
-      baseline: 38,
+      baseline: 133,
+      stly: 38,
       percent: 4.1,
       trend: generateTrend(10.0, 0.1, 'up'),
       aiInsight: aiInsights.fit.op,
     },
     np: {
       value: 47,
-      baseline: 53,
+      baseline: 83,
+      stly: 53,
       percent: 4.1,
       trend: generateTrend(10.0, 0.11, 'up'),
       aiInsight: aiInsights.fit.np,
@@ -229,28 +246,32 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     name: 'Others',
     rev: {
       value: 139,
-      baseline: 132,
+      baseline: 120.3,
+      stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.1, 'up'),
       aiInsight: aiInsights.others.rev,
     },
     gp: {
       value: 139,
-      baseline: 132,
+      baseline: 120.3,
+      stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.08, 'up'),
       aiInsight: aiInsights.others.gp,
     },
     op: {
       value: 139,
-      baseline: 132,
+      baseline: 120.3,
+      stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.12, 'up'),
       aiInsight: aiInsights.others.op,
     },
     np: {
       value: 139,
-      baseline: 132,
+      baseline: 120.3,
+      stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.14, 'up'),
       aiInsight: aiInsights.others.np,
@@ -265,25 +286,30 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
       rev: {
         value: acc.rev.value + group.rev.value,
         baseline: acc.rev.baseline + group.rev.baseline,
+        stly: acc.rev.stly + group.rev.stly,
       },
       gp: {
         value: acc.gp.value + group.gp.value,
         baseline: acc.gp.baseline + group.gp.baseline,
+        stly: acc.gp.stly + group.gp.stly,
       },
       op: {
         value: acc.op.value + group.op.value,
         baseline: acc.op.baseline + group.op.baseline,
+        stly: acc.op.stly + group.op.stly,
+
       },
       np: {
         value: acc.np.value + group.np.value,
         baseline: acc.np.baseline + group.np.baseline,
+        stly: acc.np.stly + group.np.stly,
       },
     }),
     {
-      rev: { value: 0, baseline: 0 },
-      gp: { value: 0, baseline: 0 },
-      op: { value: 0, baseline: 0 },
-      np: { value: 0, baseline: 0 },
+      rev: { value: 0, baseline: 0, stly: 0 },
+      gp: { value: 0, baseline: 0, stly: 0 },
+      op: { value: 0, baseline: 0, stly: 0 },
+      np: { value: 0, baseline: 0, stly: 0 },
     }
   );
 
@@ -323,6 +349,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     rev: {
       value: totals.rev.value,
       baseline: totals.rev.baseline,
+      stly: totals.rev.stly,
       percent: calcPercent(totals.rev.value, totals.rev.baseline),
       trend: generateConsolidatedTrend('rev'),
       aiInsight: aiInsights.overall.rev,
@@ -330,6 +357,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     gp: {
       value: totals.gp.value,
       baseline: totals.gp.baseline,
+      stly: totals.gp.stly,
       percent: calcPercent(totals.gp.value, totals.gp.baseline),
       trend: generateConsolidatedTrend('gp'),
       aiInsight: aiInsights.overall.gp,
@@ -337,6 +365,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     op: {
       value: totals.op.value,
       baseline: totals.op.baseline,
+      stly: totals.op.stly,
       percent: calcPercent(totals.op.value, totals.op.baseline),
       trend: generateConsolidatedTrend('op'),
       aiInsight: aiInsights.overall.op,
@@ -344,6 +373,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     np: {
       value: totals.np.value,
       baseline: totals.np.baseline,
+      stly: totals.np.stly,
       percent: calcPercent(totals.np.value, totals.np.baseline),
       trend: generateConsolidatedTrend('np'),
       aiInsight: aiInsights.overall.np,
@@ -573,12 +603,16 @@ const generateSubGroupData = (
   return distributions.map((dist) => {
     const revValue = parentData.rev.value * dist.factor;
     const revBaseline = parentData.rev.baseline * dist.factor;
+    const revStly = parentData.rev.stly * dist.factor;
     const gpValue = parentData.gp.value * dist.factor;
     const gpBaseline = parentData.gp.baseline * dist.factor;
+    const gpStly = parentData.gp.stly * dist.factor;
     const opValue = parentData.op.value * dist.factor;
     const opBaseline = parentData.op.baseline * dist.factor;
+    const opStly = parentData.op.stly * dist.factor;
     const npValue = parentData.np.value * dist.factor;
     const npBaseline = parentData.np.baseline * dist.factor;
+    const npStly = parentData.np.stly * dist.factor;
 
     const calcPercent = (val: number, base: number) =>
       base === 0 ? 0 : ((val - base) / base) * 100;
@@ -593,6 +627,7 @@ const generateSubGroupData = (
       rev: {
         value: revValue,
         baseline: revBaseline,
+        stly: revStly,
         percent: calcPercent(revValue, revBaseline) + variance,
         trend: generateTrend(revValue, 0.08, dist.trend),
         aiInsight: subGroupAiInsights[dist.id].rev,
@@ -600,6 +635,7 @@ const generateSubGroupData = (
       gp: {
         value: gpValue,
         baseline: gpBaseline,
+        stly: gpStly,
         percent: calcPercent(gpValue, gpBaseline) + variance,
         trend: generateTrend(gpValue, 0.06, dist.trend),
         aiInsight: subGroupAiInsights[dist.id].gp,
@@ -607,6 +643,7 @@ const generateSubGroupData = (
       op: {
         value: opValue,
         baseline: opBaseline,
+        stly: opStly,
         percent: calcPercent(opValue, opBaseline) + variance,
         trend: generateTrend(opValue, 0.1, dist.trend),
         aiInsight: subGroupAiInsights[dist.id].op,
@@ -614,6 +651,7 @@ const generateSubGroupData = (
       np: {
         value: npValue,
         baseline: npBaseline,
+        stly: npStly,
         percent: calcPercent(npValue, npBaseline) + variance,
         trend: generateTrend(npValue, 0.12, dist.trend),
         aiInsight: subGroupAiInsights[dist.id].np,
