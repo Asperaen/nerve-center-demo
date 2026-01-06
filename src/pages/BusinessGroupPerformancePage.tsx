@@ -62,6 +62,9 @@ export default function BusinessGroupPerformancePage() {
   // Expanded rows state (for "All BUs" view)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
+  // Comparison details toggle
+  const [showComparisonDetails, setShowComparisonDetails] = useState<boolean>(true);
+
   // Layer navigation state
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
@@ -249,27 +252,55 @@ export default function BusinessGroupPerformancePage() {
         ? '#ef4444'
         : '#6b7280';
 
+    if (!showComparisonDetails) {
+      return (
+        <td
+          key={metricName}
+          className={`px-4 py-3 border-b border-gray-200 ${
+            !isLast ? 'border-r' : ''
+          } relative group`}>
+          <div className='text-left'>
+            <div className='text-base font-bold text-gray-900'>
+              ${metric.value.toFixed(1)}B
+            </div>
+          </div>
+        </td>
+      );
+    }
+
     return (
       <td
         key={metricName}
         className={`px-4 py-3 border-b border-gray-200 ${
           !isLast ? 'border-r' : ''
         } relative group`}>
-        <div className='flex items-center justify-center gap-2'>
-          <div className='text-center'>
-            <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(1)}B
-            </div>
-            <div className='text-xs text-gray-500'>
-              vs ${metric.baseline.toFixed(1)}B
-            </div>
+      <div className='flex items-center justify-center gap-4'>
+        <div className='text-left'>
+          <div className='text-base font-bold text-gray-900'>
+            ${metric.value.toFixed(1)}B
           </div>
+        </div>
+        <div className='text-center'>
+          <div className='text-xs text-gray-500 mb-0.5'>
+            vs budget ${metric.baseline.toFixed(1)}B
+          </div>
+          <div className='text-xs text-gray-500'>
+            vs STLY ${metric.baseline.toFixed(1)}B
+          </div>
+        </div>
+        <div className='flex flex-col gap-0.5'>
+          <span
+            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+            {percentSign}
+            {metric.percent.toFixed(1)}%
+          </span>
           <span
             className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
             {percentSign}
             {metric.percent.toFixed(1)}%
           </span>
         </div>
+      </div>
 
         {/* Hover Tooltip */}
         <div className='absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto'>
@@ -479,12 +510,27 @@ export default function BusinessGroupPerformancePage() {
                 Financial overview – {getSectionTitle()}
               </h2>
             </div>
-            <a
-              href='/business-group-performance'
-              className='text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline transition-colors flex items-center gap-1'>
-              Business Group Performance
-              <span className='text-xs'>→</span>
-            </a>
+            <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-gray-600'>Show Details</span>
+                <button
+                  onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                </button>
+              </div>
+              <a
+                href='/business-group-performance'
+                className='text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline transition-colors flex items-center gap-1'>
+                Business Group Performance
+                <span className='text-xs'>→</span>
+              </a>
+            </div>
           </div>
           <div className='flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200'>
             <p className='text-sm text-gray-700'>
