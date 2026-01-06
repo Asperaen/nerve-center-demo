@@ -429,6 +429,20 @@ export interface MVABreakdownStage {
   description?: string;
 }
 
+// Per-Factory MVA Breakdown (for Site Table)
+export interface FactoryMVABreakdown {
+  dlEfficiency: number; // Direct Labour Efficiency
+  dlHourlyRate: number; // DL Hourly Rate Impact
+  fixedMOH: number; // Fixed MOH
+  fxImpact: number; // FX Impact
+  idlHourlyRate: number; // IDL Hourly Rate Impact
+  idlImpact: number; // IDL Impact
+  variableMOH: number; // Variable MOH
+  volumeVariance: number; // Volume Variance
+}
+
+export type FactoryMVABreakdownMap = Record<string, FactoryMVABreakdown>;
+
 // Proposal Types
 export interface Proposal {
   id: string;
