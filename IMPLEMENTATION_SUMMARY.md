@@ -591,7 +591,7 @@ The application uses a flat route structure with standalone pages for each major
      - Side-by-side layout with Key Call Out panel (waterfall takes 3 columns, Key Call Out takes 1 column)
    - **Key Call Out Section**: AI-generated insights displayed side by side with waterfall chart
      - Section title: "Key Call Out" with AI badge (purple gradient badge with sparkle icon ✨) on the same line
-     - Positioned on right side of waterfall chart (1/4 width) matching Layers 3 and 4 layout
+     - Positioned on right side of waterfall chart (1/4 width)
      - Bullet points summarizing main drivers:
        - Largest positive impact (volume: +8.81 Mn USD)
        - Most significant negative drivers (cost impact: -7.32 Mn USD, OPEX deviation: -5.29 Mn USD)
@@ -599,32 +599,30 @@ The application uses a flat route structure with standalone pages for each major
      - Root Cause Analysis paragraph explaining the root cause
      - Professional styling matching the application design system
      - Content always visible (no toggle switches)
-   - **Multi-Layer Deep Dive Navigation** (4 layers total):
+   - **Flattened 2-Layer Deep Dive Navigation** (simplified from 4 layers to 2 layers):
      - **Layer 1**: NP Deviation Breakdown waterfall with Key Call Out panel side by side (main page)
-     - **Layer 2**: Product Analysis table (clickable from first 4 stages)
-       - Overall Performance Summary with GP and Revenue performance
-       - OP Impact Overview: 4 cards (Volume Impact, Price Impact, Cost Impact, Mix Impact) sorted by GP Gap to Budget
-       - Detailed Excel-like table with Product Family breakdown
-       - Columns: Product Family, GP Actual, GP Budget, GP Gap to Budget, Vol Impact, Price Impact, Cost Impact (clickable), Mix Impact
-       - Color coding: Green for positive, Red for negative
-       - Total row at bottom
-     - **Layer 3**: Cost Impact Breakdown (clickable from Cost Impact in Layer 2)
-       - Cost Component Totals section above table (Material, Labor, MOH, Outsource)
-       - Detailed table with columns: Product Family, Cost Impact (K), Vol Actual, Unit Cost Actual, Unit Cost Budget, Unit Cost Gap, Unit Cost Material Gap, Unit Cost Labor Gap, Unit Cost MOH Gap, Unit Cost Outsource Gap
-       - Labor and MOH cards are fully clickable (entire card, not just label) with hover effects to navigate to Layer 4
-       - Key Call Out panel on right side with AI badge on same line as heading (no toggle switch, content always visible)
-     - **Layer 4**: MVA Breakdown waterfall (clickable from Labor/MOH in Layer 3)
-       - 12-stage MVA waterfall chart: Budget MVA Cost → Fix impact → MVA exclu. FX impact → Vol. and mix variance → DL/IDL Hourly rate impacts → MVA exclu. external impact → DL/IDL efficiency gaps → Fixed/Variable MOH efficiency gaps → Actual MVA Cost
-       - Color coding: Green for favourable, Red for adverse, Blue for baseline/intermediate/final
-       - Key Call Out panel on right side with AI badge on same line as heading (no toggle switch, content always visible)
+     - **Layer 2**: COGS Analysis with Sites/Products tab switch (clickable from first 4 stages)
+       - **Tab Switch**: Centered in header with "Sites" and "Products" tabs
+       - **Sites Tab** (default):
+         - Multi-select site filter dropdown (All Sites, Suzhou Plant, Dongguan Plant, etc.)
+         - Key Call Out panel with AI-generated insights
+         - MVA Breakdown waterfall chart (12-stage MVA waterfall)
+         - Cost Component Gaps section (Material, Labor, MOH, Outsource totals)
+         - Simplified Site Cost Impact table with columns: Factory, MVA Impact (K), # of Initiatives, Expected Initiative Impact (K), Actual Initiative Impact (K)
+         - Draggable table rows with factory initiative tooltips
+       - **Products Tab**:
+         - Overall Performance Summary with GP and Revenue highlights
+         - OP Impact Overview: 4 cards (Volume Impact, Price Impact, Cost Impact, Mix Impact) sorted by GP Gap to Budget
+         - Detailed Excel-like table with Product Family breakdown
+         - Columns: Product Family, GP Actual, GP Budget, GP Gap to Budget, Vol Impact, Price Impact, Cost Impact, Mix Impact
+         - Color coding: Green for positive, Red for negative
    - **Executive-Focused Navigation**:
      - Smooth slide-in/slide-out animations between layers (300ms duration)
-     - Breadcrumb navigation showing current path (e.g., "NP Deviation > Product Analysis > Cost Impact > MVA Breakdown")
-     - Back button correctly navigates to previous layer (fixed navigation stack bug)
-     - Clickable breadcrumb links for direct navigation to any layer in the path
+     - Breadcrumb navigation showing current path (e.g., "NP Deviation > COGS Analysis")
+     - Back button correctly navigates to previous layer
+     - Clickable breadcrumb links for direct navigation
      - Visual hierarchy with subtle background changes and shadows
      - Premium hover effects on clickable elements
-     - Context preservation when drilling down
    - **Initiative Proposals Section**: Proposals and initiatives for leakage recovery
      - Display proposal with actions/initiatives
      - Actions can be converted to Wave Initiatives (marked as L0 when created)
@@ -981,28 +979,26 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Side-by-side layout with Key Call Out panel (waterfall 3/4 width, Key Call Out 1/4 width)
    - **Key Call Out Section**: AI-generated insights displayed side by side with waterfall chart
      - AI badge (purple gradient badge with sparkle icon ✨) on same line as "Key Call Out" heading
-     - Positioned on right side matching Layers 3 and 4 layout
      - Bullet points summarizing main drivers and root cause analysis
      - Professional styling with clear hierarchy
      - Content always visible (no toggle switches)
-   - **Layer 2 - Product Analysis** (click any of first 4 stages):
-     - Overall Performance Summary with GP and Revenue highlights
-     - OP Impact Overview: 4 impact cards sorted by GP Gap to Budget
-     - Detailed table with Product Family breakdown
-     - Click "Cost Impact" column or card to navigate to Layer 3
-   - **Layer 3 - Cost Impact Breakdown** (click Cost Impact from Layer 2):
-     - Cost Component Totals section: Material (-8,788), Labor (+732), MOH (+586), Outsource (+146)
-     - Detailed table with cost component gaps by Product Family
-     - Click entire "Labor" or "MOH" cards (fully clickable with hover effects) to navigate to Layer 4
-     - Key Call Out panel on right with AI badge on same line as heading (no toggle switch, content always visible)
-   - **Layer 4 - MVA Breakdown** (click Labor/MOH from Layer 3):
-     - 12-stage MVA waterfall chart showing cost breakdown
-     - Stages: Budget MVA Cost → Fix impact → Vol/mix variance → Rate impacts → Efficiency gaps → Actual MVA Cost
-     - Color-coded: Green for favourable, Red for adverse, Blue for baseline
-     - Key Call Out panel on right with AI badge on same line as heading (no toggle switch, content always visible)
+   - **Layer 2 - COGS Analysis** (click any of first 4 stages):
+     - **Tab Switch**: Centered "Sites" / "Products" toggle in header
+     - **Sites Tab** (default):
+       - Multi-select site filter dropdown with checkboxes (All Sites, or select multiple individual sites)
+       - Filter logic: Deselecting a site from "All Sites" shows remaining sites; deselecting "All Sites" selects first site
+       - Key Call Out panel with AI-generated insights
+       - MVA Breakdown waterfall chart (12-stage MVA waterfall with color-coded bars)
+       - Cost Component Gaps cards (Material, Labor, MOH, Outsource)
+       - Simplified site table: Factory, MVA Impact (K), # of Initiatives, Expected/Actual Initiative Impact
+       - Draggable rows with initiative tooltips on hover
+     - **Products Tab**:
+       - Overall Performance Summary with GP and Revenue highlights
+       - OP Impact Overview: 4 impact cards sorted by GP Gap to Budget
+       - Detailed table with Product Family breakdown
    - **Navigation Features**:
      - Breadcrumb trail showing current path with clickable links
-     - Back button correctly navigates to previous layer (fixed navigation stack)
+     - Back button correctly navigates to Layer 1
      - Smooth slide-in/slide-out animations (300ms)
      - Executive-focused premium styling
    - **Initiative Proposals Section**: Located below NP Deviation Breakdown waterfall
@@ -1240,21 +1236,20 @@ pnpm lint
    - Action Tracker as dedicated route page accessible via sidebar navigation
    - "Create Action" buttons on page headers for context-specific action creation
 10. **NP Deviation Breakdown Visualization**: NP Deviation Breakdown waterfall chart prominently displayed at top of Finance Review page, showing 9-stage cumulative progression from Budget NP to Actual NP with color-coded favourable/adverse impacts and clickable deep dive functionality
-11. **Multi-Layer Deep Dive Navigation**: Executive-focused 4-layer navigation system:
+11. **Flattened 2-Layer Deep Dive Navigation**: Executive-focused navigation system simplified from 4 layers to 2 layers:
     - Layer 1: NP Deviation Breakdown waterfall with Key Call Out panel side by side (main page)
-    - Layer 2: Product Analysis table with impact cards and Excel-like breakdown
-    - Layer 3: Cost Impact Breakdown with cost component totals and detailed analysis
-    - Layer 4: MVA Breakdown waterfall with 12-stage cost analysis
+    - Layer 2: COGS Analysis with Sites/Products tab switch:
+      - **Sites Tab**: Multi-select site filter, Key Call Out, MVA waterfall, Cost Component Gaps, simplified site table
+      - **Products Tab**: Impact overview cards and product family breakdown table
     - Smooth transitions, breadcrumb navigation with clickable links, and premium styling throughout
-    - Fixed back button navigation to correctly return to previous layer
-12. **Key Call Out System**: AI-generated Key Call Out sections replacing Root Cause Analysis tables:
-    - Consistent side-by-side layout across all layers (waterfall 3/4 width, Key Call Out 1/4 width)
-    - AI badge (purple gradient badge with sparkle icon ✨) displayed on same line as "Key Call Out" heading in all layers
+    - Multi-select site filter with smart logic (deselecting from All Sites shows remaining, deselecting All Sites defaults to first site)
+12. **Key Call Out System**: AI-generated Key Call Out sections:
+    - Consistent side-by-side layout (waterfall with Key Call Out panel)
+    - AI badge (purple gradient badge with sparkle icon ✨) displayed on same line as "Key Call Out" heading
     - Bullet points summarizing main drivers
     - Root cause analysis paragraphs
     - Content always visible (toggle switches removed for cleaner UI)
     - Professional styling matching application design system
-    - Consistent AI badge styling across all Key Call Out sections (Layer 1, Layer 3, Layer 4)
 13. **Applied Assumptions Feature**: Toggle-able assumptions system for waterfall forecast:
     - Three pre-configured assumptions (AI Data Center Acceleration, Apple AirPods Launch Delay, Copper Price Surge)
     - Individual assumption impacts visualized as colored bars in waterfall chart

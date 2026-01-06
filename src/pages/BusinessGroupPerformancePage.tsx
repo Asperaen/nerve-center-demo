@@ -65,7 +65,8 @@ export default function BusinessGroupPerformancePage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Comparison details toggle
-  const [showComparisonDetails, setShowComparisonDetails] = useState<boolean>(true);
+  const [showComparisonDetails, setShowComparisonDetails] =
+    useState<boolean>(true);
 
   // Layer navigation state
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
@@ -276,33 +277,33 @@ export default function BusinessGroupPerformancePage() {
         className={`px-4 py-3 border-b border-gray-200 ${
           !isLast ? 'border-r' : ''
         } relative group`}>
-      <div className='flex items-center justify-center gap-4'>
-        <div className='text-left'>
-          <div className='text-base font-bold text-gray-900'>
-            ${metric.value.toFixed(1)}B
+        <div className='flex items-center justify-center gap-4'>
+          <div className='text-left'>
+            <div className='text-base font-bold text-gray-900'>
+              ${metric.value.toFixed(1)}B
+            </div>
+          </div>
+          <div className='text-center'>
+            <div className='text-xs text-gray-500 mb-0.5'>
+              vs budget ${metric.baseline.toFixed(1)}B
+            </div>
+            <div className='text-xs text-gray-500'>
+              vs Last Year ${metric.baseline.toFixed(1)}B
+            </div>
+          </div>
+          <div className='flex flex-col gap-0.5'>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+              {percentSign}
+              {metric.percent.toFixed(1)}%
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+              {percentSign}
+              {metric.percent.toFixed(1)}%
+            </span>
           </div>
         </div>
-        <div className='text-center'>
-          <div className='text-xs text-gray-500 mb-0.5'>
-            vs budget ${metric.baseline.toFixed(1)}B
-          </div>
-          <div className='text-xs text-gray-500'>
-            vs Last Year ${metric.baseline.toFixed(1)}B
-          </div>
-        </div>
-        <div className='flex flex-col gap-0.5'>
-          <span
-            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-            {percentSign}
-            {metric.percent.toFixed(1)}%
-          </span>
-          <span
-            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-            {percentSign}
-            {metric.percent.toFixed(1)}%
-          </span>
-        </div>
-      </div>
 
         {/* Hover Tooltip */}
         <div className='absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto'>
@@ -516,32 +517,47 @@ export default function BusinessGroupPerformancePage() {
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-gray-600'>Show Details</span>
                 <button
-                  onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                  onClick={() =>
+                    setShowComparisonDetails(!showComparisonDetails)
+                  }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                     showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
                   }`}>
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                       showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
+                    }`}
+                  />
                 </button>
               </div>
             </div>
           </div>
-          <div className='flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200'>
-            <p className='text-sm text-gray-700'>
-              <span className='font-medium'>
-                Strong revenue growth across all BUs (+8.2% YoY), but margin
-                compression in Consumer Electronics (-1.2pp) due to elevated
-                material costs requires attention.
+          {/* Key Call Out Section */}
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300 mb-4'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
+              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <span className='text-sm'>✨</span>
+                <span>AI</span>
               </span>
-            </p>
-            <span className='flex-shrink-0 ml-4 px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-              <span className='text-sm'>✨</span>
-              <span>AI</span>
-            </span>
+            </div>
+            <div className='space-y-3'>
+              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
+                  <li
+                    key={index}
+                    className='text-sm'>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <div className='mt-4 pt-4 border-t border-gray-200'>
+                <p className='text-sm text-gray-700 leading-relaxed'>
+                  {mockNPDeviationKeyCallOut.rootCauseAnalysis}
+                </p>
+              </div>
+            </div>
           </div>
-
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
             <table className='w-full'>
               <thead>
@@ -598,35 +614,6 @@ export default function BusinessGroupPerformancePage() {
 
         {/* Performance Waterfall Section */}
         <div className='space-y-6'>
-          <h2 className='text-2xl font-bold text-gray-900'>
-            Performance waterfall
-          </h2>
-          {/* Key Call Out Section */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
-              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                <span className='text-sm'>✨</span>
-                <span>AI</span>
-              </span>
-            </div>
-            <div className='space-y-3'>
-              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-                {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
-                  <li
-                    key={index}
-                    className='text-sm'>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className='mt-4 pt-4 border-t border-gray-200'>
-                <p className='text-sm text-gray-700 leading-relaxed'>
-                  {mockNPDeviationKeyCallOut.rootCauseAnalysis}
-                </p>
-              </div>
-            </div>
-          </div>
           <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
             <div className='flex items-center justify-between mb-6'>
               <div>
@@ -676,12 +663,12 @@ export default function BusinessGroupPerformancePage() {
                     }}
                   />
                   <ReferenceArea
-                    x1="Vol. impact"
-                    x2="MVA Deviation"
-                    fill="#fef3c7"
+                    x1='Vol. impact'
+                    x2='MVA Deviation'
+                    fill='#fef3c7'
                     fillOpacity={0.3}
-                    stroke="#f59e0b"
-                    strokeDasharray="5 5"
+                    stroke='#f59e0b'
+                    strokeDasharray='5 5'
                   />
                   <Tooltip
                     formatter={(
@@ -732,10 +719,16 @@ export default function BusinessGroupPerformancePage() {
                     stackId='a'
                     name='NP Deviation'>
                     <LabelList
-                      dataKey="cumulativeValue"
-                      position="top"
-                      formatter={(value: any) => `$${Number(value).toFixed(1)}M`}
-                      style={{ fontSize: '11px', fill: '#374151', fontWeight: 'bold' }}
+                      dataKey='cumulativeValue'
+                      position='top'
+                      formatter={(value: any) =>
+                        `$${Number(value).toFixed(1)}M`
+                      }
+                      style={{
+                        fontSize: '11px',
+                        fill: '#374151',
+                        fontWeight: 'bold',
+                      }}
                     />
                     {mockNPDeviationStages.map((stage, index) => {
                       const isBaseline = stage.type === 'baseline';
