@@ -389,6 +389,138 @@ const subGroupAiInsights: Record<string, Record<string, string>> = {
     op: 'Operating investments in new capabilities. Some units approaching break-even.',
     np: 'Net profit recovering as startup costs normalize. Strategic patience required.',
   },
+  others_sub_2: {
+    rev: 'Other segments showing mixed performance. New ventures in pilot phase with growth potential.',
+    gp: 'GP margins vary by segment. Focus on higher-margin opportunities in emerging categories.',
+    op: 'Operating investments in new capabilities. Some units approaching break-even.',
+    np: 'Net profit recovering as startup costs normalize. Strategic patience required.',
+  },
+  fit_sub1: {
+    rev: '5G Infrastructure revenue growing with telecom network deployments and equipment upgrades.',
+    gp: 'GP margins benefiting from standardized components and volume production.',
+    op: 'Operating leverage improving with scale. Supply chain optimization reducing costs.',
+    np: 'Net profit growth driven by market share gains and operational efficiencies.',
+  },
+  fit_sub2: {
+    rev: 'Smart Components revenue from IoT and connected device applications expanding rapidly.',
+    gp: 'GP margins expanding with proprietary sensor technologies and integration services.',
+    op: 'Operating investments in R&D yielding higher-margin product opportunities.',
+    np: 'Net profit benefiting from technology differentiation and premium pricing.',
+  },
+  fit_sub3: {
+    rev: 'AI Accelerators revenue ramping with machine learning and AI processing demand.',
+    gp: 'GP margins premium due to specialized high-performance computing components.',
+    op: 'Operating costs managed through strategic partnerships and outsourcing.',
+    np: 'Strong net profit growth from leading-edge technology positioning.',
+  },
+  fit_sub4: {
+    rev: 'Mobility revenue growing with automotive and transportation technology solutions.',
+    gp: 'GP margins expanding with integrated mobility platform offerings.',
+    op: 'Operating investments in autonomous vehicle technologies driving future growth.',
+    np: 'Net profit benefiting from strategic partnerships in mobility ecosystem.',
+  },
+  fit_sub5: {
+    rev: 'Belkin revenue from consumer connectivity products and smart home solutions.',
+    gp: 'GP margins premium with established brand positioning and product differentiation.',
+    op: 'Operating efficiency high with mature product lines and global distribution.',
+    np: 'Net profit solid with strong cash flow generation from consumer business.',
+  },
+  fit_sub6: {
+    rev: 'FIT Direct revenue from direct-to-consumer channels and online sales platforms.',
+    gp: 'GP margins optimizing with digital transformation and reduced intermediary costs.',
+    op: 'Operating costs managed through e-commerce efficiency and logistics optimization.',
+    np: 'Net profit growth driven by expanding online presence and customer acquisition.',
+  },
+  fit_sub7: {
+    rev: 'FIT Management revenue from corporate services and business development initiatives.',
+    gp: 'GP margins variable based on service contracts and project complexity.',
+    op: 'Operating investments in corporate functions and strategic initiatives.',
+    np: 'Net profit reflecting investment phase for long-term corporate development.',
+  },
+  fih_sub1: {
+    rev: 'Server revenue growing with enterprise data center and cloud computing demand.',
+    gp: 'GP margins expanding with high-volume server component production.',
+    op: 'Operating leverage improving with scale and manufacturing efficiency.',
+    np: 'Net profit growth strong from leadership in enterprise computing solutions.',
+  },
+  fih_sub4: {
+    rev: 'Storage revenue from enterprise and cloud storage solutions expanding steadily.',
+    gp: 'GP margins premium with specialized storage technology and enterprise pricing.',
+    op: 'Operating costs controlled through established manufacturing processes.',
+    np: 'Net profit solid with consistent demand from enterprise storage market.',
+  },
+  fih_sub5: {
+    rev: 'IIOT revenue from industrial internet of things and smart manufacturing applications.',
+    gp: 'GP margins expanding with value-added industrial automation solutions.',
+    op: 'Operating investments in industrial technology development and partnerships.',
+    np: 'Net profit growth driven by adoption of Industry 4.0 technologies.',
+  },
+  fih_sub6: {
+    rev: 'Automation revenue from factory automation and robotics systems increasing.',
+    gp: 'GP margins high with specialized automation equipment and systems integration.',
+    op: 'Operating efficiency improving with standardized automation platforms.',
+    np: 'Net profit benefiting from leadership in industrial automation solutions.',
+  },
+  fii_sub4: {
+    rev: 'ODM revenue from original design manufacturing services for global brands.',
+    gp: 'GP margins competitive in design and manufacturing services market.',
+    op: 'Operating costs managed through manufacturing scale and process optimization.',
+    np: 'Net profit stable with established ODM business model and client relationships.',
+  },
+  fii_sub5: {
+    rev: 'EMS revenue from electronics manufacturing services expanding with demand.',
+    gp: 'GP margins maintaining competitive levels in manufacturing services.',
+    op: 'Operating efficiency high with global manufacturing footprint optimization.',
+    np: 'Net profit growth supported by manufacturing service expansion.',
+  },
+  fih_sub2: {
+    rev: 'Data Center revenue growing with cloud computing and AI infrastructure investments.',
+    gp: 'GP margins expanding with high-density and high-reliability product mix.',
+    op: 'Operating costs well-controlled through automation and process improvements.',
+    np: 'Net profit benefiting from premium positioning in growing data center market.',
+  },
+  fih_sub3: {
+    rev: 'Industrial revenue stable with steady demand from manufacturing and automation sectors.',
+    gp: 'GP margins maintained through product quality and reliability advantages.',
+    op: 'Operating efficiency stable with established processes and cost controls.',
+    np: 'Net profit solid with consistent performance in mature industrial markets.',
+  },
+  fii_sub1: {
+    rev: 'Consumer Electronics revenue reflecting market maturity and refresh cycles.',
+    gp: 'GP margins challenged by competitive pricing and component cost pressures.',
+    op: 'Operating costs managed through efficiency programs and cost optimization.',
+    np: 'Net profit stable with focus on working capital and expense management.',
+  },
+  fii_sub2: {
+    rev: 'Value-Added Services revenue growing with software and service offerings.',
+    gp: 'GP margins expanding with higher-value service and support contracts.',
+    op: 'Operating investments in service capabilities building future growth platform.',
+    np: 'Net profit improving as service business scales and margins expand.',
+  },
+  fii_sub3: {
+    rev: 'Emerging Markets revenue accelerating with geographic expansion initiatives.',
+    gp: 'GP margins varying by market but improving with localization strategies.',
+    op: 'Operating costs increasing with market development but offset by growth.',
+    np: 'Net profit growth driven by market penetration and scale benefits.',
+  },
+  others_sub1: {
+    rev: 'Emerging Ventures revenue from new business development and market entry.',
+    gp: 'GP margins building as products mature and scale advantages emerge.',
+    op: 'Operating investments heavy in initial phases but decreasing as businesses mature.',
+    np: 'Net profit trajectory improving with business model validation and scaling.',
+  },
+  others_sub2: {
+    rev: 'B2B Services revenue growing with enterprise software and consulting offerings.',
+    gp: 'GP margins premium due to service-based business model and recurring revenue.',
+    op: 'Operating leverage building with scalable service delivery platforms.',
+    np: 'Net profit growth strong with subscription model and client retention.',
+  },
+  others_sub3: {
+    rev: 'Specialty Products revenue from niche markets and customized solutions.',
+    gp: 'GP margins high due to specialized nature and value proposition.',
+    op: 'Operating costs managed through focused manufacturing and supply chain.',
+    np: 'Net profit solid with premium positioning in specialized segments.',
+  },
 };
 
 // Generate sub-business group data for a parent BG
@@ -397,13 +529,60 @@ const generateSubGroupData = (
   parentBgName: string,
   parentData: BusinessGroupData
 ): SubBusinessGroupData[] => {
-  // Distribute parent values across sub-groups (roughly 35%, 30%, 25%, 10%)
-  const distributions = [
-    { id: 'ipbg', name: 'IPBG', factor: 0.35, trend: 'up' as const },
-    { id: 'cnsbg', name: 'CNSBG', factor: 0.30, trend: 'flat' as const },
-    { id: 'cesbg', name: 'CESBG', factor: 0.25, trend: 'up' as const },
-    { id: 'others_sub', name: 'Others', factor: 0.10, trend: 'down' as const },
-  ];
+  // Define distributions based on parentBgId
+  let distributions;
+
+  if (parentBgId === 'hh') {
+    distributions = [
+      { id: 'ipbg', name: 'A Group', factor: 0.35, trend: 'up' as const },
+      { id: 'cnsbg', name: 'B Group', factor: 0.30, trend: 'flat' as const },
+      { id: 'cesbg', name: 'C Group', factor: 0.15, trend: 'up' as const },
+      { id: 'others_sub', name: 'E Group', factor: 0.10, trend: 'down' as const },
+      { id: 'others_sub_2', name: 'S Group', factor: 0.10, trend: 'down' as const },
+    ];
+  } else if (parentBgId === 'fit') {
+    distributions = [
+      { id: 'fit_sub1', name: 'Conn.', factor: 0.40, trend: 'up' as const },
+      { id: 'fit_sub2', name: 'Cable', factor: 0.35, trend: 'up' as const },
+      { id: 'fit_sub3', name: 'Audio', factor: 0.25, trend: 'up' as const },
+      { id: 'fit_sub4', name: 'Mobility', factor: 0.25, trend: 'up' as const },
+      { id: 'fit_sub5', name: 'Belkin', factor: 0.25, trend: 'up' as const },
+      { id: 'fit_sub6', name: 'FIT Direct', factor: 0.25, trend: 'up' as const },
+      { id: 'fit_sub7', name: 'FIT Mngt.', factor: 0.25, trend: 'up' as const },
+    ];
+  } else if (parentBgId === 'fih') {
+    distributions = [
+      { id: 'fih_sub1', name: 'Server', factor: 0.45, trend: 'up' as const },
+      { id: 'fih_sub2', name: 'AI/HPC', factor: 0.35, trend: 'up' as const },
+      { id: 'fih_sub3', name: 'Networking', factor: 0.20, trend: 'flat' as const },
+      { id: 'fih_sub4', name: 'Storage', factor: 0.20, trend: 'flat' as const },
+      { id: 'fih_sub5', name: 'IIOT', factor: 0.20, trend: 'flat' as const },
+      { id: 'fih_sub6', name: 'Automation', factor: 0.20, trend: 'flat' as const },
+    ];
+  } else if (parentBgId === 'fii') {
+    distributions = [
+      { id: 'fii_sub1', name: 'Smartphone', factor: 0.50, trend: 'flat' as const },
+      { id: 'fii_sub2', name: 'Feature Phone', factor: 0.30, trend: 'up' as const },
+      { id: 'fii_sub3', name: 'Smart Device', factor: 0.20, trend: 'up' as const },
+      { id: 'fii_sub4', name: 'ODM', factor: 0.20, trend: 'up' as const },
+      { id: 'fii_sub5', name: 'EMS', factor: 0.20, trend: 'up' as const },
+    ];
+  } else if (parentBgId === 'others') {
+    distributions = [
+      { id: 'others_sub1', name: 'Sharp', factor: 0.40, trend: 'up' as const },
+      { id: 'others_sub2', name: 'MIH/EV', factor: 0.35, trend: 'up' as const },
+      { id: 'others_sub3', name: 'Others', factor: 0.25, trend: 'flat' as const },
+    ];
+  } else {
+    // Default distribution for any other parentBgId
+    distributions = [
+      { id: 'ipbg', name: 'A Group', factor: 0.35, trend: 'up' as const },
+      { id: 'cnsbg', name: 'B Group', factor: 0.30, trend: 'flat' as const },
+      { id: 'cesbg', name: 'C Group', factor: 0.15, trend: 'up' as const },
+      { id: 'others_sub', name: 'E Group', factor: 0.10, trend: 'down' as const },
+      { id: 'others_sub_2', name: 'S Group', factor: 0.10, trend: 'down' as const },
+    ];
+  }
 
   return distributions.map((dist) => {
     const revValue = parentData.rev.value * dist.factor;
