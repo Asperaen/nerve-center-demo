@@ -210,8 +210,8 @@ export default function BusinessGroupPerformancePage() {
 
   const timeframeOptions: { value: TimeframeOption; label: string }[] = [
     { value: 'full-year', label: 'Full-year forecast' },
-    { value: 'rest-of-year', label: 'Rest of Year forecast' },
     { value: 'ytm', label: 'Year to Month actuals' },
+    { value: 'rest-of-year', label: 'Rest of Year forecast' },
     { value: 'in-quarter', label: 'In-quarter actuals' },
     { value: 'in-month', label: 'In-month actuals' },
   ];
