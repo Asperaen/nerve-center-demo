@@ -1019,7 +1019,7 @@ export default function ExecutiveSummaryPage() {
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
               <ChartBarIcon className='w-6 h-6 text-primary-600' />
-              Business Group Performance
+              Business Group Performance (Quarterly Actual)
             </h2>
             <div className='flex items-center gap-4'>
               <div className='flex items-center gap-2'>
