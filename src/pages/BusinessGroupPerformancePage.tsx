@@ -127,11 +127,11 @@ export default function BusinessGroupPerformancePage() {
   const handleStageClick = (stageType: NPDeviationStageType) => {
     const stageLabels: Partial<Record<NPDeviationStageType, string>> = {
       'budget-np': 'Budget NP',
-      'vol-impact': 'Product Analysis',
-      'price-impact': 'Product Analysis',
-      'cost-impact': 'Product Analysis',
+      'vol-impact': 'COSG analysis',
+      'price-impact': 'COSG analysis',
+      'cost-impact': 'COSG analysis',
     };
-    navigateToLayer(2, stageLabels[stageType] || 'Product Analysis');
+    navigateToLayer(2, stageLabels[stageType] || 'COSG analysis');
   };
 
   const handleCostImpactClick = () => {
