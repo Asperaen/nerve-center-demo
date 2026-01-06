@@ -568,7 +568,7 @@ export default function ProductAnalysisLayer({
             <div className='flex items-center justify-between mb-6'>
               <div>
                 <h3 className='text-xl font-bold text-gray-900'>
-                  MVA Breakdown
+                  MVA Breakdown (Quarterly Actual)
                 </h3>
                 <p className='text-sm text-gray-500 mt-1'>
                   Manufacturing Value Add Cost Analysis
@@ -653,7 +653,7 @@ export default function ProductAnalysisLayer({
                       dataKey='delta'
                       position='middle'
                       formatter={(value: any) =>
-                        `${value >= 0 ? '' : ''}${Number(value).toFixed(1)}`
+                        `${value >= 0 ? '' : ''}${Number(value).toFixed(1)}M`
                       }
                       style={{
                         fontSize: '11px',

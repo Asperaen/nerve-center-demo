@@ -618,7 +618,7 @@ export default function BusinessGroupPerformancePage() {
             <div className='flex items-center justify-between mb-6'>
               <div>
                 <h2 className='text-2xl font-bold text-gray-900'>
-                  NP Deviation Breakdown
+                  NP Deviation Breakdown (Quarterly Actual)
                 </h2>
                 <p className='text-sm text-gray-500 mt-1 flex items-center gap-1'>
                   <ArrowRightIcon className='w-4 h-4 text-blue-500' />
@@ -741,7 +741,7 @@ export default function BusinessGroupPerformancePage() {
                       }
                       style={{
                         fontSize: '11px',
-                        fill: '#374151',
+                        fill: 'white',
                         fontWeight: 'bold',
                       }}
                     />
