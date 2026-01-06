@@ -65,7 +65,7 @@ export default function ExternalPulsePage() {
 
         <div className='mb-6'>
           <div className='flex items-center justify-between mb-2'>
-            <h1 className='text-3xl font-bold text-gray-900'>Critical Insights</h1>
+            <h1 className='text-3xl font-bold text-gray-900'>External Pulse</h1>
             <button
               onClick={() => setIsCreateActionModalOpen(true)}
               className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>

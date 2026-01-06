@@ -40,7 +40,7 @@ export default function RightSidebar({
     },
     {
       id: 'external-pulse',
-      label: 'Critical Insights',
+      label: 'External Pulse',
       path: '/external-pulse',
       icon: SparklesIcon,
     },

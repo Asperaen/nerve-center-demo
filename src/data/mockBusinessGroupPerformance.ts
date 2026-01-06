@@ -425,18 +425,6 @@ const subGroupAiInsights: Record<string, Record<string, string>> = {
     op: 'Operating efficiency high with mature product lines and global distribution.',
     np: 'Net profit solid with strong cash flow generation from consumer business.',
   },
-  fit_sub6: {
-    rev: 'FIT Direct revenue from direct-to-consumer channels and online sales platforms.',
-    gp: 'GP margins optimizing with digital transformation and reduced intermediary costs.',
-    op: 'Operating costs managed through e-commerce efficiency and logistics optimization.',
-    np: 'Net profit growth driven by expanding online presence and customer acquisition.',
-  },
-  fit_sub7: {
-    rev: 'FIT Management revenue from corporate services and business development initiatives.',
-    gp: 'GP margins variable based on service contracts and project complexity.',
-    op: 'Operating investments in corporate functions and strategic initiatives.',
-    np: 'Net profit reflecting investment phase for long-term corporate development.',
-  },
   fih_sub1: {
     rev: 'Server revenue growing with enterprise data center and cloud computing demand.',
     gp: 'GP margins expanding with high-volume server component production.',
@@ -547,8 +535,6 @@ const generateSubGroupData = (
       { id: 'fit_sub3', name: 'Audio', factor: 0.25, trend: 'up' as const },
       { id: 'fit_sub4', name: 'Mobility', factor: 0.25, trend: 'up' as const },
       { id: 'fit_sub5', name: 'Belkin', factor: 0.25, trend: 'up' as const },
-      { id: 'fit_sub6', name: 'FIT Direct', factor: 0.25, trend: 'up' as const },
-      { id: 'fit_sub7', name: 'FIT Mngt.', factor: 0.25, trend: 'up' as const },
     ];
   } else if (parentBgId === 'fih') {
     distributions = [

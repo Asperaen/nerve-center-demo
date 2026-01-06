@@ -210,8 +210,8 @@ export default function BusinessGroupPerformancePage() {
 
   const timeframeOptions: { value: TimeframeOption; label: string }[] = [
     { value: 'full-year', label: 'Full-year forecast' },
-    { value: 'ytm', label: 'Year to Month actuals' },
     { value: 'rest-of-year', label: 'Rest of Year forecast' },
+    { value: 'ytm', label: 'Year to Month actuals' },
     { value: 'in-quarter', label: 'In-quarter actuals' },
     { value: 'in-month', label: 'In-month actuals' },
   ];
@@ -285,7 +285,7 @@ export default function BusinessGroupPerformancePage() {
             vs budget ${metric.baseline.toFixed(1)}B
           </div>
           <div className='text-xs text-gray-500'>
-            vs STLY ${metric.baseline.toFixed(1)}B
+            vs Last Year ${metric.baseline.toFixed(1)}B
           </div>
         </div>
         <div className='flex flex-col gap-0.5'>
