@@ -213,8 +213,8 @@ export default function BusinessGroupPerformancePage() {
 
   const timeframeOptions: { value: TimeframeOption; label: string }[] = [
     { value: 'full-year', label: 'Full-year forecast' },
-    { value: 'rest-of-year', label: 'Rest of Year forecast' },
     { value: 'ytm', label: 'Year to Month actuals' },
+    { value: 'rest-of-year', label: 'Rest of Year forecast' },
     { value: 'in-quarter', label: 'In-quarter actuals' },
     { value: 'in-month', label: 'In-month actuals' },
   ];
@@ -653,19 +653,24 @@ export default function BusinessGroupPerformancePage() {
                     height={120}
                     tick={(props) => {
                       const { x, y, payload } = props;
-                      const isHighlighted = ['Vol. impact', 'Price impact', 'Cost impact', 'Mix impact', 'MVA Deviation'].includes(payload.value);
+                      const isHighlighted = [
+                        'Vol. impact',
+                        'Price impact',
+                        'Cost impact',
+                        'Mix impact',
+                        'MVA Deviation',
+                      ].includes(payload.value);
                       return (
                         <text
                           x={x}
                           y={y}
-                          textAnchor="end"
+                          textAnchor='end'
                           transform={`rotate(-15, ${x}, ${y})`}
                           style={{
                             fontSize: '11px',
                             fill: isHighlighted ? '#1e3a8a' : '#374151',
-                            fontWeight: isHighlighted ? 'bold' : 'normal'
-                          }}
-                        >
+                            fontWeight: isHighlighted ? 'bold' : 'normal',
+                          }}>
                           {payload.value}
                         </text>
                       );
@@ -681,12 +686,12 @@ export default function BusinessGroupPerformancePage() {
                     }}
                   />
                   <ReferenceArea
-                    x1="Vol. impact"
-                    x2="MVA Deviation"
-                    fill="#3b82f6"
+                    x1='Vol. impact'
+                    x2='MVA Deviation'
+                    fill='#3b82f6'
                     fillOpacity={0.2}
-                    stroke="#1e40af"
-                    strokeDasharray="5 5"
+                    stroke='#1e40af'
+                    strokeDasharray='5 5'
                   />
                   <Tooltip
                     formatter={(
@@ -707,8 +712,7 @@ export default function BusinessGroupPerformancePage() {
                       const delta = payload?.delta;
                       const isClickable = payload?.isClickable;
 
-                      const tooltipLines: string[] = [
-                        ];
+                      const tooltipLines: string[] = [];
 
                       if (delta !== undefined && delta !== cumulative) {
                         tooltipLines.push(
