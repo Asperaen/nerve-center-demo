@@ -21,18 +21,15 @@ import {
   Legend,
 } from 'recharts';
 import CreateActionModal from '../components/CreateActionModal';
-import {
-  ProductAnalysisLayer,
-  CostImpactBreakdownLayer,
-  MVABreakdownLayer,
-} from '../components/layers';
+import { ProductAnalysisLayer } from '../components/layers';
 import type {
-  NavigationLayer,
   BreadcrumbItem,
   NPDeviationStageType,
   Proposal,
   ActionProposal,
 } from '../types';
+
+type NavigationLayer = 1 | 2;
 
 export default function FinanceReviewPage() {
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
@@ -93,11 +90,7 @@ export default function FinanceReviewPage() {
       if (prevBreadcrumbs.length > 0) {
         const newBreadcrumbs = [...prevBreadcrumbs];
         newBreadcrumbs.pop();
-        // Navigate to previous layer (currentLayer - 1)
-        setCurrentLayer((prevLayer) => {
-          const previousLayer = (prevLayer - 1) as NavigationLayer;
-          return previousLayer >= 1 ? previousLayer : 1;
-        });
+        setCurrentLayer(1);
         return newBreadcrumbs;
       } else {
         setCurrentLayer(1);
@@ -108,20 +101,12 @@ export default function FinanceReviewPage() {
 
   const handleStageClick = (stageType: NPDeviationStageType) => {
     const stageLabels: Partial<Record<NPDeviationStageType, string>> = {
-      'budget-np': 'Budget NP',
-      'vol-impact': 'Product Analysis',
-      'price-impact': 'Product Analysis',
-      'cost-impact': 'Product Analysis',
+      'budget-np': 'COGS Analysis',
+      'vol-impact': 'COGS Analysis',
+      'price-impact': 'COGS Analysis',
+      'cost-impact': 'COGS Analysis',
     };
-    navigateToLayer(2, stageLabels[stageType] || 'Product Analysis');
-  };
-
-  const handleCostImpactClick = () => {
-    navigateToLayer(3, 'Cost Impact Breakdown');
-  };
-
-  const handleLaborMOHClick = () => {
-    navigateToLayer(4, 'MVA Breakdown');
+    navigateToLayer(2, stageLabels[stageType] || 'COGS Analysis');
   };
 
   // Handler functions for Initiative Proposals
@@ -524,20 +509,6 @@ export default function FinanceReviewPage() {
         {currentLayer === 1 && renderLayer1()}
         {currentLayer === 2 && (
           <ProductAnalysisLayer
-            breadcrumbs={breadcrumbs}
-            onBack={navigateBack}
-            onCostImpactClick={handleCostImpactClick}
-          />
-        )}
-        {currentLayer === 3 && (
-          <CostImpactBreakdownLayer
-            breadcrumbs={breadcrumbs}
-            onBack={navigateBack}
-            onLaborMOHClick={handleLaborMOHClick}
-          />
-        )}
-        {currentLayer === 4 && (
-          <MVABreakdownLayer
             breadcrumbs={breadcrumbs}
             onBack={navigateBack}
           />
