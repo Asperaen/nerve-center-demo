@@ -18,6 +18,7 @@ import {
   Cell,
   ComposedChart,
   Legend,
+  LabelList,
 } from 'recharts';
 import {
   mockProductFamilyData,
@@ -591,6 +592,18 @@ export default function ProductAnalysisLayer({
                     dataKey='barValue'
                     stackId='a'
                     name='MVA Breakdown'>
+                    <LabelList
+                      dataKey='delta'
+                      position='middle'
+                      formatter={(value: any) =>
+                        `${value >= 0 ? '' : ''}${Number(value).toFixed(1)}`
+                      }
+                      style={{
+                        fontSize: '11px',
+                        fill: '#374151',
+                        fontWeight: 'bold',
+                      }}
+                    />
                     {mockMVABreakdownStages.map((stage, index) => {
                       const isBaseline = stage.type === 'baseline';
                       const isPositive = stage.type === 'positive';
