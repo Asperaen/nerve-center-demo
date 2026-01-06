@@ -708,14 +708,11 @@ export default function BusinessGroupPerformancePage() {
                       const isClickable = payload?.isClickable;
 
                       const tooltipLines: string[] = [
-                        `${payload?.label ?? 'Stage'}: $${cumulative.toFixed(
-                          1
-                        )}M`,
-                      ];
+                        ];
 
                       if (delta !== undefined && delta !== cumulative) {
                         tooltipLines.push(
-                          `Change: ${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
+                          `${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
                         );
                       }
 
@@ -737,10 +734,10 @@ export default function BusinessGroupPerformancePage() {
                     stackId='a'
                     name='NP Deviation'>
                     <LabelList
-                      dataKey='cumulativeValue'
+                      dataKey='delta'
                       position='middle'
                       formatter={(value: any) =>
-                        `$${Number(value).toFixed(1)}M`
+                        `${value >= 0 ? '' : ''}$${Number(value).toFixed(1)}M`
                       }
                       style={{
                         fontSize: '11px',
