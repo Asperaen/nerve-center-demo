@@ -738,7 +738,7 @@ export default function BusinessGroupPerformancePage() {
                     name='NP Deviation'>
                     <LabelList
                       dataKey='cumulativeValue'
-                      position='top'
+                      position='middle'
                       formatter={(value: any) =>
                         `$${Number(value).toFixed(1)}M`
                       }
