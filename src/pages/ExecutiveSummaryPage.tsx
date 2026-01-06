@@ -686,15 +686,15 @@ export default function ExecutiveSummaryPage() {
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(1)}B
+              ${metric.value.toFixed(0)}M
             </div>
           </div>
           <div className='text-center'>
             <div className='text-xs text-gray-500 mb-0.5'>
-              vs budget ${metric.baseline.toFixed(1)}B
+              vs budget ${metric.baseline.toFixed(0)}M
             </div>
             <div className='text-xs text-gray-500'>
-              vs Last Year ${metric.baseline.toFixed(1)}B
+              vs Last Year ${metric.baseline.toFixed(0)}M
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>
@@ -1017,10 +1017,15 @@ export default function ExecutiveSummaryPage() {
         {/* Business Group Performance Section */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-              <ChartBarIcon className='w-6 h-6 text-primary-600' />
-              Business Group Performance (Quarterly Actual)
-            </h2>
+            <div>
+              <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+                <ChartBarIcon className='w-6 h-6 text-primary-600' />
+                Business Group Performance
+              </h2>
+              <p className='text-sm text-gray-600 mt-1'>
+                Quarterly Actual, USD
+              </p>
+            </div>
             <div className='flex items-center gap-4'>
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-gray-600'>Show Details</span>

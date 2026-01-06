@@ -559,6 +559,9 @@ export default function BusinessGroupPerformancePage() {
             </div>
           </div>
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
+            <p className='text-sm text-gray-600 mt-1'>
+              Quarterly Actual, USD
+            </p>
             <table className='w-full'>
               <thead>
                 <tr className='bg-gray-50'>
