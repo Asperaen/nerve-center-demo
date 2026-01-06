@@ -836,11 +836,11 @@ export const mockNPDeviationStages: NPDeviationStage[] = [
   },
   {
     stage: 'cost-impact',
-    label: 'Material',
+    label: 'Material & Outsource',
     value: 15.287366259, // Previous - Cost impact
     delta: -6.963,
     type: 'negative',
-    description: 'Material cost impact on Net Profit',
+    description: 'Material & Outsource cost impact on Net Profit',
     isClickable: true,
   },
   {

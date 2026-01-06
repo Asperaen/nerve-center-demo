@@ -633,8 +633,8 @@ export default function BusinessGroupPerformancePage() {
                 <p className='text-sm text-gray-500 mt-1 flex items-center gap-1'>
                   <ArrowRightIcon className='w-4 h-4 text-blue-500' />
                   <span>
-                    Click on Budget NP, Vol. impact, Price impact, Material, or
-                    MVA Deviation to drill down
+                    Click on Budget NP, Vol. impact, Price impact, Material &
+                    Outsource, or MVA Deviation to drill down
                   </span>
                 </p>
               </div>
@@ -666,7 +666,7 @@ export default function BusinessGroupPerformancePage() {
                       const isHighlighted = [
                         'Vol. impact',
                         'Price impact',
-                        'Material',
+                        'Material & Outsource',
                         'MVA Deviation',
                         'Mix impact',
                       ].includes(payload.value);

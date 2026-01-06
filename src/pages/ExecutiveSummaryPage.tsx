@@ -59,7 +59,8 @@ export default function ExecutiveSummaryPage() {
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  const [showComparisonDetails, setShowComparisonDetails] = useState<boolean>(true);
+  const [showComparisonDetails, setShowComparisonDetails] =
+    useState<boolean>(true);
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -629,8 +630,16 @@ export default function ExecutiveSummaryPage() {
     metric: BusinessGroupMetricWithTrend,
     groupName: string,
     metricName: string,
-    isLast: boolean = false
+    isLast: boolean = false,
+    groupId?: string,
+    isNavigable?: boolean
   ) => {
+    const handleCellClick = (e: React.MouseEvent) => {
+      if (isNavigable && groupId) {
+        e.stopPropagation(); // Prevent row expansion from triggering
+        navigate(`/business-group-performance?bu=${groupId}`);
+      }
+    };
     const percentColor =
       metric.percent > 0
         ? 'bg-green-100 text-green-700'
@@ -665,9 +674,12 @@ export default function ExecutiveSummaryPage() {
       return (
         <td
           key={metricName}
+          onClick={handleCellClick}
           className={`px-4 py-3 border-b border-gray-200 ${
             !isLast ? 'border-r' : ''
-          } relative group`}>
+          } relative group ${
+            isNavigable ? 'cursor-pointer hover:bg-primary-50/50' : ''
+          }`}>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
               ${metric.value.toFixed(1)}B
@@ -680,9 +692,12 @@ export default function ExecutiveSummaryPage() {
     return (
       <td
         key={metricName}
+        onClick={handleCellClick}
         className={`px-4 py-3 border-b border-gray-200 ${
           !isLast ? 'border-r' : ''
-        } relative group`}>
+        } relative group ${
+          isNavigable ? 'cursor-pointer hover:bg-primary-50/50' : ''
+        }`}>
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
@@ -759,8 +774,7 @@ export default function ExecutiveSummaryPage() {
                     cx='180'
                     cy={
                       40 -
-                      ((trendValues[trendValues.length - 1] - minVal) /
-                        range) *
+                      ((trendValues[trendValues.length - 1] - minVal) / range) *
                         35
                     }
                     r='3'
@@ -801,6 +815,9 @@ export default function ExecutiveSummaryPage() {
     isOverallRow: boolean = false
   ) => {
     const isExpanded = expandedRows.has(group.id);
+    // Only main business groups (not sub-groups, not overall/Grand Total) should navigate on click
+    const isMetricNavigable =
+      !isSubGroup && !isOverallRow && group.id !== 'overall';
 
     return (
       <tr
@@ -833,10 +850,38 @@ export default function ExecutiveSummaryPage() {
             </span>
           </div>
         </td>
-        {renderMetricCell(group.rev, group.name, 'Revenue')}
-        {renderMetricCell(group.gp, group.name, 'Gross Profit')}
-        {renderMetricCell(group.op, group.name, 'Operating Profit')}
-        {renderMetricCell(group.np, group.name, 'Net Profit', true)}
+        {renderMetricCell(
+          group.rev,
+          group.name,
+          'Revenue',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.gp,
+          group.name,
+          'Gross Profit',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.op,
+          group.name,
+          'Operating Profit',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.np,
+          group.name,
+          'Net Profit',
+          true,
+          group.id,
+          isMetricNavigable
+        )}
       </tr>
     );
   };
@@ -1025,14 +1070,17 @@ export default function ExecutiveSummaryPage() {
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-gray-600'>Show Details</span>
                 <button
-                  onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                  onClick={() =>
+                    setShowComparisonDetails(!showComparisonDetails)
+                  }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                     showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
                   }`}>
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                       showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
+                    }`}
+                  />
                 </button>
               </div>
               <Link
