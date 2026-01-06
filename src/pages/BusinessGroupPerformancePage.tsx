@@ -71,6 +71,9 @@ export default function BusinessGroupPerformancePage() {
   // Layer navigation state
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
+  const [selectedCOGSTab, setSelectedCOGSTab] = useState<'sites' | 'products'>(
+    'sites'
+  );
 
   // Get main BU options
   const mainBuOptions = getMainBusinessGroupOptions();
@@ -130,12 +133,19 @@ export default function BusinessGroupPerformancePage() {
       'vol-impact': 'COSG analysis',
       'price-impact': 'COSG analysis',
       'cost-impact': 'COSG analysis',
+      'mva-deviation': 'COSG analysis',
     };
-    navigateToLayer(2, stageLabels[stageType] || 'COSG analysis');
-  };
 
-  const handleCostImpactClick = () => {
-    navigateToLayer(3, 'Cost Impact Breakdown');
+    // Set the tab based on clicked stage
+    if (stageType === 'cost-impact') {
+      setSelectedCOGSTab('products');
+    } else if (stageType === 'mva-deviation') {
+      setSelectedCOGSTab('sites');
+    } else {
+      setSelectedCOGSTab('sites');
+    }
+
+    navigateToLayer(2, stageLabels[stageType] || 'COSG analysis');
   };
 
   const handleLaborMOHClick = () => {
@@ -623,8 +633,8 @@ export default function BusinessGroupPerformancePage() {
                 <p className='text-sm text-gray-500 mt-1 flex items-center gap-1'>
                   <ArrowRightIcon className='w-4 h-4 text-blue-500' />
                   <span>
-                    Click on Budget NP, Vol. impact, Price impact, or Cost
-                    impact to drill down
+                    Click on Budget NP, Vol. impact, Price impact, Material, or
+                    MVA Deviation to drill down
                   </span>
                 </p>
               </div>
@@ -656,9 +666,9 @@ export default function BusinessGroupPerformancePage() {
                       const isHighlighted = [
                         'Vol. impact',
                         'Price impact',
-                        'Cost impact',
-                        'Mix impact',
+                        'Material',
                         'MVA Deviation',
+                        'Mix impact',
                       ].includes(payload.value);
                       return (
                         <text
@@ -687,11 +697,12 @@ export default function BusinessGroupPerformancePage() {
                   />
                   <ReferenceArea
                     x1='Vol. impact'
-                    x2='MVA Deviation'
+                    x2='Mix impact'
                     fill='#3b82f6'
                     fillOpacity={0.2}
                     stroke='#1e40af'
                     strokeDasharray='5 5'
+                    style={{ pointerEvents: 'none' }}
                   />
                   <Tooltip
                     formatter={(
@@ -807,7 +818,7 @@ export default function BusinessGroupPerformancePage() {
             <ProductAnalysisLayer
               breadcrumbs={breadcrumbs}
               onBack={navigateBack}
-              onCostImpactClick={handleCostImpactClick}
+              initialTab={selectedCOGSTab}
             />
           )}
           {currentLayer === 3 && (
