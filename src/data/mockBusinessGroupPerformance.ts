@@ -258,7 +258,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
   },
 ];
 
-// Calculate overall consolidated totals
+// Calculate Grand total totals
 export const calculateOverallConsolidated = (): BusinessGroupData => {
   const totals = mockBusinessGroupData.reduce(
     (acc, group) => ({
@@ -319,7 +319,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
 
   return {
     id: 'overall',
-    name: 'Overall consolidated',
+    name: 'Grand total',
     rev: {
       value: totals.rev.value,
       baseline: totals.rev.baseline,
