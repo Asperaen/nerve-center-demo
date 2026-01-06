@@ -290,15 +290,15 @@ export default function BusinessGroupPerformancePage() {
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(1)}B
+              ${metric.value.toFixed(1)}M
             </div>
           </div>
           <div className='text-center'>
             <div className='text-xs text-gray-500 mb-0.5'>
-              vs budget ${metric.baseline.toFixed(1)}B
+              vs budget ${metric.baseline.toFixed(1)}M
             </div>
             <div className='text-xs text-gray-500'>
-              vs Last Year ${metric.baseline.toFixed(1)}B
+              vs Last Year ${metric.baseline.toFixed(1)}M
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>
