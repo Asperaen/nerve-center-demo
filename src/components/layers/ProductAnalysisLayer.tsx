@@ -5,6 +5,8 @@ import {
   InformationCircleIcon,
   ChevronRightIcon,
   ArrowRightIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import {
   Bar,
@@ -46,6 +48,15 @@ interface ProductAnalysisLayerProps {
   breadcrumbs: BreadcrumbItem[];
   onBack: () => void;
 }
+
+// Sorting types for site table
+type SiteSortColumn =
+  | 'factory'
+  | 'costImpact'
+  | 'initiatives'
+  | 'expectedImpact'
+  | 'actualImpact';
+type SortDirection = 'asc' | 'desc';
 
 // Stage badge color mapping
 const getStageColor = (stage: string): string => {
@@ -191,6 +202,10 @@ export default function ProductAnalysisLayer({
   const [selectedSite, setSelectedSite] = useState<string>('all'); // 'all' or specific site name
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [siteSortColumn, setSiteSortColumn] =
+    useState<SiteSortColumn>('costImpact');
+  const [siteSortDirection, setSiteSortDirection] =
+    useState<SortDirection>('asc');
 
   // Get unique sites from cost impact data
   const uniqueSites = useMemo(() => {
@@ -239,8 +254,79 @@ export default function ProductAnalysisLayer({
     if (selectedSite !== 'all') {
       data = data.filter((row) => row.factory === selectedSite);
     }
-    return data.sort((a, b) => a.costImpact - b.costImpact);
-  }, [aggregatedByFactory, selectedSite]);
+
+    // Sort based on selected column and direction
+    return data.sort((a, b) => {
+      let comparison = 0;
+
+      switch (siteSortColumn) {
+        case 'factory':
+          comparison = a.factory.localeCompare(b.factory);
+          break;
+        case 'costImpact':
+          comparison = a.costImpact - b.costImpact;
+          break;
+        case 'initiatives': {
+          const aInitiatives = mockFactoryInitiatives[a.factory]?.length || 0;
+          const bInitiatives = mockFactoryInitiatives[b.factory]?.length || 0;
+          comparison = aInitiatives - bInitiatives;
+          break;
+        }
+        case 'expectedImpact': {
+          const aExpected = (mockFactoryInitiatives[a.factory] || []).reduce(
+            (sum, i) => sum + i.expectedImpact,
+            0
+          );
+          const bExpected = (mockFactoryInitiatives[b.factory] || []).reduce(
+            (sum, i) => sum + i.expectedImpact,
+            0
+          );
+          comparison = aExpected - bExpected;
+          break;
+        }
+        case 'actualImpact': {
+          const aActual = (mockFactoryInitiatives[a.factory] || []).reduce(
+            (sum, i) => sum + i.actualImpact,
+            0
+          );
+          const bActual = (mockFactoryInitiatives[b.factory] || []).reduce(
+            (sum, i) => sum + i.actualImpact,
+            0
+          );
+          comparison = aActual - bActual;
+          break;
+        }
+        default:
+          comparison = 0;
+      }
+
+      return siteSortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [aggregatedByFactory, selectedSite, siteSortColumn, siteSortDirection]);
+
+  // Handle column header click for sorting
+  const handleSiteSort = (column: SiteSortColumn) => {
+    if (siteSortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSiteSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      // Set new column with default direction
+      setSiteSortColumn(column);
+      setSiteSortDirection(column === 'factory' ? 'asc' : 'desc');
+    }
+  };
+
+  // Sort indicator component
+  const SortIndicator = ({ column }: { column: SiteSortColumn }) => {
+    if (siteSortColumn !== column) {
+      return <span className='ml-1 text-gray-300'>⇅</span>;
+    }
+    return siteSortDirection === 'asc' ? (
+      <ChevronUpIcon className='w-4 h-4 ml-1 inline' />
+    ) : (
+      <ChevronDownIcon className='w-4 h-4 ml-1 inline' />
+    );
+  };
 
   // Handle site selection change
   const handleSiteChange = (site: string) => {
@@ -602,33 +688,74 @@ export default function ProductAnalysisLayer({
                 {selectedSite === 'all'
                   ? 'Showing all sites'
                   : `Filtered by: ${selectedSite}`}{' '}
-                | Sorted by: Cost Impact (K)
+                | Sorted by:{' '}
+                {siteSortColumn === 'factory'
+                  ? 'Factory'
+                  : siteSortColumn === 'costImpact'
+                  ? 'MVA Impact'
+                  : siteSortColumn === 'initiatives'
+                  ? '# of Initiatives'
+                  : siteSortColumn === 'expectedImpact'
+                  ? 'Expected Impact'
+                  : 'Actual Impact'}{' '}
+                ({siteSortDirection === 'asc' ? '↑' : '↓'})
               </p>
             </div>
             <div className='overflow-x-auto'>
               <table className='w-full'>
                 <thead className='bg-gray-50'>
                   <tr>
-                    <th className='text-left py-3 px-4 text-sm font-semibold text-gray-700'>
-                      Factory
+                    <th
+                      onClick={() => handleSiteSort('factory')}
+                      className='text-left py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center'>
+                        Factory
+                        <SortIndicator column='factory' />
+                      </span>
                     </th>
-                    <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                      MVA Impact (K)
+                    <th
+                      onClick={() => handleSiteSort('costImpact')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        MVA Impact (K)
+                        <SortIndicator column='costImpact' />
+                      </span>
                     </th>
-                    <th className='text-center py-3 px-4 text-sm font-semibold text-gray-700'>
-                      # of Initiatives
+                    <th
+                      onClick={() => handleSiteSort('initiatives')}
+                      className='text-center py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-center'>
+                        # of Initiatives
+                        <SortIndicator column='initiatives' />
+                      </span>
                     </th>
-                    <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                      Expected Initiative Impact (K)
+                    <th
+                      onClick={() => handleSiteSort('expectedImpact')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        Expected Initiative Impact (K)
+                        <SortIndicator column='expectedImpact' />
+                      </span>
                     </th>
-                    <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                      Actual Initiative Impact (K)
+                    <th
+                      onClick={() => handleSiteSort('actualImpact')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        Actual Initiative Impact (K)
+                        <SortIndicator column='actualImpact' />
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody className='divide-y divide-gray-100'>
-                  {filteredSiteData.map((row, index) => {
-                    const isMostNegative = index === 0 && row.costImpact < 0;
+                  {filteredSiteData.map((row) => {
+                    // Find the most negative row regardless of current sort
+                    const mostNegativeImpact = Math.min(
+                      ...filteredSiteData.map((r) => r.costImpact)
+                    );
+                    const isMostNegative =
+                      row.costImpact === mostNegativeImpact &&
+                      row.costImpact < 0;
 
                     const handleDragStart = (e: React.DragEvent) => {
                       setHoveredFactory(null);
