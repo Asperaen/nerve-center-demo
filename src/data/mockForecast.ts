@@ -2100,6 +2100,114 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
   ],
 };
 
+// Per-Factory MVA Breakdown Data (for Site Table)
+// Values represent delta/impact for each MVA breakdown category (in thousands)
+// Negative = adverse, Positive = favorable
+import type { FactoryMVABreakdownMap } from '../types';
+
+export const mockFactoryMVABreakdown: FactoryMVABreakdownMap = {
+  'Suzhou Plant': {
+    dlEfficiency: -0.18, // Direct Labour Efficiency
+    dlHourlyRate: -0.08, // DL Hourly Rate Impact
+    fixedMOH: -0.05, // Fixed MOH
+    fxImpact: -0.09, // FX Impact
+    idlHourlyRate: -0.03, // IDL Hourly Rate Impact
+    idlImpact: -0.04, // IDL Impact
+    variableMOH: -0.05, // Variable MOH
+    volumeVariance: -0.25, // Volume Variance
+  },
+  'Dongguan Plant': {
+    dlEfficiency: -0.12,
+    dlHourlyRate: -0.05,
+    fixedMOH: -0.04,
+    fxImpact: -0.06,
+    idlHourlyRate: -0.02,
+    idlImpact: -0.03,
+    variableMOH: -0.03,
+    volumeVariance: -0.15,
+  },
+  'Shenzhen Plant': {
+    dlEfficiency: 0.08, // Favorable
+    dlHourlyRate: 0.03,
+    fixedMOH: 0.02,
+    fxImpact: -0.02,
+    idlHourlyRate: 0.01,
+    idlImpact: 0.02,
+    variableMOH: 0.01,
+    volumeVariance: 0.1,
+  },
+  'Kunshan Plant': {
+    dlEfficiency: -0.1,
+    dlHourlyRate: -0.04,
+    fixedMOH: -0.03,
+    fxImpact: -0.05,
+    idlHourlyRate: -0.02,
+    idlImpact: -0.02,
+    variableMOH: -0.02,
+    volumeVariance: -0.12,
+  },
+  'Wuxi Plant': {
+    dlEfficiency: -0.08,
+    dlHourlyRate: -0.03,
+    fixedMOH: -0.02,
+    fxImpact: -0.04,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.02,
+    variableMOH: -0.02,
+    volumeVariance: -0.1,
+  },
+  'Tianjin Plant': {
+    dlEfficiency: -0.06,
+    dlHourlyRate: -0.02,
+    fixedMOH: -0.02,
+    fxImpact: -0.03,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.01,
+    variableMOH: -0.01,
+    volumeVariance: -0.08,
+  },
+  'Chengdu Plant': {
+    dlEfficiency: -0.05,
+    dlHourlyRate: -0.02,
+    fixedMOH: -0.01,
+    fxImpact: -0.02,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.01,
+    variableMOH: -0.01,
+    volumeVariance: -0.06,
+  },
+  'Zhongshan Plant': {
+    dlEfficiency: -0.04,
+    dlHourlyRate: -0.01,
+    fixedMOH: -0.01,
+    fxImpact: -0.02,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.01,
+    variableMOH: -0.01,
+    volumeVariance: -0.05,
+  },
+  'Xiamen Plant': {
+    dlEfficiency: -0.07,
+    dlHourlyRate: -0.03,
+    fixedMOH: -0.02,
+    fxImpact: -0.06,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.02,
+    variableMOH: -0.02,
+    volumeVariance: -0.18,
+  },
+  'Ningbo Plant': {
+    dlEfficiency: -0.03,
+    dlHourlyRate: -0.01,
+    fixedMOH: -0.02,
+    fxImpact: -0.06,
+    idlHourlyRate: -0.01,
+    idlImpact: -0.01,
+    variableMOH: -0.02,
+    volumeVariance: -0.11,
+  },
+};
+
 // Key Call Out for Cost Impact Breakdown
 export const mockCostImpactKeyCallOut: KeyCallOut = {
   id: 'key-callout-cost-impact',

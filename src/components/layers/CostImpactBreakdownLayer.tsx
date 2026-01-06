@@ -261,7 +261,7 @@ export default function CostImpactBreakdownLayer({
       {/* Cost Component Totals Section */}
       <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
         <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-          Cost Component Gaps (Grouped)
+          Cost Component Gaps (Grouped) sfsdfsfsdf
         </h3>
         <div className='grid grid-cols-4 gap-4'>
           <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>

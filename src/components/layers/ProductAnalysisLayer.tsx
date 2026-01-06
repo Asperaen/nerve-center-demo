@@ -29,6 +29,7 @@ import {
   mockMVABreakdownStages,
   mockFactoryInitiatives,
   mockTotalCostImpact,
+  mockFactoryMVABreakdown,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem, FactoryInitiative } from '../../types';
 
@@ -56,7 +57,15 @@ type SiteSortColumn =
   | 'costImpact'
   | 'initiatives'
   | 'expectedImpact'
-  | 'actualImpact';
+  | 'actualImpact'
+  | 'dlEfficiency'
+  | 'dlHourlyRate'
+  | 'fixedMOH'
+  | 'fxImpact'
+  | 'idlHourlyRate'
+  | 'idlImpact'
+  | 'variableMOH'
+  | 'volumeVariance';
 type SortDirection = 'asc' | 'desc';
 
 // Stage badge color mapping
@@ -295,6 +304,54 @@ export default function ProductAnalysisLayer({
             0
           );
           comparison = aActual - bActual;
+          break;
+        }
+        case 'dlEfficiency': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.dlEfficiency ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.dlEfficiency ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'dlHourlyRate': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.dlHourlyRate ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.dlHourlyRate ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'fixedMOH': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.fixedMOH ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.fixedMOH ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'fxImpact': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.fxImpact ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.fxImpact ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'idlHourlyRate': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.idlHourlyRate ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.idlHourlyRate ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'idlImpact': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.idlImpact ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.idlImpact ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'variableMOH': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.variableMOH ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.variableMOH ?? 0;
+          comparison = aVal - bVal;
+          break;
+        }
+        case 'volumeVariance': {
+          const aVal = mockFactoryMVABreakdown[a.factory]?.volumeVariance ?? 0;
+          const bVal = mockFactoryMVABreakdown[b.factory]?.volumeVariance ?? 0;
+          comparison = aVal - bVal;
           break;
         }
         default:
@@ -629,7 +686,7 @@ export default function ProductAnalysisLayer({
           {/* Cost Component Totals Section */}
           <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-              Cost Component Gaps (Grouped)
+              Cost Component Gaps
             </h3>
             <div className='grid grid-cols-4 gap-4'>
               <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
@@ -756,6 +813,71 @@ export default function ProductAnalysisLayer({
                       <span className='inline-flex items-center justify-end'>
                         Actual Initiative Impact (K)
                         <SortIndicator column='actualImpact' />
+                      </span>
+                    </th>
+                    {/* MVA Breakdown Columns */}
+                    <th
+                      onClick={() => handleSiteSort('dlEfficiency')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        DL Efficiency
+                        <SortIndicator column='dlEfficiency' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('dlHourlyRate')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        DL Hourly Rate
+                        <SortIndicator column='dlHourlyRate' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('fixedMOH')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        Fixed MOH
+                        <SortIndicator column='fixedMOH' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('fxImpact')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        FX Impact
+                        <SortIndicator column='fxImpact' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('idlHourlyRate')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        IDL Hourly Rate
+                        <SortIndicator column='idlHourlyRate' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('idlImpact')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        IDL Impact
+                        <SortIndicator column='idlImpact' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('variableMOH')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        Variable MOH
+                        <SortIndicator column='variableMOH' />
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSiteSort('volumeVariance')}
+                      className='text-right py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none'>
+                      <span className='inline-flex items-center justify-end'>
+                        Volume Variance
+                        <SortIndicator column='volumeVariance' />
                       </span>
                     </th>
                   </tr>
@@ -926,6 +1048,73 @@ export default function ProductAnalysisLayer({
                             '-'
                           )}
                         </td>
+                        {/* MVA Breakdown Data Cells */}
+                        {(() => {
+                          const breakdown =
+                            mockFactoryMVABreakdown[row.factory];
+                          const formatValue = (val: number | undefined) => {
+                            if (val === undefined) return '-';
+                            return val >= 0
+                              ? `+${val.toFixed(2)}`
+                              : val.toFixed(2);
+                          };
+                          const getColor = (val: number | undefined) => {
+                            if (val === undefined) return 'text-gray-400';
+                            return val >= 0 ? 'text-green-600' : 'text-red-600';
+                          };
+                          return (
+                            <>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.dlEfficiency
+                                )}`}>
+                                {formatValue(breakdown?.dlEfficiency)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.dlHourlyRate
+                                )}`}>
+                                {formatValue(breakdown?.dlHourlyRate)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.fixedMOH
+                                )}`}>
+                                {formatValue(breakdown?.fixedMOH)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.fxImpact
+                                )}`}>
+                                {formatValue(breakdown?.fxImpact)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.idlHourlyRate
+                                )}`}>
+                                {formatValue(breakdown?.idlHourlyRate)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.idlImpact
+                                )}`}>
+                                {formatValue(breakdown?.idlImpact)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.variableMOH
+                                )}`}>
+                                {formatValue(breakdown?.variableMOH)}
+                              </td>
+                              <td
+                                className={`py-3 px-4 text-sm text-right font-semibold ${getColor(
+                                  breakdown?.volumeVariance
+                                )}`}>
+                                {formatValue(breakdown?.volumeVariance)}
+                              </td>
+                            </>
+                          );
+                        })()}
                       </tr>
                     );
                   })}
@@ -945,6 +1134,41 @@ export default function ProductAnalysisLayer({
                       )
                         .flat()
                         .reduce((sum, i) => sum + i.actualImpact, 0);
+
+                      // Calculate MVA breakdown totals
+                      const breakdownTotals = Object.values(
+                        mockFactoryMVABreakdown
+                      ).reduce(
+                        (acc, b) => ({
+                          dlEfficiency:
+                            acc.dlEfficiency + (b.dlEfficiency ?? 0),
+                          dlHourlyRate:
+                            acc.dlHourlyRate + (b.dlHourlyRate ?? 0),
+                          fixedMOH: acc.fixedMOH + (b.fixedMOH ?? 0),
+                          fxImpact: acc.fxImpact + (b.fxImpact ?? 0),
+                          idlHourlyRate:
+                            acc.idlHourlyRate + (b.idlHourlyRate ?? 0),
+                          idlImpact: acc.idlImpact + (b.idlImpact ?? 0),
+                          variableMOH: acc.variableMOH + (b.variableMOH ?? 0),
+                          volumeVariance:
+                            acc.volumeVariance + (b.volumeVariance ?? 0),
+                        }),
+                        {
+                          dlEfficiency: 0,
+                          dlHourlyRate: 0,
+                          fixedMOH: 0,
+                          fxImpact: 0,
+                          idlHourlyRate: 0,
+                          idlImpact: 0,
+                          variableMOH: 0,
+                          volumeVariance: 0,
+                        }
+                      );
+
+                      const formatTotal = (val: number) =>
+                        val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2);
+                      const getTotalColor = (val: number) =>
+                        val >= 0 ? 'text-green-600' : 'text-red-600';
 
                       return (
                         <tr className='bg-gray-50 font-semibold'>
@@ -971,6 +1195,55 @@ export default function ProductAnalysisLayer({
                           <td className='py-3 px-4 text-sm text-right font-bold text-green-600'>
                             +{(totalActualImpact / 1000).toFixed(2)}M
                           </td>
+                          {/* MVA Breakdown Grand Totals */}
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.dlEfficiency
+                            )}`}>
+                            {formatTotal(breakdownTotals.dlEfficiency)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.dlHourlyRate
+                            )}`}>
+                            {formatTotal(breakdownTotals.dlHourlyRate)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.fixedMOH
+                            )}`}>
+                            {formatTotal(breakdownTotals.fixedMOH)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.fxImpact
+                            )}`}>
+                            {formatTotal(breakdownTotals.fxImpact)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.idlHourlyRate
+                            )}`}>
+                            {formatTotal(breakdownTotals.idlHourlyRate)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.idlImpact
+                            )}`}>
+                            {formatTotal(breakdownTotals.idlImpact)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.variableMOH
+                            )}`}>
+                            {formatTotal(breakdownTotals.variableMOH)}
+                          </td>
+                          <td
+                            className={`py-3 px-4 text-sm text-right font-bold ${getTotalColor(
+                              breakdownTotals.volumeVariance
+                            )}`}>
+                            {formatTotal(breakdownTotals.volumeVariance)}
+                          </td>
                         </tr>
                       );
                     })()}
@@ -985,16 +1258,25 @@ export default function ProductAnalysisLayer({
       {activeTab === 'products' && (
         <div className='space-y-6'>
           {/* Overall Performance Summary */}
-          <div className='bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200'>
-            <p className='text-gray-700 leading-relaxed'>
-              Gross Profit (GP) actuals exceeded budget by 2,350.0 (actual:
-              35,459.2 vs. budget: 33,109.2). Revenue actuals also surpassed
-              budget by 25.5 (actual: 150.1 vs. budget: 124.5). Volume impact
-              (+8,807.7) and price impact (+3,662.22) were the main positive
-              drivers, while cost impact (-7,323.21) and mix impact (-2,796.6)
-              were negative contributors. Product Fam 12 and 26 contributed most
-              to positive GP gap to budget.
-            </p>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-bold text-gray-900'>Key Call Out</h3>
+              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <span className='text-sm'>✨</span>
+                <span>AI</span>
+              </span>
+            </div>
+            <div className='space-y-3'>
+              <p className='text-sm text-gray-700 leading-relaxed'>
+                Gross Profit (GP) actuals exceeded budget by 2,350.0 (actual:
+                35,459.2 vs. budget: 33,109.2). Revenue actuals also surpassed
+                budget by 25.5 (actual: 150.1 vs. budget: 124.5). Volume impact
+                (+8,807.7) and price impact (+3,662.22) were the main positive
+                drivers, while cost impact (-7,323.21) and mix impact (-2,796.6)
+                were negative contributors. Product Fam 12 and 26 contributed
+                most to positive GP gap to budget.
+              </p>
+            </div>
           </div>
 
           {/* OP Impact Overview Cards */}
