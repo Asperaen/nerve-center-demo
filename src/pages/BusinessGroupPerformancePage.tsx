@@ -559,6 +559,32 @@ export default function BusinessGroupPerformancePage() {
           <h2 className='text-2xl font-bold text-gray-900'>
             Performance waterfall
           </h2>
+          {/* Key Call Out Section */}
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
+              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <span className='text-sm'>✨</span>
+                <span>AI</span>
+              </span>
+            </div>
+            <div className='space-y-3'>
+              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
+                  <li
+                    key={index}
+                    className='text-sm'>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <div className='mt-4 pt-4 border-t border-gray-200'>
+                <p className='text-sm text-gray-700 leading-relaxed'>
+                  {mockNPDeviationKeyCallOut.rootCauseAnalysis}
+                </p>
+              </div>
+            </div>
+          </div>
           <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
             <div className='flex items-center justify-between mb-6'>
               <div>
@@ -697,33 +723,6 @@ export default function BusinessGroupPerformancePage() {
                   </Bar>
                 </ComposedChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Key Call Out Section */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
-              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                <span className='text-sm'>✨</span>
-                <span>AI</span>
-              </span>
-            </div>
-            <div className='space-y-3'>
-              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-                {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
-                  <li
-                    key={index}
-                    className='text-sm'>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className='mt-4 pt-4 border-t border-gray-200'>
-                <p className='text-sm text-gray-700 leading-relaxed'>
-                  {mockNPDeviationKeyCallOut.rootCauseAnalysis}
-                </p>
-              </div>
             </div>
           </div>
         </div>
