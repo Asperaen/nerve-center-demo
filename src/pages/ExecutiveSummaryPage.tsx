@@ -59,7 +59,8 @@ export default function ExecutiveSummaryPage() {
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  const [showComparisonDetails, setShowComparisonDetails] = useState<boolean>(true);
+  const [showComparisonDetails, setShowComparisonDetails] =
+    useState<boolean>(true);
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -629,8 +630,16 @@ export default function ExecutiveSummaryPage() {
     metric: BusinessGroupMetricWithTrend,
     groupName: string,
     metricName: string,
-    isLast: boolean = false
+    isLast: boolean = false,
+    groupId?: string,
+    isNavigable?: boolean
   ) => {
+    const handleCellClick = (e: React.MouseEvent) => {
+      if (isNavigable && groupId) {
+        e.stopPropagation(); // Prevent row expansion from triggering
+        navigate(`/business-group-performance?bu=${groupId}`);
+      }
+    };
     const percentColor =
       metric.percent > 0
         ? 'bg-green-100 text-green-700'
@@ -665,9 +674,12 @@ export default function ExecutiveSummaryPage() {
       return (
         <td
           key={metricName}
+          onClick={handleCellClick}
           className={`px-4 py-3 border-b border-gray-200 ${
             !isLast ? 'border-r' : ''
-          } relative group`}>
+          } relative group ${
+            isNavigable ? 'cursor-pointer hover:bg-primary-50/50' : ''
+          }`}>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
               ${metric.value.toFixed(1)}B
@@ -680,9 +692,12 @@ export default function ExecutiveSummaryPage() {
     return (
       <td
         key={metricName}
+        onClick={handleCellClick}
         className={`px-4 py-3 border-b border-gray-200 ${
           !isLast ? 'border-r' : ''
-        } relative group`}>
+        } relative group ${
+          isNavigable ? 'cursor-pointer hover:bg-primary-50/50' : ''
+        }`}>
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
@@ -759,8 +774,7 @@ export default function ExecutiveSummaryPage() {
                     cx='180'
                     cy={
                       40 -
-                      ((trendValues[trendValues.length - 1] - minVal) /
-                        range) *
+                      ((trendValues[trendValues.length - 1] - minVal) / range) *
                         35
                     }
                     r='3'
@@ -801,6 +815,9 @@ export default function ExecutiveSummaryPage() {
     isOverallRow: boolean = false
   ) => {
     const isExpanded = expandedRows.has(group.id);
+    // Only main business groups (not sub-groups, not overall/Grand Total) should navigate on click
+    const isMetricNavigable =
+      !isSubGroup && !isOverallRow && group.id !== 'overall';
 
     return (
       <tr
@@ -833,10 +850,38 @@ export default function ExecutiveSummaryPage() {
             </span>
           </div>
         </td>
-        {renderMetricCell(group.rev, group.name, 'Revenue')}
-        {renderMetricCell(group.gp, group.name, 'Gross Profit')}
-        {renderMetricCell(group.op, group.name, 'Operating Profit')}
-        {renderMetricCell(group.np, group.name, 'Net Profit', true)}
+        {renderMetricCell(
+          group.rev,
+          group.name,
+          'Revenue',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.gp,
+          group.name,
+          'Gross Profit',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.op,
+          group.name,
+          'Operating Profit',
+          false,
+          group.id,
+          isMetricNavigable
+        )}
+        {renderMetricCell(
+          group.np,
+          group.name,
+          'Net Profit',
+          true,
+          group.id,
+          isMetricNavigable
+        )}
       </tr>
     );
   };
@@ -902,116 +947,6 @@ export default function ExecutiveSummaryPage() {
               Create Action
             </button> */}
           </div>
-
-          {/* Executive Briefing - Critical Meetings */}
-          <div className='mb-8'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-                <CalendarIcon className='w-6 h-6 text-primary-600' />
-                🎯 Upcoming Critical Meetings{' '}
-              </h2>
-            </div>
-
-            {/* Upcoming Critical Meetings (up to 5) */}
-            {executiveBriefing.todayMeetings.length > 0 && (
-              <div className='grid grid-cols-5 gap-4 overflow-x-auto'>
-                {executiveBriefing.todayMeetings.map((item) => (
-                  <div
-                    key={item.meeting.id}
-                    className='border-2 border-gray-200 bg-white rounded-xl p-4 transition-all hover:shadow-lg flex flex-col'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-2 mb-2'>
-                        <span className='text-xs font-bold text-gray-700'>
-                          {item.time}
-                        </span>
-                        <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                            item.priority === 'critical'
-                              ? 'bg-red-200 text-red-800'
-                              : item.priority === 'high'
-                              ? 'bg-orange-200 text-orange-800'
-                              : 'bg-blue-200 text-blue-800'
-                          }`}>
-                          {item.priority.toUpperCase()}
-                        </span>
-                      </div>
-                      <h4 className='text-sm font-bold text-gray-900 mb-1.5 line-clamp-2'>
-                        {item.meeting.title}
-                      </h4>
-                      {item.meeting.location && (
-                        <p className='text-xs text-gray-600 mb-1.5 line-clamp-1'>
-                          📍 {item.meeting.location}
-                        </p>
-                      )}
-                      {item.keyAttendees.length > 0 && (
-                        <p className='text-xs text-gray-600 mb-2 line-clamp-2'>
-                          <span className='font-semibold'>With:</span>{' '}
-                          {item.keyAttendees.slice(0, 2).join(', ')}
-                          {item.keyAttendees.length > 2 && ' + more'}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Materials & Action Items */}
-                    {item.materials.length > 0 && (
-                      <div className='mt-3 pt-3 border-t border-gray-200'>
-                        <p className='text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide'>
-                          📋 Prep:
-                        </p>
-                        <div className='space-y-1.5'>
-                          {item.materials.map((material, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex items-start gap-1.5 p-1.5 rounded-md ${
-                                material.type === 'deck'
-                                  ? 'bg-purple-100 border border-purple-300'
-                                  : material.type === 'action'
-                                  ? 'bg-amber-100 border border-amber-300'
-                                  : 'bg-blue-100 border border-blue-300'
-                              }`}>
-                              <span className='text-xs mt-0.5 flex-shrink-0'>
-                                {material.type === 'deck'
-                                  ? '📊'
-                                  : material.type === 'action'
-                                  ? '⚠️'
-                                  : '📄'}
-                              </span>
-                              <div className='flex-1 min-w-0'>
-                                <p className='text-xs font-semibold text-gray-800 line-clamp-2'>
-                                  {material.description}
-                                </p>
-                                {material.items && (
-                                  <ul className='mt-0.5 space-y-0.5'>
-                                    {material.items.map((item, i) => (
-                                      <li
-                                        key={i}
-                                        className='text-xs text-gray-600 list-disc list-inside line-clamp-1'>
-                                        {item}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {executiveBriefing.todayMeetings.length === 0 && (
-              <div className='text-center py-8 text-gray-500'>
-                <CalendarIcon className='w-12 h-12 mx-auto mb-3 text-gray-300' />
-                <p className='text-sm font-medium'>
-                  No critical meetings scheduled
-                </p>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Business Group Performance Section */}
@@ -1030,14 +965,17 @@ export default function ExecutiveSummaryPage() {
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-gray-600'>Show Details</span>
                 <button
-                  onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                  onClick={() =>
+                    setShowComparisonDetails(!showComparisonDetails)
+                  }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                     showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
                   }`}>
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                       showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
+                    }`}
+                  />
                 </button>
               </div>
               <Link

@@ -49,6 +49,7 @@ interface FactoryAggregatedData {
 interface ProductAnalysisLayerProps {
   breadcrumbs: BreadcrumbItem[];
   onBack: () => void;
+  initialTab?: 'sites' | 'products';
 }
 
 // Sorting types for site table
@@ -206,9 +207,10 @@ function FactoryInitiativeTooltip({
 export default function ProductAnalysisLayer({
   breadcrumbs,
   onBack,
+  initialTab = 'sites',
 }: ProductAnalysisLayerProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'sites' | 'products'>('sites');
+  const [activeTab, setActiveTab] = useState<'sites' | 'products'>(initialTab);
   const [selectedSite, setSelectedSite] = useState<string>('all'); // 'all' or specific site name
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -680,71 +682,6 @@ export default function ProductAnalysisLayer({
                   </Bar>
                 </ComposedChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Cost Component Totals Section */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
-            <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-              Cost Component Gaps
-            </h3>
-            <div className='grid grid-cols-4 gap-4'>
-              <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
-                <div className='text-sm font-medium text-gray-700 mb-2 text-left'>
-                  Material
-                </div>
-                <div
-                  className={`text-2xl font-bold text-center ${
-                    mockCostComponentTotals.material >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {mockCostComponentTotals.material >= 0 ? '+' : ''}
-                  {mockCostComponentTotals.material.toLocaleString()}
-                </div>
-              </div>
-              <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
-                <div className='text-sm font-medium text-gray-700 mb-2 text-left'>
-                  Labor
-                </div>
-                <div
-                  className={`text-2xl font-bold text-center ${
-                    mockCostComponentTotals.labor >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {mockCostComponentTotals.labor >= 0 ? '+' : ''}
-                  {mockCostComponentTotals.labor.toLocaleString()}
-                </div>
-              </div>
-              <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
-                <div className='text-sm font-medium text-gray-700 mb-2 text-left'>
-                  MOH
-                </div>
-                <div
-                  className={`text-2xl font-bold text-center ${
-                    mockCostComponentTotals.moh >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {mockCostComponentTotals.moh >= 0 ? '+' : ''}
-                  {mockCostComponentTotals.moh.toLocaleString()}
-                </div>
-              </div>
-              <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
-                <div className='text-sm font-medium text-gray-700 mb-2 text-left'>
-                  Outsource
-                </div>
-                <div
-                  className={`text-2xl font-bold text-center ${
-                    mockCostComponentTotals.outsource >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                  {mockCostComponentTotals.outsource >= 0 ? '+' : ''}
-                  {mockCostComponentTotals.outsource.toLocaleString()}
-                </div>
-              </div>
             </div>
           </div>
 

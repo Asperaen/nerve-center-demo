@@ -836,29 +836,29 @@ export const mockNPDeviationStages: NPDeviationStage[] = [
   },
   {
     stage: 'cost-impact',
-    label: 'Cost impact',
+    label: 'Material & Outsource',
     value: 15.287366259, // Previous - Cost impact
-    delta: -7.323214053,
+    delta: -6.963,
     type: 'negative',
-    description: 'Cost impact on Net Profit',
+    description: 'Material & Outsource cost impact on Net Profit',
+    isClickable: true,
+  },
+  {
+    stage: 'mva-deviation',
+    label: 'MVA Deviation',
+    value: 11.486805062, // Previous - MVA Deviation (moved after Material)
+    delta: -1.9155,
+    type: 'negative',
+    description: 'MVA deviation',
     isClickable: true,
   },
   {
     stage: 'mix-impact',
     label: 'Mix impact',
-    value: 12.490735021, // Previous - Mix impact
+    value: 8.690173824, // Previous - Mix impact
     delta: -2.796631238,
     type: 'negative',
     description: 'Product mix impact on Net Profit',
-    isClickable: false,
-  },
-  {
-    stage: 'mva-deviation',
-    label: 'MVA Deviation',
-    value: 8.690173824, // Previous - MVA Deviation
-    delta: -3.800561197,
-    type: 'negative',
-    description: 'MVA deviation',
     isClickable: false,
   },
   {
@@ -1278,7 +1278,7 @@ export const mockProductFamilyTotals: ProductFamilyData = {
   gpGapToBudget: 2350.034,
   volImpact: 8807.664,
   priceImpact: 3662.216,
-  costImpact: -7323.21,
+  costImpact: -6963,
   mixImpact: -2796.63,
 };
 
