@@ -59,6 +59,8 @@ export default function ExecutiveSummaryPage() {
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
+  const [showComparisonDetails, setShowComparisonDetails] = useState<boolean>(true);
+
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
     const metrics: PulseMetric[] = [];
@@ -659,26 +661,54 @@ export default function ExecutiveSummaryPage() {
         ? '#ef4444'
         : '#6b7280';
 
+    if (!showComparisonDetails) {
+      return (
+        <td
+          key={metricName}
+          className={`px-4 py-3 border-b border-gray-200 ${
+            !isLast ? 'border-r' : ''
+          } relative group`}>
+          <div className='text-left'>
+            <div className='text-base font-bold text-gray-900'>
+              ${metric.value.toFixed(1)}B
+            </div>
+          </div>
+        </td>
+      );
+    }
+
     return (
       <td
         key={metricName}
         className={`px-4 py-3 border-b border-gray-200 ${
           !isLast ? 'border-r' : ''
         } relative group`}>
-        <div className='flex items-center justify-center gap-2'>
-          <div className='text-center'>
+        <div className='flex items-center justify-center gap-4'>
+          <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
               ${metric.value.toFixed(1)}B
             </div>
+          </div>
+          <div className='text-center'>
+            <div className='text-xs text-gray-500 mb-0.5'>
+              vs budget ${metric.baseline.toFixed(1)}B
+            </div>
             <div className='text-xs text-gray-500'>
-              vs ${metric.baseline.toFixed(1)}B
+              vs STLY ${metric.baseline.toFixed(1)}B
             </div>
           </div>
-          <span
-            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-            {percentSign}
-            {metric.percent.toFixed(1)}%
-          </span>
+          <div className='flex flex-col gap-0.5'>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+              {percentSign}
+              {metric.percent.toFixed(1)}%
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+              {percentSign}
+              {metric.percent.toFixed(1)}%
+            </span>
+          </div>
         </div>
 
         {/* Hover Tooltip */}
@@ -991,12 +1021,27 @@ export default function ExecutiveSummaryPage() {
               <ChartBarIcon className='w-6 h-6 text-primary-600' />
               Business Group Performance
             </h2>
-            <Link
-              to='/business-group-performance?bu=all'
-              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-              Business Group Details
-              <ArrowRightIcon className='w-4 h-4' />
-            </Link>
+            <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-gray-600'>Show Details</span>
+                <button
+                  onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                </button>
+              </div>
+              <Link
+                to='/business-group-performance?bu=all'
+                className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
+                Business Group Details
+                <ArrowRightIcon className='w-4 h-4' />
+              </Link>
+            </div>
           </div>
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
             <table className='w-full'>
