@@ -63,7 +63,7 @@ export default function ProductAnalysisLayer({
             className='p-2 hover:bg-gray-100 rounded-lg transition-colors'>
             <ArrowLeftIcon className='w-6 h-6 text-gray-600' />
           </button>
-          <h1 className='text-3xl font-bold text-gray-900'>Product Analysis</h1>
+          <h1 className='text-3xl font-bold text-gray-900'>COGS Analysis</h1>
         </div>
         <div className='flex items-center gap-2'>
           <InformationCircleIcon className='w-5 h-5 text-gray-400' />
@@ -76,7 +76,9 @@ export default function ProductAnalysisLayer({
         <div className='flex items-center gap-2 text-sm text-gray-600'>
           <span>NP Deviation</span>
           {breadcrumbs.map((crumb, index) => (
-            <div key={index} className='flex items-center gap-2'>
+            <div
+              key={index}
+              className='flex items-center gap-2'>
               <ChevronRightIcon className='w-4 h-4' />
               <button
                 onClick={crumb.onClick}
@@ -282,4 +284,3 @@ export default function ProductAnalysisLayer({
     </div>
   );
 }
-
