@@ -5,7 +5,6 @@ import {
   InformationCircleIcon,
   ChevronRightIcon,
   ArrowRightIcon,
-  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import {
   Bar,
@@ -189,8 +188,7 @@ export default function ProductAnalysisLayer({
 }: ProductAnalysisLayerProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'sites' | 'products'>('sites');
-  const [selectedSites, setSelectedSites] = useState<string[]>([]); // Empty means all sites
-  const [isSiteFilterOpen, setIsSiteFilterOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<string>('all'); // 'all' or specific site name
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -238,62 +236,15 @@ export default function ProductAnalysisLayer({
   // Filter and sort site data based on selection
   const filteredSiteData = useMemo(() => {
     let data = [...aggregatedByFactory];
-    if (selectedSites.length > 0) {
-      data = data.filter((row) => selectedSites.includes(row.factory));
+    if (selectedSite !== 'all') {
+      data = data.filter((row) => row.factory === selectedSite);
     }
     return data.sort((a, b) => a.costImpact - b.costImpact);
-  }, [aggregatedByFactory, selectedSites]);
+  }, [aggregatedByFactory, selectedSite]);
 
-  // Toggle site selection
-  const toggleSiteSelection = (site: string) => {
-    setSelectedSites((prev) => {
-      // If currently showing all sites (empty array), deselecting means select all EXCEPT this one
-      if (prev.length === 0) {
-        return uniqueSites.filter((s) => s !== site);
-      }
-
-      // If site is already selected, remove it
-      if (prev.includes(site)) {
-        const newSelection = prev.filter((s) => s !== site);
-        // If removing this site would leave no sites selected, select the first site
-        if (newSelection.length === 0) {
-          return [uniqueSites[0]];
-        }
-        return newSelection;
-      } else {
-        // Add site to selection
-        const newSelection = [...prev, site];
-        // If all sites are now selected, switch to "All Sites" mode (empty array)
-        if (newSelection.length === uniqueSites.length) {
-          return [];
-        }
-        return newSelection;
-      }
-    });
-  };
-
-  // Select/deselect all sites
-  const toggleAllSites = () => {
-    if (selectedSites.length === 0) {
-      // Currently "All Sites" - deselecting means select only the first site
-      setSelectedSites([uniqueSites[0]]);
-    } else {
-      // Select all sites (switch to empty array = all sites mode)
-      setSelectedSites([]);
-    }
-  };
-
-  // Get display text for filter button
-  const getFilterDisplayText = () => {
-    if (selectedSites.length === 0) {
-      return 'All Sites';
-    } else if (selectedSites.length === 1) {
-      return selectedSites[0];
-    } else if (selectedSites.length === uniqueSites.length) {
-      return 'All Sites';
-    } else {
-      return `${selectedSites.length} Sites Selected`;
-    }
+  // Handle site selection change
+  const handleSiteChange = (site: string) => {
+    setSelectedSite(site);
   };
 
   // Prepare MVA chart data
@@ -422,80 +373,32 @@ export default function ProductAnalysisLayer({
         <div className='space-y-6'>
           {/* Site Filter */}
           <div className='flex items-center gap-4'>
-            <label className='text-sm font-medium text-gray-700'>
-              Filter by Site:
-            </label>
-            <div className='relative'>
+            <span className='text-sm font-medium text-gray-600 w-32'>
+              Select Site
+            </span>
+            <div className='flex bg-gray-100 rounded-lg p-1'>
               <button
-                onClick={() => setIsSiteFilterOpen(!isSiteFilterOpen)}
-                className='flex items-center justify-between bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer min-w-[220px]'>
-                <span>{getFilterDisplayText()}</span>
-                <ChevronDownIcon
-                  className={`w-4 h-4 text-gray-500 ml-2 transition-transform ${
-                    isSiteFilterOpen ? 'rotate-180' : ''
-                  }`}
-                />
+                onClick={() => handleSiteChange('all')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  selectedSite === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}>
+                All Sites
               </button>
-
-              {/* Dropdown Menu */}
-              {isSiteFilterOpen && (
-                <>
-                  {/* Backdrop to close dropdown */}
-                  <div
-                    className='fixed inset-0 z-10'
-                    onClick={() => setIsSiteFilterOpen(false)}
-                  />
-                  <div className='absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto'>
-                    {/* Select All Option */}
-                    <div
-                      className='flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200'
-                      onClick={toggleAllSites}>
-                      <input
-                        type='checkbox'
-                        checked={
-                          selectedSites.length === 0 ||
-                          selectedSites.length === uniqueSites.length
-                        }
-                        onChange={toggleAllSites}
-                        className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
-                      />
-                      <span className='text-sm font-medium text-gray-900'>
-                        All Sites
-                      </span>
-                    </div>
-
-                    {/* Individual Sites */}
-                    {uniqueSites.map((site) => (
-                      <div
-                        key={site}
-                        className='flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer'
-                        onClick={() => toggleSiteSelection(site)}>
-                        <input
-                          type='checkbox'
-                          checked={
-                            selectedSites.length === 0 ||
-                            selectedSites.includes(site)
-                          }
-                          onChange={() => toggleSiteSelection(site)}
-                          className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
-                        />
-                        <span className='text-sm text-gray-700'>{site}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Selected sites count badge */}
-            {selectedSites.length > 0 &&
-              selectedSites.length < uniqueSites.length && (
+              {uniqueSites.map((site) => (
                 <button
-                  onClick={() => setSelectedSites([])}
-                  className='text-xs text-primary-600 hover:text-primary-700 font-medium'>
-                  Clear filter
+                  key={site}
+                  onClick={() => handleSiteChange(site)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    selectedSite === site
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}>
+                  {site}
                 </button>
-              )}
+              ))}
+            </div>
           </div>
 
           {/* Key Call Out Panel */}
@@ -696,11 +599,9 @@ export default function ProductAnalysisLayer({
                 Site Cost Impact Details
               </h3>
               <p className='text-sm text-gray-500 mt-1'>
-                {selectedSites.length === 0
+                {selectedSite === 'all'
                   ? 'Showing all sites'
-                  : selectedSites.length === 1
-                  ? `Filtered by: ${selectedSites[0]}`
-                  : `Filtered by: ${selectedSites.length} sites`}{' '}
+                  : `Filtered by: ${selectedSite}`}{' '}
                 | Sorted by: Cost Impact (K)
               </p>
             </div>
@@ -889,7 +790,7 @@ export default function ProductAnalysisLayer({
                     );
                   })}
                   {/* Grand Total Row - only show when all sites */}
-                  {selectedSites.length === 0 &&
+                  {selectedSite === 'all' &&
                     (() => {
                       const totalInitiatives = Object.values(
                         mockFactoryInitiatives
