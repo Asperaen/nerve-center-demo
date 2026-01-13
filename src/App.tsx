@@ -12,6 +12,8 @@ import MeetingDetailView from './components/MeetingDetailView';
 import MyMeetingsPage from './pages/MyMeetingsPage';
 import PowerBIPage from './pages/PowerBIPage';
 import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
+import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
+import MarketIntelligencePage from './pages/MarketIntelligencePage';
 
 function App() {
   return (
@@ -64,6 +66,14 @@ function App() {
             <Route
               path='business-group-performance'
               element={<BusinessGroupPerformancePage />}
+            />
+            <Route
+              path='wave-dashboard'
+              element={<WaveExecutiveDashboardPage />}
+            />
+            <Route
+              path='market-intelligence'
+              element={<MarketIntelligencePage />}
             />
           </Route>
         </Routes>

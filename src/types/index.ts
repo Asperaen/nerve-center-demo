@@ -345,6 +345,28 @@ export interface NPDeviationStage {
   isClickable?: boolean; // First 4 stages are clickable for deep dive
 }
 
+// Budget Forecast Actual Waterfall Types
+export type BudgetForecastStageType =
+  | 'budget'
+  | 'market-performance'
+  | 'l3-vs-target'
+  | 'l4-vs-planned'
+  | 'one-off-adjustments'
+  | 'forecast'
+  | 'l4-to-l5-leakage'
+  | 'actuals';
+
+export interface BudgetForecastStage {
+  stage: BudgetForecastStageType;
+  label: string;
+  value: number; // Cumulative value in millions
+  delta?: number; // Change from previous stage in millions
+  type: 'baseline' | 'positive' | 'negative'; // For color coding
+  description?: string;
+  isClickable?: boolean; // Whether the bar is clickable for navigation
+  navigationTarget?: string; // Route to navigate to when clicked
+}
+
 // Key Call Out Types
 export interface KeyCallOut {
   id: string;
@@ -463,7 +485,8 @@ export interface AppliedAssumption {
   impactType: 'positive' | 'negative'; // tailwind vs headwind
   isApplied?: boolean; // Default true, since these are "already baked in"
   color: string; // Color for visualization in waterfall chart
-  sourceNewsId?: string; // ID of the news item this assumption was derived from
+  sourceNewsId?: string; // ID of the news item this assumption was derived from (single)
+  sourceNewsIds?: string[]; // IDs of multiple news items supporting this assumption
   isSuggested?: boolean; // true if this is a suggested assumption from Pulse, false if applied
   valueDriverChanges?: ValueDriverChange[]; // Value driver changes specific to this assumption
   proposal?: Proposal; // 1-to-1 relationship with Proposal

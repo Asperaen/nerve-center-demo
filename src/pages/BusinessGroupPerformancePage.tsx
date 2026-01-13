@@ -5,21 +5,7 @@ import {
   SparklesIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
-import {
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ComposedChart,
-  Legend,
-  LabelList,
-  ReferenceArea,
-} from 'recharts';
 import {
   getAllBusinessGroupData,
   getSubBusinessGroupsWithOverall,
@@ -29,9 +15,10 @@ import {
   type BusinessGroupData,
 } from '../data/mockBusinessGroupPerformance';
 import {
-  mockNPDeviationStages,
   mockNPDeviationKeyCallOut,
+  mockBudgetForecastStages,
 } from '../data/mockForecast';
+import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import {
   ProductAnalysisLayer,
   CostImpactBreakdownLayer,
@@ -40,11 +27,7 @@ import {
 import TimeframePicker, {
   type TimeframeOption,
 } from '../components/TimeframePicker';
-import type {
-  NavigationLayer,
-  BreadcrumbItem,
-  NPDeviationStageType,
-} from '../types';
+import type { NavigationLayer, BreadcrumbItem } from '../types';
 
 export default function BusinessGroupPerformancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,9 +50,7 @@ export default function BusinessGroupPerformancePage() {
   // Layer navigation state
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
-  const [selectedCOGSTab, setSelectedCOGSTab] = useState<'sites' | 'products'>(
-    'sites'
-  );
+  const [selectedCOGSTab] = useState<'sites' | 'products'>('sites');
 
   // Get main BU options
   const mainBuOptions = getMainBusinessGroupOptions();
@@ -123,27 +104,6 @@ export default function BusinessGroupPerformancePage() {
     });
   };
 
-  const handleStageClick = (stageType: NPDeviationStageType) => {
-    const stageLabels: Partial<Record<NPDeviationStageType, string>> = {
-      'budget-np': 'Budget NP',
-      'vol-impact': 'COSG analysis',
-      'price-impact': 'COSG analysis',
-      'cost-impact': 'COSG analysis',
-      'mva-deviation': 'COSG analysis',
-    };
-
-    // Set the tab based on clicked stage
-    if (stageType === 'cost-impact') {
-      setSelectedCOGSTab('products');
-    } else if (stageType === 'mva-deviation') {
-      setSelectedCOGSTab('sites');
-    } else {
-      setSelectedCOGSTab('sites');
-    }
-
-    navigateToLayer(2, stageLabels[stageType] || 'COSG analysis');
-  };
-
   const handleLaborMOHClick = () => {
     navigateToLayer(4, 'MVA Breakdown');
   };
@@ -176,32 +136,6 @@ export default function BusinessGroupPerformancePage() {
     }
     return getSubBusinessGroupsWithOverall(selectedBu);
   }, [selectedBu]);
-
-  // Prepare chart data for Layer 1 (NP Deviation)
-  const npDeviationChartData = useMemo(() => {
-    return mockNPDeviationStages.map((stage, index) => {
-      const prevValue = index > 0 ? mockNPDeviationStages[index - 1].value : 0;
-      const currentValue = stage.value;
-      const delta =
-        stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
-
-      const isBaseline = stage.type === 'baseline';
-      const barValue = isBaseline ? currentValue : delta;
-      const baselineValue = isBaseline ? 0 : prevValue;
-
-      return {
-        ...stage,
-        name: stage.label,
-        label: stage.label,
-        cumulativeValue: currentValue,
-        delta,
-        baselineValue,
-        barValue,
-        isPositive: delta >= 0,
-        isClickable: stage.isClickable,
-      };
-    });
-  }, []);
 
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
@@ -486,6 +420,44 @@ export default function BusinessGroupPerformancePage() {
         </div>
       </div>
 
+      {/* Key Call Out Section */}
+      <div className='max-w-[1920px] mx-auto px-8 pt-6'>
+        <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
+            <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+              <span className='text-sm'>✨</span>
+              <span>AI</span>
+            </span>
+          </div>
+          <div className='space-y-3'>
+            <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+              {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
+                <li
+                  key={index}
+                  className='text-sm'>
+                  {point}
+                </li>
+              ))}
+            </ul>
+            <div className='mt-4 pt-4 border-t border-gray-200'>
+              <p className='text-sm text-gray-700 leading-relaxed'>
+                {mockNPDeviationKeyCallOut.rootCauseAnalysis}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Budget Forecast Actual Waterfall Section */}
+      <div className='max-w-[1920px] mx-auto px-8 py-6'>
+        <BudgetForecastActualWaterfall
+          stages={mockBudgetForecastStages}
+          title='Budget Forecast Actual Waterfall'
+          subtitle='Click on Market Performance, L3+ vs target, or L4+ vs planned to navigate'
+        />
+      </div>
+
       {/* Content */}
       <div className='max-w-[1920px] mx-auto px-8 py-8'>
         {/* Financial Overview Section */}
@@ -516,32 +488,7 @@ export default function BusinessGroupPerformancePage() {
               </div>
             </div>
           </div>
-          {/* Key Call Out Section */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300 mb-4'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
-              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                <span className='text-sm'>✨</span>
-                <span>AI</span>
-              </span>
-            </div>
-            <div className='space-y-3'>
-              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-                {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
-                  <li
-                    key={index}
-                    className='text-sm'>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className='mt-4 pt-4 border-t border-gray-200'>
-                <p className='text-sm text-gray-700 leading-relaxed'>
-                  {mockNPDeviationKeyCallOut.rootCauseAnalysis}
-                </p>
-              </div>
-            </div>
-          </div>
+
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
             <p className='text-sm text-gray-600 mt-1'>Quarterly Actual, USD</p>
             <table className='w-full'>
@@ -594,190 +541,6 @@ export default function BusinessGroupPerformancePage() {
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* Performance Waterfall Section */}
-        <div className='space-y-6'>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
-            <div className='flex items-center justify-between mb-6'>
-              <div>
-                <h2 className='text-2xl font-bold text-gray-900'>
-                  NP Deviation Breakdown (Quarterly Actual)
-                </h2>
-                <p className='text-sm text-gray-500 mt-1 flex items-center gap-1'>
-                  <ArrowRightIcon className='w-4 h-4 text-blue-500' />
-                  <span>
-                    Click on Budget NP, Vol. impact, Price impact, Material &
-                    Outsource, or MVA Deviation to drill down
-                  </span>
-                </p>
-              </div>
-              <div className='flex items-center gap-4'>
-                <div className='flex items-center gap-2'>
-                  <div className='w-3 h-3 rounded-full bg-green-500'></div>
-                  <span className='text-sm text-gray-700'>Favourable</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <div className='w-3 h-3 rounded-full bg-red-500'></div>
-                  <span className='text-sm text-gray-700'>Adverse</span>
-                </div>
-              </div>
-            </div>
-
-            <div className='h-96'>
-              <ResponsiveContainer
-                width='100%'
-                height='100%'>
-                <ComposedChart data={npDeviationChartData}>
-                  <CartesianGrid strokeDasharray='3 3' />
-                  <XAxis
-                    dataKey='label'
-                    angle={-15}
-                    textAnchor='end'
-                    height={120}
-                    tick={(props) => {
-                      const { x, y, payload } = props;
-                      const isHighlighted = [
-                        'Vol. impact',
-                        'Price impact',
-                        'Material & Outsource',
-                        'MVA Deviation',
-                        'Mix impact',
-                      ].includes(payload.value);
-                      return (
-                        <text
-                          x={x}
-                          y={y}
-                          textAnchor='end'
-                          transform={`rotate(-15, ${x}, ${y})`}
-                          style={{
-                            fontSize: '11px',
-                            fill: isHighlighted ? '#1e3a8a' : '#374151',
-                            fontWeight: isHighlighted ? 'bold' : 'normal',
-                          }}>
-                          {payload.value}
-                        </text>
-                      );
-                    }}
-                  />
-                  <YAxis
-                    style={{ fontSize: '12px' }}
-                    label={{
-                      value: 'Net Profit (Mn USD)',
-                      angle: -90,
-                      position: 'insideLeft',
-                      style: { fontSize: '12px' },
-                    }}
-                  />
-                  <ReferenceArea
-                    x1='Vol. impact'
-                    x2='Mix impact'
-                    fill='#3b82f6'
-                    fillOpacity={0.2}
-                    stroke='#1e40af'
-                    strokeDasharray='5 5'
-                    style={{ pointerEvents: 'none' }}
-                  />
-                  <Tooltip
-                    formatter={(
-                      value: number,
-                      _name: string,
-                      props: {
-                        payload?: {
-                          [key: string]: string | number | boolean | undefined;
-                          cumulativeValue?: number;
-                          delta?: number;
-                          label?: string;
-                          isClickable?: boolean;
-                        };
-                      }
-                    ) => {
-                      const payload = props.payload;
-                      const cumulative = payload?.cumulativeValue ?? value;
-                      const delta = payload?.delta;
-                      const isClickable = payload?.isClickable;
-
-                      const tooltipLines: string[] = [];
-
-                      if (delta !== undefined && delta !== cumulative) {
-                        tooltipLines.push(
-                          `${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
-                        );
-                      }
-
-                      if (isClickable) {
-                        tooltipLines.push('Deep dive →');
-                      }
-
-                      return tooltipLines.join('\n');
-                    }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey='baselineValue'
-                    stackId='a'
-                    fill='transparent'
-                  />
-                  <Bar
-                    dataKey='barValue'
-                    stackId='a'
-                    name='NP Deviation'>
-                    <LabelList
-                      dataKey='delta'
-                      position='middle'
-                      formatter={(value: any) =>
-                        `${value >= 0 ? '' : ''}$${Number(value).toFixed(1)}M`
-                      }
-                      style={{
-                        fontSize: '11px',
-                        fill: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    />
-                    {mockNPDeviationStages.map((stage, index) => {
-                      const isBaseline = stage.type === 'baseline';
-                      const isPositive = stage.type === 'positive';
-
-                      let fillColor = '#6b7280';
-                      if (!isBaseline) {
-                        fillColor = isPositive ? '#10b981' : '#ef4444';
-                      }
-
-                      return (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={fillColor}
-                          style={{
-                            cursor: stage.isClickable ? 'pointer' : 'default',
-                            stroke: stage.isClickable ? '#3b82f6' : 'none',
-                            strokeWidth: stage.isClickable ? 2 : 0,
-                            opacity: stage.isClickable ? 1 : 0.9,
-                          }}
-                          onClick={() => {
-                            if (stage.isClickable) {
-                              handleStageClick(stage.stage);
-                            }
-                          }}
-                          onMouseEnter={(e) => {
-                            if (stage.isClickable) {
-                              e.currentTarget.style.opacity = '0.8';
-                              e.currentTarget.style.strokeWidth = '3';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (stage.isClickable) {
-                              e.currentTarget.style.opacity = '1';
-                              e.currentTarget.style.strokeWidth = '2';
-                            }
-                          }}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
           </div>
         </div>
       </div>

@@ -168,4 +168,64 @@ export const mockNews: NewsItem[] = [
     source: 'Automotive News Europe',
     annotations: [],
   },
+  {
+    id: 'news-12',
+    category: 'Customer & End-market',
+    title: 'Nvidia Reports Record AI Chip Demand, Data Center Revenue Up 122%',
+    summary:
+      'Nvidia AI chip demand surge drives 122% YoY data center revenue growth. Our high-speed connector business positioned to benefit from hyperscaler capex acceleration.',
+    reasoning:
+      'Nvidia reported record quarterly earnings with data center revenue up 122% YoY, driven by unprecedented AI infrastructure demand. Major cloud providers are accelerating capex to meet AI compute needs. This validates our strategic investment in high-speed data center connectors. Recommended actions: Accelerate capacity expansion for 800G/1.6T connectors and strengthen Nvidia partnership.',
+    riskOrOpportunity: 'opportunity',
+    priority: 'high',
+    urgency: 'short_term',
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+    source: 'CNBC',
+    annotations: [],
+  },
+  {
+    id: 'news-13',
+    category: 'Customer & End-market',
+    title: 'Consumer Electronics Demand Softens in Q4 Amid Economic Uncertainty',
+    summary:
+      'Global consumer electronics demand down 8% QoQ. TWS headphone shipments declined 12% affecting our $95M Apple audio business and $45M Samsung audio segment.',
+    reasoning:
+      'Consumer spending on electronics has softened due to macroeconomic headwinds and inflation concerns. Premium audio segment particularly affected with TWS shipments down 12%. May see continued weakness into Q1 2026. Recommended actions: Diversify customer base, accelerate cost reduction initiatives, and explore value segment opportunities.',
+    riskOrOpportunity: 'risk',
+    priority: 'medium',
+    urgency: 'short_term',
+    timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000), // 18 hours ago
+    source: 'IDC Research',
+    annotations: [],
+  },
+  {
+    id: 'news-14',
+    category: 'Customer & End-market',
+    title: 'Apple Revises Q1 Guidance Citing Component Shortages',
+    summary:
+      'Apple lowers Q1 revenue guidance by 5-7% due to component supply constraints. Multiple product launches pushed to Q2 affecting supplier revenue timing.',
+    reasoning:
+      'Apple announced revised Q1 guidance citing ongoing component shortages and production optimization for new products. AirPods Pro and iPad Mini launches delayed by 4-6 weeks. This follows broader industry trend of product launch delays. Recommended actions: Adjust production schedules, manage inventory levels carefully, and confirm revised delivery schedules with Apple.',
+    riskOrOpportunity: 'risk',
+    priority: 'high',
+    urgency: 'short_term',
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+    source: 'Bloomberg',
+    annotations: [],
+  },
+  {
+    id: 'news-15',
+    category: 'Suppliers & Supply Chain',
+    title: 'Global Supply Chain Disruptions Continue Amid Red Sea Tensions',
+    summary:
+      'Red Sea shipping disruptions add 10-14 days to Asia-Europe transit times. Freight costs up 200% affecting material procurement and customer deliveries.',
+    reasoning:
+      'Ongoing tensions in the Red Sea region have forced major shipping lines to reroute around Africa, significantly increasing transit times and costs. This impacts both inbound material procurement from European suppliers and outbound shipments to European customers. Recommended actions: Increase safety stock levels, explore air freight for critical components, and communicate proactively with customers on delivery timelines.',
+    riskOrOpportunity: 'risk',
+    priority: 'high',
+    urgency: 'short_term',
+    timestamp: new Date(Date.now() - 30 * 60 * 60 * 1000), // 30 hours ago
+    source: 'Lloyd\'s List',
+    annotations: [],
+  },
 ];

@@ -39,9 +39,9 @@ export default function RightSidebar({
       icon: BuildingOffice2Icon,
     },
     {
-      id: 'business-group-performance',
+      id: 'market-intelligence',
       label: 'Market Intelligence',
-      path: '/business-group-performance',
+      path: '/market-intelligence',
       icon: CurrencyDollarIcon,
     },
     {

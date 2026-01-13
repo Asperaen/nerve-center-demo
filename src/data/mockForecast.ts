@@ -15,6 +15,7 @@ import type {
   CostComponentTotals,
   MVABreakdownStage,
   Proposal,
+  BudgetForecastStage,
 } from '../types';
 import { addMonths, subDays } from 'date-fns';
 
@@ -901,6 +902,85 @@ export const mockNPDeviationKeyCallOut: KeyCallOut = {
     'The root cause for the positive variance appears to be strong volume performance, while increased costs and OPEX partially offset these gains. This suggests that while sales or production volumes drove profit above budget, cost management remains a key area for improvement.',
   generatedAt: new Date(),
 };
+
+// Budget Forecast Actual Waterfall Stages
+export const mockBudgetForecastStages: BudgetForecastStage[] = [
+  {
+    stage: 'budget',
+    label: 'Budget',
+    value: 30,
+    delta: 30,
+    type: 'baseline',
+    description: 'Initial budget baseline',
+    isClickable: false,
+  },
+  {
+    stage: 'market-performance',
+    label: 'Market Performance',
+    value: 33,
+    delta: 3,
+    type: 'positive',
+    description: 'Market performance impact on forecast',
+    isClickable: true,
+    navigationTarget: '/market-intelligence',
+  },
+  {
+    stage: 'l3-vs-target',
+    label: 'L3+ vs target',
+    value: 43,
+    delta: 10,
+    type: 'positive',
+    description: 'L3+ initiatives performance vs target',
+    isClickable: true,
+    navigationTarget: '/wave-dashboard',
+  },
+  {
+    stage: 'l4-vs-planned',
+    label: 'L4+ vs planned',
+    value: 40,
+    delta: -3,
+    type: 'negative',
+    description: 'L4+ initiatives performance vs planned',
+    isClickable: true,
+    navigationTarget: '/wave-dashboard',
+  },
+  {
+    stage: 'one-off-adjustments',
+    label: 'One-off adjustments',
+    value: 41,
+    delta: 1,
+    type: 'positive',
+    description: 'One-time adjustments to forecast',
+    isClickable: false,
+  },
+  {
+    stage: 'forecast',
+    label: 'Forecast',
+    value: 41,
+    delta: 41,
+    type: 'baseline',
+    description: 'Current forecast value',
+    isClickable: false,
+  },
+  {
+    stage: 'l4-to-l5-leakage',
+    label: 'L4 to L5 leakage and other external factors',
+    value: 37,
+    delta: -4,
+    type: 'negative',
+    description: 'Leakage from L4 to L5 and external factors',
+    isClickable: false,
+  },
+  {
+    stage: 'actuals',
+    label: 'Actuals',
+    value: 37,
+    delta: 37,
+    type: 'baseline',
+    description: 'Actual realized value',
+    isClickable: false,
+  },
+];
 
 // Product Analysis Data (Layer 2)
 export const mockProductFamilyData: ProductFamilyData[] = [
@@ -2341,6 +2421,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     impactType: 'positive',
     isApplied: true,
     color: '#10b981', // emerald-500 for positive/tailwind
+    sourceNewsIds: ['news-7', 'news-5', 'news-12'], // Related news: Amphenol growth, 5G Infrastructure, AI demand
     valueDriverChanges: [
       {
         valueDriverId: 'vd-rev-vol-1',
@@ -2400,6 +2481,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     impactType: 'negative',
     isApplied: true,
     color: '#f59e0b', // amber-500 for negative/headwind
+    sourceNewsIds: ['news-6', 'news-13', 'news-14'], // Related news: Apple delays, consumer electronics slowdown
     valueDriverChanges: [
       {
         valueDriverId: 'vd-rev-vol-1',
@@ -2459,6 +2541,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     impactType: 'negative',
     isApplied: true,
     color: '#ef4444', // red-500 for negative/headwind
+    sourceNewsIds: ['news-8', 'news-2', 'news-15'], // Related news: Copper prices, rare earth exports, supply chain
     valueDriverChanges: [
       {
         valueDriverId: 'vd-oh-energy-1',
@@ -2522,7 +2605,7 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
     impactType: 'negative',
     isApplied: false,
     isSuggested: true,
-    sourceNewsId: 'news-11',
+    sourceNewsIds: ['news-11', 'news-9', 'news-15'], // Related news: Vietnam wage hike, Vietnam tax incentives, supply chain
     color: '#f97316', // orange-500 for suggested negative/headwind
     valueDriverChanges: [
       {
@@ -2549,7 +2632,7 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
     impactType: 'negative',
     isApplied: false,
     isSuggested: true,
-    sourceNewsId: 'news-1',
+    sourceNewsIds: ['news-1', 'news-10', 'news-3'], // Related news: US tariffs, BYD Europe, Tesla EV demand
     color: '#dc2626', // red-600 for suggested negative/headwind
     valueDriverChanges: [
       {
@@ -2576,7 +2659,7 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
     impactType: 'negative',
     isApplied: false,
     isSuggested: true,
-    sourceNewsId: 'news-2',
+    sourceNewsIds: ['news-2', 'news-8', 'news-15'], // Related news: Rare earth exports, copper prices, supply chain disruptions
     color: '#ea580c', // orange-600 for suggested negative/headwind
     valueDriverChanges: [
       {
