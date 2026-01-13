@@ -28,11 +28,12 @@ The application is currently running and ready for demonstration.
 - ✅ Left calendar sidebar (CalendarSidebar component) for daily agenda view with drag-and-drop material support
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
 - ✅ Navigation items organized into two visually distinct groups:
-  - **Real Time Pulse Section** (blue theme): Home, Business Group Performance, External Pulse, Internal Pulse, Action Tracker, My Meetings
-  - **Meetings Section** (purple theme): Finance Forecast, Finance Review
+  - **Real Time Pulse Section** (blue theme): Home, Performance Intelligence, Market Intelligence, Action Tracker
+  - **Meetings Section** (purple theme): Quarterly Actuals Review
 - ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
 - ✅ Visual separator between sections
 - ✅ Color-coded active states: blue for Real Time Pulse items, purple for Meetings items
+- ⚠️ **Note**: External Pulse, Internal Pulse, Finance Forecast, and My Meetings pages still exist but have been removed from the sidebar navigation menu
 - ✅ Icon-based navigation with labels
 - ✅ Active state highlighting with color-coded background and left border
 - ✅ Profile link at bottom of sidebar
@@ -66,7 +67,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 The application uses a flat route structure with standalone pages for each major feature:
 
 - ✅ Home Page (Executive Summary) - Main dashboard with business group performance and action items
-- ✅ Business Group Performance Page - Detailed financial metrics by business group with NP deviation breakdown
+- ✅ Performance Intelligence Page (formerly Business Group Performance) - Detailed financial metrics by business group with NP deviation breakdown
 - ✅ External Pulse Page - Standalone page for external pulse check with "Create Action" button in header
 - ✅ Internal Pulse Page - Combined page with tab switcher for KPIs/operational indicators and Wave Executive Dashboard
   - **KPIs and operational indicators tab**: Value driver framework with metrics, value drivers, and affecting factors
@@ -74,7 +75,7 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Action Tracker Page - Dedicated route page accessible via sidebar navigation
 - ✅ My Meetings Page - Weekly calendar view with meeting management and materials display
 - ✅ Finance Forecast Page - Combined financial forecast page with all financial features
-- ✅ Finance Review Page - NP Deviation Breakdown with deep dive navigation
+- ✅ Quarterly Actuals Review Page (formerly Finance Review) - NP Deviation Breakdown with deep dive navigation
 - ✅ Power BI Page - Embedded Power BI dashboard for financial review overview
 - ✅ Meeting Detail Page - Individual meeting details with materials and attendees
 - ✅ User Profile Page - User profile and settings
@@ -409,6 +410,7 @@ The application uses a flat route structure with standalone pages for each major
   - RootCauseAnalysisSidebar.tsx - AI analysis slider sidebar
   - ScenarioComparisonPanel.tsx - Scenario comparison slider panel
   - ScenarioCreationModal.tsx - Modal for creating scenarios
+  - TimeframePicker.tsx - Reusable timeframe selection component
   - WaveExecutiveDashboard.tsx - Wave initiatives dashboard
 - ✅ 3 Layer components (in layers/):
   - CostImpactBreakdownLayer.tsx
@@ -433,12 +435,12 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ Flat route structure:
   - `/` - Home Page (Executive Summary with Business Group Performance)
   - `/business-group-performance` - Business Group Performance Page (detailed metrics)
-  - `/external-pulse` - External Pulse Page
-  - `/internal-pulse` - Internal Pulse Page (contains tab switcher for KPIs and Wave Dashboard)
-  - `/finance` - Finance Forecast Page (combines all financial forecast features)
+  - `/external-pulse` - External Pulse Page (not in sidebar menu)
+  - `/internal-pulse` - Internal Pulse Page (not in sidebar menu, contains tab switcher for KPIs and Wave Dashboard)
+  - `/finance` - Finance Forecast Page (not in sidebar menu, combines all financial forecast features)
   - `/finance-review` - Finance Review Page (NP Deviation Breakdown)
   - `/action-tracker` - Action Tracker Page
-  - `/my-meetings` - My Meetings Page (weekly calendar view)
+  - `/my-meetings` - My Meetings Page (not in sidebar menu, weekly calendar view)
   - `/meeting/:meetingId` - Meeting Detail Page (individual meeting view)
   - `/powerbi` - Power BI Page (embedded dashboard)
   - `/profile` - User Profile Page
@@ -516,7 +518,7 @@ The application uses a flat route structure with standalone pages for each major
    - Business Group Performance table with expandable rows
    - Action Items Requiring Attention section
 
-2. ✅ `/business-group-performance` - Business Group Performance Page
+2. ✅ `/business-group-performance` - Performance Intelligence Page (label: "Performance Intelligence" and "Market Intelligence" in sidebar)
 
    - Detailed financial metrics by business group
    - Supports query parameter `?bu=<group_id>` for filtering
@@ -524,7 +526,7 @@ The application uses a flat route structure with standalone pages for each major
    - Deep dive navigation to COGS Analysis (Sites/Products)
    - Layer navigation with breadcrumbs
 
-3. ✅ `/external-pulse` - External Pulse Page
+3. ✅ `/external-pulse` - External Pulse Page (not in sidebar menu)
 
    - GenAI-style news feed with dynamic category filtering
    - Risk/opportunity classification with badges
@@ -537,7 +539,7 @@ The application uses a flat route structure with standalone pages for each major
    - Quantitative insights on external impacts
    - Draggable news items for adding to meeting materials
 
-4. ✅ `/internal-pulse` - Internal Pulse Page
+4. ✅ `/internal-pulse` - Internal Pulse Page (not in sidebar menu)
 
    - **Tab Switcher**: Two tabs - "KPIs and operational indicators" and "Wave"
    - **KPIs and operational indicators tab**:
@@ -565,7 +567,7 @@ The application uses a flat route structure with standalone pages for each major
        - 6 cards showing overdue/due soon initiatives and milestones
        - Count and net benefit/owner count metrics
 
-5. ✅ `/finance` - Finance Forecast Page
+5. ✅ `/finance` - Finance Forecast Page (not in sidebar menu)
 
    - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
@@ -612,7 +614,7 @@ The application uses a flat route structure with standalone pages for each major
        - Example: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
    - All financial forecast features combined in one page
 
-6. ✅ `/finance-review` - Finance Review Page
+6. ✅ `/finance-review` - Quarterly Actuals Review Page
 
    - **NP Deviation Breakdown Waterfall Chart**: Prominently displayed at top showing 9-stage NP deviation progression
      - Stages: Budget NP (26.0M) → Vol. impact (+8.8M) → Price impact (+3.7M) → Cost impact (-7.3M) → Mix impact (-2.8M) → OPEX Deviation (-5.3M) → Other COGS (+5.3M) → Gap of non-OP and tax (+0.6M) → Actual NP (28.9M)
@@ -664,7 +666,7 @@ The application uses a flat route structure with standalone pages for each major
      - "Add Initiative" button to add new actions to proposals
      - Wave Initiative modal for creating initiatives
    - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals (focused on NP Deviation Breakdown and Initiative Proposals)
-   - Accessible via right sidebar navigation (Finance Review)
+   - Accessible via right sidebar navigation (Quarterly Actuals Review)
 
 7. ✅ `/action-tracker` - Action Tracker Page
 
@@ -679,7 +681,7 @@ The application uses a flat route structure with standalone pages for each major
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-8. ✅ `/my-meetings` - My Meetings Page
+8. ✅ `/my-meetings` - My Meetings Page (not in sidebar menu)
 
    - Weekly calendar view (Monday-Friday grid layout)
    - Week navigation controls (previous/next/today buttons)
@@ -812,7 +814,7 @@ This is a **frontend-only mockup** with:
 
 ## 📦 File Count
 
-- React Components: 12
+- React Components: 13
   - ActionTracker.tsx
   - CalendarSidebar.tsx
   - CreateActionModal.tsx
@@ -824,6 +826,7 @@ This is a **frontend-only mockup** with:
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
+  - TimeframePicker.tsx
   - WaveExecutiveDashboard.tsx
 - Layer Components: 3
   - CostImpactBreakdownLayer.tsx
@@ -870,14 +873,11 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Right sidebar navigation always visible with two grouped sections:
      - **Real Time Pulse Section** (blue theme):
        - Home (Home icon)
-       - Business Group Performance (Building Office icon)
-       - External Pulse (Sparkles icon)
-       - Internal Pulse (Chart Bar icon) - Contains tab switcher for KPIs and Wave Dashboard
+       - Performance Intelligence (Building Office icon)
+       - Market Intelligence (Currency Dollar icon)
        - Action Tracker (Clipboard icon)
-       - My Meetings (Calendar icon)
      - **Meetings Section** (purple theme):
-       - Finance Forecast (Currency Dollar icon)
-       - Finance Review (Document Check icon)
+       - Quarterly Actuals Review (Document Check icon)
    - Optional left calendar sidebar (toggleable via floating button)
    - Section headers displayed when sidebar is expanded
    - Visual separator between sections
@@ -888,6 +888,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 2. **Home Page** (http://localhost:5173/) - Demonstrate:
 
+   - **Timeframe Filter**: Shared TimeframePicker component with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
    - **Business Group Performance**: Table showing financial metrics by business group
      - Business groups: HH, FII, FIH, FIT, Others, Overall consolidated
      - Expandable rows to show sub-groups
@@ -916,7 +917,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Click meetings to navigate to meeting detail page
    - **Root Cause Analysis**: Integrated AI sidebar for insights on selected items
 
-3. **Business Group Performance Page** (http://localhost:5173/business-group-performance) - Demonstrate:
+3. **Performance Intelligence Page** (http://localhost:5173/business-group-performance) - Demonstrate:
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
    - **Detailed Table**: Same table as Home page but with more space and focus
@@ -925,9 +926,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Sites tab with MVA waterfall and site table
      - Products tab with product family breakdown
    - **Breadcrumb Navigation**: Clear path with clickable links
-   - **Timeframe Filtering**: Full Year, Rest of Year, YTM, In Quarter, In Month options
+   - **Timeframe Filtering**: Full year forecast, Year to Month actuals, Rolling 3 months, In-month options (using shared TimeframePicker component)
 
-4. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
+4. **External Pulse Page** (http://localhost:5173/external-pulse) - Access via direct URL (not in sidebar menu):
 
    - External news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
    - Risk/opportunity classification with badges
@@ -941,10 +942,11 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - See quantitative impact analysis on value drivers and financials
      - Waterfall and bar charts showing external impacts
 
-5. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
+5. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Access via direct URL (not in sidebar menu):
 
    - **Tab Switcher**: Two tabs at the top - "KPIs and operational indicators" and "Wave"
    - **KPIs and operational indicators tab** (default):
+     - **Timeframe Filter**: Shared TimeframePicker component (compact variant) with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
      - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
      - Metrics with value drivers and affecting factors
      - Performance status indicators and variance displays
@@ -971,7 +973,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
        - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
 
-6. **Finance Forecast Page** (http://localhost:5173/finance) - Demonstrate:
+6. **Finance Forecast Page** (http://localhost:5173/finance) - Access via direct URL (not in sidebar menu):
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -1036,7 +1038,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - Badge automatically disappears when action is "Waved" (assigned a stage), indicating CEO review and approval
        - Example actions: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
 
-7. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
+7. **Quarterly Actuals Review Page** (http://localhost:5173/finance-review) - Demonstrate:
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -1077,11 +1079,12 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - L-gate stage badges (L0-L5) displayed when action is "Waved"
      - "Add Initiative" button to add new actions to existing proposals
      - Wave Initiative modal for comprehensive initiative creation
-   - Accessible via right sidebar navigation (Finance Review)
+   - Accessible via right sidebar navigation (Quarterly Actuals Review)
 
 8. **Action Tracker** (http://localhost:5173/action-tracker) - Access via sidebar navigation:
 
    - Click "Action Tracker" in sidebar (Real Time Pulse section) → Navigates to dedicated page
+   - **Note**: External Pulse, Internal Pulse, Finance Forecast, and My Meetings pages are accessible via direct URL but not shown in sidebar menu
    - **Tab Switch**: "My Actions" and "Assign to others" tabs in page header (between title and Create Action button)
      - Default view: "My Actions" (shows 17 CEO-owned actions)
      - Switch to "Assign to others" to view 28 actions assigned to team members
@@ -1098,7 +1101,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-9. **My Meetings** (http://localhost:5173/my-meetings) - Access via route:
+9. **My Meetings** (http://localhost:5173/my-meetings) - Access via direct URL (not in sidebar menu):
 
    - **Weekly Calendar View**: Monday-Friday grid layout with time slots (7 AM - 8 PM)
    - **Week Navigation**: Use previous/next buttons to navigate between weeks, or click "Today" to jump to current week
@@ -1292,8 +1295,8 @@ pnpm lint
 9. **User Journey Optimized**: Right sidebar navigation with flat route structure:
    - Root route displays Home page (Executive Summary)
    - Navigation items organized into two visually distinct groups:
-     - Real Time Pulse section (blue theme): Home, Business Group Performance, External Pulse, Internal Pulse, Action Tracker, My Meetings
-     - Meetings section (purple theme): Finance Forecast, Finance Review
+     - Real Time Pulse section (blue theme): Home, Performance Intelligence, Market Intelligence, Action Tracker
+     - Meetings section (purple theme): Quarterly Actuals Review
    - Section headers and visual separators for clear organization
    - Color-coded active states for easy identification
    - Sidebar navigation provides quick access to all features
@@ -1422,6 +1425,12 @@ pnpm lint
     - Full-height iframe embedding of Power BI report
     - "Create Action" button in page header
     - Seamless integration with application navigation
+24. **TimeframePicker Component**: Reusable timeframe selection component:
+    - Shared component used across multiple pages (Home, Performance Intelligence, Internal Pulse)
+    - Four timeframe options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
+    - Two visual variants: `default` (with label) and `compact` (no label, enhanced styling)
+    - Exported types (`TimeframeOption`, `TimeframeOptionItem`) and constants (`TIMEFRAME_OPTIONS`) for reuse
+    - Consistent styling and behavior across the application
 
 ---
 

@@ -34,21 +34,15 @@ export default function RightSidebar({
     },
     {
       id: 'business-group-performance',
-      label: 'Business Group Performance',
+      label: 'Performance Intelligence',
       path: '/business-group-performance',
       icon: BuildingOffice2Icon,
     },
     {
-      id: 'external-pulse',
-      label: 'External Pulse',
-      path: '/external-pulse',
-      icon: SparklesIcon,
-    },
-    {
-      id: 'internal-pulse',
-      label: 'Internal Pulse',
-      path: '/internal-pulse',
-      icon: ChartBarIcon,
+      id: 'business-group-performance',
+      label: 'Market Intelligence',
+      path: '/business-group-performance',
+      icon: CurrencyDollarIcon,
     },
     {
       id: 'action-tracker',
@@ -56,25 +50,13 @@ export default function RightSidebar({
       path: '/action-tracker',
       icon: ClipboardDocumentListIcon,
     },
-    {
-      id: 'my-meetings',
-      label: 'My Meetings',
-      path: '/my-meetings',
-      icon: CalendarDaysIcon,
-    },
   ];
 
   // Meetings section
   const meetingsTabs = [
     {
-      id: 'finance',
-      label: 'Finance Forecast',
-      path: '/finance',
-      icon: CurrencyDollarIcon,
-    },
-    {
       id: 'finance-review',
-      label: 'Finance Review',
+      label: 'Quarterly Actuals Review',
       path: '/finance-review',
       icon: DocumentCheckIcon,
     },

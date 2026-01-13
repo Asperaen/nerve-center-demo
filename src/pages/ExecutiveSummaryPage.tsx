@@ -34,6 +34,9 @@ import type { PulseMetric, Meeting, MeetingMaterial } from '../types';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import CreateActionModal from '../components/CreateActionModal';
+import TimeframePicker, {
+  type TimeframeOption,
+} from '../components/TimeframePicker';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import type { SelectedItem } from '../utils/meetingRelevance';
 
@@ -61,6 +64,9 @@ export default function ExecutiveSummaryPage() {
 
   const [showComparisonDetails, setShowComparisonDetails] =
     useState<boolean>(true);
+
+  const [selectedTimeframe, setSelectedTimeframe] =
+    useState<TimeframeOption>('full-year');
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -947,6 +953,14 @@ export default function ExecutiveSummaryPage() {
               Create Action
             </button> */}
           </div>
+        </div>
+
+        {/* Timeframe Filter */}
+        <div className='mb-6'>
+          <TimeframePicker
+            selectedTimeframe={selectedTimeframe}
+            onTimeframeChange={setSelectedTimeframe}
+          />
         </div>
 
         {/* Business Group Performance Section */}

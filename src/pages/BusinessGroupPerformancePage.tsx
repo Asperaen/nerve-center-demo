@@ -37,18 +37,14 @@ import {
   CostImpactBreakdownLayer,
   MVABreakdownLayer,
 } from '../components/layers';
+import TimeframePicker, {
+  type TimeframeOption,
+} from '../components/TimeframePicker';
 import type {
   NavigationLayer,
   BreadcrumbItem,
   NPDeviationStageType,
 } from '../types';
-
-type TimeframeOption =
-  | 'full-year'
-  | 'rest-of-year'
-  | 'ytm'
-  | 'in-quarter'
-  | 'in-month';
 
 export default function BusinessGroupPerformancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -220,14 +216,6 @@ export default function BusinessGroupPerformancePage() {
     const bg = mainBuOptions.find((b) => b.id === selectedBu);
     return bg?.name || selectedBu.toUpperCase();
   };
-
-  const timeframeOptions: { value: TimeframeOption; label: string }[] = [
-    { value: 'full-year', label: 'Full-year forecast' },
-    { value: 'ytm', label: 'Year to Month actuals' },
-    { value: 'rest-of-year', label: 'Rest of Year forecast' },
-    { value: 'in-quarter', label: 'In-quarter actuals' },
-    { value: 'in-month', label: 'In-month actuals' },
-  ];
 
   const renderMetricCell = (
     metric: BusinessGroupMetricWithTrend,
@@ -460,25 +448,11 @@ export default function BusinessGroupPerformancePage() {
       <div className='bg-white border-b border-gray-200'>
         <div className='max-w-[1920px] mx-auto px-8 py-6'>
           {/* Timeframe Filter */}
-          <div className='flex items-center gap-4 mb-4'>
-            <span className='text-sm font-medium text-gray-600 w-32'>
-              Timeframe
-            </span>
-            <div className='flex bg-gray-100 rounded-lg p-1'>
-              {timeframeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setSelectedTimeframe(option.value)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    selectedTimeframe === option.value
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}>
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <TimeframePicker
+            selectedTimeframe={selectedTimeframe}
+            onTimeframeChange={setSelectedTimeframe}
+            className='mb-4'
+          />
 
           {/* Select BU Filter */}
           <div className='flex items-center gap-4'>
@@ -569,9 +543,7 @@ export default function BusinessGroupPerformancePage() {
             </div>
           </div>
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
-            <p className='text-sm text-gray-600 mt-1'>
-              Quarterly Actual, USD
-            </p>
+            <p className='text-sm text-gray-600 mt-1'>Quarterly Actual, USD</p>
             <table className='w-full'>
               <thead>
                 <tr className='bg-gray-50'>

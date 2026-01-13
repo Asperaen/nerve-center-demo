@@ -7,6 +7,7 @@ import {
   ArrowTrendingDownIcon,
   CogIcon,
 } from '@heroicons/react/24/outline';
+import TimeframePicker, { type TimeframeOption } from './TimeframePicker';
 
 interface InternalPulseCheckProps {
   onSelectionChange?: (items: FinancialMetric[]) => void;
@@ -66,13 +67,6 @@ function convertPulseMetricToFinancialMetric(
   };
 }
 
-type TimePeriod =
-  | 'full-year'
-  | 'rest-of-year'
-  | 'year-to-month'
-  | 'in-quarter'
-  | 'in-month';
-
 export default function InternalPulseCheck({
   onSelectionChange,
   selectedItems = [],
@@ -80,8 +74,8 @@ export default function InternalPulseCheck({
   const [selectedMetricIds, setSelectedMetricIds] = useState<string[]>(
     selectedItems.map((item) => item.id)
   );
-  const [selectedTimePeriod, setSelectedTimePeriod] =
-    useState<TimePeriod>('full-year');
+  const [selectedTimeframe, setSelectedTimeframe] =
+    useState<TimeframeOption>('full-year');
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   // Sync with parent selection
@@ -122,14 +116,6 @@ export default function InternalPulseCheck({
     return `Today ${displayHours}:${displayMinutes}${ampm}`;
   };
 
-  const timePeriods: { value: TimePeriod; label: string }[] = [
-    { value: 'full-year', label: 'Full-year' },
-    { value: 'rest-of-year', label: 'Rest of Year' },
-    { value: 'year-to-month', label: 'Year to Month' },
-    { value: 'in-quarter', label: 'In-quarter' },
-    { value: 'in-month', label: 'In-month' },
-  ];
-
   return (
     <div className='bg-white rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-200/40 hover:shadow-2xl transition-all duration-300 overflow-hidden'>
       {/* Controls Section */}
@@ -147,20 +133,12 @@ export default function InternalPulseCheck({
           {/* Right side: Tabs, Legend, Settings */}
           <div className='flex items-center gap-5'>
             {/* Time Period Tabs */}
-            <div className='flex items-center gap-1 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50 shadow-sm'>
-              {timePeriods.map((period) => (
-                <button
-                  key={period.value}
-                  onClick={() => setSelectedTimePeriod(period.value)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                    selectedTimePeriod === period.value
-                      ? 'bg-white text-gray-900 shadow-md shadow-gray-200/50 scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                  }`}>
-                  {period.label}
-                </button>
-              ))}
-            </div>
+            <TimeframePicker
+              selectedTimeframe={selectedTimeframe}
+              onTimeframeChange={setSelectedTimeframe}
+              label={null}
+              variant='compact'
+            />
 
             {/* Legend */}
             <div className='flex items-center gap-4 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-lg border border-gray-200/50 shadow-sm'>
