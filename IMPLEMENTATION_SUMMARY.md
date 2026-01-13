@@ -23,11 +23,12 @@ The application is currently running and ready for demonstration.
 
 ### 2. Core Layout & Navigation ✅
 
-- ✅ MainLayout with right sidebar navigation
+- ✅ MainLayout with right sidebar navigation and optional left calendar sidebar
 - ✅ Right sidebar (RightSidebar component) with collapsible functionality
+- ✅ Left calendar sidebar (CalendarSidebar component) for daily agenda view with drag-and-drop material support
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
 - ✅ Navigation items organized into two visually distinct groups:
-  - **Real Time Pulse Section** (blue theme): CEO Mind Space, External Pulse, Internal Pulse
+  - **Real Time Pulse Section** (blue theme): Home, Business Group Performance, External Pulse, Internal Pulse, Action Tracker, My Meetings
   - **Meetings Section** (purple theme): Finance Forecast, Finance Review
 - ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
 - ✅ Visual separator between sections
@@ -35,11 +36,12 @@ The application is currently running and ready for demonstration.
 - ✅ Icon-based navigation with labels
 - ✅ Active state highlighting with color-coded background and left border
 - ✅ Profile link at bottom of sidebar
-- ✅ Main content area with dynamic right margin based on sidebar state
+- ✅ Main content area with dynamic margins based on sidebar states
 - ✅ Smooth transitions for sidebar collapse/expand
 - ✅ User profile page with user information and quick actions
 - ✅ Action Tracker accessible as a dedicated route via sidebar navigation
-- ✅ "Create Action" buttons on page headers (Executive Summary, External Pulse, Internal Pulse, Finance, Finance Review) for context-specific action creation
+- ✅ "Create Action" buttons on page headers for context-specific action creation
+- ✅ Floating calendar toggle button to show/hide left calendar sidebar
 
 ### 3. Mock Data Layer ✅
 
@@ -51,27 +53,30 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockActions.ts` - 45 action items with comments (17 CEO actions, 28 team member actions)
   - CEO actions include approval tasks and executive follow-ups, distributed across all status types
   - Team member actions assigned to various VPs and executives
-- ✅ `mockAssumptions.ts` - 12 business assumptions with history
-- ✅ `mockConflicts.ts` - 5 assumption conflicts
+- ✅ `mockAssumptions.ts` - 12 business assumptions with history and 5 assumption conflicts
 - ✅ `mockForecast.ts` - Forecast drivers, income statement, scenarios, OP waterfall stages, applied assumptions, suggested assumptions, NP deviation stages, product family data, cost impact data, MVA breakdown stages
 - ✅ `mockAnalysis.ts` - Root cause analysis results
 - ✅ `mockRootCauses.ts` - 3 root causes with title, impact, tags, and Wave ticket numbers
 - ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
 - ✅ `mockBusinessGroupPerformance.ts` - Business group performance data (HH, FII, FIH, FIT, Others) with 12-month trend data and AI-generated insights for Revenue, GP, OP, NP metrics
+- ✅ `mockCalendar.ts` - Calendar events and meetings with attendees, materials, and meeting types
 
 ### 4. Page Structure ✅
 
 The application uses a flat route structure with standalone pages for each major feature:
 
+- ✅ Home Page (Executive Summary) - Main dashboard with business group performance and action items
+- ✅ Business Group Performance Page - Detailed financial metrics by business group with NP deviation breakdown
 - ✅ External Pulse Page - Standalone page for external pulse check with "Create Action" button in header
-- ✅ Internal Pulse Page - Combined page with tab switcher for KPIs/operational indicators and Wave Executive Dashboard, "Create Action" button in header
+- ✅ Internal Pulse Page - Combined page with tab switcher for KPIs/operational indicators and Wave Executive Dashboard
   - **KPIs and operational indicators tab**: Value driver framework with metrics, value drivers, and affecting factors
   - **Wave tab**: Executive dashboard with initiatives tracking and value delivery charts
-- ✅ Finance Page - Combined financial forecast page with all financial features, "Create Action" button in header
-- ✅ Finance Review Page - NP Deviation Breakdown with 4-layer deep dive navigation, "Create Action" button in header
-- ✅ Executive Summary Page - CEO Mind Space page with "Create Action" button in header
-- ✅ Action Tracker - Dedicated route page accessible via sidebar navigation (Meetings section)
+- ✅ Action Tracker Page - Dedicated route page accessible via sidebar navigation
 - ✅ My Meetings Page - Weekly calendar view with meeting management and materials display
+- ✅ Finance Forecast Page - Combined financial forecast page with all financial features
+- ✅ Finance Review Page - NP Deviation Breakdown with deep dive navigation
+- ✅ Power BI Page - Embedded Power BI dashboard for financial review overview
+- ✅ Meeting Detail Page - Individual meeting details with materials and attendees
 - ✅ User Profile Page - User profile and settings
 
 ### 5. Daily Pulse Check Features ✅
@@ -392,14 +397,23 @@ The application uses a flat route structure with standalone pages for each major
 
 ### Component Architecture
 
-- ✅ 7 React components:
-  - ActionTracker.tsx
-  - ExternalPulseCheck.tsx
-  - InternalPulseCheck.tsx
-  - RightSidebar.tsx
-  - RootCauseAnalysisSidebar.tsx
-  - ScenarioComparisonPanel.tsx
-  - ScenarioCreationModal.tsx
+- ✅ 12 React components:
+  - ActionTracker.tsx - Action management with JIRA-like swim lanes
+  - CalendarSidebar.tsx - Left sidebar with daily agenda and drag-drop support
+  - CreateActionModal.tsx - Modal for creating new actions
+  - CriticalInsights.tsx - AI-generated insights display
+  - InternalPulseCheck.tsx - Internal pulse metrics dashboard
+  - MeetingDetailView.tsx - Individual meeting details component
+  - MeetingSchedulingModal.tsx - Modal for scheduling meetings
+  - RightSidebar.tsx - Main navigation sidebar
+  - RootCauseAnalysisSidebar.tsx - AI analysis slider sidebar
+  - ScenarioComparisonPanel.tsx - Scenario comparison slider panel
+  - ScenarioCreationModal.tsx - Modal for creating scenarios
+  - WaveExecutiveDashboard.tsx - Wave initiatives dashboard
+- ✅ 3 Layer components (in layers/):
+  - CostImpactBreakdownLayer.tsx
+  - MVABreakdownLayer.tsx
+  - ProductAnalysisLayer.tsx
 - ✅ TypeScript interfaces for type safety
 - ✅ React hooks for state management
 - ✅ Component composition patterns
@@ -415,16 +429,20 @@ The application uses a flat route structure with standalone pages for each major
 ### Routing
 
 - ✅ React Router v7 setup with flat route structure
-- ✅ Root route (`/`) redirects to `/external-pulse`
+- ✅ Root route (`/`) displays Home (Executive Summary) page
 - ✅ Flat route structure:
-  - `/` (redirects to `/executive-summary`) - Executive Summary Page
+  - `/` - Home Page (Executive Summary with Business Group Performance)
+  - `/business-group-performance` - Business Group Performance Page (detailed metrics)
   - `/external-pulse` - External Pulse Page
   - `/internal-pulse` - Internal Pulse Page (contains tab switcher for KPIs and Wave Dashboard)
-  - `/finance` - Finance Page (combines all financial forecast features)
+  - `/finance` - Finance Forecast Page (combines all financial forecast features)
   - `/finance-review` - Finance Review Page (NP Deviation Breakdown)
   - `/action-tracker` - Action Tracker Page
+  - `/my-meetings` - My Meetings Page (weekly calendar view)
+  - `/meeting/:meetingId` - Meeting Detail Page (individual meeting view)
+  - `/powerbi` - Power BI Page (embedded dashboard)
   - `/profile` - User Profile Page
-- ✅ MainLayout wrapper with RightSidebar navigation
+- ✅ MainLayout wrapper with RightSidebar and optional CalendarSidebar
 - ✅ Sidebar navigation with active state highlighting
 - ✅ Icon-based navigation with labels
 - ✅ Collapsible sidebar for space optimization
@@ -432,15 +450,17 @@ The application uses a flat route structure with standalone pages for each major
 
 ### Data Structure
 
-- ✅ 40+ TypeScript interfaces including:
+- ✅ 60+ TypeScript interfaces including:
   - Core types: NewsItem, KPI, Action, BusinessAssumption, Conflict
   - Forecast types: ForecastDriver, IncomeStatement, BusinessEvent, ActionProposal
   - Proposal types: Proposal (1-to-1 mapping with AppliedAssumption, contains multiple ActionProposals)
-  - Waterfall types: OPWaterfallStage, OPWaterfallStageType, SimulatedWaterfallStage
+  - Waterfall types: OPWaterfallStage, OPWaterfallStageType, SimulatedWaterfallStage, NPDeviationStage
   - Scenario types: ValueDriverScenario, ValueDriverScenarioValue, ScenarioComparisonState
   - Value driver types: ValueDriverItem, ForecastMetric, FinancialCategoryGroup, ValueDriverAssumption
   - Internal pulse types: FinancialMetric, ValueDriver, AffectingFactor, FinancialCategoryData
   - Root cause types: RootCause (with title, impact, tags, waveTicketNumber)
+  - Calendar types: Meeting, CalendarEvent, MeetingAttendee, MeetingMaterial
+  - Executive dashboard types: ExecutiveInitiative, Milestone, WorkflowGroup
   - AppliedAssumption type extended with sourceNewsId, isSuggested fields, and proposal field
   - ActionProposal type extended with isAIGenerated field to mark AI-generated actions
 - ✅ Comprehensive mock data (1100+ lines including OP waterfall stages and proposals with actions)
@@ -488,24 +508,36 @@ The application uses a flat route structure with standalone pages for each major
 
 ## 📱 Pages & Routes (Current Structure)
 
-1. ✅ `/` - Root Route
+1. ✅ `/` - Home Page (Executive Summary)
 
-   - Redirects to Executive Summary Page (CEO Mind Space)
+   - Main dashboard for CEO with business overview
    - Right sidebar navigation always visible
+   - Optional left calendar sidebar (toggleable)
+   - Business Group Performance table with expandable rows
+   - Action Items Requiring Attention section
 
-2. ✅ `/external-pulse` - External Pulse Page
+2. ✅ `/business-group-performance` - Business Group Performance Page
 
-   - GenAI-style news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
+   - Detailed financial metrics by business group
+   - Supports query parameter `?bu=<group_id>` for filtering
+   - NP Deviation Breakdown waterfall chart
+   - Deep dive navigation to COGS Analysis (Sites/Products)
+   - Layer navigation with breadcrumbs
+
+3. ✅ `/external-pulse` - External Pulse Page
+
+   - GenAI-style news feed with dynamic category filtering
    - Risk/opportunity classification with badges
    - Impact level indicators (High/Medium/Low)
-   - Urgency level badges (Urgent/Important/Normal)
+   - Urgency level badges (Short-term/Mid-term/Long-term)
    - AI analysis display with typing effect simulation
    - Annotation feature (add notes to news items)
    - Expandable/collapsible analysis sections
    - Root Cause Analysis sidebar integration (slider sidebar accessible via button)
    - Quantitative insights on external impacts
+   - Draggable news items for adding to meeting materials
 
-3. ✅ `/internal-pulse` - Internal Pulse Page
+4. ✅ `/internal-pulse` - Internal Pulse Page
 
    - **Tab Switcher**: Two tabs - "KPIs and operational indicators" and "Wave"
    - **KPIs and operational indicators tab**:
@@ -533,7 +565,7 @@ The application uses a flat route structure with standalone pages for each major
        - 6 cards showing overdue/due soon initiatives and milestones
        - Count and net benefit/owner count metrics
 
-4. ✅ `/finance` - Finance Page
+5. ✅ `/finance` - Finance Forecast Page
 
    - **Full Year OP Waterfall Chart**: Prominently displayed at top showing 8-stage OP progression
      - Interactive tooltips with cumulative OP, delta changes, and scenario values
@@ -580,7 +612,7 @@ The application uses a flat route structure with standalone pages for each major
        - Example: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
    - All financial forecast features combined in one page
 
-5. ✅ `/finance-review` - Finance Review Page
+6. ✅ `/finance-review` - Finance Review Page
 
    - **NP Deviation Breakdown Waterfall Chart**: Prominently displayed at top showing 9-stage NP deviation progression
      - Stages: Budget NP (26.0M) → Vol. impact (+8.8M) → Price impact (+3.7M) → Cost impact (-7.3M) → Mix impact (-2.8M) → OPEX Deviation (-5.3M) → Other COGS (+5.3M) → Gap of non-OP and tax (+0.6M) → Actual NP (28.9M)
@@ -634,9 +666,9 @@ The application uses a flat route structure with standalone pages for each major
    - **Removed Features**: Scenarios, assumptions, comparison features, value driver modals (focused on NP Deviation Breakdown and Initiative Proposals)
    - Accessible via right sidebar navigation (Finance Review)
 
-6. ✅ **Action Tracker** - Dedicated Route Page
+7. ✅ `/action-tracker` - Action Tracker Page
 
-   - Accessible via sidebar navigation (Meetings section) at `/action-tracker`
+   - Accessible via sidebar navigation at `/action-tracker`
    - Comprehensive action list with JIRA-like swim lanes
    - Auto-resizing swimlanes that utilize available width
    - Status workflow management (TODO/In Progress/Ready for Review/Completed/Reopen)
@@ -647,7 +679,7 @@ The application uses a flat route structure with standalone pages for each major
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-7. ✅ `/my-meetings` - My Meetings Page
+8. ✅ `/my-meetings` - My Meetings Page
 
    - Weekly calendar view (Monday-Friday grid layout)
    - Week navigation controls (previous/next/today buttons)
@@ -664,13 +696,27 @@ The application uses a flat route structure with standalone pages for each major
    - HKT (GMT+8) timezone indicator
    - Click on meeting events to view details in modal
 
-8. ✅ `/profile` - User Profile Page
+9. ✅ `/meeting/:meetingId` - Meeting Detail Page
 
-   - User information display
-   - Profile details (email, role, member since)
-   - Notification status
-   - Quick actions (Edit Profile, Notification Settings, Change Password)
-   - Back navigation button
+   - Individual meeting view accessed from calendar
+   - Full meeting details with attendees
+   - Meeting materials display
+   - Navigation back to calendar
+
+10. ✅ `/powerbi` - Power BI Page
+
+    - Embedded Power BI dashboard for financial review
+    - Financial Review Overview dashboard
+    - "Create Action" button in page header
+    - Full-height iframe integration
+
+11. ✅ `/profile` - User Profile Page
+
+    - User information display
+    - Profile details (email, role, member since)
+    - Notification status
+    - Quick actions (Edit Profile, Notification Settings, Change Password)
+    - Back navigation button
 
 ## 🎯 Feature Completeness
 
@@ -766,34 +812,49 @@ This is a **frontend-only mockup** with:
 
 ## 📦 File Count
 
-- React Components: 8
+- React Components: 12
   - ActionTracker.tsx
-  - ExternalPulseCheck.tsx
+  - CalendarSidebar.tsx
+  - CreateActionModal.tsx
+  - CriticalInsights.tsx
   - InternalPulseCheck.tsx
-  - WaveExecutiveDashboard.tsx
+  - MeetingDetailView.tsx
+  - MeetingSchedulingModal.tsx
   - RightSidebar.tsx
   - RootCauseAnalysisSidebar.tsx
   - ScenarioComparisonPanel.tsx
   - ScenarioCreationModal.tsx
-- Page Components: 8
+  - WaveExecutiveDashboard.tsx
+- Layer Components: 3
+  - CostImpactBreakdownLayer.tsx
+  - MVABreakdownLayer.tsx
+  - ProductAnalysisLayer.tsx
+- Page Components: 11
+  - ActionTrackerPage.tsx
+  - BusinessGroupPerformancePage.tsx
   - ExecutiveSummaryPage.tsx
   - ExternalPulsePage.tsx
-  - InternalPulsePage.tsx
   - FinancePage.tsx
   - FinanceReviewPage.tsx
-  - ActionTrackerPage.tsx
+  - InternalPulsePage.tsx
   - MyMeetingsPage.tsx
+  - PowerBIPage.tsx
   - UserProfile.tsx
+  - WaveExecutiveDashboardPage.tsx
 - Layout Components: 1
   - MainLayout.tsx
-- Utility Files: 3
-  - scenarioUtils.ts
+- Utility Files: 5
+  - meetingRelevance.ts
+  - meetingUtils.ts
   - scenarioComparison.ts
+  - scenarioUtils.ts
   - valueDriverMapping.ts
-- TypeScript files: 25+
-- Mock data files: 10 (including OP waterfall stages data, NP deviation stages data, product family data, cost impact data, MVA breakdown stages, executive dashboard data, root causes data, and business group performance data with 12-month trends and AI insights)
-- Type definitions: 1 (with 40+ interfaces including scenario, waterfall, and root cause types)
-- Total lines of code: ~8,800+
+- Context Files: 1
+  - ActionsContext.tsx
+- TypeScript files: 30+
+- Mock data files: 11 (including OP waterfall stages data, NP deviation stages data, product family data, cost impact data, MVA breakdown stages, executive dashboard data, root causes data, business group performance data, and calendar events)
+- Type definitions: 1 (with 60+ interfaces including scenario, waterfall, meeting, and root cause types)
+- Total lines of code: ~10,000+
 
 **Architecture Change**: The application has been refactored from a tab-based navigation structure to a page-based structure with right sidebar navigation. This provides better separation of concerns and a cleaner navigation experience.
 
@@ -805,60 +866,68 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
 1. **Application Entry** (http://localhost:5173/) - Default landing:
 
-   - Root route redirects to `/executive-summary`
+   - Root route shows Home page (Executive Summary)
    - Right sidebar navigation always visible with two grouped sections:
      - **Real Time Pulse Section** (blue theme):
-       - CEO Mind Space (Home icon)
+       - Home (Home icon)
+       - Business Group Performance (Building Office icon)
        - External Pulse (Sparkles icon)
        - Internal Pulse (Chart Bar icon) - Contains tab switcher for KPIs and Wave Dashboard
+       - Action Tracker (Clipboard icon)
+       - My Meetings (Calendar icon)
      - **Meetings Section** (purple theme):
        - Finance Forecast (Currency Dollar icon)
-       - Finance Review (Presentation Chart Bar icon)
+       - Finance Review (Document Check icon)
+   - Optional left calendar sidebar (toggleable via floating button)
    - Section headers displayed when sidebar is expanded
    - Visual separator between sections
    - Color-coded active states (blue for Real Time Pulse, purple for Meetings)
    - Profile link at bottom of sidebar
    - Sidebar can be collapsed/expanded using toggle button
-   - Action Tracker accessible via sidebar navigation (Meetings section)
-   - "Create Action" buttons on each page header for context-specific action creation
+   - "Create Action" buttons on page headers for context-specific action creation
 
-2. **Executive Summary Page** (http://localhost:5173/) - Demonstrate:
+2. **Home Page** (http://localhost:5173/) - Demonstrate:
 
-   - **Upcoming Critical Meetings**: Up to 5 critical meetings displayed in grid layout
-     - Each meeting card shows time, priority badge, title, location, key attendees
-     - Materials and preparation items displayed (decks, data, action items)
-     - Priority indicators: Critical (red), High (orange), Medium (blue)
    - **Business Group Performance**: Table showing financial metrics by business group
      - Business groups: HH, FII, FIH, FIT, Others, Overall consolidated
+     - Expandable rows to show sub-groups
      - Metrics: Revenue, Gross Profit, Operating Profit, Net Profit
-     - Each cell displays absolute value (e.g., "$14.8B") with comparison ("vs $14.2B")
+     - Each cell displays absolute value (e.g., "$14.8M") with comparison ("vs budget $X.XM")
      - Percentage badges with color coding (green for positive, red for negative, gray for flat)
      - Hover tooltip on each metric cell showing:
        - 12-month trend sparkline chart with SVG visualization
        - AI-generated insights explaining the metric performance
        - Color-coded trend line matching performance direction
-     - Vertical grid lines for clear column separation
-     - Overall consolidated row with calculated totals highlighted in primary color
-   - **Wave Status Glance**: 3 summary cards showing:
-     - Overdue initiatives (count + net benefit)
-     - Initiatives due in 7 days (count + net benefit)
-     - Initiatives due in 30 days (count + net benefit)
-   - **Financial & Topline KPIs**: 4 key financial metrics
-     - Net Profit, Operating Profit, Working Capital, Total Revenue
-     - Status badges and trend indicators
-     - Checkbox selection for multi-select and drag-to-calendar functionality
+     - Toggle to show/hide comparison details
+     - Click on metric cells to navigate to Business Group Performance page
+     - Link to detailed Business Group Performance page
    - **Action Items Requiring Attention**: Summary of urgent high-priority actions
      - Count cards for urgent actions, high-priority actions, and total actions
      - Top 3 urgent actions displayed with details
+     - Link to Action Tracker page
    - **Selection System**: Multi-select items with action bar
      - Action bar appears when items are selected
      - "AI Analysis" button opens Root Cause Analysis sidebar
      - "Schedule Meeting" button opens meeting scheduling modal
      - Drag selected items directly to calendar events
-   - **Create Action**: "Create Action" button in page header (top-right) for quick action creation
+   - **Left Calendar Sidebar**: Toggleable daily agenda view
+     - Shows today's meetings
+     - Drag-and-drop support for adding materials to meetings
+     - Click meetings to navigate to meeting detail page
    - **Root Cause Analysis**: Integrated AI sidebar for insights on selected items
 
-3. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
+3. **Business Group Performance Page** (http://localhost:5173/business-group-performance) - Demonstrate:
+
+   - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
+   - **Detailed Table**: Same table as Home page but with more space and focus
+   - **NP Deviation Breakdown Waterfall**: Shows 9-stage NP deviation progression
+   - **Deep Dive Navigation**: Click waterfall stages for COGS Analysis
+     - Sites tab with MVA waterfall and site table
+     - Products tab with product family breakdown
+   - **Breadcrumb Navigation**: Clear path with clickable links
+   - **Timeframe Filtering**: Full Year, Rest of Year, YTM, In Quarter, In Month options
+
+4. **External Pulse Page** (http://localhost:5173/external-pulse) - Demonstrate:
 
    - External news feed with 4-category filtering (Macro, Competitors, Customers, Suppliers)
    - Risk/opportunity classification with badges
@@ -872,7 +941,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - See quantitative impact analysis on value drivers and financials
      - Waterfall and bar charts showing external impacts
 
-4. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
+5. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Demonstrate:
 
    - **Tab Switcher**: Two tabs at the top - "KPIs and operational indicators" and "Wave"
    - **KPIs and operational indicators tab** (default):
@@ -902,7 +971,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
        - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
 
-5. **Finance Page** (http://localhost:5173/finance) - Demonstrate:
+6. **Finance Forecast Page** (http://localhost:5173/finance) - Demonstrate:
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -967,7 +1036,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - Badge automatically disappears when action is "Waved" (assigned a stage), indicating CEO review and approval
        - Example actions: "Improve UPPH by 2–3% through line balancing..." (2.5M impact) and "Push 1.5–2% ASP adjustment..." (4.5M impact)
 
-6. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
+7. **Finance Review Page** (http://localhost:5173/finance-review) - Demonstrate:
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 
@@ -1010,9 +1079,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Wave Initiative modal for comprehensive initiative creation
    - Accessible via right sidebar navigation (Finance Review)
 
-7. **Action Tracker** (http://localhost:5173/action-tracker) - Access via sidebar navigation:
+8. **Action Tracker** (http://localhost:5173/action-tracker) - Access via sidebar navigation:
 
-   - Click "Action Tracker" in sidebar (Meetings section) → Navigates to dedicated page
+   - Click "Action Tracker" in sidebar (Real Time Pulse section) → Navigates to dedicated page
    - **Tab Switch**: "My Actions" and "Assign to others" tabs in page header (between title and Create Action button)
      - Default view: "My Actions" (shows 17 CEO-owned actions)
      - Switch to "Assign to others" to view 28 actions assigned to team members
@@ -1029,7 +1098,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Expandable action cards with full details
    - "Create Action" button in page header
 
-8. **My Meetings** (http://localhost:5173/my-meetings) - Access via route:
+9. **My Meetings** (http://localhost:5173/my-meetings) - Access via route:
 
    - **Weekly Calendar View**: Monday-Friday grid layout with time slots (7 AM - 8 PM)
    - **Week Navigation**: Use previous/next buttons to navigate between weeks, or click "Today" to jump to current week
@@ -1050,13 +1119,13 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Timezone**: HKT (GMT+8) indicator in top navigation bar
    - **Time Slots**: 30-minute intervals from 7 AM to 8 PM with visual grid lines
 
-9. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
+10. **User Profile** (http://localhost:5173/profile) - Access via profile link in sidebar:
 
-   - User profile information display
-   - Profile details (email, role, member since)
-   - Notification status
-   - Quick actions (Edit Profile, Notification Settings, Change Password)
-   - Back navigation button
+- User profile information display
+- Profile details (email, role, member since)
+- Notification status
+- Quick actions (Edit Profile, Notification Settings, Change Password)
+- Back navigation button
 
 ## 🔮 Future Enhancements (Out of Scope)
 
@@ -1221,18 +1290,19 @@ pnpm lint
 7. **Documented**: Extensive README and code comments
 8. **Demo-Ready**: Immediately usable for stakeholder presentations
 9. **User Journey Optimized**: Right sidebar navigation with flat route structure:
-   - Root route redirects to External Pulse page
+   - Root route displays Home page (Executive Summary)
    - Navigation items organized into two visually distinct groups:
-     - Real Time Pulse section (blue theme): CEO Mind Space, External Pulse, Internal Pulse
+     - Real Time Pulse section (blue theme): Home, Business Group Performance, External Pulse, Internal Pulse, Action Tracker, My Meetings
      - Meetings section (purple theme): Finance Forecast, Finance Review
    - Section headers and visual separators for clear organization
    - Color-coded active states for easy identification
    - Sidebar navigation provides quick access to all features
-   - Collapsible sidebar for space optimization
+   - Collapsible right sidebar for space optimization
+   - Optional left calendar sidebar with daily agenda and drag-drop support
    - Profile link accessible from sidebar
    - Root Cause Analysis integrated into Pulse pages for quantitative insights
    - Internal Pulse Page with tab switcher: "KPIs and operational indicators" tab for value driver framework, "Wave" tab for executive dashboard with comprehensive initiatives tracking and value delivery visualization
-   - Scenario simulation system integrated into Finance and Finance Review pages for value driver testing
+   - Scenario simulation system integrated into Finance page for value driver testing
    - Action Tracker as dedicated route page accessible via sidebar navigation
    - "Create Action" buttons on page headers for context-specific action creation
 10. **NP Deviation Breakdown Visualization**: NP Deviation Breakdown waterfall chart prominently displayed at top of Finance Review page, showing 9-stage cumulative progression from Budget NP to Actual NP with color-coded favourable/adverse impacts and clickable deep dive functionality
@@ -1312,7 +1382,7 @@ pnpm lint
     - Removed global floating "Create Action" button for cleaner UI
     - Enables CEO to quickly create actions from any page context
 20. **Action Tracker Page**: Dedicated route page for action management:
-    - Accessible via sidebar navigation (Meetings section) at `/action-tracker` route
+    - Accessible via sidebar navigation (Real Time Pulse section) at `/action-tracker` route
     - Full page layout with header and "Create Action" button
     - **Tab Switch Feature**: "My Actions" and "Assign to others" tabs in page header
       - Tab switch positioned between page title and "Create Action" button, vertically centered
@@ -1326,18 +1396,32 @@ pnpm lint
     - Status workflow management, priority indicators, owner information
     - Comments system and expandable action cards
     - Integrated into main layout with consistent styling
-21. **Business Group Performance Section**: Comprehensive business group financial overview on Executive Summary:
-    - Table layout with 6 business groups: HH, FII, FIH, FIT, Others, Overall consolidated
+21. **Business Group Performance**: Comprehensive business group financial overview:
+    - Available on both Home page (summary) and dedicated Business Group Performance page (detailed)
+    - Table layout with expandable business groups: HH, FII, FIH, FIT, Others, Overall consolidated
     - 4 financial metrics per group: Revenue, Gross Profit, Operating Profit, Net Profit
-    - Each cell shows absolute value (e.g., "$14.8B") with comparison baseline ("vs $14.2B")
+    - Each cell shows absolute value (e.g., "$14.8M") with comparison baseline ("vs budget $X.XM")
     - Color-coded percentage badges (green positive, red negative, gray flat)
     - Hover tooltips with rich content:
       - 12-month trend sparkline chart (SVG visualization)
       - Color-coded trend line matching performance direction
       - AI-generated insights explaining metric performance
-    - Vertical grid lines for clear column separation
+    - Click on metric cells to navigate to detailed Business Group Performance page
+    - Toggle to show/hide comparison details
+    - Expandable rows to show sub-groups
     - Overall consolidated row with calculated totals and primary color highlighting
-    - Mock data includes realistic 12-month trend generation and contextual AI insights per business group/metric
+22. **Left Calendar Sidebar**: Toggleable daily agenda view:
+    - Floating button to open/close calendar sidebar
+    - Daily view showing today's meetings
+    - Drag-and-drop support for adding materials to meetings from pulse pages
+    - Click meetings to navigate to meeting detail page
+    - Auto-close when navigating to My Meetings page
+    - Visual indicators for meeting times and materials
+23. **Power BI Integration**: Embedded Power BI dashboard:
+    - Dedicated `/powerbi` route for financial review overview
+    - Full-height iframe embedding of Power BI report
+    - "Create Action" button in page header
+    - Seamless integration with application navigation
 
 ---
 
