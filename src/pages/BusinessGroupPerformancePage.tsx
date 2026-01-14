@@ -326,6 +326,15 @@ export default function BusinessGroupPerformancePage() {
     isOverallRow: boolean = false
   ) => {
     const isExpanded = expandedRows.has(group.id);
+    const isClickable = isExpandable || isSubGroup;
+
+    const handleRowClick = () => {
+      if (isExpandable) {
+        toggleRowExpansion(group.id);
+      } else if (isSubGroup) {
+        navigateToLayer(2, group.name);
+      }
+    };
 
     return (
       <tr
@@ -334,10 +343,10 @@ export default function BusinessGroupPerformancePage() {
           isOverallRow
             ? 'bg-primary-50/50'
             : isSubGroup
-            ? 'bg-gray-50'
+            ? 'bg-gray-50 hover:bg-gray-100 transition-colors'
             : 'hover:bg-gray-50 transition-colors'
-        } ${isExpandable ? 'cursor-pointer' : ''}`}
-        onClick={isExpandable ? () => toggleRowExpansion(group.id) : undefined}>
+        } ${isClickable ? 'cursor-pointer' : ''}`}
+        onClick={isClickable ? handleRowClick : undefined}>
         <td className='px-6 py-3 border-b border-r border-gray-200'>
           <div className='flex items-center gap-2'>
             {isExpandable && (
@@ -527,11 +536,18 @@ export default function BusinessGroupPerformancePage() {
                     group.id === 'overall' || group.id.endsWith('-overall');
                   const isExpandable =
                     selectedBu === 'all' && group.id !== 'overall';
+                  // When a specific BU is selected, non-overall rows should be clickable
+                  const isSubGroupRow = selectedBu !== 'all' && !isOverallRow;
                   const isExpanded = expandedRows.has(group.id);
 
                   return (
                     <>
-                      {renderTableRow(group, isExpandable, false, isOverallRow)}
+                      {renderTableRow(
+                        group,
+                        isExpandable,
+                        isSubGroupRow,
+                        isOverallRow
+                      )}
                       {isExpanded &&
                         getExpandedSubGroups(group.id).map((subGroup) =>
                           renderTableRow(subGroup, false, true, false)

@@ -9,29 +9,18 @@ import {
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import {
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ComposedChart,
-  Legend,
-  LabelList,
-} from 'recharts';
-import {
   mockProductFamilyData,
   mockProductFamilyTotals,
   mockCostImpactData,
-  mockCostComponentTotals,
   mockCostImpactKeyCallOut,
-  mockMVABreakdownStages,
   mockFactoryInitiatives,
   mockTotalCostImpact,
   mockFactoryMVABreakdown,
+  mockBudgetForecastStages,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem, FactoryInitiative } from '../../types';
+import TimeframePicker, { type TimeframeOption } from '../TimeframePicker';
+import BudgetForecastActualWaterfall from '../BudgetForecastActualWaterfall';
 
 // Aggregated factory data type
 interface FactoryAggregatedData {
@@ -218,6 +207,8 @@ export default function ProductAnalysisLayer({
     useState<SiteSortColumn>('costImpact');
   const [siteSortDirection, setSiteSortDirection] =
     useState<SortDirection>('asc');
+  const [selectedTimeframe, setSelectedTimeframe] =
+    useState<TimeframeOption>('full-year');
 
   // Get unique sites from cost impact data
   const uniqueSites = useMemo(() => {
@@ -393,31 +384,6 @@ export default function ProductAnalysisLayer({
     setSelectedSite(site);
   };
 
-  // Prepare MVA chart data
-  const mvaChartData = useMemo(() => {
-    return mockMVABreakdownStages.map((stage, index) => {
-      const prevValue = index > 0 ? mockMVABreakdownStages[index - 1].value : 0;
-      const currentValue = stage.value;
-      const delta =
-        stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
-
-      const isBaseline = stage.type === 'baseline';
-      const barValue = isBaseline ? currentValue : delta;
-      const baselineValue = isBaseline ? 0 : prevValue;
-
-      return {
-        ...stage,
-        name: stage.label,
-        label: stage.label,
-        cumulativeValue: currentValue,
-        delta,
-        baselineValue,
-        barValue,
-        isPositive: delta >= 0,
-      };
-    });
-  }, []);
-
   // Product data sorting
   const sortedProductData = [...mockProductFamilyData].sort(
     (a, b) => b.gpGapToBudget - a.gpGapToBudget
@@ -461,7 +427,9 @@ export default function ProductAnalysisLayer({
             className='p-2 hover:bg-gray-100 rounded-lg transition-colors'>
             <ArrowLeftIcon className='w-6 h-6 text-gray-600' />
           </button>
-          <h1 className='text-3xl font-bold text-gray-900'>COGS Analysis</h1>
+          <h1 className='text-3xl font-bold text-gray-900'>
+            Business Unit Performance
+          </h1>
         </div>
 
         {/* Center: Tab Switch */}
@@ -495,24 +463,36 @@ export default function ProductAnalysisLayer({
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      {breadcrumbs.length > 0 && (
-        <div className='flex items-center gap-2 text-sm text-gray-600'>
-          <span>NP Deviation</span>
-          {breadcrumbs.map((crumb, index) => (
-            <div
-              key={index}
-              className='flex items-center gap-2'>
-              <ChevronRightIcon className='w-4 h-4' />
-              <button
-                onClick={crumb.onClick}
-                className='hover:text-gray-900 transition-colors'>
-                {crumb.label}
-              </button>
-            </div>
-          ))}
+      {/* Timeframe Picker */}
+      <TimeframePicker
+        selectedTimeframe={selectedTimeframe}
+        onTimeframeChange={setSelectedTimeframe}
+      />
+
+      {/* Key Call Out Panel */}
+      <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
+        <div className='flex items-center justify-between mb-4'>
+          <h3 className='text-lg font-bold text-gray-900'>Key Call Out</h3>
+          <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+            <span className='text-sm'>✨</span>
+            <span>AI</span>
+          </span>
         </div>
-      )}
+        <div className='space-y-3'>
+          <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+            {mockCostImpactKeyCallOut.bulletPoints.map((point, index) => (
+              <li key={index}>{point}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Budget Forecast Actual Waterfall */}
+      <BudgetForecastActualWaterfall
+        stages={mockBudgetForecastStages}
+        title='Budget Forecast Actual Waterfall'
+        subtitle='Click on Market Performance, L3+ vs target, or L4+ vs planned to navigate'
+      />
 
       {/* Sites Tab Content */}
       {activeTab === 'sites' && (
@@ -544,144 +524,6 @@ export default function ProductAnalysisLayer({
                   {site}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Key Call Out Panel */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
-            <div className='flex items-center justify-between mb-4'>
-              <h3 className='text-lg font-bold text-gray-900'>Key Call Out</h3>
-              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                <span className='text-sm'>✨</span>
-                <span>AI</span>
-              </span>
-            </div>
-            <div className='space-y-3'>
-              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-                {mockCostImpactKeyCallOut.bulletPoints.map((point, index) => (
-                  <li key={index}>{point}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* MVA Waterfall Chart */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-8'>
-            <div className='flex items-center justify-between mb-6'>
-              <div>
-                <h3 className='text-xl font-bold text-gray-900'>
-                  MVA Breakdown (Quarterly Actual)
-                </h3>
-                <p className='text-sm text-gray-500 mt-1'>
-                  Manufacturing Value Add Cost Analysis
-                </p>
-              </div>
-              <div className='flex items-center gap-4'>
-                <div className='flex items-center gap-2'>
-                  <div className='w-3 h-3 rounded-full bg-green-500'></div>
-                  <span className='text-sm text-gray-700'>Favourable</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <div className='w-3 h-3 rounded-full bg-red-500'></div>
-                  <span className='text-sm text-gray-700'>Adverse</span>
-                </div>
-              </div>
-            </div>
-            <div className='h-80'>
-              <ResponsiveContainer
-                width='100%'
-                height='100%'>
-                <ComposedChart data={mvaChartData}>
-                  <CartesianGrid strokeDasharray='3 3' />
-                  <XAxis
-                    dataKey='label'
-                    angle={-15}
-                    textAnchor='end'
-                    height={100}
-                    style={{ fontSize: '10px' }}
-                  />
-                  <YAxis
-                    style={{ fontSize: '12px' }}
-                    label={{
-                      value: 'MVA Cost',
-                      angle: -90,
-                      position: 'insideLeft',
-                      style: { fontSize: '12px' },
-                    }}
-                  />
-                  <Tooltip
-                    formatter={(
-                      value: number,
-                      _name: string,
-                      props: {
-                        payload?: {
-                          [key: string]: string | number | undefined;
-                          cumulativeValue?: number;
-                          delta?: number;
-                          label?: string;
-                        };
-                      }
-                    ) => {
-                      const payload = props.payload;
-                      const cumulative = payload?.cumulativeValue ?? value;
-                      const delta = payload?.delta;
-
-                      const tooltipLines: string[] = [
-                        `${payload?.label ?? 'Stage'}: ${cumulative.toFixed(
-                          1
-                        )}`,
-                      ];
-
-                      if (delta !== undefined && delta !== cumulative) {
-                        tooltipLines.push(
-                          `Change: ${delta > 0 ? '+' : ''}${delta.toFixed(1)}`
-                        );
-                      }
-
-                      return tooltipLines.join('\n');
-                    }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey='baselineValue'
-                    stackId='a'
-                    fill='transparent'
-                  />
-                  <Bar
-                    dataKey='barValue'
-                    stackId='a'
-                    name='MVA Breakdown'>
-                    <LabelList
-                      dataKey='delta'
-                      position='middle'
-                      formatter={(value: any) =>
-                        `${value >= 0 ? '' : ''}${Number(value).toFixed(1)}M`
-                      }
-                      style={{
-                        fontSize: '11px',
-                        fill: '#374151',
-                        fontWeight: 'bold',
-                      }}
-                    />
-                    {mockMVABreakdownStages.map((stage, index) => {
-                      const isBaseline = stage.type === 'baseline';
-                      const isPositive = stage.type === 'positive';
-
-                      let fillColor = '#3b82f6'; // blue for baseline
-                      if (!isBaseline) {
-                        fillColor = isPositive ? '#10b981' : '#ef4444';
-                      }
-
-                      return (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={fillColor}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </ComposedChart>
-              </ResponsiveContainer>
             </div>
           </div>
 
@@ -1194,28 +1036,6 @@ export default function ProductAnalysisLayer({
       {/* Products Tab Content */}
       {activeTab === 'products' && (
         <div className='space-y-6'>
-          {/* Overall Performance Summary */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg p-6'>
-            <div className='flex items-center justify-between mb-4'>
-              <h3 className='text-lg font-bold text-gray-900'>Key Call Out</h3>
-              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                <span className='text-sm'>✨</span>
-                <span>AI</span>
-              </span>
-            </div>
-            <div className='space-y-3'>
-              <p className='text-sm text-gray-700 leading-relaxed'>
-                Gross Profit (GP) actuals exceeded budget by 2,350.0 (actual:
-                35,459.2 vs. budget: 33,109.2). Revenue actuals also surpassed
-                budget by 25.5 (actual: 150.1 vs. budget: 124.5). Volume impact
-                (+8,807.7) and price impact (+3,662.22) were the main positive
-                drivers, while cost impact (-7,323.21) and mix impact (-2,796.6)
-                were negative contributors. Product Fam 12 and 26 contributed
-                most to positive GP gap to budget.
-              </p>
-            </div>
-          </div>
-
           {/* OP Impact Overview Cards */}
           <div>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
