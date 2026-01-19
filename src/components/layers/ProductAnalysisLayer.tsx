@@ -1,26 +1,29 @@
-import { useState, useMemo } from 'react';
+import {
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
+    InformationCircleIcon
+} from '@heroicons/react/24/outline';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeftIcon,
-  InformationCircleIcon,
-  ChevronRightIcon,
-  ArrowRightIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-} from '@heroicons/react/24/outline';
-import {
-  mockProductFamilyData,
-  mockProductFamilyTotals,
-  mockCostImpactData,
-  mockCostImpactKeyCallOut,
-  mockFactoryInitiatives,
-  mockTotalCostImpact,
-  mockFactoryMVABreakdown,
-  mockBudgetForecastStages,
+    mockBudgetForecastStages,
+    mockCostImpactData,
+    mockCostImpactKeyCallOut,
+    mockFactoryInitiatives,
+    mockFactoryMVABreakdown,
+    mockProductFamilyData,
+    mockProductFamilyTotals,
+    mockTotalCostImpact,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem, FactoryInitiative } from '../../types';
-import TimeframePicker, { type TimeframeOption } from '../TimeframePicker';
+import {
+    getStoredTimeframe,
+    setStoredTimeframe,
+} from '../../utils/timeframeStorage';
 import BudgetForecastActualWaterfall from '../BudgetForecastActualWaterfall';
+import TimeframePicker, { type TimeframeOption } from '../TimeframePicker';
 
 // Aggregated factory data type
 interface FactoryAggregatedData {
@@ -208,7 +211,11 @@ export default function ProductAnalysisLayer({
   const [siteSortDirection, setSiteSortDirection] =
     useState<SortDirection>('asc');
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>('full-year');
+    useState<TimeframeOption>(() => getStoredTimeframe());
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframe);
+  }, [selectedTimeframe]);
 
   // Get unique sites from cost impact data
   const uniqueSites = useMemo(() => {

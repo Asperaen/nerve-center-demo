@@ -99,10 +99,6 @@ export default function BudgetForecastActualWaterfall({
             <div className='w-3 h-3 rounded-full bg-risk-500'></div>
             <span className='text-sm text-gray-700'>Adverse</span>
           </div>
-          <div className='flex items-center gap-2'>
-            <div className='w-3 h-3 rounded-full bg-gray-500'></div>
-            <span className='text-sm text-gray-700'>Baseline</span>
-          </div>
         </div>
       </div>
 
@@ -185,7 +181,6 @@ export default function BudgetForecastActualWaterfall({
                 return tooltipLines.join('\n');
               }}
             />
-            <Legend />
             {/* Baseline transparent spacer bar */}
             <Bar dataKey='baselineValue' stackId='a' fill='transparent' />
             {/* Actual value bars */}

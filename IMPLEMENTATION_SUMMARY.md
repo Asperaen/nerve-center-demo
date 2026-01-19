@@ -28,11 +28,11 @@ The application is currently running and ready for demonstration.
 - ✅ Left calendar sidebar (CalendarSidebar component) for daily agenda view with drag-and-drop material support
 - ✅ Sidebar expands to 256px (w-64) when expanded, collapses to 64px (w-16) when collapsed
 - ✅ Navigation items organized into two visually distinct groups:
-  - **Real Time Pulse Section** (blue theme): Home, Performance Intelligence, Market Intelligence, Action Tracker
-  - **Meetings Section** (purple theme): Quarterly Actuals Review
-- ✅ Section headers ("Real Time Pulse" and "Meetings") displayed when sidebar is expanded
+  - **Real Time Pulse Section** (blue theme): Home, Performance Intelligence, Market Intelligence
+  - **Tools** (blue theme): Action Tracker, Quarterly Actuals Review
+- ✅ Section headers ("Real Time Pulse" and "Tools") displayed when sidebar is expanded
 - ✅ Visual separator between sections
-- ✅ Color-coded active states: blue for Real Time Pulse items, purple for Meetings items
+- ✅ Color-coded active states: blue for Real Time Pulse and Tools items
 - ⚠️ **Note**: External Pulse, Internal Pulse, Finance Forecast, and My Meetings pages still exist but have been removed from the sidebar navigation menu
 - ✅ Icon-based navigation with labels
 - ✅ Active state highlighting with color-coded background and left border
@@ -59,7 +59,7 @@ Complete mock data for two scenarios (US Tariff Impact & Rare Earth Supply Disru
 - ✅ `mockAnalysis.ts` - Root cause analysis results
 - ✅ `mockRootCauses.ts` - 3 root causes with title, impact, tags, and Wave ticket numbers
 - ✅ `mockExecutiveDashboard.ts` - Executive initiatives, milestones, workflow groups, and chart data (value progress, value delivery tracking, variance analysis, workflow value delivery)
-- ✅ `mockBusinessGroupPerformance.ts` - Business group performance data (HH, FII, FIH, FIT, Others) with 12-month trend data and AI-generated insights for Revenue, GP, OP, NP metrics
+- ✅ `mockBusinessGroupPerformance.ts` - Business group performance data (HH, FII, FIH, FIT, Others) with 12-month trend data and AI-generated insights for Revenue, GP, OP, NP metrics; includes Year-to-Month dataset variants
 - ✅ `mockCalendar.ts` - Calendar events and meetings with attendees, materials, and meeting types
 
 ### 4. Page Structure ✅
@@ -516,13 +516,13 @@ The application uses a flat route structure with standalone pages for each major
    - Right sidebar navigation always visible
    - Optional left calendar sidebar (toggleable)
    - Business Group Performance table with expandable rows
-   - Action Items Requiring Attention section
 
 2. ✅ `/business-group-performance` - Performance Intelligence Page (label: "Performance Intelligence" and "Market Intelligence" in sidebar)
 
    - Detailed financial metrics by business group
    - Supports query parameter `?bu=<group_id>` for filtering
    - NP Deviation Breakdown waterfall chart
+   - Row selection on the table updates the waterfall values to match selected BUs
    - Deep dive navigation to COGS Analysis (Sites/Products)
    - Layer navigation with breadcrumbs
 
@@ -875,20 +875,20 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - Home (Home icon)
        - Performance Intelligence (Building Office icon)
        - Market Intelligence (Currency Dollar icon)
+     - **Tools Section** (blue theme):
        - Action Tracker (Clipboard icon)
-     - **Meetings Section** (purple theme):
        - Quarterly Actuals Review (Document Check icon)
    - Optional left calendar sidebar (toggleable via floating button)
    - Section headers displayed when sidebar is expanded
    - Visual separator between sections
-   - Color-coded active states (blue for Real Time Pulse, purple for Meetings)
+   - Color-coded active states (blue for Real Time Pulse and Tools)
    - Profile link at bottom of sidebar
    - Sidebar can be collapsed/expanded using toggle button
    - "Create Action" buttons on page headers for context-specific action creation
 
 2. **Home Page** (http://localhost:5173/) - Demonstrate:
 
-   - **Timeframe Filter**: Shared TimeframePicker component with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
+   - **Timeframe Filter**: Shared TimeframePicker component with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month (default: Year to Month actuals)
    - **Business Group Performance**: Table showing financial metrics by business group
      - Business groups: HH, FII, FIH, FIT, Others, Overall consolidated
      - Expandable rows to show sub-groups
@@ -902,10 +902,6 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Toggle to show/hide comparison details
      - Click on metric cells to navigate to Business Group Performance page
      - Link to detailed Business Group Performance page
-   - **Action Items Requiring Attention**: Summary of urgent high-priority actions
-     - Count cards for urgent actions, high-priority actions, and total actions
-     - Top 3 urgent actions displayed with details
-     - Link to Action Tracker page
    - **Selection System**: Multi-select items with action bar
      - Action bar appears when items are selected
      - "AI Analysis" button opens Root Cause Analysis sidebar
@@ -921,12 +917,14 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
    - **Detailed Table**: Same table as Home page but with more space and focus
-   - **NP Deviation Breakdown Waterfall**: Shows 9-stage NP deviation progression
+   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver with YTM budget/actual aligned to the BU totals and cumulative bars maintained
+   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver
+   - **Row Selection**: Select rows to scale the waterfall to the chosen business units
    - **Deep Dive Navigation**: Click waterfall stages for COGS Analysis
      - Sites tab with MVA waterfall and site table
      - Products tab with product family breakdown
    - **Breadcrumb Navigation**: Clear path with clickable links
-   - **Timeframe Filtering**: Full year forecast, Year to Month actuals, Rolling 3 months, In-month options (using shared TimeframePicker component)
+   - **Timeframe Filtering**: Full year forecast, Year to Month actuals, Rolling 3 months, In-month options (default: Year to Month actuals)
 
 4. **External Pulse Page** (http://localhost:5173/external-pulse) - Access via direct URL (not in sidebar menu):
 
@@ -943,10 +941,15 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Waterfall and bar charts showing external impacts
 
 5. **Internal Pulse Page** (http://localhost:5173/internal-pulse) - Access via direct URL (not in sidebar menu):
+6. **Market Intelligence Page** (http://localhost:5173/market-intelligence) - Demonstrate:
+
+   - **Performance Waterfall** updates with assumption toggles
+   - **Focus Toggle** defaults from the inbound link and controls the highlighted stage
+
 
    - **Tab Switcher**: Two tabs at the top - "KPIs and operational indicators" and "Wave"
    - **KPIs and operational indicators tab** (default):
-     - **Timeframe Filter**: Shared TimeframePicker component (compact variant) with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
+     - **Timeframe Filter**: Shared TimeframePicker component (compact variant) with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month (default: Year to Month actuals)
      - Value driver framework organized by financial category (Revenue, COGS, OPEX, Operating Profit)
      - Metrics with value drivers and affecting factors
      - Performance status indicators and variance displays
@@ -1100,6 +1103,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Comments system with history display
    - Expandable action cards with full details
    - "Create Action" button in page header
+    - **Action Items Requiring Attention**: Summary of urgent high-priority actions (below the tracker)
+      - Count cards for urgent actions, high-priority actions, and total actions
+      - Top 3 urgent actions displayed with details
 
 9. **My Meetings** (http://localhost:5173/my-meetings) - Access via direct URL (not in sidebar menu):
 
@@ -1296,7 +1302,7 @@ pnpm lint
    - Root route displays Home page (Executive Summary)
    - Navigation items organized into two visually distinct groups:
      - Real Time Pulse section (blue theme): Home, Performance Intelligence, Market Intelligence, Action Tracker
-     - Meetings section (purple theme): Quarterly Actuals Review
+     - Tools section (blue theme): Quarterly Actuals Review
    - Section headers and visual separators for clear organization
    - Color-coded active states for easy identification
    - Sidebar navigation provides quick access to all features
@@ -1402,9 +1408,11 @@ pnpm lint
 21. **Business Group Performance**: Comprehensive business group financial overview:
     - Available on both Home page (summary) and dedicated Business Group Performance page (detailed)
     - Table layout with expandable business groups: HH, FII, FIH, FIT, Others, Overall consolidated
+    - Overall row pinned to the top and selected by default
     - 4 financial metrics per group: Revenue, Gross Profit, Operating Profit, Net Profit
     - Each cell shows absolute value (e.g., "$14.8M") with comparison baseline ("vs budget $X.XM")
     - Color-coded percentage badges (green positive, red negative, gray flat)
+    - Row selection controls to compare specific business units against the waterfall
     - Hover tooltips with rich content:
       - 12-month trend sparkline chart (SVG visualization)
       - Color-coded trend line matching performance direction
@@ -1428,6 +1436,7 @@ pnpm lint
 24. **TimeframePicker Component**: Reusable timeframe selection component:
     - Shared component used across multiple pages (Home, Performance Intelligence, Internal Pulse)
     - Four timeframe options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month
+    - Selection persists across pages (stored and reused as the default on navigation)
     - Two visual variants: `default` (with label) and `compact` (no label, enhanced styling)
     - Exported types (`TimeframeOption`, `TimeframeOptionItem`) and constants (`TIMEFRAME_OPTIONS`) for reuse
     - Consistent styling and behavior across the application

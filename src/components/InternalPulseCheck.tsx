@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
-import { internalPulseColumns } from '../data/mockInternalPulse';
-import type { PulseColumn, PulseMetric, FinancialMetric } from '../types';
 import {
-  CircleStackIcon,
-  ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  ArrowTrendingUpIcon,
+  CircleStackIcon,
   CogIcon,
 } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { internalPulseColumns } from '../data/mockInternalPulse';
+import type { FinancialMetric, PulseColumn, PulseMetric } from '../types';
+import {
+  getStoredTimeframe,
+  setStoredTimeframe,
+} from '../utils/timeframeStorage';
 import TimeframePicker, { type TimeframeOption } from './TimeframePicker';
 
 interface InternalPulseCheckProps {
@@ -75,13 +79,17 @@ export default function InternalPulseCheck({
     selectedItems.map((item) => item.id)
   );
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>('full-year');
+    useState<TimeframeOption>(() => getStoredTimeframe());
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   // Sync with parent selection
   useEffect(() => {
     setSelectedMetricIds(selectedItems.map((item) => item.id));
   }, [selectedItems]);
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframe);
+  }, [selectedTimeframe]);
 
   // Set last refreshed time when component mounts
   useEffect(() => {

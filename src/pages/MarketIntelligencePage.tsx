@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import CreateActionModalGlobal from '../components/CreateActionModal';
 import {
   mockOPWaterfallStages,
@@ -12,6 +13,10 @@ import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWat
 import TimeframePicker, {
   type TimeframeOption,
 } from '../components/TimeframePicker';
+import {
+  getStoredTimeframe,
+  setStoredTimeframe,
+} from '../utils/timeframeStorage';
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -35,8 +40,9 @@ import type {
 } from '../types';
 
 export default function MarketIntelligencePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>('full-year');
+    useState<TimeframeOption>(() => getStoredTimeframe());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
     null
@@ -84,6 +90,55 @@ export default function MarketIntelligencePage() {
     useState<Proposal | null>(null);
   const [isCreateActionGlobalModalOpen, setIsCreateActionGlobalModalOpen] =
     useState(false);
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframe);
+  }, [selectedTimeframe]);
+
+  const focusOptions = [
+    {
+      id: 'market-performance',
+      label: 'Market performance',
+      subtitle:
+        'Market Performance analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l3-vs-target',
+      label: 'L3+ vs target',
+      subtitle:
+        'L3+ vs target analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l4-vs-planned',
+      label: 'L4+ vs planned',
+      subtitle:
+        'L4+ vs planned analysis - You are here. Toggle assumptions below to see impact.',
+    },
+  ] as const;
+
+  type FocusOptionId = (typeof focusOptions)[number]['id'];
+
+  const resolveFocus = (value: string | null): FocusOptionId => {
+    const match = focusOptions.find((option) => option.id === value);
+    return match?.id ?? 'market-performance';
+  };
+
+  const [selectedFocusStage, setSelectedFocusStage] = useState<FocusOptionId>(
+    resolveFocus(searchParams.get('focus'))
+  );
+
+  useEffect(() => {
+    setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
+  }, [searchParams]);
+
+  const handleFocusChange = (focus: FocusOptionId) => {
+    setSelectedFocusStage(focus);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('focus', focus);
+      return next;
+    });
+  };
 
   // Calculate adjusted budget forecast stages based on enabled assumptions
   const adjustedBudgetForecastStages = useMemo(() => {
@@ -474,12 +529,33 @@ export default function MarketIntelligencePage() {
 
         <div className='space-y-8'>
           {/* Market Performance Waterfall Chart */}
-          <BudgetForecastActualWaterfall
-            stages={adjustedBudgetForecastStages}
-            title='Market Intelligence - Performance Waterfall'
-            subtitle='Market Performance analysis - You are here. Toggle assumptions below to see impact.'
-            highlightedStage='market-performance'
-          />
+          <div className='space-y-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex bg-gray-100 rounded-lg p-1'>
+                {focusOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => handleFocusChange(option.id)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedFocusStage === option.id
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}>
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <BudgetForecastActualWaterfall
+              stages={adjustedBudgetForecastStages}
+              title='Market Intelligence - Performance Waterfall'
+              subtitle={
+                focusOptions.find((option) => option.id === selectedFocusStage)
+                  ?.subtitle
+              }
+              highlightedStage={selectedFocusStage}
+            />
+          </div>
 
           {/* Assumptions Section - Side by Side Layout */}
           <div className='flex items-start justify-center gap-8'>

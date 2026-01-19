@@ -1,44 +1,43 @@
-import { useState, useMemo } from 'react';
-import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
   ArrowRightIcon,
-  ChartBarIcon,
-  SparklesIcon,
-  ClipboardDocumentListIcon,
+  ArrowTrendingDownIcon,
+  ArrowTrendingUpIcon,
   CalendarIcon,
-  PlusIcon,
+  ChartBarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { format, isToday } from 'date-fns';
-import { mockActions } from '../data/mockActions';
-import { internalPulseColumns } from '../data/mockInternalPulse';
-import {
-  getAllBusinessGroupData,
-  getSubBusinessGroupsWithOverall,
-  getMainBusinessGroupOptions,
-  getSubBusinessGroups,
-  type BusinessGroupMetricWithTrend,
-  type BusinessGroupData,
-} from '../data/mockBusinessGroupPerformance';
-import { mockKPIs } from '../data/mockKPIs';
-import {
-  mockExecutiveInitiatives,
-  mockMilestones,
-  calculateSummaryStatistics,
-} from '../data/mockExecutiveDashboard';
-import { mockCalendarEvents } from '../data/mockCalendar';
-import type { PulseMetric, Meeting, MeetingMaterial } from '../types';
-import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
-import CreateActionModal from '../components/CreateActionModal';
+import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import TimeframePicker, {
   type TimeframeOption,
 } from '../components/TimeframePicker';
-import { findRelevantMeetings } from '../utils/meetingRelevance';
+import {
+  getAllBusinessGroupData,
+  getSubBusinessGroups,
+  getSubBusinessGroupsWithOverall,
+  type BusinessGroupData,
+  type BusinessGroupMetricWithTrend
+} from '../data/mockBusinessGroupPerformance';
+import { mockCalendarEvents } from '../data/mockCalendar';
+import {
+  calculateSummaryStatistics,
+  mockExecutiveInitiatives,
+  mockMilestones,
+} from '../data/mockExecutiveDashboard';
+import { internalPulseColumns } from '../data/mockInternalPulse';
+import { mockKPIs } from '../data/mockKPIs';
+import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
+import { findRelevantMeetings } from '../utils/meetingRelevance';
+import {
+  getStoredTimeframe,
+  setStoredTimeframe,
+} from '../utils/timeframeStorage';
 
 interface ExecutiveSummaryPageContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
@@ -66,7 +65,11 @@ export default function ExecutiveSummaryPage() {
     useState<boolean>(true);
 
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>('full-year');
+    useState<TimeframeOption>(() => getStoredTimeframe());
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframe);
+  }, [selectedTimeframe]);
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -210,17 +213,6 @@ export default function ExecutiveSummaryPage() {
       } meeting${meetingIds.length !== 1 ? 's' : ''}!`
     );
   };
-
-  // Count high-priority actions
-  const highPriorityActions = mockActions.filter(
-    (action) => action.priority === 'high'
-  );
-  const urgentActions = highPriorityActions.filter(
-    (action) =>
-      action.status === 'todo' ||
-      action.status === 'in-progress' ||
-      action.status === 'reopen'
-  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -610,14 +602,16 @@ export default function ExecutiveSummaryPage() {
   const executiveBriefing = getExecutiveBriefing();
 
   const tableData = useMemo(() => {
+    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
-      return getAllBusinessGroupData();
+      return getAllBusinessGroupData(dataTimeframe);
     }
-    return getSubBusinessGroupsWithOverall(selectedBu);
-  }, [selectedBu]);
+    return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
+  }, [selectedBu, selectedTimeframe]);
 
   const getExpandedSubGroups = (bgId: string) => {
-    return getSubBusinessGroups(bgId);
+    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    return getSubBusinessGroups(bgId, dataTimeframe);
   };
 
   const toggleRowExpansion = (bgId: string) => {
@@ -963,7 +957,7 @@ export default function ExecutiveSummaryPage() {
           />
         </div>
 
-        {/* Business Group Performance Section */}
+        {/* Business Group Performance Section */}  
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
             <div>
@@ -972,7 +966,7 @@ export default function ExecutiveSummaryPage() {
                 Business Group Performance
               </h2>
               <p className='text-sm text-gray-600 mt-1'>
-                Quarterly Actual, USD
+                Mn, USD
               </p>
             </div>
             <div className='flex items-center gap-4'>
@@ -1054,101 +1048,6 @@ export default function ExecutiveSummaryPage() {
           </div>
         </div>
 
-        {/* Quick Actions Summary Section */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-              <ClipboardDocumentListIcon className='w-6 h-6 text-primary-600' />
-              Action Items Requiring Attention
-            </h2>
-            <Link
-              to='/action-tracker'
-              className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-              Action Tracker
-              <ArrowRightIcon className='w-4 h-4' />
-            </Link>
-          </div>
-          <p className='text-gray-600 mb-4'>
-            {urgentActions.length} urgent high-priority actions requiring
-            immediate attention, including Vietnam production shift for EV
-            connectors, securing alternative rare earth suppliers, and
-            accelerating Nvidia GB300 program engagement to capture data center
-            growth.
-          </p>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
-              <div className='text-center p-4 bg-red-50 rounded-lg border border-red-200'>
-                <div className='text-3xl font-bold text-red-600 mb-1'>
-                  {urgentActions.length}
-                </div>
-                <div className='text-sm font-medium text-red-800'>
-                  Urgent High-Priority Actions
-                </div>
-              </div>
-              <div className='text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200'>
-                <div className='text-3xl font-bold text-yellow-600 mb-1'>
-                  {highPriorityActions.length}
-                </div>
-                <div className='text-sm font-medium text-yellow-800'>
-                  Total High-Priority Actions
-                </div>
-              </div>
-              <div className='text-center p-4 bg-blue-50 rounded-lg border border-blue-200'>
-                <div className='text-3xl font-bold text-blue-600 mb-1'>
-                  {mockActions.length}
-                </div>
-                <div className='text-sm font-medium text-blue-800'>
-                  Total Actions
-                </div>
-              </div>
-            </div>
-            {urgentActions.length > 0 && (
-              <div className='space-y-3'>
-                <h4 className='text-sm font-semibold text-gray-700 mb-2'>
-                  Top Urgent Actions:
-                </h4>
-                {urgentActions.slice(0, 3).map((action) => (
-                  <div
-                    key={action.id}
-                    className='flex items-start justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-2 mb-1'>
-                        <span
-                          className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                            action.priority === 'high'
-                              ? 'bg-red-100 text-red-800'
-                              : action.priority === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {action.priority.toUpperCase()}
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
-                            action.status === 'todo'
-                              ? 'bg-blue-100 text-blue-800'
-                              : action.status === 'in-progress'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : action.status === 'reopen'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {action.status.replace('-', ' ')}
-                        </span>
-                      </div>
-                      <h5 className='text-sm font-medium text-gray-900'>
-                        {action.title}
-                      </h5>
-                      <p className='text-xs text-gray-600 mt-1'>
-                        Owner: {action.owner}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* AI Analysis Sidebar */}

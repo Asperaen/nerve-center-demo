@@ -1,33 +1,37 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
   ChartBarIcon,
-  SparklesIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
-import {
-  getAllBusinessGroupData,
-  getSubBusinessGroupsWithOverall,
-  getMainBusinessGroupOptions,
-  getSubBusinessGroups,
-  type BusinessGroupMetricWithTrend,
-  type BusinessGroupData,
-} from '../data/mockBusinessGroupPerformance';
-import {
-  mockNPDeviationKeyCallOut,
-  mockBudgetForecastStages,
-} from '../data/mockForecast';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import {
-  ProductAnalysisLayer,
   CostImpactBreakdownLayer,
   MVABreakdownLayer,
+  ProductAnalysisLayer,
 } from '../components/layers';
 import TimeframePicker, {
   type TimeframeOption,
 } from '../components/TimeframePicker';
-import type { NavigationLayer, BreadcrumbItem } from '../types';
+import {
+  getAllBusinessGroupData,
+  getMainBusinessGroupOptions,
+  getSubBusinessGroups,
+  getSubBusinessGroupsWithOverall,
+  type BusinessGroupData,
+  type BusinessGroupMetricWithTrend,
+} from '../data/mockBusinessGroupPerformance';
+import {
+  mockBudgetForecastStages,
+  mockNPDeviationKeyCallOut,
+} from '../data/mockForecast';
+import type { BreadcrumbItem, NavigationLayer } from '../types';
+import {
+  getStoredTimeframe,
+  setStoredTimeframe,
+} from '../utils/timeframeStorage';
 
 export default function BusinessGroupPerformancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,8 +41,11 @@ export default function BusinessGroupPerformancePage() {
 
   // Filter states
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>('full-year');
+    useState<TimeframeOption>(() => getStoredTimeframe());
   const [selectedBu, setSelectedBu] = useState<string>(initialBu);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
+    new Set()
+  );
 
   // Expanded rows state (for "All BUs" view)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -129,17 +136,53 @@ export default function BusinessGroupPerformancePage() {
     });
   };
 
+  const toggleGroupSelection = (bgId: string) => {
+    setSelectedGroupIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(bgId)) {
+        next.delete(bgId);
+      } else {
+        next.add(bgId);
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframe);
+  }, [selectedTimeframe]);
+
+  const isOverallRowId = (id: string) =>
+    id === 'overall' || id.endsWith('-overall');
+
   // Get data based on selected BU
   const tableData = useMemo(() => {
+    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
-      return getAllBusinessGroupData();
+      return getAllBusinessGroupData(dataTimeframe);
     }
-    return getSubBusinessGroupsWithOverall(selectedBu);
-  }, [selectedBu]);
+    return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
+  }, [selectedBu, selectedTimeframe]);
+
+  const orderedTableData = useMemo(() => {
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    const remainingRows = tableData.filter((row) => !isOverallRowId(row.id));
+    return overallRow ? [overallRow, ...remainingRows] : tableData;
+  }, [tableData]);
+
+  useEffect(() => {
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    if (overallRow) {
+      setSelectedGroupIds(new Set([overallRow.id]));
+    } else if (tableData.length === 0) {
+      setSelectedGroupIds(new Set());
+    }
+  }, [tableData]);
 
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
-    return getSubBusinessGroups(bgId);
+    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    return getSubBusinessGroups(bgId, dataTimeframe);
   };
 
   // Get section title
@@ -150,6 +193,83 @@ export default function BusinessGroupPerformancePage() {
     const bg = mainBuOptions.find((b) => b.id === selectedBu);
     return bg?.name || selectedBu.toUpperCase();
   };
+
+  const scaledBudgetForecastStages = useMemo(() => {
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    const baseRows = tableData.filter((row) => !isOverallRowId(row.id));
+    const totalNpValue =
+      overallRow?.np.value ??
+      baseRows.reduce((sum, row) => sum + row.np.value, 0);
+    const totalNpBaseline =
+      overallRow?.np.baseline ??
+      baseRows.reduce((sum, row) => sum + row.np.baseline, 0);
+
+    const selectedRows =
+      selectedGroupIds.size === 0
+        ? overallRow
+          ? [overallRow]
+          : baseRows
+        : tableData.filter((row) => selectedGroupIds.has(row.id));
+    const hasOverallSelected = selectedRows.some((row) =>
+      isOverallRowId(row.id)
+    );
+    const selectedNpValue = hasOverallSelected
+      ? overallRow?.np.value ?? totalNpValue
+      : selectedRows.reduce((sum, row) => sum + row.np.value, 0);
+    const selectedNpBaseline = hasOverallSelected
+      ? overallRow?.np.baseline ?? totalNpBaseline
+      : selectedRows.reduce((sum, row) => sum + row.np.baseline, 0);
+
+    if (totalNpBaseline === 0) {
+      return mockBudgetForecastStages;
+    }
+
+    const scaleFactor = selectedNpBaseline / totalNpBaseline;
+    const roundToOne = (value: number) => Math.round(value * 10) / 10;
+    let runningValue = roundToOne(selectedNpBaseline);
+
+    return mockBudgetForecastStages.map((stage) => {
+      if (stage.stage === 'budget') {
+        runningValue = roundToOne(selectedNpBaseline);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.stage === 'actuals') {
+        runningValue = roundToOne(selectedNpValue);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.type === 'baseline') {
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      const scaledDelta =
+        stage.delta === undefined
+          ? undefined
+          : roundToOne(stage.delta * scaleFactor);
+      if (scaledDelta !== undefined) {
+        runningValue = roundToOne(runningValue + scaledDelta);
+      }
+
+      return {
+        ...stage,
+        value: runningValue,
+        delta: scaledDelta,
+      };
+    });
+  }, [selectedGroupIds, tableData]);
 
   const renderMetricCell = (
     metric: BusinessGroupMetricWithTrend,
@@ -349,6 +469,14 @@ export default function BusinessGroupPerformancePage() {
         onClick={isClickable ? handleRowClick : undefined}>
         <td className='px-6 py-3 border-b border-r border-gray-200'>
           <div className='flex items-center gap-2'>
+            <input
+              type='checkbox'
+              checked={selectedGroupIds.has(group.id)}
+              onChange={() => toggleGroupSelection(group.id)}
+              onClick={(event) => event.stopPropagation()}
+              className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500'
+              aria-label={`Select ${group.name}`}
+            />
             {isExpandable && (
               <span className='text-gray-400'>
                 {isExpanded ? (
@@ -458,49 +586,42 @@ export default function BusinessGroupPerformancePage() {
         </div>
       </div>
 
-      {/* Budget Forecast Actual Waterfall Section */}
-      <div className='max-w-[1920px] mx-auto px-8 py-6'>
-        <BudgetForecastActualWaterfall
-          stages={mockBudgetForecastStages}
-          title='Budget Forecast Actual Waterfall'
-          subtitle='Click on Market Performance, L3+ vs target, or L4+ vs planned to navigate'
-        />
-      </div>
-
       {/* Content */}
-      <div className='max-w-[1920px] mx-auto px-8 py-8'>
+      <div className='max-w-[1920px] mx-auto px-8 pt-6'>
         {/* Financial Overview Section */}
         <div className='mb-8'>
-          <div className='flex items-center justify-between mb-2'>
-            <div className='flex items-center gap-2'>
-              <ChartBarIcon className='w-5 h-5 text-primary-600' />
-              <h2 className='text-lg font-semibold text-gray-700 italic'>
-                Financial overview – {getSectionTitle()}
-              </h2>
-            </div>
-            <div className='flex items-center gap-4'>
-              <div className='flex items-center gap-2'>
-                <span className='text-sm text-gray-600'>Show Details</span>
-                <button
-                  onClick={() =>
-                    setShowComparisonDetails(!showComparisonDetails)
-                  }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
-                  }`}>
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
-            <p className='text-sm text-gray-600 mt-1'>Quarterly Actual, USD</p>
-            <table className='w-full'>
+            <div className='px-6 pt-6'>
+              <div className='flex items-center justify-between mb-2'>
+                <div className='flex items-center gap-2'>
+                  <ChartBarIcon className='w-5 h-5 text-primary-600' />
+                  <h2 className='text-lg font-bold text-gray-900'>
+                    Decomposition by BU - {getSectionTitle()}
+                  </h2>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-gray-600'>Show Details</span>
+                    <button
+                      onClick={() =>
+                        setShowComparisonDetails(!showComparisonDetails)
+                      }
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                        showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                      }`}>
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className='text-sm text-gray-600 mt-1'>Quarterly Actual, USD</p>
+            </div>
+            <div className='px-4 pb-4 pt-2'>
+              <table className='w-full'>
               <thead>
                 <tr className='bg-gray-50'>
                   <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
@@ -531,7 +652,7 @@ export default function BusinessGroupPerformancePage() {
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((group) => {
+                {orderedTableData.map((group) => {
                   const isOverallRow =
                     group.id === 'overall' || group.id.endsWith('-overall');
                   const isExpandable =
@@ -556,9 +677,18 @@ export default function BusinessGroupPerformancePage() {
                   );
                 })}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Budget Forecast Actual Waterfall Section */}
+      <div className='max-w-[1920px] mx-auto px-8 pb-8'>
+        <BudgetForecastActualWaterfall
+          stages={scaledBudgetForecastStages}
+          title='Deviation waterfall of BU performance by value driver'
+        />
       </div>
     </>
   );

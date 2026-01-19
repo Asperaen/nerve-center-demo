@@ -24,6 +24,8 @@ export interface BusinessGroupData {
   np: BusinessGroupMetricWithTrend;
 }
 
+export type BusinessGroupTimeframe = 'full-year' | 'ytm';
+
 // Helper to generate trend data
 const generateTrend = (
   baseValue: number,
@@ -279,9 +281,67 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
   },
 ];
 
+const ytmScaleByGroup: Record<
+  string,
+  { value: number; baseline: number; stly: number }
+> = {
+  hh: { value: 0.72, baseline: 0.74, stly: 0.71 },
+  fii: { value: 0.76, baseline: 0.75, stly: 0.74 },
+  fih: { value: 0.78, baseline: 0.77, stly: 0.76 },
+  fit: { value: 0.73, baseline: 0.75, stly: 0.72 },
+  others: { value: 0.7, baseline: 0.71, stly: 0.69 },
+};
+
+const roundTo = (value: number, digits: number = 1) => {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+};
+
+const calcPercent = (value: number, baseline: number) =>
+  baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
+
+const scaleMetricForYtm = (
+  metric: BusinessGroupMetricWithTrend,
+  scale: { value: number; baseline: number; stly: number }
+): BusinessGroupMetricWithTrend => {
+  const value = roundTo(metric.value * scale.value);
+  const baseline = roundTo(metric.baseline * scale.baseline);
+  const stly = roundTo(metric.stly * scale.stly);
+
+  return {
+    ...metric,
+    value,
+    baseline,
+    stly,
+    percent: calcPercent(value, baseline),
+    trend: metric.trend.map((point) => ({
+      ...point,
+      value: roundTo(point.value * scale.value, 2),
+    })),
+  };
+};
+
+export const mockBusinessGroupDataYtm: BusinessGroupData[] =
+  mockBusinessGroupData.map((group) => {
+    const scale = ytmScaleByGroup[group.id] ?? {
+      value: 0.74,
+      baseline: 0.74,
+      stly: 0.72,
+    };
+    return {
+      ...group,
+      rev: scaleMetricForYtm(group.rev, scale),
+      gp: scaleMetricForYtm(group.gp, scale),
+      op: scaleMetricForYtm(group.op, scale),
+      np: scaleMetricForYtm(group.np, scale),
+    };
+  });
+
 // Calculate Grand total totals
-export const calculateOverallConsolidated = (): BusinessGroupData => {
-  const totals = mockBusinessGroupData.reduce(
+export const calculateOverallConsolidated = (
+  data: BusinessGroupData[] = mockBusinessGroupData
+): BusinessGroupData => {
+  const totals = data.reduce(
     (acc, group) => ({
       rev: {
         value: acc.rev.value + group.rev.value,
@@ -313,9 +373,6 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     }
   );
 
-  const calcPercent = (value: number, baseline: number) =>
-    baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
-
   // Generate consolidated trend by summing all BU trends
   const generateConsolidatedTrend = (
     metricKey: 'rev' | 'gp' | 'op' | 'np'
@@ -336,7 +393,7 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
     ];
     return months.map((month, index) => ({
       month,
-      value: mockBusinessGroupData.reduce(
+      value: data.reduce(
         (sum, group) => sum + group[metricKey].trend[index].value,
         0
       ),
@@ -381,8 +438,16 @@ export const calculateOverallConsolidated = (): BusinessGroupData => {
   };
 };
 
-export const getAllBusinessGroupData = (): BusinessGroupData[] => {
-  return [...mockBusinessGroupData, calculateOverallConsolidated()];
+const getBusinessGroupDataset = (
+  timeframe: BusinessGroupTimeframe = 'full-year'
+): BusinessGroupData[] =>
+  timeframe === 'ytm' ? mockBusinessGroupDataYtm : mockBusinessGroupData;
+
+export const getAllBusinessGroupData = (
+  timeframe: BusinessGroupTimeframe = 'full-year'
+): BusinessGroupData[] => {
+  const data = getBusinessGroupDataset(timeframe);
+  return [...data, calculateOverallConsolidated(data)];
 };
 
 // ============================================
@@ -662,18 +727,24 @@ const generateSubGroupData = (
 
 // Get sub-business groups for a given parent BG (without overall row)
 export const getSubBusinessGroups = (
-  parentBgId: string
+  parentBgId: string,
+  timeframe: BusinessGroupTimeframe = 'full-year'
 ): SubBusinessGroupData[] => {
-  const parentBg = mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+  const parentBg = getBusinessGroupDataset(timeframe).find(
+    (bg) => bg.id === parentBgId
+  );
   if (!parentBg) return [];
   return generateSubGroupData(parentBgId, parentBg.name, parentBg);
 };
 
 // Get sub-business groups with overall for a given parent BG
 export const getSubBusinessGroupsWithOverall = (
-  parentBgId: string
+  parentBgId: string,
+  timeframe: BusinessGroupTimeframe = 'full-year'
 ): BusinessGroupData[] => {
-  const parentBg = mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+  const parentBg = getBusinessGroupDataset(timeframe).find(
+    (bg) => bg.id === parentBgId
+  );
   if (!parentBg) return [];
 
   const subGroups = generateSubGroupData(parentBgId, parentBg.name, parentBg);
@@ -693,9 +764,10 @@ export const getSubBusinessGroupsWithOverall = (
 
 // Get parent BG info by ID
 export const getParentBusinessGroup = (
-  parentBgId: string
+  parentBgId: string,
+  timeframe: BusinessGroupTimeframe = 'full-year'
 ): BusinessGroupData | undefined => {
-  return mockBusinessGroupData.find((bg) => bg.id === parentBgId);
+  return getBusinessGroupDataset(timeframe).find((bg) => bg.id === parentBgId);
 };
 
 // Get list of all main BU IDs and names for filter options
