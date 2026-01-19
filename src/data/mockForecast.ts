@@ -982,6 +982,92 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
   },
 ];
 
+export type FunctionDeviationRow = {
+  id: string;
+  label: string;
+  ytmBudget: number;
+  ytmActuals: number;
+  aiInsight: string;
+  indentLevel?: number;
+  isEmphasis?: boolean;
+};
+
+// Deviation of BU performance by functions (base values, scaled by BU selection)
+export const mockFunctionDeviationRows: FunctionDeviationRow[] = [
+  {
+    id: 'conn-op',
+    label: 'Conn OP',
+    ytmBudget: 30.0,
+    ytmActuals: 37.0,
+    aiInsight: 'Volume outperformance offsets cost pressure.',
+    isEmphasis: true,
+  },
+  {
+    id: 'revenue',
+    label: 'Revenue',
+    ytmBudget: 220.0,
+    ytmActuals: 245.0,
+    aiInsight: 'AI server ramp and EV connectors drive upside.',
+    isEmphasis: true,
+  },
+  {
+    id: 'topline',
+    label: 'Topline',
+    ytmBudget: 220.0,
+    ytmActuals: 245.0,
+    aiInsight: 'Higher volume across HH and FII segments.',
+    indentLevel: 1,
+  },
+  {
+    id: 'cost',
+    label: 'Cost',
+    ytmBudget: -150.0,
+    ytmActuals: -168.0,
+    aiInsight: 'Material inflation and mix shift drag gross margin.',
+    isEmphasis: true,
+  },
+  {
+    id: 'procurement',
+    label: 'Procurement',
+    ytmBudget: -62.0,
+    ytmActuals: -71.0,
+    aiInsight: 'Rare earth pricing pressures not fully passed through.',
+    indentLevel: 1,
+  },
+  {
+    id: 'mva',
+    label: 'MVA',
+    ytmBudget: -41.0,
+    ytmActuals: -44.5,
+    aiInsight: 'Labor efficiency improves but MOH remains elevated.',
+    indentLevel: 1,
+  },
+  {
+    id: 'rd',
+    label: 'R&D',
+    ytmBudget: -11.5,
+    ytmActuals: -12.8,
+    aiInsight: 'Incremental headcount on AI platform acceleration.',
+    indentLevel: 1,
+  },
+  {
+    id: 'opex',
+    label: 'OPEX',
+    ytmBudget: -20.0,
+    ytmActuals: -21.6,
+    aiInsight: 'Travel and project ramp-up lift spend slightly.',
+    indentLevel: 1,
+  },
+  {
+    id: 'shared-expenses',
+    label: 'Shared Expenses',
+    ytmBudget: -8.5,
+    ytmActuals: -9.0,
+    aiInsight: 'Corporate allocations run marginally above plan.',
+    indentLevel: 1,
+  },
+];
+
 // Product Analysis Data (Layer 2)
 export const mockProductFamilyData: ProductFamilyData[] = [
   {
