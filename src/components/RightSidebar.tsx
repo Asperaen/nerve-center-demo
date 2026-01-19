@@ -1,17 +1,14 @@
-import { Link, useLocation } from 'react-router-dom';
 import {
-  SparklesIcon,
-  ChartBarIcon,
-  CurrencyDollarIcon,
-  UserCircleIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
-  HomeIcon,
-  DocumentCheckIcon,
-  ClipboardDocumentListIcon,
-  CalendarDaysIcon,
   BuildingOffice2Icon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClipboardDocumentListIcon,
+  CurrencyDollarIcon,
+  DocumentCheckIcon,
+  HomeIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
+import { Link, useLocation } from 'react-router-dom';
 
 interface RightSidebarProps {
   isCollapsed: boolean;
@@ -44,16 +41,16 @@ export default function RightSidebar({
       path: '/market-intelligence',
       icon: CurrencyDollarIcon,
     },
+  ];
+
+  // Tools section
+  const toolsTabs = [
     {
       id: 'action-tracker',
       label: 'Action Tracker',
       path: '/action-tracker',
       icon: ClipboardDocumentListIcon,
     },
-  ];
-
-  // Meetings section
-  const meetingsTabs = [
     {
       id: 'finance-review',
       label: 'Quarterly Actuals Review',
@@ -134,17 +131,17 @@ export default function RightSidebar({
           <div className='mx-4 my-4 border-t border-gray-200'></div>
         )}
 
-        {/* Meetings Section */}
-        <div className='mb-4'>
+        {/* Tools Section */}
+        <div className='mb-6'>
           {!isCollapsed && (
             <div className='px-4 mb-3'>
               <h3 className='text-xs font-semibold text-gray-500 uppercase tracking-wider'>
-                Meetings
+                Tools
               </h3>
             </div>
           )}
           <div className='space-y-1'>
-            {meetingsTabs.map((tab) => {
+            {toolsTabs.map((tab) => {
               const Icon = tab.icon;
               const active = isActive(tab.path);
               return (
@@ -153,12 +150,12 @@ export default function RightSidebar({
                   to={tab.path}
                   className={`flex items-center px-4 py-3 mx-2 rounded-lg transition-colors ${
                     active
-                      ? 'bg-purple-50 text-purple-700 border-l-4 border-purple-600'
+                      ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}>
                   <Icon
                     className={`w-6 h-6 flex-shrink-0 ${
-                      active ? 'text-purple-600' : 'text-gray-600'
+                      active ? 'text-blue-600' : 'text-gray-600'
                     }`}
                   />
                   {!isCollapsed && (
@@ -171,6 +168,7 @@ export default function RightSidebar({
             })}
           </div>
         </div>
+
       </nav>
 
       {/* Profile Button */}

@@ -1,23 +1,23 @@
-import type {
-  ForecastDriver,
-  OperationalKPI,
-  IncomeStatement,
-  BusinessEvent,
-  Scenario,
-  Initiative,
-  OPWaterfallStage,
-  FinancialCategoryGroup,
-  AppliedAssumption,
-  NPDeviationStage,
-  KeyCallOut,
-  ProductFamilyData,
-  CostImpactData,
-  CostComponentTotals,
-  MVABreakdownStage,
-  Proposal,
-  BudgetForecastStage,
-} from '../types';
 import { addMonths, subDays } from 'date-fns';
+import type {
+  AppliedAssumption,
+  BudgetForecastStage,
+  BusinessEvent,
+  CostComponentTotals,
+  CostImpactData,
+  FinancialCategoryGroup,
+  ForecastDriver,
+  IncomeStatement,
+  Initiative,
+  KeyCallOut,
+  MVABreakdownStage,
+  NPDeviationStage,
+  OperationalKPI,
+  OPWaterfallStage,
+  ProductFamilyData,
+  Proposal,
+  Scenario,
+} from '../types';
 
 // Hierarchical Value Drivers matching the image structure
 export const mockValueDriverHierarchy: FinancialCategoryGroup[] = [
@@ -907,7 +907,7 @@ export const mockNPDeviationKeyCallOut: KeyCallOut = {
 export const mockBudgetForecastStages: BudgetForecastStage[] = [
   {
     stage: 'budget',
-    label: 'Budget',
+    label: 'YTM budget',
     value: 30,
     delta: 30,
     type: 'baseline',
@@ -922,7 +922,7 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
     type: 'positive',
     description: 'Market performance impact on forecast',
     isClickable: true,
-    navigationTarget: '/market-intelligence',
+    navigationTarget: '/market-intelligence?focus=market-performance',
   },
   {
     stage: 'l3-vs-target',
@@ -955,7 +955,7 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
   },
   {
     stage: 'forecast',
-    label: 'Forecast',
+    label: 'YTM planned',
     value: 41,
     delta: 41,
     type: 'baseline',
@@ -973,7 +973,7 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
   },
   {
     stage: 'actuals',
-    label: 'Actuals',
+    label: 'YTM actuals',
     value: 37,
     delta: 37,
     type: 'baseline',
