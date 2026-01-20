@@ -39,7 +39,7 @@ export default function RightSidebar({
     {
       id: 'wave-dashboard',
       label: 'Initiatives',
-      path: '/wave-dashboard',
+      path: '/ideation-progress',
       icon: SparklesIcon,
     },
     {
