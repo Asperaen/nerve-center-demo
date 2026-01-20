@@ -7,9 +7,9 @@ import {
   NewspaperIcon,
   PlusIcon,
   TrashIcon,
-  XMarkIcon
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import CreateActionModalGlobal from '../components/CreateActionModal';
@@ -148,10 +148,11 @@ export default function MarketIntelligencePage() {
 
   type FocusOptionId = (typeof focusOptions)[number]['id'];
 
-  const resolveFocus = (value: string | null): FocusOptionId => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolveFocus = useCallback((value: string | null): FocusOptionId => {
     const match = focusOptions.find((option) => option.id === value);
     return match?.id ?? 'market-performance';
-  };
+  });
 
   const [selectedFocusStage, setSelectedFocusStage] = useState<FocusOptionId>(
     resolveFocus(searchParams.get('focus'))
@@ -159,16 +160,7 @@ export default function MarketIntelligencePage() {
 
   useEffect(() => {
     setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
-  }, [searchParams]);
-
-  const handleFocusChange = (focus: FocusOptionId) => {
-    setSelectedFocusStage(focus);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('focus', focus);
-      return next;
-    });
-  };
+  }, [resolveFocus, searchParams]);
 
   const forecastWaterfallStages = useMemo(() => {
     const budgetStageValue =
@@ -283,18 +275,6 @@ export default function MarketIntelligencePage() {
     });
   };
 
-  const handleToggleSuggestedAssumption = (assumptionId: string) => {
-    setEnabledSuggestedAssumptionIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(assumptionId)) {
-        next.delete(assumptionId);
-      } else {
-        next.add(assumptionId);
-      }
-      return next;
-    });
-  };
-
   const handleMoveToApplied = (assumptionId: string) => {
     const assumption = suggestedAssumptions.find((a) => a.id === assumptionId);
     if (!assumption) return;
@@ -363,29 +343,6 @@ export default function MarketIntelligencePage() {
         return next;
       });
     }
-  };
-
-  const handleDragStart = (e: React.DragEvent, assumptionId: string) => {
-    // Don't start drag if clicking on checkbox or delete button
-    const target = e.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'BUTTON' ||
-      target.closest('button') ||
-      target.closest('input')
-    ) {
-      e.preventDefault();
-      return;
-    }
-
-    setDraggedAssumptionId(assumptionId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', assumptionId);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedAssumptionId(null);
-    setIsDragOverApplied(false);
   };
 
   const handleDragOver = (e: React.DragEvent) => {

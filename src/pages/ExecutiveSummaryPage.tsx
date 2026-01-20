@@ -1,7 +1,5 @@
 import {
   ArrowRightIcon,
-  ArrowTrendingDownIcon,
-  ArrowTrendingUpIcon,
   CalendarIcon,
   ChartBarIcon,
   ChevronDownIcon,
@@ -26,7 +24,7 @@ import {
   getSubBusinessGroups,
   getSubBusinessGroupsWithOverall,
   type BusinessGroupData,
-  type BusinessGroupMetricWithTrend
+  type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
 import { mockCalendarEvents } from '../data/mockCalendar';
 import {
@@ -35,7 +33,6 @@ import {
   mockMilestones,
 } from '../data/mockExecutiveDashboard';
 import { internalPulseColumns } from '../data/mockInternalPulse';
-import { mockKPIs } from '../data/mockKPIs';
 import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
@@ -71,7 +68,6 @@ export default function ExecutiveSummaryPage({
   // Modal state
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
-  const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const mainBuOptions = getMainBusinessGroupOptions();
@@ -81,11 +77,12 @@ export default function ExecutiveSummaryPage({
   const [showComparisonDetails, setShowComparisonDetails] =
     useState<boolean>(true);
 
-  const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>(() => getStoredTimeframe());
-  const [homeToggle, setHomeToggle] = useState<
-    'budget' | 'ytm' | 'full-year'
-  >(defaultHomeToggle);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>(
+    () => getStoredTimeframe()
+  );
+  const [homeToggle, setHomeToggle] = useState<'budget' | 'ytm' | 'full-year'>(
+    defaultHomeToggle
+  );
 
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
@@ -191,19 +188,6 @@ export default function ExecutiveSummaryPage({
 
   const financialAndToplineKPIs = getFinancialAndToplineKPIs();
 
-  // Selection handlers
-  const toggleFinancialKPI = (kpiId: string) => {
-    setSelectedFinancialKPIs((prev) => {
-      const next = new Set(prev);
-      if (next.has(kpiId)) {
-        next.delete(kpiId);
-      } else {
-        next.add(kpiId);
-      }
-      return next;
-    });
-  };
-
   const clearAllSelections = () => {
     setSelectedFinancialKPIs(new Set());
   };
@@ -279,132 +263,6 @@ export default function ExecutiveSummaryPage({
         meetingIds.length
       } meeting${meetingIds.length !== 1 ? 's' : ''}!`
     );
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'good':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'concern':
-        return 'bg-red-100 text-red-800 border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up':
-        return <ArrowTrendingUpIcon className='w-5 h-5 text-green-600' />;
-      case 'down':
-        return <ArrowTrendingDownIcon className='w-5 h-5 text-red-600' />;
-      default:
-        return null;
-    }
-  };
-
-  // Helper to format metric value
-  const formatMetricValue = (metric: PulseMetric): string => {
-    // For Gold price, show market price as the main value
-    if (metric.id === 'gold-material' && metric.subMetrics) {
-      const marketPrice = metric.subMetrics.find((m) =>
-        m.name.includes('Market price')
-      )?.value;
-      if (marketPrice !== undefined) {
-        return `${marketPrice.toLocaleString('en-US')} ${metric.unit || ''}`;
-      }
-    }
-
-    // For UPPH and OEE, try to get actual value from mockKPIs as fallback
-    if (
-      metric.value === undefined &&
-      (metric.id === 'upph' || metric.id === 'oee')
-    ) {
-      const kpiData = mockKPIs.find((kpi) => kpi.id === metric.id);
-      if (kpiData) {
-        if (metric.id === 'oee') {
-          return `${kpiData.value.toFixed(1)}%`;
-        }
-        return `${kpiData.value.toFixed(1)} ${kpiData.unit}`;
-      }
-    }
-
-    // For Inventory Turnover, use valuePercent as the actual rate value
-    if (
-      metric.id === 'inventory-turnover' &&
-      metric.valuePercent !== undefined
-    ) {
-      return `${metric.valuePercent.toFixed(1)} times/year`;
-    }
-
-    if (metric.value !== undefined) {
-      if (metric.valuePercent !== undefined) {
-        return `$${metric.value.toFixed(1)}M (${metric.valuePercent}%)`;
-      }
-      // Format with comma for thousands
-      return `${metric.value.toLocaleString('en-US')} ${metric.unit || ''}`;
-    }
-    if (metric.valuePercent !== undefined) {
-      return `${metric.valuePercent}%`;
-    }
-    // For metrics without value, show comparison if available
-    if (metric.comparisons?.vsLastYear) {
-      const percent = metric.comparisons.vsLastYear.percent;
-      return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
-    }
-    return 'N/A';
-  };
-
-  // Helper to determine status from comparisons
-  const getMetricStatus = (
-    metric: PulseMetric
-  ): 'good' | 'warning' | 'concern' => {
-    // Gold price should show warning as it impacts overall performance
-    if (metric.id === 'gold-material') return 'warning';
-
-    if (!metric.comparisons) return 'good';
-
-    // Check if any comparison shows negative trend
-    const hasNegative = Object.values(metric.comparisons).some(
-      (comp) => comp.percent < 0
-    );
-
-    if (hasNegative) {
-      // Check severity
-      const worstComparison = Math.min(
-        ...Object.values(metric.comparisons).map((c) => c.percent)
-      );
-      if (worstComparison < -5) return 'concern';
-      return 'warning';
-    }
-
-    return 'good';
-  };
-
-  // Helper to determine trend from comparisons
-  const getMetricTrend = (metric: PulseMetric): 'up' | 'down' | 'flat' => {
-    if (metric.comparisons?.vsLastRefresh) {
-      return metric.comparisons.vsLastRefresh.percent >= 0 ? 'up' : 'down';
-    }
-    if (metric.comparisons?.vsLastYear) {
-      return metric.comparisons.vsLastYear.percent >= 0 ? 'up' : 'down';
-    }
-    return 'flat';
-  };
-
-  // Helper to get comparison text for display
-  const getComparisonText = (metric: PulseMetric): string => {
-    if (metric.comparisons?.vsLastYear) {
-      const percent = metric.comparisons.vsLastYear.percent;
-      return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
-    }
-    if (metric.comparisons?.vsLastRefresh) {
-      const percent = metric.comparisons.vsLastRefresh.percent;
-      return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last refresh`;
-    }
-    return '';
   };
 
   // Generate executive briefing with today's and week's critical meetings
@@ -1036,21 +894,23 @@ export default function ExecutiveSummaryPage({
                   Timeframe
                 </span>
                 <div className='flex bg-gray-100 rounded-lg p-1'>
-              {(isBudgetView
-                ? [
-                    { id: 'full-year', label: 'Full year' },
-                    { id: 'ytm', label: 'Remainder of the year' },
-                  ]
-                : [
-                    { id: 'budget', label: 'Budget' },
-                    { id: 'ytm', label: 'Year to Month actuals' },
-                    { id: 'full-year', label: 'Full year forecast' },
-                  ]
-              ).map((option) => (
+                  {(isBudgetView
+                    ? [
+                        { id: 'full-year', label: 'Full year' },
+                        { id: 'ytm', label: 'Remainder of the year' },
+                      ]
+                    : [
+                        { id: 'budget', label: 'Budget' },
+                        { id: 'ytm', label: 'Year to Month actuals' },
+                        { id: 'full-year', label: 'Full year forecast' },
+                      ]
+                  ).map((option) => (
                     <button
                       key={option.id}
                       onClick={() => {
-                        setHomeToggle(option.id as 'budget' | 'ytm' | 'full-year');
+                        setHomeToggle(
+                          option.id as 'budget' | 'ytm' | 'full-year'
+                        );
                         if (option.id === 'budget') {
                           setSelectedTimeframe('full-year');
                         } else if (option.id === 'ytm') {
@@ -1079,7 +939,12 @@ export default function ExecutiveSummaryPage({
 
         {/* Business Group Performance Section */}
         <div className='mb-8'>
-          <div className={isBudgetView ? 'bg-white rounded-xl border border-gray-200/60 shadow-sm p-6' : ''}>
+          <div
+            className={
+              isBudgetView
+                ? 'bg-white rounded-xl border border-gray-200/60 shadow-sm p-6'
+                : ''
+            }>
             <div className='flex items-center justify-between mb-4'>
               <div>
                 <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
@@ -1100,7 +965,9 @@ export default function ExecutiveSummaryPage({
                     }`}>
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                        showComparisonDetails
+                          ? 'translate-x-6'
+                          : 'translate-x-1'
                       }`}
                     />
                   </button>
@@ -1154,7 +1021,12 @@ export default function ExecutiveSummaryPage({
 
                     return (
                       <>
-                        {renderTableRow(group, isExpandable, false, isOverallRow)}
+                        {renderTableRow(
+                          group,
+                          isExpandable,
+                          false,
+                          isOverallRow
+                        )}
                         {isExpanded &&
                           getExpandedSubGroups(group.id).map((subGroup) =>
                             renderTableRow(subGroup, false, true, false)
@@ -1167,7 +1039,6 @@ export default function ExecutiveSummaryPage({
             </div>
           </div>
         </div>
-
       </div>
 
       {/* AI Analysis Sidebar */}
