@@ -534,14 +534,20 @@ export default function IdeationProgressPage() {
     const tabParam = searchParams.get('tab');
     return tabParam === 'execution' ? 'execution' : 'plans';
   }, [searchParams]);
+  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() =>
+    getStoredTimeframe()
+  );
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
-  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() =>
-    getStoredTimeframe()
-  );
+
+  useEffect(() => {
+    if (activeTab === 'execution' && activeTimeframe === 'full-year') {
+      setActiveTimeframe('ytm');
+    }
+  }, [activeTab, activeTimeframe]);
 
   const timeframeScale = useMemo(
     () => getTimeframeScale(activeTimeframe),
