@@ -25,7 +25,8 @@ import {
 } from '../data/mockBusinessGroupPerformance';
 import {
   mockBudgetForecastStages,
-  mockNPDeviationKeyCallOut,
+  mockFunctionDeviationRows,
+  type FunctionDeviationRow,
 } from '../data/mockForecast';
 import type { BreadcrumbItem, NavigationLayer } from '../types';
 import {
@@ -136,18 +137,6 @@ export default function BusinessGroupPerformancePage() {
     });
   };
 
-  const toggleGroupSelection = (bgId: string) => {
-    setSelectedGroupIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(bgId)) {
-        next.delete(bgId);
-      } else {
-        next.add(bgId);
-      }
-      return next;
-    });
-  };
-
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
   }, [selectedTimeframe]);
@@ -164,6 +153,41 @@ export default function BusinessGroupPerformancePage() {
     return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
   }, [selectedBu, selectedTimeframe]);
 
+  const toggleGroupSelection = (bgId: string) => {
+    setSelectedGroupIds((prev) => {
+      const next = new Set(prev);
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      const overallId = overallRow?.id;
+      const isOverall = isOverallRowId(bgId);
+
+      if (isOverall) {
+        if (next.has(bgId)) {
+          next.delete(bgId);
+        } else {
+          next.clear();
+          next.add(bgId);
+        }
+        return next;
+      }
+
+      if (overallId && next.has(overallId)) {
+        next.delete(overallId);
+      }
+
+      if (next.has(bgId)) {
+        next.delete(bgId);
+      } else {
+        next.add(bgId);
+      }
+
+      if (next.size === 0 && overallId) {
+        next.add(overallId);
+      }
+
+      return next;
+    });
+  };
+
   const orderedTableData = useMemo(() => {
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
     const remainingRows = tableData.filter((row) => !isOverallRowId(row.id));
@@ -179,22 +203,30 @@ export default function BusinessGroupPerformancePage() {
     }
   }, [tableData]);
 
+  useEffect(() => {
+    if (selectedGroupIds.size === 0) {
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      if (overallRow) {
+        setSelectedGroupIds(new Set([overallRow.id]));
+      }
+    }
+  }, [selectedGroupIds, tableData]);
+
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     return getSubBusinessGroups(bgId, dataTimeframe);
   };
 
-  // Get section title
-  const getSectionTitle = () => {
+  const sectionTitle = useMemo(() => {
     if (selectedBu === 'all') {
       return 'All BUs';
     }
     const bg = mainBuOptions.find((b) => b.id === selectedBu);
     return bg?.name || selectedBu.toUpperCase();
-  };
+  }, [mainBuOptions, selectedBu]);
 
-  const scaledBudgetForecastStages = useMemo(() => {
+  const selectionMetrics = useMemo(() => {
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
     const baseRows = tableData.filter((row) => !isOverallRowId(row.id));
     const totalNpValue =
@@ -220,11 +252,69 @@ export default function BusinessGroupPerformancePage() {
       ? overallRow?.np.baseline ?? totalNpBaseline
       : selectedRows.reduce((sum, row) => sum + row.np.baseline, 0);
 
+    const scaleFactor =
+      totalNpBaseline === 0 ? 1 : selectedNpBaseline / totalNpBaseline;
+
+    return {
+      totalNpBaseline,
+      totalNpValue,
+      selectedNpBaseline,
+      selectedNpValue,
+      scaleFactor,
+    };
+  }, [selectedGroupIds, tableData]);
+
+  const formatMn = (value: number) =>
+    value.toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+
+  const keyCallOut = useMemo(() => {
+    const overallRow =
+      tableData.find((row) => isOverallRowId(row.id)) ?? tableData[0];
+    const actual = overallRow?.np.value ?? selectionMetrics.selectedNpValue;
+    const budget = overallRow?.np.baseline ?? selectionMetrics.selectedNpBaseline;
+    const delta = actual - budget;
+    const deltaSign = delta >= 0 ? '+' : '-';
+    const percent =
+      budget === 0 ? 0 : (delta / Math.abs(budget)) * 100;
+    const percentSign = percent >= 0 ? '+' : '-';
+    const performance =
+      delta >= 0 ? 'outperformance' : 'underperformance';
+    const magnitude = Math.abs(percent);
+    const intensity =
+      magnitude >= 7.5 ? 'material' : magnitude >= 3 ? 'moderate' : 'slight';
+    const directionText = delta >= 0 ? 'above' : 'below';
+
+    return {
+      bulletPoints: [
+        `Actual NP is ${formatMn(actual)} Mn USD versus Budget NP of ${formatMn(
+          budget
+        )} Mn USD.`,
+        `This is a ${intensity} ${performance}: ${deltaSign}${formatMn(
+          Math.abs(delta)
+        )} Mn USD (${percentSign}${magnitude.toFixed(1)}%).`,
+        `${sectionTitle} overall performance sits ${directionText} plan, implying execution and mix effects are the primary drivers.`,
+      ],
+      rootCauseAnalysis: `Root cause analysis indicates ${sectionTitle} is tracking ${directionText} plan with a ${intensity} variance. The ${performance} vs budget suggests execution and mix levers are the dominant contributors, with variance of ${deltaSign}${formatMn(
+        Math.abs(delta)
+      )} Mn USD (${percentSign}${magnitude.toFixed(1)}%) between Actual and Budget NP.`,
+    };
+  }, [tableData, selectionMetrics, sectionTitle]);
+
+  const scaledBudgetForecastStages = useMemo(() => {
+    const {
+      totalNpBaseline,
+      selectedNpBaseline,
+      selectedNpValue,
+      scaleFactor,
+    } = selectionMetrics;
+
     if (totalNpBaseline === 0) {
       return mockBudgetForecastStages;
     }
 
-    const scaleFactor = selectedNpBaseline / totalNpBaseline;
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
     let runningValue = roundToOne(selectedNpBaseline);
 
@@ -269,7 +359,194 @@ export default function BusinessGroupPerformancePage() {
         delta: scaledDelta,
       };
     });
-  }, [selectedGroupIds, tableData]);
+  }, [selectionMetrics]);
+
+  const selectedGroupLabel = useMemo(() => {
+    if (selectedGroupIds.size === 0) {
+      return `${sectionTitle} OP`;
+    }
+    const selectedRows = tableData.filter((row) =>
+      selectedGroupIds.has(row.id)
+    );
+    if (selectedRows.length === 0) {
+      return `${sectionTitle} OP`;
+    }
+    if (selectedRows.some((row) => isOverallRowId(row.id))) {
+      return `${sectionTitle} OP`;
+    }
+    return `${selectedRows.map((row) => row.name).join(', ')} OP`;
+  }, [selectedGroupIds, tableData, sectionTitle]);
+
+  const scaledFunctionDeviationRows = useMemo(() => {
+    const roundToOne = (value: number) => Math.round(value * 10) / 10;
+    const topRowId = 'conn-op';
+    const revenueRowId = 'revenue';
+    const costRowId = 'cost';
+    const revenueChildIds = ['topline'];
+    const costChildIds = ['procurement', 'mva', 'rd', 'opex', 'shared-expenses'];
+
+    const rowsById = new Map(
+      mockFunctionDeviationRows.map((row) => [row.id, row])
+    );
+    const baseRevenue = rowsById.get(revenueRowId)?.ytmBudget ?? 0;
+    const baseCost = rowsById.get(costRowId)?.ytmBudget ?? 0;
+    const baseRevenueActuals = rowsById.get(revenueRowId)?.ytmActuals ?? 0;
+    const baseCostActuals = rowsById.get(costRowId)?.ytmActuals ?? 0;
+
+    const topBudget = selectionMetrics.selectedNpBaseline;
+    const topActuals = selectionMetrics.selectedNpValue;
+
+    const topBudgetScale =
+      baseRevenue + baseCost === 0 ? 1 : topBudget / (baseRevenue + baseCost);
+    const topActualsScale =
+      baseRevenueActuals + baseCostActuals === 0
+        ? 1
+        : topActuals / (baseRevenueActuals + baseCostActuals);
+
+    const revenueBudget = baseRevenue * topBudgetScale;
+    const costBudget = baseCost * topBudgetScale;
+    const revenueActuals = baseRevenueActuals * topActualsScale;
+    const costActuals = baseCostActuals * topActualsScale;
+
+    const baseRevenueChildrenBudget = revenueChildIds.reduce(
+      (sum, id) => sum + (rowsById.get(id)?.ytmBudget ?? 0),
+      0
+    );
+    const baseRevenueChildrenActuals = revenueChildIds.reduce(
+      (sum, id) => sum + (rowsById.get(id)?.ytmActuals ?? 0),
+      0
+    );
+    const baseCostChildrenBudget = costChildIds.reduce(
+      (sum, id) => sum + (rowsById.get(id)?.ytmBudget ?? 0),
+      0
+    );
+    const baseCostChildrenActuals = costChildIds.reduce(
+      (sum, id) => sum + (rowsById.get(id)?.ytmActuals ?? 0),
+      0
+    );
+
+    const scaleChildren = (
+      ids: string[],
+      baseTotal: number,
+      targetTotal: number,
+      key: 'ytmBudget' | 'ytmActuals'
+    ) => {
+      if (ids.length === 0) return new Map<string, number>();
+      const scale = baseTotal === 0 ? 0 : targetTotal / baseTotal;
+      const values = ids.map((id) => ({
+        id,
+        value: (rowsById.get(id)?.[key] ?? 0) * scale,
+      }));
+      const rounded = values.map((entry) => ({
+        ...entry,
+        value: roundToOne(entry.value),
+      }));
+      const sumRounded = rounded.reduce((sum, entry) => sum + entry.value, 0);
+      const diff = roundToOne(targetTotal - sumRounded);
+      if (rounded.length > 0) {
+        rounded[rounded.length - 1].value = roundToOne(
+          rounded[rounded.length - 1].value + diff
+        );
+      }
+      return new Map(rounded.map((entry) => [entry.id, entry.value]));
+    };
+
+    const revenueBudgetChildren = scaleChildren(
+      revenueChildIds,
+      baseRevenueChildrenBudget,
+      revenueBudget,
+      'ytmBudget'
+    );
+    const revenueActualsChildren = scaleChildren(
+      revenueChildIds,
+      baseRevenueChildrenActuals,
+      revenueActuals,
+      'ytmActuals'
+    );
+    const costBudgetChildren = scaleChildren(
+      costChildIds,
+      baseCostChildrenBudget,
+      costBudget,
+      'ytmBudget'
+    );
+    const costActualsChildren = scaleChildren(
+      costChildIds,
+      baseCostChildrenActuals,
+      costActuals,
+      'ytmActuals'
+    );
+
+    return mockFunctionDeviationRows.map((row) => {
+      const isTopRow = row.id === topRowId;
+      if (isTopRow) {
+        return {
+          ...row,
+          label: selectedGroupLabel,
+          ytmBudget: roundToOne(topBudget),
+          ytmActuals: roundToOne(topActuals),
+        };
+      }
+      if (row.id === revenueRowId) {
+        return {
+          ...row,
+          ytmBudget: roundToOne(revenueBudget),
+          ytmActuals: roundToOne(revenueActuals),
+        };
+      }
+      if (row.id === costRowId) {
+        return {
+          ...row,
+          ytmBudget: roundToOne(costBudget),
+          ytmActuals: roundToOne(costActuals),
+        };
+      }
+      if (revenueBudgetChildren.has(row.id)) {
+        return {
+          ...row,
+          ytmBudget: revenueBudgetChildren.get(row.id) ?? row.ytmBudget,
+          ytmActuals: revenueActualsChildren.get(row.id) ?? row.ytmActuals,
+        };
+      }
+      if (costBudgetChildren.has(row.id)) {
+        return {
+          ...row,
+          ytmBudget: costBudgetChildren.get(row.id) ?? row.ytmBudget,
+          ytmActuals: costActualsChildren.get(row.id) ?? row.ytmActuals,
+        };
+      }
+      return row;
+    });
+  }, [
+    selectionMetrics.selectedNpBaseline,
+    selectionMetrics.selectedNpValue,
+    selectedGroupLabel,
+  ]);
+
+  const getFunctionInsight = (row: FunctionDeviationRow) => {
+    if (row.ytmBudget === 0) {
+      return {
+        text: row.aiInsight,
+        severity: 'low' as const,
+        needsAttention: false,
+      };
+    }
+    const variance = row.ytmActuals - row.ytmBudget;
+    const percent = (variance / Math.abs(row.ytmBudget)) * 100;
+    const percentValue = Math.abs(percent).toFixed(1);
+    const percentSign = percent >= 0 ? '+' : '-';
+    const varianceSign = variance >= 0 ? '+' : '-';
+    const varianceLabel = `${varianceSign}${formatMn(
+      Math.abs(variance)
+    )} Mn USD`;
+    const status = variance < 0 ? 'adverse' : 'favourable';
+    const severity = Math.abs(percent) >= 7.5 ? 'high' : 'low';
+    const needsAttention = variance < 0 && Math.abs(percent) >= 5;
+    return {
+      text: `${row.label} deviates ${percentSign}${percentValue}% vs budget (${varianceLabel}, ${status}).`,
+      severity,
+      needsAttention,
+    };
+  };
 
   const renderMetricCell = (
     metric: BusinessGroupMetricWithTrend,
@@ -439,6 +716,46 @@ export default function BusinessGroupPerformancePage() {
     );
   };
 
+  const renderFunctionRow = (row: FunctionDeviationRow) => {
+    const labelClasses = row.isEmphasis
+      ? 'text-gray-900 font-semibold'
+      : 'text-gray-700';
+    const insight = getFunctionInsight(row);
+    const handleRowDoubleClick = () => {
+      navigateToLayer(2, 'Sites');
+    };
+    return (
+      <tr
+        key={row.id}
+        className='border-b border-gray-200 last:border-b-0 hover:bg-gray-50'
+        onDoubleClick={handleRowDoubleClick}>
+        <td className='px-6 py-3'>
+          <div
+            className={`${labelClasses}`}
+            style={{ paddingLeft: row.indentLevel ? row.indentLevel * 20 : 0 }}>
+            {row.label}
+          </div>
+        </td>
+        <td className='px-6 py-3 text-right text-gray-700'>
+          {formatMn(row.ytmBudget)}
+        </td>
+        <td className='px-6 py-3 text-right text-gray-700'>
+          {formatMn(row.ytmActuals)}
+        </td>
+        <td className='px-6 py-3'>
+          <div className='flex flex-wrap items-center gap-2 text-sm'>
+            <span className='text-gray-600'>{insight.text}</span>
+            {insight.needsAttention && (
+              <span className='inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 text-[11px] font-semibold'>
+                Needs attention
+              </span>
+            )}
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
   const renderTableRow = (
     group: BusinessGroupData,
     isExpandable: boolean = false,
@@ -569,7 +886,7 @@ export default function BusinessGroupPerformancePage() {
           </div>
           <div className='space-y-3'>
             <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-              {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
+              {keyCallOut.bulletPoints.map((point, index) => (
                 <li
                   key={index}
                   className='text-sm'>
@@ -579,7 +896,7 @@ export default function BusinessGroupPerformancePage() {
             </ul>
             <div className='mt-4 pt-4 border-t border-gray-200'>
               <p className='text-sm text-gray-700 leading-relaxed'>
-                {mockNPDeviationKeyCallOut.rootCauseAnalysis}
+                {keyCallOut.rootCauseAnalysis}
               </p>
             </div>
           </div>
@@ -596,7 +913,7 @@ export default function BusinessGroupPerformancePage() {
                 <div className='flex items-center gap-2'>
                   <ChartBarIcon className='w-5 h-5 text-primary-600' />
                   <h2 className='text-lg font-bold text-gray-900'>
-                    Decomposition by BU - {getSectionTitle()}
+                    Decomposition by BU - {sectionTitle}
                   </h2>
                 </div>
                 <div className='flex items-center gap-4'>
@@ -688,7 +1005,47 @@ export default function BusinessGroupPerformancePage() {
         <BudgetForecastActualWaterfall
           stages={scaledBudgetForecastStages}
           title='Deviation waterfall of BU performance by value driver'
+          subtitle='Operating Profit, Mn USD'
         />
+      </div>
+
+      {/* Deviation by Functions Section */}
+      <div className='max-w-[1920px] mx-auto px-8 pb-12'>
+        <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+          <div className='mb-4'>
+            <h2 className='text-2xl font-bold text-gray-900'>
+              Deviation of BU performance by functions
+            </h2>
+            <p className='text-sm text-gray-500 mt-1'>Mn, USD</p>
+          </div>
+          <div className='overflow-hidden rounded-lg border border-gray-200'>
+            <table className='w-full text-sm'>
+              <thead className='bg-gray-50 border-b border-gray-200'>
+                <tr>
+                  <th className='px-6 py-3 text-left font-semibold text-gray-700'>
+                    Functions
+                  </th>
+                  <th className='px-6 py-3 text-right font-semibold text-gray-700'>
+                    YTM budget
+                  </th>
+                  <th className='px-6 py-3 text-right font-semibold text-gray-700'>
+                    YTM actuals
+                  </th>
+                  <th className='px-6 py-3 text-left font-semibold text-gray-700'>
+                    <div className='flex items-center gap-2'>
+                      <span>Insights</span>
+                      <span className='px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border border-purple-300 shadow-sm flex items-center gap-1'>
+                        <span className='text-xs'>✨</span>
+                        <span>AI</span>
+                      </span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>{scaledFunctionDeviationRows.map(renderFunctionRow)}</tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </>
   );
