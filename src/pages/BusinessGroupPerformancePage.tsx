@@ -2,17 +2,20 @@ import {
   ChartBarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  InformationCircleIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
+import HeaderFilters from '../components/HeaderFilters';
 import {
   CostImpactBreakdownLayer,
   MVABreakdownLayer,
   ProductAnalysisLayer,
 } from '../components/layers';
 import TimeframePicker, {
+  TIMEFRAME_OPTIONS,
   type TimeframeOption,
 } from '../components/TimeframePicker';
 import {
@@ -36,6 +39,7 @@ import {
 
 export default function BusinessGroupPerformancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Get initial BU from query param
   const initialBu = searchParams.get('bu') || 'all';
@@ -302,6 +306,33 @@ export default function BusinessGroupPerformancePage() {
       )} Mn USD (${percentSign}${magnitude.toFixed(1)}%) between Actual and Budget NP.`,
     };
   }, [tableData, selectionMetrics, sectionTitle]);
+
+  const selectedBuLabel = useMemo(() => {
+    if (selectedGroupIds.size === 0) {
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      return overallRow?.name ?? 'Overall';
+    }
+    const selectedRows = tableData.filter((row) =>
+      selectedGroupIds.has(row.id)
+    );
+    if (selectedRows.length === 0) {
+      return 'Overall';
+    }
+    if (selectedRows.length === 1) {
+      return selectedRows[0]?.name ?? 'Overall';
+    }
+    return `${selectedRows.length} BUs selected`;
+  }, [selectedGroupIds, tableData]);
+
+  const selectedBuNames = useMemo(() => {
+    if (selectedGroupIds.size === 0) {
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      return overallRow ? [overallRow.name] : ['Overall'];
+    }
+    return tableData
+      .filter((row) => selectedGroupIds.has(row.id))
+      .map((row) => row.name);
+  }, [selectedGroupIds, tableData]);
 
   const scaledBudgetForecastStages = useMemo(() => {
     const {
@@ -721,14 +752,36 @@ export default function BusinessGroupPerformancePage() {
       ? 'text-gray-900 font-semibold'
       : 'text-gray-700';
     const insight = getFunctionInsight(row);
-    const handleRowDoubleClick = () => {
-      navigateToLayer(2, 'Sites');
+    const showDrilldown =
+      row.id === 'topline' ||
+      row.id === 'procurement' ||
+      row.id === 'mva' ||
+      row.id === 'rd';
+    const handleRowDrillDown = () => {
+      if (!showDrilldown) {
+        return;
+      }
+      const selectedRows =
+        selectedGroupIds.size === 0
+          ? tableData.filter((row) => isOverallRowId(row.id))
+          : tableData.filter((row) => selectedGroupIds.has(row.id));
+      const buParam = selectedRows.map((row) => row.name).join(',');
+      const params = new URLSearchParams({
+        function: row.label,
+      });
+      if (buParam) {
+        params.set('bu', buParam);
+      }
+      navigate(
+        `/business-unit-performance/functional-performance?${params.toString()}`
+      );
     };
     return (
       <tr
         key={row.id}
-        className='border-b border-gray-200 last:border-b-0 hover:bg-gray-50'
-        onDoubleClick={handleRowDoubleClick}>
+        className='border-b border-gray-200 last:border-b-0 hover:bg-indigo-50/60 transition-colors'
+        onDoubleClick={handleRowDrillDown}
+        title={showDrilldown ? 'Double click to drill down' : undefined}>
         <td className='px-6 py-3'>
           <div
             className={`${labelClasses}`}
@@ -752,6 +805,20 @@ export default function BusinessGroupPerformancePage() {
             )}
           </div>
         </td>
+        <td className='px-4 py-3 text-right'>
+          {showDrilldown ? (
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                handleRowDrillDown();
+              }}
+              className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
+              View details
+            </button>
+          ) : (
+            <span className='text-xs text-transparent'>View details</span>
+          )}
+        </td>
       </tr>
     );
   };
@@ -764,11 +831,18 @@ export default function BusinessGroupPerformancePage() {
   ) => {
     const isExpanded = expandedRows.has(group.id);
     const isClickable = isExpandable || isSubGroup;
+    const canDrillDown = !isOverallRow;
 
     const handleRowClick = () => {
       if (isExpandable) {
         toggleRowExpansion(group.id);
       } else if (isSubGroup) {
+        navigateToLayer(2, group.name);
+      }
+    };
+
+    const handleRowDrillDown = () => {
+      if (canDrillDown) {
         navigateToLayer(2, group.name);
       }
     };
@@ -781,9 +855,11 @@ export default function BusinessGroupPerformancePage() {
             ? 'bg-primary-50/50'
             : isSubGroup
             ? 'bg-gray-50 hover:bg-gray-100 transition-colors'
-            : 'hover:bg-gray-50 transition-colors'
+            : 'hover:bg-indigo-50/60 transition-colors'
         } ${isClickable ? 'cursor-pointer' : ''}`}
-        onClick={isClickable ? handleRowClick : undefined}>
+        onClick={isClickable ? handleRowClick : undefined}
+        onDoubleClick={canDrillDown ? handleRowDrillDown : undefined}
+        title={canDrillDown ? 'Double click to drill down' : undefined}>
         <td className='px-6 py-3 border-b border-r border-gray-200'>
           <div className='flex items-center gap-2'>
             <input
@@ -835,42 +911,21 @@ export default function BusinessGroupPerformancePage() {
       {/* Filters Section */}
       <div className='bg-white border-b border-gray-200'>
         <div className='max-w-[1920px] mx-auto px-8 py-6'>
-          {/* Timeframe Filter */}
-          <TimeframePicker
-            selectedTimeframe={selectedTimeframe}
-            onTimeframeChange={setSelectedTimeframe}
-            className='mb-4'
+          <HeaderFilters
+            timeframeContent={
+              <TimeframePicker
+                selectedTimeframe={selectedTimeframe}
+                onTimeframeChange={setSelectedTimeframe}
+                options={TIMEFRAME_OPTIONS.filter(
+                  (option) =>
+                    option.value === 'full-year' || option.value === 'ytm'
+                )}
+              />
+            }
+            buOptions={mainBuOptions}
+            selectedBu={selectedBu}
+            onBuChange={handleBuChange}
           />
-
-          {/* Select BU Filter */}
-          <div className='flex items-center gap-4'>
-            <span className='text-sm font-medium text-gray-600 w-32'>
-              Select BU
-            </span>
-            <div className='flex bg-gray-100 rounded-lg p-1'>
-              <button
-                onClick={() => handleBuChange('all')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  selectedBu === 'all'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}>
-                All BUs
-              </button>
-              {mainBuOptions.map((bu) => (
-                <button
-                  key={bu.id}
-                  onClick={() => handleBuChange(bu.id)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    selectedBu === bu.id
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}>
-                  {bu.name}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -878,7 +933,7 @@ export default function BusinessGroupPerformancePage() {
       <div className='max-w-[1920px] mx-auto px-8 pt-6'>
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
           <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
+            <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
             <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
               <span className='text-sm'>✨</span>
               <span>AI</span>
@@ -912,7 +967,7 @@ export default function BusinessGroupPerformancePage() {
               <div className='flex items-center justify-between mb-2'>
                 <div className='flex items-center gap-2'>
                   <ChartBarIcon className='w-5 h-5 text-primary-600' />
-                  <h2 className='text-lg font-bold text-gray-900'>
+                  <h2 className='text-2xl font-bold text-gray-900'>
                     Decomposition by BU - {sectionTitle}
                   </h2>
                 </div>
@@ -1005,7 +1060,31 @@ export default function BusinessGroupPerformancePage() {
         <BudgetForecastActualWaterfall
           stages={scaledBudgetForecastStages}
           title='Deviation waterfall of BU performance by value driver'
-          subtitle='Operating Profit, Mn USD'
+          subtitle={
+            <span className='inline-flex items-center gap-1.5 text-sm text-gray-500'>
+              <span>Operating Profit, Mn USD • {selectedBuLabel}</span>
+              {selectedBuNames.length > 1 && (
+                <span className='relative group inline-flex items-center'>
+                  <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
+                  <span className='absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
+                    <span className='block text-xs font-semibold text-gray-700 mb-2'>
+                      Selected BUs
+                    </span>
+                    <ul className='space-y-1'>
+                      {selectedBuNames.map((name) => (
+                        <li
+                          key={name}
+                          className='flex items-center gap-2'>
+                          <span className='h-1.5 w-1.5 rounded-full bg-primary-500' />
+                          <span>{name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </span>
+                </span>
+              )}
+            </span>
+          }
         />
       </div>
 
@@ -1016,7 +1095,31 @@ export default function BusinessGroupPerformancePage() {
             <h2 className='text-2xl font-bold text-gray-900'>
               Deviation of BU performance by functions
             </h2>
-            <p className='text-sm text-gray-500 mt-1'>Mn, USD</p>
+            <p className='text-sm text-gray-500 mt-1'>
+              <span className='inline-flex items-center gap-1.5'>
+                <span>Mn, USD • {selectedBuLabel}</span>
+                {selectedBuNames.length > 1 && (
+                  <span className='relative group inline-flex items-center'>
+                    <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
+                    <span className='absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
+                      <span className='block text-xs font-semibold text-gray-700 mb-2'>
+                        Selected BUs
+                      </span>
+                      <ul className='space-y-1'>
+                        {selectedBuNames.map((name) => (
+                          <li
+                            key={name}
+                            className='flex items-center gap-2'>
+                            <span className='h-1.5 w-1.5 rounded-full bg-primary-500' />
+                            <span>{name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </span>
+                  </span>
+                )}
+              </span>
+            </p>
           </div>
           <div className='overflow-hidden rounded-lg border border-gray-200'>
             <table className='w-full text-sm'>
@@ -1039,6 +1142,9 @@ export default function BusinessGroupPerformancePage() {
                         <span>AI</span>
                       </span>
                     </div>
+                  </th>
+                  <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                    <span className='sr-only'>Details</span>
                   </th>
                 </tr>
               </thead>

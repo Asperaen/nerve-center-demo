@@ -1,5 +1,6 @@
 import {
   BuildingOffice2Icon,
+  ChartBarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardDocumentListIcon,
@@ -26,21 +27,27 @@ export default function RightSidebar({
   const realTimePulseTabs = [
     {
       id: 'executive-summary',
-      label: 'Home (Budget)',
+      label: 'Home',
       path: '/',
       icon: HomeIcon,
+    },
+    {
+      id: 'budget',
+      label: 'Budget',
+      path: '/budget',
+      icon: ChartBarIcon,
+    },
+    {
+      id: 'ideation-progress',
+      label: 'Initiatives',
+      path: '/initiative-performance',
+      icon: SparklesIcon,
     },
     {
       id: 'business-group-performance',
       label: 'Actual',
       path: '/business-group-performance',
       icon: BuildingOffice2Icon,
-    },
-    {
-      id: 'wave-dashboard',
-      label: 'Initiatives',
-      path: '/ideation-progress',
-      icon: SparklesIcon,
     },
     {
       id: 'market-intelligence',

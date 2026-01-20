@@ -10,14 +10,19 @@ import {
 } from '@heroicons/react/24/outline';
 import { format, isToday } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import {
+  Link,
+  useNavigate,
+  useOutletContext,
+  useSearchParams,
+} from 'react-router-dom';
+import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
-import TimeframePicker, {
-  type TimeframeOption,
-} from '../components/TimeframePicker';
+import { type TimeframeOption } from '../components/TimeframePicker';
 import {
   getAllBusinessGroupData,
+  getMainBusinessGroupOptions,
   getSubBusinessGroups,
   getSubBusinessGroupsWithOverall,
   type BusinessGroupData,
@@ -43,9 +48,20 @@ interface ExecutiveSummaryPageContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
 }
 
-export default function ExecutiveSummaryPage() {
+interface ExecutiveSummaryPageProps {
+  isBudgetView?: boolean;
+  defaultHomeToggle?: 'budget' | 'ytm' | 'full-year';
+  pageTitle?: string;
+}
+
+export default function ExecutiveSummaryPage({
+  isBudgetView = false,
+  defaultHomeToggle = 'ytm',
+  pageTitle,
+}: ExecutiveSummaryPageProps) {
   useOutletContext<ExecutiveSummaryPageContext>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Selection state
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
@@ -58,6 +74,7 @@ export default function ExecutiveSummaryPage() {
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
+  const mainBuOptions = getMainBusinessGroupOptions();
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -66,10 +83,60 @@ export default function ExecutiveSummaryPage() {
 
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>(() => getStoredTimeframe());
+  const [homeToggle, setHomeToggle] = useState<
+    'budget' | 'ytm' | 'full-year'
+  >(defaultHomeToggle);
 
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
   }, [selectedTimeframe]);
+
+  useEffect(() => {
+    if (homeToggle === 'ytm') {
+      setSelectedTimeframe('ytm');
+    } else {
+      setSelectedTimeframe('full-year');
+    }
+  }, [homeToggle]);
+
+  useEffect(() => {
+    const toggleParam = searchParams.get('toggle');
+    if (
+      toggleParam === 'budget' ||
+      toggleParam === 'ytm' ||
+      toggleParam === 'full-year'
+    ) {
+      if (isBudgetView && toggleParam === 'budget') {
+        setHomeToggle('full-year');
+      } else {
+        setHomeToggle(toggleParam);
+      }
+    }
+  }, [searchParams, isBudgetView]);
+
+  useEffect(() => {
+    const buParam = searchParams.get('bu');
+    if (!buParam) {
+      return;
+    }
+    if (buParam === 'all') {
+      setSelectedBu('all');
+      return;
+    }
+    const validBu = mainBuOptions.find((bu) => bu.id === buParam);
+    if (validBu) {
+      setSelectedBu(validBu.id);
+    }
+  }, [searchParams, mainBuOptions]);
+
+  const handleBuChange = (buId: string) => {
+    setSelectedBu(buId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('bu', buId);
+      return next;
+    });
+  };
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -634,10 +701,17 @@ export default function ExecutiveSummaryPage() {
     groupId?: string,
     isNavigable?: boolean
   ) => {
+    const isBudgetMode = isBudgetView || homeToggle === 'budget';
     const handleCellClick = (e: React.MouseEvent) => {
       if (isNavigable && groupId) {
         e.stopPropagation(); // Prevent row expansion from triggering
-        navigate(`/business-group-performance?bu=${groupId}`);
+        if (homeToggle === 'budget') {
+          navigate(`/budget?bu=${groupId}&toggle=budget`);
+        } else if (homeToggle === 'full-year') {
+          navigate(`/market-intelligence?bu=${groupId}&toggle=full-year`);
+        } else {
+          navigate(`/business-group-performance?bu=${groupId}&toggle=ytm`);
+        }
       }
     };
     const percentColor =
@@ -682,7 +756,7 @@ export default function ExecutiveSummaryPage() {
           }`}>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(1)}B
+              ${(isBudgetMode ? metric.baseline : metric.value).toFixed(1)}B
             </div>
           </div>
         </td>
@@ -701,13 +775,15 @@ export default function ExecutiveSummaryPage() {
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(0)}M
+              ${(isBudgetMode ? metric.baseline : metric.value).toFixed(0)}M
             </div>
           </div>
           <div className='text-center'>
-            <div className='text-xs text-gray-500 mb-0.5'>
-              vs budget ${metric.baseline.toFixed(0)}M
-            </div>
+            {!isBudgetMode && (
+              <div className='text-xs text-gray-500 mb-0.5'>
+                vs budget ${metric.baseline.toFixed(0)}M
+              </div>
+            )}
             <div className='text-xs text-gray-500'>
               vs Last Year ${metric.baseline.toFixed(0)}M
             </div>
@@ -939,7 +1015,9 @@ export default function ExecutiveSummaryPage() {
         {/* Page Header */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-6'>
-            <h1 className='text-4xl font-bold text-gray-900'>Home</h1>
+            <h1 className='text-3xl font-bold text-gray-900'>
+              {pageTitle ?? (isBudgetView ? 'Budget' : 'Home')}
+            </h1>
             {/* <button
               onClick={() => setIsCreateActionModalOpen(true)}
               className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
@@ -951,100 +1029,142 @@ export default function ExecutiveSummaryPage() {
 
         {/* Timeframe Filter */}
         <div className='mb-6'>
-          <TimeframePicker
-            selectedTimeframe={selectedTimeframe}
-            onTimeframeChange={setSelectedTimeframe}
+          <HeaderFilters
+            timeframeContent={
+              <div className='flex items-center gap-4'>
+                <span className='text-sm font-medium text-gray-600 w-32'>
+                  Timeframe
+                </span>
+                <div className='flex bg-gray-100 rounded-lg p-1'>
+              {(isBudgetView
+                ? [
+                    { id: 'full-year', label: 'Full year' },
+                    { id: 'ytm', label: 'Remainder of the year' },
+                  ]
+                : [
+                    { id: 'budget', label: 'Budget' },
+                    { id: 'ytm', label: 'Year to Month actuals' },
+                    { id: 'full-year', label: 'Full year forecast' },
+                  ]
+              ).map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => {
+                        setHomeToggle(option.id as 'budget' | 'ytm' | 'full-year');
+                        if (option.id === 'budget') {
+                          setSelectedTimeframe('full-year');
+                        } else if (option.id === 'ytm') {
+                          setSelectedTimeframe('ytm');
+                        } else {
+                          setSelectedTimeframe('full-year');
+                        }
+                      }}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                        homeToggle === option.id
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
+            buOptions={mainBuOptions}
+            selectedBu={selectedBu}
+            onBuChange={handleBuChange}
+            showBu={isBudgetView}
           />
         </div>
 
-        {/* Business Group Performance Section */}  
+        {/* Business Group Performance Section */}
         <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-                <ChartBarIcon className='w-6 h-6 text-primary-600' />
-                Business Group Performance
-              </h2>
-              <p className='text-sm text-gray-600 mt-1'>
-                Mn, USD
-              </p>
-            </div>
-            <div className='flex items-center gap-4'>
-              <div className='flex items-center gap-2'>
-                <span className='text-sm text-gray-600'>Show Details</span>
-                <button
-                  onClick={() =>
-                    setShowComparisonDetails(!showComparisonDetails)
-                  }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
-                  }`}>
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+          <div className={isBudgetView ? 'bg-white rounded-xl border border-gray-200/60 shadow-sm p-6' : ''}>
+            <div className='flex items-center justify-between mb-4'>
+              <div>
+                <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+                  <ChartBarIcon className='w-6 h-6 text-primary-600' />
+                  Business Group Performance
+                </h2>
+                <p className='text-sm text-gray-600 mt-1'>Mn, USD</p>
               </div>
-              <Link
-                to='/business-group-performance?bu=all'
-                className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-                Business Group Details
-                <ArrowRightIcon className='w-4 h-4' />
-              </Link>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-sm text-gray-600'>Show Details</span>
+                  <button
+                    onClick={() =>
+                      setShowComparisonDetails(!showComparisonDetails)
+                    }
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                      showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                    }`}>
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <Link
+                  to='/business-group-performance?bu=all'
+                  className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
+                  Business Group Details
+                  <ArrowRightIcon className='w-4 h-4' />
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
-            <table className='w-full'>
-              <thead>
-                <tr className='bg-gray-50'>
-                  <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
-                    <span className='text-sm font-semibold text-gray-700'>
-                      Business Group
-                    </span>
-                  </th>
-                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                    <span className='text-sm font-bold text-gray-900'>
-                      Revenue
-                    </span>
-                  </th>
-                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                    <span className='text-sm font-bold text-gray-900'>
-                      Gross Profit
-                    </span>
-                  </th>
-                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                    <span className='text-sm font-bold text-gray-900'>
-                      Operating Profit
-                    </span>
-                  </th>
-                  <th className='text-center px-4 py-3 border-b border-gray-200'>
-                    <span className='text-sm font-bold text-gray-900'>
-                      Net Profit
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData.map((group) => {
-                  const isOverallRow =
-                    group.id === 'overall' || group.id.endsWith('-overall');
-                  const isExpandable =
-                    selectedBu === 'all' && group.id !== 'overall';
-                  const isExpanded = expandedRows.has(group.id);
+            <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
+              <table className='w-full'>
+                <thead>
+                  <tr className='bg-gray-50'>
+                    <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
+                      <span className='text-sm font-semibold text-gray-700'>
+                        Business Group
+                      </span>
+                    </th>
+                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                      <span className='text-sm font-bold text-gray-900'>
+                        Revenue
+                      </span>
+                    </th>
+                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                      <span className='text-sm font-bold text-gray-900'>
+                        Gross Profit
+                      </span>
+                    </th>
+                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                      <span className='text-sm font-bold text-gray-900'>
+                        Operating Profit
+                      </span>
+                    </th>
+                    <th className='text-center px-4 py-3 border-b border-gray-200'>
+                      <span className='text-sm font-bold text-gray-900'>
+                        Net Profit
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableData.map((group) => {
+                    const isOverallRow =
+                      group.id === 'overall' || group.id.endsWith('-overall');
+                    const isExpandable =
+                      selectedBu === 'all' && group.id !== 'overall';
+                    const isExpanded = expandedRows.has(group.id);
 
-                  return (
-                    <>
-                      {renderTableRow(group, isExpandable, false, isOverallRow)}
-                      {isExpanded &&
-                        getExpandedSubGroups(group.id).map((subGroup) =>
-                          renderTableRow(subGroup, false, true, false)
-                        )}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <>
+                        {renderTableRow(group, isExpandable, false, isOverallRow)}
+                        {isExpanded &&
+                          getExpandedSubGroups(group.id).map((subGroup) =>
+                            renderTableRow(subGroup, false, true, false)
+                          )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 

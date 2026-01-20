@@ -932,7 +932,7 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
     type: 'positive',
     description: 'L3+ initiatives performance vs target',
     isClickable: true,
-    navigationTarget: '/ideation-progress?tab=plans',
+    navigationTarget: '/initiative-performance?tab=plans',
   },
   {
     stage: 'l4-vs-planned',
@@ -942,7 +942,7 @@ export const mockBudgetForecastStages: BudgetForecastStage[] = [
     type: 'negative',
     description: 'L4+ initiatives performance vs planned',
     isClickable: true,
-    navigationTarget: '/ideation-progress?tab=execution',
+    navigationTarget: '/initiative-performance?tab=execution',
   },
   {
     stage: 'one-off-adjustments',

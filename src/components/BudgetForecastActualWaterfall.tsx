@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
@@ -17,7 +17,7 @@ import type { BudgetForecastStage } from '../types';
 interface BudgetForecastActualWaterfallProps {
   stages: BudgetForecastStage[];
   title?: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string; // Stage ID to highlight (e.g., 'market-performance')
 }

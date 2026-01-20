@@ -3,7 +3,9 @@ import MeetingDetailView from './components/MeetingDetailView';
 import { ActionsProvider } from './contexts/ActionsContext';
 import MainLayout from './layouts/MainLayout';
 import ActionTrackerPage from './pages/ActionTrackerPage';
+import BudgetPage from './pages/BudgetPage';
 import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
+import BusinessUnitPerformanceByFunctionPage from './pages/BusinessUnitPerformanceByFunctionPage';
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage';
 import ExternalPulsePage from './pages/ExternalPulsePage';
 import FinancePage from './pages/FinancePage';
@@ -69,6 +71,10 @@ function App() {
               element={<BusinessGroupPerformancePage />}
             />
             <Route
+              path='business-unit-performance/functional-performance'
+              element={<BusinessUnitPerformanceByFunctionPage />}
+            />
+            <Route
               path='wave-dashboard'
               element={<WaveExecutiveDashboardPage />}
             />
@@ -77,7 +83,11 @@ function App() {
               element={<MarketIntelligencePage />}
             />
             <Route
-              path='ideation-progress'
+              path='budget'
+              element={<BudgetPage />}
+            />
+            <Route
+              path='initiative-performance'
               element={<IdeationProgressPage />}
             />
           </Route>

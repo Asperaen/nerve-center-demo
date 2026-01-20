@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -9,8 +10,8 @@ import { getStoredTimeframe, setStoredTimeframe } from '../utils/timeframeStorag
 type TabId = 'plans' | 'execution';
 
 const TAB_CONFIG: Array<{ id: TabId; label: string }> = [
-  { id: 'plans', label: 'Building Robust Plans' },
-  { id: 'execution', label: 'Tracking execution to bottom line' },
+  { id: 'plans', label: 'Ideation Dashboard' },
+  { id: 'execution', label: 'Implementation dashboard' },
 ];
 
 type PlanRow = {
@@ -538,6 +539,7 @@ export default function IdeationProgressPage() {
     getStoredTimeframe()
   );
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -598,7 +600,7 @@ export default function IdeationProgressPage() {
       <div className='p-8 max-w-[1440px] mx-auto'>
         <div className='mb-6'>
           <h1 className='text-3xl font-bold text-gray-900'>
-            Ideation Progress
+            Initiative Performance
           </h1>
           <p className='text-sm text-gray-600 mt-2'>
             Track ideation maturity from robust planning to bottom-line
@@ -624,24 +626,9 @@ export default function IdeationProgressPage() {
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
           {activeTab === 'plans' ? (
             <div className='space-y-6'>
-              <div className='flex items-center gap-6'>
-                <span className='text-sm font-semibold text-gray-700'>
-                  Timeframe
-                </span>
-                <div className='flex items-center gap-2 bg-gray-100 rounded-full p-1'>
-                  {TIMEFRAME_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setActiveTimeframe(option.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                        activeTimeframe === option.value
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <span className='font-semibold text-gray-700'>From</span>
+                <span>{todayLabel}</span>
               </div>
 
               <div className='overflow-x-auto'>
@@ -656,12 +643,12 @@ export default function IdeationProgressPage() {
                       <th
                         className='bg-blue-900 text-white text-center px-4 py-3'
                         colSpan={1}>
-                        2023 in-year L3 total
+                        In-year L3 total
                       </th>
                       <th
                         className='bg-blue-900 text-white text-center px-4 py-3'
                         colSpan={3}>
-                        2023 In-year impact (YTM)
+                        In-year impact (YTM)
                       </th>
                       <th
                         className='bg-blue-900 text-white text-center px-4 py-3'
@@ -699,12 +686,10 @@ export default function IdeationProgressPage() {
                         ? 'bg-blue-200 font-semibold'
                         : '';
                       const labelClass = row.isSub ? 'pl-8' : '';
-                      const pctClass = (value: number) => {
-                        if (value >= 100) return 'bg-green-100 text-green-700';
-                        if (value >= 60) return 'bg-blue-50 text-blue-700';
-                        if (value >= 40) return 'bg-amber-50 text-amber-700';
-                        return 'bg-red-50 text-red-700';
-                      };
+                      const pctClass = (value: number) =>
+                        value >= 100
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-50 text-red-700';
 
                       return (
                         <tr
@@ -768,26 +753,9 @@ export default function IdeationProgressPage() {
             </div>
           ) : (
             <div className='space-y-6'>
-              <div className='flex items-center gap-6'>
-                <span className='text-sm font-semibold text-gray-700'>
-                  Timeframe
-                </span>
-                <div className='flex items-center gap-2 bg-gray-100 rounded-full p-1'>
-                  {TIMEFRAME_OPTIONS.filter(
-                    (option) => option.value !== 'full-year'
-                  ).map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setActiveTimeframe(option.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                        activeTimeframe === option.value
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <span className='font-semibold text-gray-700'>From</span>
+                <span>{todayLabel}</span>
               </div>
 
               <div className='overflow-x-auto'>
@@ -802,7 +770,7 @@ export default function IdeationProgressPage() {
                       <th
                         className='bg-blue-900 text-white text-center px-4 py-3'
                         colSpan={1}>
-                        2023 in-year (YTM)
+                        In-year (YTM)
                       </th>
                       <th
                         className='bg-blue-900 text-white text-center px-4 py-3'
@@ -860,12 +828,10 @@ export default function IdeationProgressPage() {
                         ? 'bg-blue-200 font-semibold'
                         : '';
                       const labelClass = row.isSub ? 'pl-8' : '';
-                      const pctClass = (value: number) => {
-                        if (value >= 100) return 'bg-green-100 text-green-700';
-                        if (value >= 80) return 'bg-blue-50 text-blue-700';
-                        if (value >= 60) return 'bg-amber-50 text-amber-700';
-                        return 'bg-red-50 text-red-700';
-                      };
+                      const pctClass = (value: number) =>
+                        value >= 100
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-50 text-red-700';
 
                       return (
                         <tr

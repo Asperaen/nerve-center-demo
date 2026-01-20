@@ -1,48 +1,49 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import CreateActionModalGlobal from '../components/CreateActionModal';
 import {
-  mockOPWaterfallStages,
-  mockValueDriverHierarchy,
-  mockAppliedAssumptions,
-  mockSuggestedAssumptions,
-  mockBudgetForecastStages,
-} from '../data/mockForecast';
-import { mockNews } from '../data/mockNews';
-import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
-import TimeframePicker, {
-  type TimeframeOption,
-} from '../components/TimeframePicker';
-import {
-  getStoredTimeframe,
-  setStoredTimeframe,
-} from '../utils/timeframeStorage';
-import {
-  ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-  XMarkIcon,
+  ArrowTrendingUpIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  NewspaperIcon,
   PlusIcon,
   TrashIcon,
-  ChartBarIcon,
-  ArrowLeftIcon,
-  NewspaperIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
+import CreateActionModalGlobal from '../components/CreateActionModal';
+import HeaderFilters from '../components/HeaderFilters';
+import TimeframePicker, {
+  type TimeframeOption,
+  type TimeframeOptionItem,
+} from '../components/TimeframePicker';
+import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
+import {
+  mockAppliedAssumptions,
+  mockBudgetForecastStages,
+  mockOPWaterfallStages,
+  mockSuggestedAssumptions,
+  mockValueDriverHierarchy,
+} from '../data/mockForecast';
+import { mockNews } from '../data/mockNews';
 import type {
   ActionProposal,
   AppliedAssumption,
-  FinancialCategoryGroup,
-  ValueDriverChange,
-  Proposal,
   BudgetForecastStage,
+  FinancialCategoryGroup,
   NewsItem,
+  Proposal,
+  ValueDriverChange,
 } from '../types';
+import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 export default function MarketIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>(
-    () => getStoredTimeframe()
+  const [selectedTimeframe, setSelectedTimeframe] =
+    useState<TimeframeOption>('full-year');
+  const [selectedBu, setSelectedBu] = useState<string>(
+    searchParams.get('bu') || 'all'
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
@@ -96,6 +97,34 @@ export default function MarketIntelligencePage() {
     setStoredTimeframe(selectedTimeframe);
   }, [selectedTimeframe]);
 
+  useEffect(() => {
+    const buParam = searchParams.get('bu');
+    if (buParam) {
+      setSelectedBu(buParam);
+    }
+  }, [searchParams]);
+
+  const mainBuOptions = getMainBusinessGroupOptions();
+  const selectedBuName =
+    selectedBu === 'all'
+      ? 'All BUs'
+      : mainBuOptions.find((bu) => bu.id === selectedBu)?.name ??
+        selectedBu.toUpperCase();
+
+  const handleBuChange = (buId: string) => {
+    setSelectedBu(buId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('bu', buId);
+      return next;
+    });
+  };
+
+  const forecastTimeframeOptions: TimeframeOptionItem[] = [
+    { value: 'full-year', label: 'Full year' },
+    { value: 'ytm', label: 'Remainder of the year' },
+  ];
+
   const focusOptions = [
     {
       id: 'market-performance',
@@ -141,85 +170,105 @@ export default function MarketIntelligencePage() {
     });
   };
 
-  // Calculate adjusted budget forecast stages based on enabled assumptions
-  const adjustedBudgetForecastStages = useMemo(() => {
-    // Calculate total impact from enabled suggested assumptions
-    let marketPerformanceImpact = 0;
-    let oneOffAdjustmentsImpact = 0;
+  const forecastWaterfallStages = useMemo(() => {
+    const budgetStageValue =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
+        ?.value ?? 0;
+    const l3Delta =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'l3-vs-target')
+        ?.delta ?? 0;
+    const l4Delta =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'l4-vs-planned')
+        ?.delta ?? 0;
+    const initiativeOver = Math.max(0, l3Delta);
+    const initiativeUnder = Math.min(0, l4Delta);
 
-    // Add impacts from enabled suggested assumptions
-    suggestedAssumptions
-      .filter((a) => enabledSuggestedAssumptionIds.has(a.id))
-      .forEach((assumption) => {
-        // Apply half to market-performance and half to one-off-adjustments
-        // Or you could apply all to market-performance
-        marketPerformanceImpact += assumption.impact;
-      });
-
-    // Add impacts from enabled applied assumptions (subtract if disabled from baseline)
-    const disabledApplied = appliedAssumptions.filter(
-      (a) => !enabledAssumptionIds.has(a.id)
+    const enabledApplied = appliedAssumptions.filter((assumption) =>
+      enabledAssumptionIds.has(assumption.id)
     );
-    disabledApplied.forEach((assumption) => {
-      // When an applied assumption is disabled, subtract its impact
-      oneOffAdjustmentsImpact -= assumption.impact;
+    const enabledSuggested = suggestedAssumptions.filter((assumption) =>
+      enabledSuggestedAssumptionIds.has(assumption.id)
+    );
+    const allEnabled = [...enabledApplied, ...enabledSuggested];
+    const tailwind = allEnabled
+      .filter((assumption) => assumption.impact > 0)
+      .reduce((sum, assumption) => sum + assumption.impact, 0);
+    const headwind = allEnabled
+      .filter((assumption) => assumption.impact < 0)
+      .reduce((sum, assumption) => sum + assumption.impact, 0);
+
+    let running = budgetStageValue;
+    const stages: BudgetForecastStage[] = [];
+
+    stages.push({
+      stage: 'budget',
+      label: 'Budget',
+      value: running,
+      delta: running,
+      type: 'baseline',
+      description: 'Budget baseline',
+      isClickable: false,
     });
 
-    // Clone and adjust stages
-    const adjustedStages: BudgetForecastStage[] = [];
-    let cumulativeAdjustment = 0;
+    const addStage = (
+      stage: BudgetForecastStage['stage'],
+      label: string,
+      delta: number,
+      description: string
+    ) => {
+      running += delta;
+      stages.push({
+        stage,
+        label,
+        value: running,
+        delta,
+        type: delta >= 0 ? 'positive' : 'negative',
+        description,
+        isClickable: false,
+      });
+    };
 
-    mockBudgetForecastStages.forEach((stage, index) => {
-      const newStage = { ...stage };
+    addStage(
+      'market-performance',
+      'New Tailwind',
+      tailwind,
+      'Tailwind impact from enabled assumptions'
+    );
+    addStage(
+      'one-off-adjustments',
+      'New Headwind',
+      headwind,
+      'Headwind impact from enabled assumptions'
+    );
+    addStage(
+      'l3-vs-target',
+      'Initiative Over-delivery',
+      initiativeOver,
+      'Initiative over-delivery impact'
+    );
+    addStage(
+      'l4-vs-planned',
+      'Initiative Under-delivery',
+      initiativeUnder,
+      'Initiative under-delivery impact'
+    );
 
-      if (stage.stage === 'market-performance') {
-        // Apply market performance impact
-        newStage.delta = (stage.delta ?? 0) + marketPerformanceImpact;
-        newStage.value =
-          (mockBudgetForecastStages[index - 1]?.value ?? 0) + newStage.delta;
-        cumulativeAdjustment += marketPerformanceImpact;
-
-        // Update type based on new delta
-        if (newStage.delta > 0) {
-          newStage.type = 'positive';
-        } else if (newStage.delta < 0) {
-          newStage.type = 'negative';
-        }
-      } else if (stage.stage === 'one-off-adjustments') {
-        // Apply one-off adjustments impact
-        const baseDelta = stage.delta ?? 0;
-        newStage.delta = baseDelta + oneOffAdjustmentsImpact;
-        newStage.value =
-          (adjustedStages[index - 1]?.value ?? 0) + newStage.delta;
-        cumulativeAdjustment += oneOffAdjustmentsImpact;
-
-        // Update type based on new delta
-        if (newStage.delta > 0) {
-          newStage.type = 'positive';
-        } else if (newStage.delta < 0) {
-          newStage.type = 'negative';
-        }
-      } else if (stage.type === 'baseline' && index === 0) {
-        // Keep budget baseline as is
-        newStage.value = stage.value;
-      } else if (stage.stage === 'forecast') {
-        // Forecast should reflect cumulative value
-        newStage.value = adjustedStages[index - 1]?.value ?? stage.value;
-        newStage.delta = newStage.value;
-      } else {
-        // Other stages: carry forward cumulative adjustment
-        newStage.value = stage.value + cumulativeAdjustment;
-      }
-
-      adjustedStages.push(newStage);
+    stages.push({
+      stage: 'forecast',
+      label: 'Latest forecast',
+      value: running,
+      delta: running,
+      type: 'baseline',
+      description: 'Latest forecast value',
+      isClickable: false,
     });
 
-    return adjustedStages;
+    return stages;
   }, [
-    suggestedAssumptions,
-    enabledSuggestedAssumptionIds,
     appliedAssumptions,
     enabledAssumptionIds,
+    enabledSuggestedAssumptionIds,
+    suggestedAssumptions,
   ]);
 
   const handleToggleAssumption = (assumptionId: string) => {
@@ -509,9 +558,12 @@ export default function MarketIntelligencePage() {
         {/* Page Title */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-2'>
-            <h1 className='text-3xl font-bold text-gray-900'>
-              Market Intelligence
-            </h1>
+            <div>
+              <h1 className='text-3xl font-bold text-gray-900'>Forecast</h1>
+              <p className='text-sm text-gray-500 mt-1'>
+                {selectedBuName} view
+              </p>
+            </div>
             <button
               onClick={() => setIsCreateActionGlobalModalOpen(true)}
               className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors'>
@@ -521,39 +573,29 @@ export default function MarketIntelligencePage() {
           </div>
         </div>
 
-        {/* Timeframe Picker */}
-        <TimeframePicker
-          selectedTimeframe={selectedTimeframe}
-          onTimeframeChange={setSelectedTimeframe}
-          className='mb-6'
-        />
+        {/* Timeframe + BU Selector */}
+        <div className='mb-6'>
+          <HeaderFilters
+            timeframeContent={
+              <TimeframePicker
+                selectedTimeframe={selectedTimeframe}
+                onTimeframeChange={setSelectedTimeframe}
+                options={forecastTimeframeOptions}
+              />
+            }
+            buOptions={mainBuOptions}
+            selectedBu={selectedBu}
+            onBuChange={handleBuChange}
+          />
+        </div>
 
         <div className='space-y-8'>
-          {/* Market Performance Waterfall Chart */}
+          {/* Forecast Waterfall Chart */}
           <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div className='flex bg-gray-100 rounded-lg p-1'>
-                {focusOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleFocusChange(option.id)}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      selectedFocusStage === option.id
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}>
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
             <BudgetForecastActualWaterfall
-              stages={adjustedBudgetForecastStages}
-              title='Market Intelligence - Performance Waterfall'
-              subtitle={
-                focusOptions.find((option) => option.id === selectedFocusStage)
-                  ?.subtitle
-              }
+              stages={forecastWaterfallStages}
+              title='Forecast - Performance Waterfall'
+              subtitle={`${selectedBuName} view`}
               highlightedStage={selectedFocusStage}
             />
           </div>
@@ -661,6 +703,9 @@ export default function MarketIntelligencePage() {
                           onChange={(e) => {
                             e.stopPropagation();
                             handleToggleAssumption(assumption.id);
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
                           }}
                           className='w-5 h-5 text-primary-600 rounded focus:ring-primary-500 cursor-pointer'
                         />
@@ -1462,7 +1507,7 @@ function ValueDriverModal({
                       </div>
                       <div className='flex-1'>
                         <div className='flex items-center gap-3 mb-2'>
-                          <h3 className='text-lg font-bold text-gray-900'>
+                          <h3 className='text-2xl font-bold text-gray-900'>
                             {selectedAssumption.name}
                           </h3>
                           <span
