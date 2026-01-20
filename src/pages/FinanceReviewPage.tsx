@@ -227,22 +227,19 @@ export default function FinanceReviewPage() {
                 }}
               />
               <Tooltip
-                formatter={(
-                  value: number | string | undefined,
-                  _name: string | undefined,
-                  props: {
-                    payload?: {
-                      [key: string]: string | number | boolean | undefined;
-                      cumulativeValue?: number;
-                      delta?: number;
-                      label?: string;
-                      isClickable?: boolean;
-                    };
-                  }
-                ) => {
-                  const payload = props.payload;
+                formatter={(value, _name, props) => {
+                  const payload = props.payload as
+                    | {
+                        cumulativeValue?: number;
+                        delta?: number;
+                        label?: string;
+                        isClickable?: boolean;
+                      }
+                    | undefined;
                   const numericValue =
-                    typeof value === 'number' ? value : Number(value ?? 0);
+                    typeof value === 'number'
+                      ? value
+                      : Number(Array.isArray(value) ? value[0] : value ?? 0);
                   const cumulative = payload?.cumulativeValue ?? numericValue;
                   const delta = payload?.delta;
                   const isClickable = payload?.isClickable;

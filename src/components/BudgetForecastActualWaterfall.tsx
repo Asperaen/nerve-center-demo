@@ -85,9 +85,7 @@ export default function BudgetForecastActualWaterfall({
       <div className='flex items-center justify-between mb-6'>
         <div>
           <h2 className='text-2xl font-bold text-gray-900'>{title}</h2>
-          {subtitle && (
-            <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>
-          )}
+          {subtitle && <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>}
         </div>
         <div className='flex items-center gap-4'>
           <div className='flex items-center gap-2'>
@@ -102,7 +100,9 @@ export default function BudgetForecastActualWaterfall({
       </div>
 
       <div className='h-96'>
-        <ResponsiveContainer width='100%' height='100%'>
+        <ResponsiveContainer
+          width='100%'
+          height='100%'>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray='3 3' />
             <XAxis
@@ -114,7 +114,8 @@ export default function BudgetForecastActualWaterfall({
                 const { x, y, payload } = props;
                 const stage = stages.find((s) => s.label === payload.value);
                 const isClickable = stage?.isClickable ?? false;
-                const isHighlightedLabel = highlightedStage && stage?.stage === highlightedStage;
+                const isHighlightedLabel =
+                  highlightedStage && stage?.stage === highlightedStage;
                 return (
                   <text
                     x={x}
@@ -123,11 +124,18 @@ export default function BudgetForecastActualWaterfall({
                     transform={`rotate(-15, ${x}, ${y})`}
                     style={{
                       fontSize: isHighlightedLabel ? '13px' : '11px',
-                      fill: isHighlightedLabel ? '#1d4ed8' : isClickable ? '#1e3a8a' : '#374151',
-                      fontWeight: isHighlightedLabel ? '800' : isClickable ? 'bold' : 'normal',
+                      fill: isHighlightedLabel
+                        ? '#1d4ed8'
+                        : isClickable
+                        ? '#1e3a8a'
+                        : '#374151',
+                      fontWeight: isHighlightedLabel
+                        ? '800'
+                        : isClickable
+                        ? 'bold'
+                        : 'normal',
                       cursor: isClickable ? 'pointer' : 'default',
-                    }}
-                  >
+                    }}>
                     {payload.value}
                     {isHighlightedLabel && ' ★'}
                   </text>
@@ -144,23 +152,20 @@ export default function BudgetForecastActualWaterfall({
               }}
             />
             <Tooltip
-              formatter={(
-                value: number | string | undefined,
-                _name: string | undefined,
-                props: {
-                  payload?: {
-                    [key: string]: string | number | boolean | undefined;
-                    cumulativeValue?: number;
-                    delta?: number;
-                    label?: string;
-                    isClickable?: boolean;
-                    description?: string;
-                  };
-                }
-              ) => {
-                const payload = props.payload;
+              formatter={(value, _name, props) => {
+                const payload = props.payload as
+                  | {
+                      cumulativeValue?: number;
+                      delta?: number;
+                      label?: string;
+                      isClickable?: boolean;
+                      description?: string;
+                    }
+                  | undefined;
                 const numericValue =
-                  typeof value === 'number' ? value : Number(value ?? 0);
+                  typeof value === 'number'
+                    ? value
+                    : Number(Array.isArray(value) ? value[0] : value ?? 0);
                 const cumulative = payload?.cumulativeValue ?? numericValue;
                 const delta = payload?.delta;
                 const isClickable = payload?.isClickable;
@@ -183,9 +188,16 @@ export default function BudgetForecastActualWaterfall({
               }}
             />
             {/* Baseline transparent spacer bar */}
-            <Bar dataKey='baselineValue' stackId='a' fill='transparent' />
+            <Bar
+              dataKey='baselineValue'
+              stackId='a'
+              fill='transparent'
+            />
             {/* Actual value bars */}
-            <Bar dataKey='barValue' stackId='a' name='Budget Forecast Actual'>
+            <Bar
+              dataKey='barValue'
+              stackId='a'
+              name='Budget Forecast Actual'>
               <LabelList
                 dataKey='delta'
                 position='middle'
@@ -212,10 +224,16 @@ export default function BudgetForecastActualWaterfall({
                     fill={fillColor}
                     style={{
                       cursor: stage.isClickable ? 'pointer' : 'default',
-                      stroke: highlighted ? '#1d4ed8' : stage.isClickable ? '#3b82f6' : 'none',
+                      stroke: highlighted
+                        ? '#1d4ed8'
+                        : stage.isClickable
+                        ? '#3b82f6'
+                        : 'none',
                       strokeWidth: highlighted ? 4 : stage.isClickable ? 2 : 0,
                       opacity: highlighted ? 1 : stage.isClickable ? 1 : 0.9,
-                      filter: highlighted ? 'drop-shadow(0 4px 6px rgba(59, 130, 246, 0.5))' : 'none',
+                      filter: highlighted
+                        ? 'drop-shadow(0 4px 6px rgba(59, 130, 246, 0.5))'
+                        : 'none',
                     }}
                     onClick={() => handleBarClick(stage)}
                     onMouseEnter={(e) => {
@@ -240,4 +258,3 @@ export default function BudgetForecastActualWaterfall({
     </div>
   );
 }
-

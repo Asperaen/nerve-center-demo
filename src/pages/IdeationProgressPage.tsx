@@ -2,7 +2,10 @@ import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { type TimeframeOption } from '../components/TimeframePicker';
-import { getStoredTimeframe, setStoredTimeframe } from '../utils/timeframeStorage';
+import {
+  getStoredTimeframe,
+  setStoredTimeframe,
+} from '../utils/timeframeStorage';
 
 type TabId = 'plans' | 'execution';
 
@@ -605,7 +608,7 @@ export default function IdeationProgressPage() {
           </p>
         </div>
 
-        <div className='flex items-center gap-2 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50 shadow-sm mb-6'>
+        <div className='flex items-center gap-2 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 pr-3 border border-gray-200/50 shadow-sm mb-6 w-fit'>
           {TAB_CONFIG.map((tab) => (
             <button
               key={tab.id}
@@ -672,7 +675,9 @@ export default function IdeationProgressPage() {
                       <th className='px-4 py-2 text-center'>
                         # of init. owners
                       </th>
-                      <th className='px-4 py-2 text-center'>avg. init per IO</th>
+                      <th className='px-4 py-2 text-center'>
+                        avg. init per IO
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -860,10 +865,14 @@ export default function IdeationProgressPage() {
                             )}
                           </td>
                           <td className='px-4 py-2 text-center'>
-                            {row.lateInitiatives === 0 ? '-' : row.lateInitiatives}
+                            {row.lateInitiatives === 0
+                              ? '-'
+                              : row.lateInitiatives}
                           </td>
                           <td className='px-4 py-2 text-center'>
-                            {row.lateValue === 0 ? '-' : row.lateValue.toFixed(1)}
+                            {row.lateValue === 0
+                              ? '-'
+                              : row.lateValue.toFixed(1)}
                           </td>
                           <td className='px-4 py-2 text-center'>
                             {row.milestonesDue}

@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
-import {
-  ArrowLeftIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   Bar,
   XAxis,
@@ -88,7 +85,9 @@ export default function MVABreakdownLayer({
         <div className='flex items-center gap-2 text-sm text-gray-600'>
           <span>NP Deviation</span>
           {breadcrumbs.map((crumb, index) => (
-            <div key={index} className='flex items-center gap-2'>
+            <div
+              key={index}
+              className='flex items-center gap-2'>
               <ChevronRightIcon className='w-4 h-4' />
               <button
                 onClick={crumb.onClick}
@@ -103,7 +102,9 @@ export default function MVABreakdownLayer({
       {/* Waterfall Chart */}
       <div className='lg:col-span-3 bg-white rounded-xl border border-gray-200 shadow-lg p-8'>
         <div className='h-96'>
-          <ResponsiveContainer width='100%' height='100%'>
+          <ResponsiveContainer
+            width='100%'
+            height='100%'>
             <ComposedChart data={mvaChartData}>
               <CartesianGrid strokeDasharray='3 3' />
               <XAxis
@@ -123,21 +124,18 @@ export default function MVABreakdownLayer({
                 }}
               />
               <Tooltip
-                formatter={(
-                  value: number | string | undefined,
-                  _name: string | undefined,
-                  props: {
-                    payload?: {
-                      [key: string]: string | number | undefined;
-                      cumulativeValue?: number;
-                      delta?: number;
-                      label?: string;
-                    };
-                  }
-                ) => {
-                  const payload = props.payload;
+                formatter={(value, _name, props) => {
+                  const payload = props.payload as
+                    | {
+                        cumulativeValue?: number;
+                        delta?: number;
+                        label?: string;
+                      }
+                    | undefined;
                   const numericValue =
-                    typeof value === 'number' ? value : Number(value ?? 0);
+                    typeof value === 'number'
+                      ? value
+                      : Number(Array.isArray(value) ? value[0] : value ?? 0);
                   const cumulative = payload?.cumulativeValue ?? numericValue;
                   const delta = payload?.delta;
 
@@ -160,7 +158,10 @@ export default function MVABreakdownLayer({
                 stackId='a'
                 fill='transparent'
               />
-              <Bar dataKey='barValue' stackId='a' name='MVA Breakdown'>
+              <Bar
+                dataKey='barValue'
+                stackId='a'
+                name='MVA Breakdown'>
                 {mockMVABreakdownStages.map((stage, index) => {
                   const isBaseline = stage.type === 'baseline';
                   const isPositive = stage.type === 'positive';
@@ -208,4 +209,3 @@ export default function MVABreakdownLayer({
     </div>
   );
 }
-
