@@ -6,7 +6,8 @@ const isValidTimeframe = (value: string | null): value is TimeframeOption =>
   value === 'full-year' ||
   value === 'ytm' ||
   value === 'rolling-3m' ||
-  value === 'in-month';
+  value === 'in-month' ||
+  value === 'budget';
 
 export const getStoredTimeframe = (
   fallback: TimeframeOption = 'ytm'

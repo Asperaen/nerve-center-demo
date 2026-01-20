@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { getStoredTimeframe } from '../utils/timeframeStorage';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
@@ -17,8 +17,12 @@ const formatMn = (value: number) => {
 };
 
 export default function BusinessUnitPerformanceByFunctionPage() {
+  const { functionId } = useParams<{ functionId?: string }>();
   const [searchParams] = useSearchParams();
-  const functionParam = searchParams.get('function') ?? 'TopLine';
+  const functionParam =
+    functionId ??
+    searchParams.get('function') ??
+    'topline';
   const buParam = searchParams.get('bu') ?? '';
   const selectedBus = buParam
     .split(',')

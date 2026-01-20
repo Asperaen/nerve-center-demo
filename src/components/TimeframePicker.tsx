@@ -1,4 +1,9 @@
-export type TimeframeOption = 'full-year' | 'ytm' | 'rolling-3m' | 'in-month';
+export type TimeframeOption =
+  | 'full-year'
+  | 'ytm'
+  | 'rolling-3m'
+  | 'in-month'
+  | 'budget';
 
 export interface TimeframeOptionItem {
   value: TimeframeOption;

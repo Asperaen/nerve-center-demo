@@ -924,17 +924,17 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Root Cause Analysis**: Integrated AI sidebar for insights on selected items
 
 3. **Performance Intelligence Page** (http://localhost:5173/business-group-performance) - Demonstrate:
-4. **BU Function Performance Page** (http://localhost:5173/business-unit-performance/functional-performance) - Demonstrate:
+4. **BU Function Performance Page** (http://localhost:5173/business-unit-performance/functional-performance/topline) - Demonstrate:
 
    - Key Call Out card with AI insight
    - Budget and Actual cards with large values for the selected function, scaled to match selected BU totals
-   - Query params: `function=TopLine` and `bu=x,y,z`
+  - Route segments: `/topline`, `/procurement`, `/mva`, `/rd` with optional `?bu=x,y,z`
 
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
    - **Detailed Table**: Same table as Home page but with more space and focus
-   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver with YTM budget/actual aligned to the BU totals, plus a BU selection indicator with hover list
-   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver
+  - **Deviation Waterfall**: Past year OP → Volume/mix → Initiative performance → Other factors → Current year OP, scaled to selected BUs with hoverable BU indicator
+  - **Waterfall Details Modal**: Click a driver bar to open a modal with BU-level drivers and impacts
    - **Row Selection**: Select rows to scale the waterfall to the chosen business units
    - **Ideation Progress Link**: Click L3+ vs target or L4+ vs planned to open Ideation Progress
    - **Deep Dive Navigation**: Click waterfall stages for COGS Analysis

@@ -14,6 +14,7 @@ import {
   useOutletContext,
   useSearchParams,
 } from 'react-router-dom';
+import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
@@ -26,6 +27,7 @@ import {
   type BusinessGroupData,
   type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
+import { mockBudgetForecastStages } from '../data/mockForecast';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
@@ -236,7 +238,6 @@ export default function ExecutiveSummaryPage({
     );
   };
 
-
   const tableData = useMemo(() => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
@@ -244,6 +245,72 @@ export default function ExecutiveSummaryPage({
     }
     return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
   }, [selectedBu, selectedTimeframe]);
+
+  const budgetWaterfallStages = useMemo(() => {
+    if (!isBudgetView) {
+      return [];
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return mockBudgetForecastStages;
+    }
+
+    const budgetValue = overallRow.np.baseline;
+    const actualValue = overallRow.np.value;
+    const baseBudgetValue =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
+        ?.value ?? 0;
+    const scaleFactor =
+      baseBudgetValue === 0 ? 1 : budgetValue / baseBudgetValue;
+
+    const roundToOne = (value: number) => Math.round(value * 10) / 10;
+    let runningValue = roundToOne(budgetValue);
+
+    return mockBudgetForecastStages.map((stage) => {
+      if (stage.stage === 'budget') {
+        runningValue = roundToOne(budgetValue);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.stage === 'actuals') {
+        runningValue = roundToOne(actualValue);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.type === 'baseline') {
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      const scaledDelta =
+        stage.delta === undefined
+          ? undefined
+          : roundToOne(stage.delta * scaleFactor);
+      if (scaledDelta !== undefined) {
+        runningValue = roundToOne(runningValue + scaledDelta);
+      }
+
+      return {
+        ...stage,
+        value: runningValue,
+        delta: scaledDelta,
+      };
+    });
+  }, [isBudgetView, tableData]);
 
   const getExpandedSubGroups = (bgId: string) => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
@@ -363,11 +430,13 @@ export default function ExecutiveSummaryPage({
               {percentSign}
               {metric.percent.toFixed(1)}%
             </span>
-            <span
-              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-              {percentSign}
-              {metric.percent.toFixed(1)}%
-            </span>
+            {!isBudgetView && (
+              <span
+                className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+                {percentSign}
+                {metric.percent.toFixed(1)}%
+              </span>
+            )}
           </div>
         </div>
 
@@ -739,6 +808,15 @@ export default function ExecutiveSummaryPage({
                 </tbody>
               </table>
             </div>
+            {isBudgetView && budgetWaterfallStages.length > 0 && (
+              <div className='mt-6'>
+                <BudgetForecastActualWaterfall
+                  stages={budgetWaterfallStages}
+                  title='Budget Waterfall'
+                  subtitle='Net Profit, Mn USD'
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

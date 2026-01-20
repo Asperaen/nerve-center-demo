@@ -1,7 +1,12 @@
 import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { type TimeframeOption } from '../components/TimeframePicker';
+import HeaderFilters from '../components/HeaderFilters';
+import TimeframePicker, {
+  type TimeframeOption,
+  type TimeframeOptionItem,
+} from '../components/TimeframePicker';
+import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   getStoredTimeframe,
   setStoredTimeframe,
@@ -535,21 +540,24 @@ export default function IdeationProgressPage() {
     const tabParam = searchParams.get('tab');
     return tabParam === 'execution' ? 'execution' : 'plans';
   }, [searchParams]);
-  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() =>
-    getStoredTimeframe()
-  );
+  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
+    const stored = getStoredTimeframe();
+    return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
+  });
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [selectedBu, setSelectedBu] = useState<string>('all');
   const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
+  const mainBuOptions = getMainBusinessGroupOptions();
 
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
   useEffect(() => {
-    if (activeTab === 'execution' && activeTimeframe === 'full-year') {
-      setActiveTimeframe('ytm');
+    if (activeTimeframe !== 'ytm' && activeTimeframe !== 'full-year') {
+      setActiveTimeframe('full-year');
     }
-  }, [activeTab, activeTimeframe]);
+  }, [activeTimeframe]);
 
   const timeframeScale = useMemo(
     () => getTimeframeScale(activeTimeframe),
@@ -590,10 +598,43 @@ export default function IdeationProgressPage() {
     setStoredTimeframe(activeTimeframe);
   }, [activeTimeframe]);
 
+  useEffect(() => {
+    const buParam = searchParams.get('bu');
+    if (!buParam) {
+      return;
+    }
+    if (buParam === 'all') {
+      setSelectedBu('all');
+      return;
+    }
+    const validBu = mainBuOptions.find((bu) => bu.id === buParam);
+    if (validBu) {
+      setSelectedBu(validBu.id);
+    }
+  }, [mainBuOptions, searchParams]);
+
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
-    setSearchParams({ tab });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', tab);
+      return next;
+    });
   };
+
+  const handleBuChange = (buId: string) => {
+    setSelectedBu(buId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('bu', buId);
+      return next;
+    });
+  };
+
+  const timeframeOptions: TimeframeOptionItem[] = [
+    { value: 'full-year', label: 'Full year forecast' },
+    { value: 'ytm', label: 'YTM actuals' },
+  ];
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
@@ -606,6 +647,22 @@ export default function IdeationProgressPage() {
             Track ideation maturity from robust planning to bottom-line
             execution.
           </p>
+        </div>
+
+        <div className='mb-6'>
+          <HeaderFilters
+            timeframeContent={
+              <TimeframePicker
+                selectedTimeframe={activeTimeframe}
+                onTimeframeChange={setActiveTimeframe}
+                options={timeframeOptions}
+              />
+            }
+            buOptions={mainBuOptions}
+            selectedBu={selectedBu}
+            onBuChange={handleBuChange}
+            showBu
+          />
         </div>
 
         <div className='flex items-center gap-2 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 pr-3 border border-gray-200/50 shadow-sm mb-6 w-fit'>
@@ -631,51 +688,71 @@ export default function IdeationProgressPage() {
                 <span>{todayLabel}</span>
               </div>
 
-              <div className='overflow-x-auto'>
-                <table className='w-full text-sm'>
+              <div className='overflow-x-auto rounded-lg border border-gray-200'>
+                <table className='w-full text-sm border-collapse'>
                   <thead>
                     <tr>
                       <th
-                        className='bg-blue-900 text-white text-left px-4 py-3'
+                        className='bg-gray-50 text-left px-6 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={2}>
                         Mn USD
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={1}>
-                        In-year L3 total
+                        In-year target
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={3}>
                         In-year impact (YTM)
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={3}>
                         % of in-year target
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={3}>
                         Indicat.
                       </th>
                     </tr>
-                    <tr className='bg-blue-50 text-gray-700'>
-                      <th className='px-4 py-2 text-left'>VS &amp; Sub-VS</th>
-                      <th className='px-4 py-2 text-left'>Sponsor</th>
-                      <th className='px-4 py-2 text-center'>Total</th>
-                      <th className='px-4 py-2 text-center'>L1+</th>
-                      <th className='px-4 py-2 text-center'>L2+</th>
-                      <th className='px-4 py-2 text-center'>L3+</th>
-                      <th className='px-4 py-2 text-center'>L1+</th>
-                      <th className='px-4 py-2 text-center'>L2+</th>
-                      <th className='px-4 py-2 text-center'>L3+</th>
-                      <th className='px-4 py-2 text-center'># of L1+ init</th>
-                      <th className='px-4 py-2 text-center'>
+                    <tr className='bg-gray-50'>
+                      <th className='px-6 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        VS &amp; Sub-VS
+                      </th>
+                      <th className='px-6 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        Sponsor
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        Total
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L1+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L2+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L3+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L1+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L2+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L3+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        # of L1+ init
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         # of init. owners
                       </th>
-                      <th className='px-4 py-2 text-center'>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         avg. init per IO
                       </th>
                     </tr>
@@ -697,23 +774,26 @@ export default function IdeationProgressPage() {
                         <tr
                           key={row.id}
                           className={`border-b border-gray-200 ${rowClass}`}>
-                          <td className={`px-4 py-2 ${labelClass}`}>
+                          <td
+                            className={`px-6 py-3 border-r border-gray-200 last:border-r-0 ${labelClass}`}>
                             {row.label}
                           </td>
-                          <td className='px-4 py-2'>{row.sponsor ?? '-'}</td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-6 py-3 border-r border-gray-200 last:border-r-0'>
+                            {row.sponsor ?? '-'}
+                          </td>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.total.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l1.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l2.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l3.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
                               className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
                                 row.pctL1
@@ -721,7 +801,7 @@ export default function IdeationProgressPage() {
                               {row.pctL1}%
                             </span>
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
                               className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
                                 row.pctL2
@@ -729,7 +809,7 @@ export default function IdeationProgressPage() {
                               {row.pctL2}%
                             </span>
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
                               className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
                                 row.pctL3
@@ -737,13 +817,13 @@ export default function IdeationProgressPage() {
                               {row.pctL3}%
                             </span>
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.countL1}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.owners}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.avgPerIo.toFixed(1)}
                           </td>
                         </tr>
@@ -760,64 +840,78 @@ export default function IdeationProgressPage() {
                 <span>{todayLabel}</span>
               </div>
 
-              <div className='overflow-x-auto'>
-                <table className='w-full text-sm'>
+              <div className='overflow-x-auto rounded-lg border border-gray-200'>
+                <table className='w-full text-sm border-collapse'>
                   <thead>
                     <tr>
                       <th
-                        className='bg-blue-900 text-white text-left px-4 py-3'
+                        className='bg-gray-50 text-left px-6 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={3}>
                         Mn USD
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={1}>
                         In-year (YTM)
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={1}>
                         Impact
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={1}>
                         Impact vs. target
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={2}>
                         Late Initiatives
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={2}>
                         Milestone Completion (rolling 30 days)
                       </th>
                       <th
-                        className='bg-blue-900 text-white text-center px-4 py-3'
+                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={1}>
                         Milestone (vs LW)
                       </th>
                     </tr>
-                    <tr className='bg-blue-50 text-gray-700'>
-                      <th className='px-4 py-2 text-left'>VS &amp; Sub-VS</th>
-                      <th className='px-4 py-2 text-left'>Sponsor</th>
-                      <th className='px-4 py-2 text-center'>L3+ Pipeline</th>
-                      <th className='px-4 py-2 text-center'>Feb L4 target</th>
-                      <th className='px-4 py-2 text-center'>L4+</th>
-                      <th className='px-4 py-2 text-center'>L4+ (%)</th>
-                      <th className='px-4 py-2 text-center'>
+                    <tr className='bg-gray-50'>
+                      <th className='px-6 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        VS &amp; Sub-VS
+                      </th>
+                      <th className='px-6 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        Sponsor
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L3+ Pipeline
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        Feb L4 target
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L4+
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        L4+ (%)
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         # initiatives late for L4
                       </th>
-                      <th className='px-4 py-2 text-center'>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         Value late for L4
                       </th>
-                      <th className='px-4 py-2 text-center'>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         Total # milestones due
                       </th>
-                      <th className='px-4 py-2 text-center'>% completed</th>
-                      <th className='px-4 py-2 text-center'>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
+                        % completed
+                      </th>
+                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         # postponed milestone
                       </th>
                     </tr>
@@ -839,20 +933,23 @@ export default function IdeationProgressPage() {
                         <tr
                           key={row.id}
                           className={`border-b border-gray-200 ${rowClass}`}>
-                          <td className={`px-4 py-2 ${labelClass}`}>
+                          <td
+                            className={`px-6 py-3 border-r border-gray-200 last:border-r-0 ${labelClass}`}>
                             {row.label}
                           </td>
-                          <td className='px-4 py-2'>{row.sponsor ?? '-'}</td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-6 py-3 border-r border-gray-200 last:border-r-0'>
+                            {row.sponsor ?? '-'}
+                          </td>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.pipeline.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l4Target.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l4Impact.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l4Pct === null ? (
                               'n/a'
                             ) : (
@@ -864,20 +961,20 @@ export default function IdeationProgressPage() {
                               </span>
                             )}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.lateInitiatives === 0
                               ? '-'
                               : row.lateInitiatives}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.lateValue === 0
                               ? '-'
                               : row.lateValue.toFixed(1)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.milestonesDue}
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
                               className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
                                 row.milestonesCompletePct
@@ -885,7 +982,7 @@ export default function IdeationProgressPage() {
                               {row.milestonesCompletePct}%
                             </span>
                           </td>
-                          <td className='px-4 py-2 text-center'>
+                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.postponed}
                           </td>
                         </tr>
