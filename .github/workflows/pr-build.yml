@@ -14,16 +14,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20.12
           cache: pnpm
+
+      - name: Enable pnpm via Corepack
+        run: corepack enable && corepack prepare pnpm@9 --activate
 
       - name: Install dependencies
         run: pnpm install
