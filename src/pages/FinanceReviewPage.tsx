@@ -1,32 +1,32 @@
-import { useState, useMemo } from 'react';
-import {
-  mockNPDeviationStages,
-  mockNPDeviationKeyCallOut,
-  mockLeakageRecoveryProposal,
-} from '../data/mockForecast';
 import {
   ArrowRightIcon,
   PlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { useMemo, useState } from 'react';
 import {
   Bar,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
   ComposedChart,
   Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import CreateActionModal from '../components/CreateActionModal';
 import { ProductAnalysisLayer } from '../components/layers';
+import {
+  mockLeakageRecoveryProposal,
+  mockNPDeviationKeyCallOut,
+  mockNPDeviationStages,
+} from '../data/mockForecast';
 import type {
+  ActionProposal,
   BreadcrumbItem,
   NPDeviationStageType,
   Proposal,
-  ActionProposal,
 } from '../types';
 
 type NavigationLayer = 1 | 2;
@@ -228,8 +228,8 @@ export default function FinanceReviewPage() {
               />
               <Tooltip
                 formatter={(
-                  value: number,
-                  _name: string,
+                  value: number | string | undefined,
+                  _name: string | undefined,
                   props: {
                     payload?: {
                       [key: string]: string | number | boolean | undefined;
@@ -241,7 +241,9 @@ export default function FinanceReviewPage() {
                   }
                 ) => {
                   const payload = props.payload;
-                  const cumulative = payload?.cumulativeValue ?? value;
+                  const numericValue =
+                    typeof value === 'number' ? value : Number(value ?? 0);
+                  const cumulative = payload?.cumulativeValue ?? numericValue;
                   const delta = payload?.delta;
                   const isClickable = payload?.isClickable;
 

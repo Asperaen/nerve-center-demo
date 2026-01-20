@@ -2,15 +2,14 @@ import { useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
   ComposedChart,
-  Legend,
   LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import type { BudgetForecastStage } from '../types';
 
@@ -146,8 +145,8 @@ export default function BudgetForecastActualWaterfall({
             />
             <Tooltip
               formatter={(
-                value: number,
-                _name: string,
+                value: number | string | undefined,
+                _name: string | undefined,
                 props: {
                   payload?: {
                     [key: string]: string | number | boolean | undefined;
@@ -160,7 +159,9 @@ export default function BudgetForecastActualWaterfall({
                 }
               ) => {
                 const payload = props.payload;
-                const cumulative = payload?.cumulativeValue ?? value;
+                const numericValue =
+                  typeof value === 'number' ? value : Number(value ?? 0);
+                const cumulative = payload?.cumulativeValue ?? numericValue;
                 const delta = payload?.delta;
                 const isClickable = payload?.isClickable;
 
@@ -188,9 +189,13 @@ export default function BudgetForecastActualWaterfall({
               <LabelList
                 dataKey='delta'
                 position='middle'
-                formatter={(value: number) =>
-                  `${value >= 0 ? '' : ''}${Number(value).toFixed(0)}`
-                }
+                formatter={(value) => {
+                  const numericValue =
+                    typeof value === 'number' ? value : Number(value ?? 0);
+                  return `${numericValue >= 0 ? '' : ''}${numericValue.toFixed(
+                    0
+                  )}`;
+                }}
                 style={{
                   fontSize: '11px',
                   fill: 'white',
