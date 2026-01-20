@@ -122,7 +122,7 @@ export default function MarketIntelligencePage() {
 
   const forecastTimeframeOptions: TimeframeOptionItem[] = [
     { value: 'full-year', label: 'Full year' },
-    { value: 'ytm', label: 'Remainder' },
+    { value: 'ytm', label: 'Remainder of the year' },
   ];
 
   const focusOptions = [

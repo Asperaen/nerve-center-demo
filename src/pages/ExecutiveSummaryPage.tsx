@@ -61,7 +61,7 @@ export default function ExecutiveSummaryPage({
 }: ExecutiveSummaryPageProps) {
   useOutletContext<ExecutiveSummaryPageContext>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Selection state
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
@@ -128,6 +128,15 @@ export default function ExecutiveSummaryPage({
       setSelectedBu(validBu.id);
     }
   }, [searchParams, mainBuOptions]);
+
+  const handleBuChange = (buId: string) => {
+    setSelectedBu(buId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('bu', buId);
+      return next;
+    });
+  };
 
   // Get Financial and Topline KPIs from Internal Pulse
   const getFinancialAndToplineKPIs = (): PulseMetric[] => {
@@ -1030,7 +1039,7 @@ export default function ExecutiveSummaryPage({
               {(isBudgetView
                 ? [
                     { id: 'full-year', label: 'Full year' },
-                    { id: 'ytm', label: 'Remainder' },
+                    { id: 'ytm', label: 'Remainder of the year' },
                   ]
                 : [
                     { id: 'budget', label: 'Budget' },
@@ -1063,7 +1072,7 @@ export default function ExecutiveSummaryPage({
             }
             buOptions={mainBuOptions}
             selectedBu={selectedBu}
-            onBuChange={setSelectedBu}
+            onBuChange={handleBuChange}
             showBu={isBudgetView}
           />
         </div>
