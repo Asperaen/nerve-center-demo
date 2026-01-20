@@ -523,6 +523,7 @@ The application uses a flat route structure with standalone pages for each major
    - Supports query parameter `?bu=<group_id>` for filtering
    - NP Deviation Breakdown waterfall chart
    - Row selection on the table updates the waterfall values to match selected BUs
+   - L3+ vs target and L4+ vs planned waterfall stages link to Ideation Progress
    - Deep dive navigation to COGS Analysis (Sites/Products)
    - Layer navigation with breadcrumbs
 
@@ -713,6 +714,13 @@ The application uses a flat route structure with standalone pages for each major
     - Full-height iframe integration
 
 11. ✅ `/profile` - User Profile Page
+
+12. ✅ `/ideation-progress` - Ideation Progress Page
+
+   - Two tabs: Building Robust Plans and Tracking execution to bottom line
+   - Timeframe toggles shared with global selection (YTM default)
+   - Building Robust Plans: in-year L3 totals, L1+/L2+/L3 impact, % of target, and indicator columns
+   - Tracking execution: L3+ pipeline, L4+ impact vs target, late initiatives, milestone completion, postponed milestones
 
     - User information display
     - Profile details (email, role, member since)
@@ -920,6 +928,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver with YTM budget/actual aligned to the BU totals and cumulative bars maintained
    - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver
    - **Row Selection**: Select rows to scale the waterfall to the chosen business units
+   - **Ideation Progress Link**: Click L3+ vs target or L4+ vs planned to open Ideation Progress
    - **Deep Dive Navigation**: Click waterfall stages for COGS Analysis
      - Sites tab with MVA waterfall and site table
      - Products tab with product family breakdown
@@ -976,7 +985,14 @@ The application is **fully functional** and ready for CEO demonstration. All pla
        - **Row 1**: Overdue initiatives (count + net benefit), Initiatives due in 7 days, Initiatives due in 30 days
        - **Row 2**: Overdue milestones (count + owner count), Milestones due in 7 days, Milestones due in 30 days
 
-6. **Finance Forecast Page** (http://localhost:5173/finance) - Access via direct URL (not in sidebar menu):
+7. **Ideation Progress Page** (http://localhost:5173/ideation-progress) - Demonstrate:
+
+   - **Tabs**: Building Robust Plans and Tracking execution to bottom line
+   - **Timeframe Toggle**: Mirrors the global timeframe selection (Execution tab excludes Full year forecast)
+   - **Building Robust Plans**: L3 totals, impact by L1+/L2+/L3, % of in-year target, indicator columns
+   - **Tracking Execution**: L3+ pipeline, L4+ impact vs target, late initiatives, milestone completion, postponed milestones
+
+8. **Finance Forecast Page** (http://localhost:5173/finance) - Access via direct URL (not in sidebar menu):
 
    - **Create Action**: "Create Action" button in page header (top-right) for context-specific action creation
 

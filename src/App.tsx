@@ -1,19 +1,20 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import MeetingDetailView from './components/MeetingDetailView';
 import { ActionsProvider } from './contexts/ActionsContext';
 import MainLayout from './layouts/MainLayout';
+import ActionTrackerPage from './pages/ActionTrackerPage';
+import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage';
 import ExternalPulsePage from './pages/ExternalPulsePage';
-import InternalPulsePage from './pages/InternalPulsePage';
 import FinancePage from './pages/FinancePage';
 import FinanceReviewPage from './pages/FinanceReviewPage';
-import ActionTrackerPage from './pages/ActionTrackerPage';
-import UserProfile from './pages/UserProfile';
-import MeetingDetailView from './components/MeetingDetailView';
+import IdeationProgressPage from './pages/IdeationProgressPage';
+import InternalPulsePage from './pages/InternalPulsePage';
+import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import MyMeetingsPage from './pages/MyMeetingsPage';
 import PowerBIPage from './pages/PowerBIPage';
-import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
+import UserProfile from './pages/UserProfile';
 import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
-import MarketIntelligencePage from './pages/MarketIntelligencePage';
 
 function App() {
   return (
@@ -74,6 +75,10 @@ function App() {
             <Route
               path='market-intelligence'
               element={<MarketIntelligencePage />}
+            />
+            <Route
+              path='ideation-progress'
+              element={<IdeationProgressPage />}
             />
           </Route>
         </Routes>
