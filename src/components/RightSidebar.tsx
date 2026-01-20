@@ -6,7 +6,8 @@ import {
   CurrencyDollarIcon,
   DocumentCheckIcon,
   HomeIcon,
-  UserCircleIcon
+  SparklesIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -25,19 +26,25 @@ export default function RightSidebar({
   const realTimePulseTabs = [
     {
       id: 'executive-summary',
-      label: 'Home',
+      label: 'Home (Budget)',
       path: '/',
       icon: HomeIcon,
     },
     {
       id: 'business-group-performance',
-      label: 'Performance Intelligence',
+      label: 'Actual',
       path: '/business-group-performance',
       icon: BuildingOffice2Icon,
     },
     {
+      id: 'wave-dashboard',
+      label: 'Initiatives',
+      path: '/wave-dashboard',
+      icon: SparklesIcon,
+    },
+    {
       id: 'market-intelligence',
-      label: 'Market Intelligence',
+      label: 'Forecast',
       path: '/market-intelligence',
       icon: CurrencyDollarIcon,
     },
@@ -168,7 +175,6 @@ export default function RightSidebar({
             })}
           </div>
         </div>
-
       </nav>
 
       {/* Profile Button */}

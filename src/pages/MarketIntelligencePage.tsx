@@ -41,8 +41,9 @@ import type {
 
 export default function MarketIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>(() => getStoredTimeframe());
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>(
+    () => getStoredTimeframe()
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
     null
@@ -677,137 +678,6 @@ export default function MarketIntelligencePage() {
                 })}
               </div>
             </div>
-
-            {/* Arrow Indicator */}
-            {suggestedAssumptions.length > 0 && (
-              <div className='flex items-center justify-center py-8'>
-                <div className='flex flex-col items-center gap-2'>
-                  <ArrowLeftIcon className='w-12 h-12 text-primary-500' />
-                  <span className='text-xs font-medium text-gray-600'>
-                    Drag here
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Pulse Suggested Assumptions Panel */}
-            {suggestedAssumptions.length > 0 && (
-              <div className='flex-1 bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
-                <div className='flex items-center justify-between mb-6'>
-                  <div>
-                    <h2 className='text-2xl font-bold text-gray-900 mb-1'>
-                      Pulse Suggested Assumptions
-                    </h2>
-                    <p className='text-sm text-gray-500'>
-                      Pulse AI suggested assumptions - drag to Applied
-                      Assumptions or check to see impact on waterfall
-                    </p>
-                  </div>
-                </div>
-
-                <div className='space-y-4'>
-                  {suggestedAssumptions.map((assumption) => {
-                    const isEnabled = enabledSuggestedAssumptionIds.has(
-                      assumption.id
-                    );
-                    const stageLabel =
-                      mockOPWaterfallStages.find(
-                        (s) => s.stage === assumption.targetStage
-                      )?.label || assumption.targetStage;
-
-                    const isDragging = draggedAssumptionId === assumption.id;
-
-                    return (
-                      <div
-                        key={assumption.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, assumption.id)}
-                        onDragEnd={handleDragEnd}
-                        className={`flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 ${
-                          isDragging
-                            ? 'opacity-50 cursor-grabbing'
-                            : assumption.valueDriverChanges &&
-                              assumption.valueDriverChanges.length > 0
-                            ? 'cursor-grab active:cursor-grabbing'
-                            : 'cursor-grab active:cursor-grabbing'
-                        }`}
-                        onClick={(e) => {
-                          // Only handle click if not dragging and has value drivers
-                          if (
-                            !isDragging &&
-                            assumption.valueDriverChanges &&
-                            assumption.valueDriverChanges.length > 0 &&
-                            !(e.target as HTMLElement).closest('input') &&
-                            !(e.target as HTMLElement).closest('button')
-                          ) {
-                            handleViewAssumptionValueDrivers(assumption);
-                          }
-                        }}>
-                        <div className='flex-1 pr-4'>
-                          <div className='flex items-center gap-3 mb-2'>
-                            <div
-                              className='w-4 h-4 rounded border-2 border-white shadow-sm'
-                              style={{ backgroundColor: assumption.color }}
-                            />
-                            <h3 className='text-base font-semibold text-gray-900'>
-                              {assumption.name}
-                            </h3>
-                            <span
-                              className={`text-xs px-2 py-1 rounded font-semibold ${
-                                assumption.impactType === 'positive'
-                                  ? 'bg-opportunity-100 text-opportunity-700'
-                                  : 'bg-risk-100 text-risk-700'
-                              }`}>
-                              {assumption.impactType === 'positive'
-                                ? 'Tailwind'
-                                : 'Headwind'}
-                            </span>
-                          </div>
-                          <p className='text-sm text-gray-600 mb-2'>
-                            {assumption.description}
-                          </p>
-                          <div className='flex items-center gap-4 text-xs text-gray-500'>
-                            <span>
-                              Impact:{' '}
-                              <span
-                                className={`font-semibold ${
-                                  assumption.impact >= 0
-                                    ? 'text-opportunity-600'
-                                    : 'text-risk-600'
-                                }`}>
-                                {assumption.impact > 0 ? '+' : ''}
-                                {assumption.impact.toFixed(1)}M
-                              </span>
-                            </span>
-                            <span>•</span>
-                            <span>Affects: {stageLabel}</span>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <input
-                            type='checkbox'
-                            checked={isEnabled}
-                            onChange={() =>
-                              handleToggleSuggestedAssumption(assumption.id)
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className='w-5 h-5 text-primary-600 rounded focus:ring-primary-500 cursor-pointer'
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteAssumption(assumption.id, true);
-                            }}
-                            className='p-1 text-gray-400 hover:text-red-600 transition-colors'>
-                            <TrashIcon className='w-5 h-5' />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Initiative Proposals - Based on Applied Assumptions */}
