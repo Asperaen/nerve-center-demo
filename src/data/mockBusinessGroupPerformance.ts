@@ -609,7 +609,6 @@ const subGroupAiInsights: Record<string, Record<string, string>> = {
 // Generate sub-business group data for a parent BG
 const generateSubGroupData = (
   parentBgId: string,
-  parentBgName: string,
   parentData: BusinessGroupData
 ): SubBusinessGroupData[] => {
   // Define distributions based on parentBgId
@@ -734,7 +733,7 @@ export const getSubBusinessGroups = (
     (bg) => bg.id === parentBgId
   );
   if (!parentBg) return [];
-  return generateSubGroupData(parentBgId, parentBg.name, parentBg);
+  return generateSubGroupData(parentBgId, parentBg);
 };
 
 // Get sub-business groups with overall for a given parent BG
@@ -747,7 +746,7 @@ export const getSubBusinessGroupsWithOverall = (
   );
   if (!parentBg) return [];
 
-  const subGroups = generateSubGroupData(parentBgId, parentBg.name, parentBg);
+  const subGroups = generateSubGroupData(parentBgId, parentBg);
 
   // Create overall row for this BG
   const overall: BusinessGroupData = {

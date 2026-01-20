@@ -201,6 +201,7 @@ export default function ProductAnalysisLayer({
   onBack,
   initialTab = 'sites',
 }: ProductAnalysisLayerProps) {
+  void breadcrumbs;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'sites' | 'products'>(initialTab);
   const [selectedSite, setSelectedSite] = useState<string>('all'); // 'all' or specific site name

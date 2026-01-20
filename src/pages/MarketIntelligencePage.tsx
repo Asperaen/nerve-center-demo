@@ -152,7 +152,7 @@ export default function MarketIntelligencePage() {
   const resolveFocus = useCallback((value: string | null): FocusOptionId => {
     const match = focusOptions.find((option) => option.id === value);
     return match?.id ?? 'market-performance';
-  });
+  }, [focusOptions]);
 
   const [selectedFocusStage, setSelectedFocusStage] = useState<FocusOptionId>(
     resolveFocus(searchParams.get('focus'))
@@ -160,7 +160,7 @@ export default function MarketIntelligencePage() {
 
   useEffect(() => {
     setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
-  }, [resolveFocus, searchParams]);
+  }, [searchParams]);
 
   const forecastWaterfallStages = useMemo(() => {
     const budgetStageValue =

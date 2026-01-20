@@ -30,8 +30,10 @@ export default function MainLayout() {
   const handleDropMaterial = useCallback(
     (
       meetingId: string,
-      materialType: 'external-pulse' | 'internal-pulse',
-      itemId: string
+      materialType: 'external-pulse' | 'internal-pulse' | 'cost-impact-factory',
+      itemId: string,
+      itemTitle?: string,
+      itemDescription?: string
     ) => {
       setMeetingMaterials((prev) => {
         const existing = prev[meetingId] || [];
@@ -47,6 +49,8 @@ export default function MainLayout() {
           id: `material-${Date.now()}-${Math.random()}`,
           type: materialType,
           itemId,
+          title: itemTitle,
+          description: itemDescription,
           addedAt: new Date(),
         };
 

@@ -1,10 +1,7 @@
 import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  TIMEFRAME_OPTIONS,
-  type TimeframeOption,
-} from '../components/TimeframePicker';
+import { type TimeframeOption } from '../components/TimeframePicker';
 import { getStoredTimeframe, setStoredTimeframe } from '../utils/timeframeStorage';
 
 type TabId = 'plans' | 'execution';

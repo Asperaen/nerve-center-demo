@@ -6,7 +6,7 @@ import {
   ChevronRightIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { format, isToday } from 'date-fns';
+ 
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -26,12 +26,6 @@ import {
   type BusinessGroupData,
   type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
-import { mockCalendarEvents } from '../data/mockCalendar';
-import {
-  calculateSummaryStatistics,
-  mockExecutiveInitiatives,
-  mockMilestones,
-} from '../data/mockExecutiveDashboard';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
@@ -220,29 +214,6 @@ export default function ExecutiveSummaryPage({
   // Total selected count
   const totalSelectedCount = selectedFinancialKPIs.size;
 
-  // Helper function to collect all selected items for drag
-  const getAllSelectedItemsForDrag = (): Array<{
-    type: 'external-pulse' | 'internal-pulse';
-    itemId: string;
-  }> => {
-    const allSelectedItems: Array<{
-      type: 'external-pulse' | 'internal-pulse';
-      itemId: string;
-    }> = [];
-
-    // Add all selected financial KPIs
-    financialAndToplineKPIs.forEach((kpi) => {
-      if (selectedFinancialKPIs.has(kpi.id)) {
-        allSelectedItems.push({
-          type: 'internal-pulse',
-          itemId: kpi.id,
-        });
-      }
-    });
-
-    return allSelectedItems;
-  };
-
   // Meeting handlers
   const handleScheduleNewMeeting = (meeting: Omit<Meeting, 'id'>) => {
     // In a real app, this would create the meeting via API
@@ -265,266 +236,6 @@ export default function ExecutiveSummaryPage({
     );
   };
 
-  // Generate executive briefing with today's and week's critical meetings
-  interface CriticalMeeting {
-    meeting: Meeting;
-    time: string;
-    materials: {
-      type: 'deck' | 'data' | 'action';
-      description: string;
-      items?: string[];
-    }[];
-    keyAttendees: string[];
-    priority: 'critical' | 'high' | 'medium';
-  }
-
-  const getExecutiveBriefing = (): {
-    todayMeetings: CriticalMeeting[];
-    weekMeetings: CriticalMeeting[];
-    totalActionItems: number;
-  } => {
-    const currentDate = new Date('2025-11-19T08:07:00+08:00'); // Current time: Nov 19, 2025 8:07 AM
-    const today = new Date(currentDate);
-    today.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(today);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
-    // Get all critical meetings (only those marked with isCritical: true)
-    const allMeetings = mockCalendarEvents.filter((meeting) => {
-      const meetingDate = new Date(meeting.startTime);
-      meetingDate.setHours(0, 0, 0, 0);
-      return (
-        meetingDate >= today &&
-        meetingDate <= weekEnd &&
-        meeting.isCritical === true
-      );
-    });
-
-    // Sort by priority: critical first, then customer meetings, then by time
-    allMeetings.sort((a, b) => {
-      if (a.isCritical && !b.isCritical) return -1;
-      if (!a.isCritical && b.isCritical) return 1;
-
-      const aHasCustomer = a.attendees.some(
-        (att) =>
-          att.role?.toLowerCase().includes('customer') ||
-          (att.role?.toLowerCase().includes('ceo') &&
-            att.email !== 'ceo@company.com')
-      );
-      const bHasCustomer = b.attendees.some(
-        (att) =>
-          att.role?.toLowerCase().includes('customer') ||
-          (att.role?.toLowerCase().includes('ceo') &&
-            att.email !== 'ceo@company.com')
-      );
-
-      if (aHasCustomer && !bHasCustomer) return -1;
-      if (!aHasCustomer && bHasCustomer) return 1;
-
-      return a.startTime.getTime() - b.startTime.getTime();
-    });
-
-    const processMeeting = (meeting: Meeting): CriticalMeeting => {
-      const meetingDate = new Date(meeting.startTime);
-      const isTodayMeeting = isToday(meetingDate);
-      const timeStr = isTodayMeeting
-        ? format(meeting.startTime, 'h:mm a')
-        : format(meeting.startTime, 'EEE, MMM d, h:mm a');
-
-      // Extract key attendees (excluding CEO)
-      const keyAttendees = meeting.attendees
-        .filter((att) => att.email !== 'ceo@company.com')
-        .map((att) => {
-          if (att.role?.toLowerCase().includes('customer ceo')) {
-            return `${att.name} (CEO)`;
-          }
-          if (att.role?.toLowerCase().includes('customer')) {
-            return att.name;
-          }
-          if (att.role?.toLowerCase().includes('ceo')) {
-            return `${att.name} (CEO)`;
-          }
-          return att.name;
-        })
-        .slice(0, 3);
-
-      // Determine materials/preparation needed
-      const materials: CriticalMeeting['materials'] = [];
-
-      // Check if deck/presentation is needed
-      const descLower = meeting.description?.toLowerCase() || '';
-      const needsDeck =
-        descLower.includes('deck') ||
-        descLower.includes('presentation') ||
-        descLower.includes('roadmap') ||
-        descLower.includes('bring the');
-
-      if (needsDeck) {
-        // Check for multiple deck types mentioned
-        const hasQ4PartnershipDeck =
-          descLower.includes('q4 partnership deck') ||
-          (descLower.includes('q4') &&
-            descLower.includes('partnership') &&
-            descLower.includes('deck'));
-        const hasProductRoadmap =
-          descLower.includes('product roadmap') ||
-          descLower.includes('roadmap presentation');
-        const hasPartnershipDeck =
-          descLower.includes('partnership deck') && !hasQ4PartnershipDeck;
-        const hasRoadmap = descLower.includes('roadmap') && !hasProductRoadmap;
-
-        // Add multiple deck materials if both are mentioned
-        if (hasQ4PartnershipDeck && hasProductRoadmap) {
-          materials.push({
-            type: 'deck',
-            description: 'Q4 partnership deck',
-          });
-          materials.push({
-            type: 'deck',
-            description: 'Product roadmap presentation',
-          });
-        } else if (hasQ4PartnershipDeck) {
-          materials.push({
-            type: 'deck',
-            description: 'Q4 partnership deck',
-          });
-        } else if (hasProductRoadmap) {
-          materials.push({
-            type: 'deck',
-            description: 'Product roadmap presentation',
-          });
-        } else if (hasPartnershipDeck) {
-          materials.push({
-            type: 'deck',
-            description: 'Partnership deck',
-          });
-        } else if (hasRoadmap) {
-          materials.push({
-            type: 'deck',
-            description: 'Product roadmap presentation',
-          });
-        } else if (descLower.includes('q4')) {
-          materials.push({
-            type: 'deck',
-            description: 'Q4 partnership deck',
-          });
-        } else if (descLower.includes('partnership')) {
-          materials.push({
-            type: 'deck',
-            description: 'Partnership deck',
-          });
-        } else {
-          materials.push({
-            type: 'deck',
-            description: 'Presentation deck',
-          });
-        }
-      }
-
-      // Check for existing materials
-      if (meeting.materials && meeting.materials.length > 0) {
-        const externalMaterials = meeting.materials.filter(
-          (m) => m.type === 'external-pulse'
-        );
-        const internalMaterials = meeting.materials.filter(
-          (m) => m.type === 'internal-pulse'
-        );
-
-        if (externalMaterials.length > 0 || internalMaterials.length > 0) {
-          const items: string[] = [];
-          if (externalMaterials.length > 0) {
-            items.push(
-              `${externalMaterials.length} external pulse item${
-                externalMaterials.length > 1 ? 's' : ''
-              }`
-            );
-          }
-          if (internalMaterials.length > 0) {
-            items.push(
-              `${internalMaterials.length} internal pulse metric${
-                internalMaterials.length > 1 ? 's' : ''
-              }`
-            );
-          }
-          materials.push({
-            type: 'data',
-            description: 'Review attached materials',
-            items,
-          });
-        }
-      }
-
-      // Check for specific action items
-      const titleLower = meeting.title.toLowerCase();
-      if (titleLower.includes('procurement')) {
-        const descLower = meeting.description?.toLowerCase() || '';
-        if (descLower.includes('xiaochen')) {
-          // Extract the specific action items mentioned
-          let actionDesc = 'Verify with Xiaochen';
-          if (descLower.includes('alternative rare earth supplier')) {
-            actionDesc =
-              'Verify with Xiaochen on alternative rare earth supplier negotiations';
-          } else if (descLower.includes('rare earth')) {
-            actionDesc = 'Verify with Xiaochen on rare earth supplier status';
-          }
-          if (descLower.includes('vietnam production shift')) {
-            if (actionDesc.includes('rare earth')) {
-              actionDesc += ' and Vietnam production shift timeline';
-            } else {
-              actionDesc =
-                'Verify with Xiaochen on Vietnam production shift timeline';
-            }
-          }
-          materials.push({
-            type: 'action',
-            description: actionDesc,
-          });
-        }
-      }
-
-      // Determine priority
-      let priority: 'critical' | 'high' | 'medium' = 'medium';
-      if (meeting.isCritical) {
-        priority = 'critical';
-      } else if (
-        meeting.attendees.some(
-          (att) =>
-            att.role?.toLowerCase().includes('customer ceo') ||
-            (att.role?.toLowerCase().includes('ceo') &&
-              att.email !== 'ceo@company.com')
-        )
-      ) {
-        priority = 'high';
-      }
-
-      return {
-        meeting,
-        time: timeStr,
-        materials,
-        keyAttendees,
-        priority,
-      };
-    };
-
-    // Combine all meetings and sort chronologically starting from today
-    const allProcessedMeetings = allMeetings
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime()) // Sort by time
-      .map(processMeeting)
-      .slice(0, 5); // Limit to 5 meetings
-
-    const totalActionItems = allProcessedMeetings.reduce(
-      (sum, m) => sum + m.materials.length,
-      0
-    );
-
-    return {
-      todayMeetings: allProcessedMeetings,
-      weekMeetings: [], // No longer used, kept for compatibility
-      totalActionItems,
-    };
-  };
-
-  const executiveBriefing = getExecutiveBriefing();
 
   const tableData = useMemo(() => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
@@ -818,15 +529,6 @@ export default function ExecutiveSummaryPage({
         )}
       </tr>
     );
-  };
-
-  // Calculate Wave summary statistics
-  const waveSummary = useMemo(() => {
-    return calculateSummaryStatistics(mockExecutiveInitiatives, mockMilestones);
-  }, []);
-
-  const formatNetBenefit = (value: number): string => {
-    return `Million USD ${value.toFixed(1)}`;
   };
 
   return (

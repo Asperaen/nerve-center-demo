@@ -831,8 +831,8 @@ export default function FinancePage() {
                   />
                   <Tooltip
                     formatter={(
-                      value: number,
-                      _name: string,
+                      value: number | string | undefined,
+                      _name: string | undefined,
                       props: {
                         payload?: {
                           [key: string]: string | number | undefined;
@@ -843,7 +843,10 @@ export default function FinancePage() {
                       }
                     ) => {
                       const payload = props.payload;
-                      const cumulative = payload?.cumulativeValue ?? value;
+                      const numericValue =
+                        typeof value === 'number' ? value : Number(value ?? 0);
+                      const cumulative =
+                        payload?.cumulativeValue ?? numericValue;
                       const delta = payload?.delta;
 
                       const tooltipLines: string[] = [
