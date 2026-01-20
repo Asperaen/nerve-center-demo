@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
-import { getStoredTimeframe } from '../utils/timeframeStorage';
-import { mockFunctionDeviationRows } from '../data/mockForecast';
+import { useMemo, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import FunctionalPerformanceWaterfall, {
+  type FunctionalPerformanceStage,
+} from '../components/FunctionalPerformanceWaterfall';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
+import { mockFunctionDeviationRows } from '../data/mockForecast';
+import { getStoredTimeframe } from '../utils/timeframeStorage';
 
 const normalizeFunction = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, '');
@@ -23,6 +26,15 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     functionId ??
     searchParams.get('function') ??
     'topline';
+  const normalizedFunction = normalizeFunction(functionParam);
+  const isProcurement = normalizedFunction === 'procurement';
+  const isManufacturing =
+    normalizedFunction === 'mva' || normalizedFunction === 'manufacturing';
+  const isRnD = normalizedFunction === 'rd' || normalizedFunction === 'r&d';
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(
+    new Set(['overall'])
+  );
+  const [activeBucketId, setActiveBucketId] = useState<string | null>(null);
   const buParam = searchParams.get('bu') ?? '';
   const selectedBus = buParam
     .split(',')
@@ -216,75 +228,1196 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
   }, [functionParam, scaledFunctionRow, selectedBus]);
 
+  const aiSummaryInsights = [
+    'Procurement is tracking above budget on key spend categories driven by mix and higher input costs.',
+    'L3 initiatives are behind target in IDS, while EMS shows stronger pipeline conversion.',
+    'FX and part price variance explain most of the delta versus budget for the selected BUs.',
+  ];
+  const manufacturingInsights = [
+    'MVA cost is above budget as DL efficiency gains trail plan in Site B and C.',
+    'IDL hourly rate pressure is partially offset by favorable fixed MOH absorption.',
+    'Variable MOH efficiency gaps remain the largest adverse driver vs budget.',
+  ];
+  const rndInsights = [
+    'R&D spend is tracking above target driven by new project intake and timing shifts.',
+    'Personnel delta remains the largest driver against plan, with HC mix changes in core programs.',
+    'Central and cross-BU support is stable, while prototype/testing costs trend higher.',
+  ];
+
+  const procurementCategories = [
+    {
+      id: 'overall',
+      label: 'Overall all',
+      budget: 120,
+      actual: 135,
+      children: [
+        {
+          id: 'overall-direct',
+          label: 'Direct materials',
+          budget: 70,
+          actual: 78,
+        },
+        {
+          id: 'overall-indirect',
+          label: 'Indirect materials',
+          budget: 50,
+          actual: 57,
+        },
+      ],
+    },
+    {
+      id: 'category-a',
+      label: 'Category A',
+      budget: 42,
+      actual: 47,
+      children: [
+        {
+          id: 'category-a-raw',
+          label: 'Raw materials',
+          budget: 26,
+          actual: 30,
+        },
+        {
+          id: 'category-a-components',
+          label: 'Components',
+          budget: 16,
+          actual: 17,
+        },
+      ],
+    },
+    {
+      id: 'category-b',
+      label: 'Category B',
+      budget: 35,
+      actual: 38,
+      children: [
+        {
+          id: 'category-b-logistics',
+          label: 'Logistics',
+          budget: 18,
+          actual: 20,
+        },
+        {
+          id: 'category-b-suppliers',
+          label: 'Supplier services',
+          budget: 17,
+          actual: 18,
+        },
+      ],
+    },
+    {
+      id: 'category-c',
+      label: 'Category C',
+      budget: 43,
+      actual: 50,
+      children: [
+        {
+          id: 'category-c-energy',
+          label: 'Energy',
+          budget: 22,
+          actual: 26,
+        },
+        {
+          id: 'category-c-consumables',
+          label: 'Consumables',
+          budget: 21,
+          actual: 24,
+        },
+      ],
+    },
+  ];
+
+  const procurementBuckets = [
+    {
+      id: 'volume-change',
+      label: 'Volume change variance',
+      delta: -4.8,
+      details: [
+        'Lower volume in Category A',
+        'Mix shift toward lower spend items',
+        'Demand pull-forward',
+      ],
+    },
+    {
+      id: 'l3-deviation',
+      label: 'L3 deviation vs target',
+      delta: 6.2,
+      details: [
+        'Supplier renegotiations delayed',
+        'Target execution variance in EMS',
+        'Pipeline pull-through',
+      ],
+    },
+    {
+      id: 'l4-deviation',
+      label: 'L4 deviation vs L3 plan',
+      delta: 3.4,
+      details: [
+        'Late sourcing events',
+        'Commodity reset lag',
+        'Freight variance',
+      ],
+    },
+  ];
+
+  const procurementTotals = useMemo(() => {
+    const overall = procurementCategories[0];
+    const selected = procurementCategories.filter((row) =>
+      selectedCategoryIds.has(row.id)
+    );
+    const activeRows = selected.length > 0 ? selected : [overall];
+    const budgetTotal = activeRows.reduce((sum, row) => sum + row.budget, 0);
+    const actualTotal = activeRows.reduce((sum, row) => sum + row.actual, 0);
+    return { budgetTotal, actualTotal };
+  }, [procurementCategories, selectedCategoryIds]);
+
+  const procurementWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
+    const budgetValue = procurementTotals.budgetTotal;
+    const actualValue = procurementTotals.actualTotal;
+    const totalDelta = actualValue - budgetValue;
+    const split = [0.28, 0.22, 0.18, 0.2, 0.12];
+    const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = Number(
+      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+    );
+
+    const [volumeDelta, l3Delta, l4Delta, partPriceDelta, fxDelta] = deltas;
+    let running = budgetValue;
+    const nextValue = (delta: number) => {
+      running = Number((running + delta).toFixed(1));
+      return running;
+    };
+
+    return [
+      {
+        id: 'budget-spend',
+        label: 'Budget spend',
+        value: Number(budgetValue.toFixed(1)),
+        delta: Number(budgetValue.toFixed(1)),
+        type: 'baseline',
+      },
+      {
+        id: 'volume-change',
+        label: 'Volume change variance',
+        value: nextValue(volumeDelta),
+        delta: volumeDelta,
+        type: volumeDelta >= 0 ? 'positive' : 'negative',
+        isClickable: true,
+      },
+      {
+        id: 'l3-deviation',
+        label: 'L3 deviation vs target',
+        value: nextValue(l3Delta),
+        delta: l3Delta,
+        type: l3Delta >= 0 ? 'positive' : 'negative',
+        isClickable: true,
+      },
+      {
+        id: 'l4-deviation',
+        label: 'L4 deviation vs L3 plan',
+        value: nextValue(l4Delta),
+        delta: l4Delta,
+        type: l4Delta >= 0 ? 'positive' : 'negative',
+        isClickable: true,
+      },
+      {
+        id: 'part-price',
+        label: 'Part price variance',
+        value: nextValue(partPriceDelta),
+        delta: partPriceDelta,
+        type: partPriceDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'fx-impact',
+        label: 'FX impact',
+        value: nextValue(fxDelta),
+        delta: fxDelta,
+        type: fxDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'actual-spend',
+        label: 'Actual spend',
+        value: Number(actualValue.toFixed(1)),
+        delta: Number(actualValue.toFixed(1)),
+        type: 'baseline',
+      },
+    ];
+  }, [procurementTotals]);
+
+  const manufacturingSites = [
+    {
+      id: 'overall',
+      label: 'Overall all',
+      dl: { budget: 18.4, actual: 19.6 },
+      idl: { budget: 12.8, actual: 13.5 },
+      ga: { budget: 7.6, actual: 7.2 },
+      children: [
+        {
+          id: 'site-a',
+          label: 'Site A',
+          dl: { budget: 6.2, actual: 6.6 },
+          idl: { budget: 4.1, actual: 4.4 },
+          ga: { budget: 2.4, actual: 2.3 },
+        },
+        {
+          id: 'site-b',
+          label: 'Site B',
+          dl: { budget: 7.1, actual: 7.6 },
+          idl: { budget: 5.0, actual: 5.3 },
+          ga: { budget: 3.0, actual: 2.9 },
+        },
+        {
+          id: 'site-c',
+          label: 'Site C',
+          dl: { budget: 5.1, actual: 5.4 },
+          idl: { budget: 3.7, actual: 3.8 },
+          ga: { budget: 2.2, actual: 2.0 },
+        },
+      ],
+    },
+  ];
+
+  const manufacturingTotals = useMemo(() => {
+    const overall = manufacturingSites[0];
+    const selected = manufacturingSites.filter((row) =>
+      selectedCategoryIds.has(row.id)
+    );
+    const activeRows = selected.length > 0 ? selected : [overall];
+    const budgetTotal = activeRows.reduce(
+      (sum, row) =>
+        sum +
+        row.dl.budget +
+        row.idl.budget +
+        row.ga.budget,
+      0
+    );
+    const actualTotal = activeRows.reduce(
+      (sum, row) =>
+        sum +
+        row.dl.actual +
+        row.idl.actual +
+        row.ga.actual,
+      0
+    );
+    return { budgetTotal, actualTotal };
+  }, [manufacturingSites, selectedCategoryIds]);
+
+  const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
+    const budgetValue = manufacturingTotals.budgetTotal;
+    const actualValue = manufacturingTotals.actualTotal;
+    const totalDelta = actualValue - budgetValue;
+    const split = [0.22, 0.18, 0.14, 0.12, 0.16, 0.08, 0.1];
+    const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = Number(
+      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+    );
+
+    const [
+      fxDelta,
+      gaVariableDelta,
+      laborRateDelta,
+      dlEfficiencyDelta,
+      idlHcDelta,
+      gaFixedDelta,
+      volMixDelta,
+    ] = deltas;
+    let running = budgetValue;
+    const nextValue = (delta: number) => {
+      running = Number((running + delta).toFixed(1));
+      return running;
+    };
+
+    return [
+      {
+        id: 'budget-mva',
+        label: 'Budget MVA cost',
+        value: Number(budgetValue.toFixed(1)),
+        delta: Number(budgetValue.toFixed(1)),
+        type: 'baseline',
+      },
+      {
+        id: 'fx-impact',
+        label: 'FX impact',
+        value: nextValue(fxDelta),
+        delta: fxDelta,
+        type: fxDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'ga-variable-gap',
+        label: 'G&A variable efficiency gap',
+        value: nextValue(gaVariableDelta),
+        delta: gaVariableDelta,
+        type: gaVariableDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'labor-rate-impact',
+        label: 'Labor rate impact',
+        value: nextValue(laborRateDelta),
+        delta: laborRateDelta,
+        type: laborRateDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'dl-efficiency',
+        label: 'DL - efficiency gap',
+        value: nextValue(dlEfficiencyDelta),
+        delta: dlEfficiencyDelta,
+        type: dlEfficiencyDelta >= 0 ? 'positive' : 'negative',
+        isClickable: true,
+      },
+      {
+        id: 'idl-hc-gap',
+        label: 'IDL - HC gap',
+        value: nextValue(idlHcDelta),
+        delta: idlHcDelta,
+        type: idlHcDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'ga-fixed-gap',
+        label: 'G&A fixed cost gap',
+        value: nextValue(gaFixedDelta),
+        delta: gaFixedDelta,
+        type: gaFixedDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'vol-mix-change',
+        label: 'Vol / mix change',
+        value: nextValue(volMixDelta),
+        delta: volMixDelta,
+        type: volMixDelta >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'actual-mva',
+        label: 'Actual MVA cost',
+        value: Number(actualValue.toFixed(1)),
+        delta: Number(actualValue.toFixed(1)),
+        type: 'baseline',
+      },
+    ];
+  }, [manufacturingTotals]);
+
+  const rndTotals = useMemo(() => {
+    const budgetValue = 100;
+    const actualValue = 118;
+    return { budgetValue, actualValue };
+  }, []);
+
+  const rndWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
+    const budgetValue = rndTotals.budgetValue;
+    const actualValue = rndTotals.actualValue;
+    const totalDelta = actualValue - budgetValue;
+    const split = [
+      0.18,
+      -0.1,
+      0.06,
+      0.04,
+      0.03,
+      0.1,
+      0.08,
+      0.04,
+      0.02,
+      0.03,
+      0.02,
+      0.04,
+      0.04,
+    ];
+    const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = Number(
+      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+    );
+    let running = budgetValue;
+    const nextValue = (delta: number) => {
+      running = Number((running + delta).toFixed(1));
+      return running;
+    };
+
+    return [
+      {
+        id: 'rnd-expense-target',
+        label: 'R&D expense target',
+        value: Number(budgetValue.toFixed(1)),
+        delta: Number(budgetValue.toFixed(1)),
+        type: 'baseline',
+      },
+      {
+        id: 'project-new',
+        label: 'Project newly added',
+        value: nextValue(deltas[0]),
+        delta: deltas[0],
+        type: deltas[0] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'project-cancelled',
+        label: 'Project cancelled',
+        value: nextValue(deltas[1]),
+        delta: deltas[1],
+        type: deltas[1] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'customer-request',
+        label: 'Customer request item',
+        value: nextValue(deltas[2]),
+        delta: deltas[2],
+        type: deltas[2] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'timeline-change',
+        label: 'Timeline change',
+        value: nextValue(deltas[3]),
+        delta: deltas[3],
+        type: deltas[3] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'cost-accounting',
+        label: 'Cost per accounting rule (64) delta',
+        value: nextValue(deltas[4]),
+        delta: deltas[4],
+        type: deltas[4] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'rnd-budget-control',
+        label: 'R&D budget controlled by R&D',
+        value: nextValue(deltas[5]),
+        delta: deltas[5],
+        type: deltas[5] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'personnel-delta',
+        label: 'Personnel (61) delta',
+        value: nextValue(deltas[6]),
+        delta: deltas[6],
+        type: deltas[6] >= 0 ? 'positive' : 'negative',
+        isClickable: true,
+      },
+      {
+        id: 'rental-dep',
+        label: 'Rental & Dep. (62) delta',
+        value: nextValue(deltas[7]),
+        delta: deltas[7],
+        type: deltas[7] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'travel',
+        label: 'Travel (63) delta',
+        value: nextValue(deltas[8]),
+        delta: deltas[8],
+        type: deltas[8] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'prototype',
+        label: 'Prototype & testing (64) delta',
+        value: nextValue(deltas[9]),
+        delta: deltas[9],
+        type: deltas[9] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'logistics',
+        label: 'Logistics (65) delta',
+        value: nextValue(deltas[10]),
+        delta: deltas[10],
+        type: deltas[10] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'central-support',
+        label: 'Central & cross BU support',
+        value: nextValue(deltas[11]),
+        delta: deltas[11],
+        type: deltas[11] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'fx-impact',
+        label: 'FX Impact',
+        value: nextValue(deltas[12]),
+        delta: deltas[12],
+        type: deltas[12] >= 0 ? 'positive' : 'negative',
+      },
+      {
+        id: 'rnd-expense-actual',
+        label: 'R&D expense actual',
+        value: Number(actualValue.toFixed(1)),
+        delta: Number(actualValue.toFixed(1)),
+        type: 'baseline',
+      },
+    ];
+  }, [rndTotals]);
+
+  const activeBucket = procurementBuckets.find(
+    (bucket) => bucket.id === activeBucketId
+  );
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
       <div className='max-w-[1920px] mx-auto px-8 py-8 space-y-6'>
         <div className='flex items-center justify-between'>
           <div>
             <h1 className='text-3xl font-bold text-gray-900'>
-              {scaledFunctionRow?.label ?? functionParam} performance
+              {{
+                procurement: 'Functional Performance - Procurement',
+                mva: 'Functional Performance - Manufacturing',
+                manufacturing: 'Functional Performance - Manufacturing',
+                rd: 'Functional Performance - R&D',
+                'r&d': 'Functional Performance - R&D',
+              }[normalizedFunction] ??
+                `Functional Performance - ${scaledFunctionRow?.label ?? functionParam}`}
             </h1>
             <div className='flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-2'>
               <span className='px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold'>
-                {getStoredTimeframe() === 'ytm' ? 'YTM actuals' : 'Full year'}
+                {getStoredTimeframe() === 'ytm'
+                  ? 'YTM actuals'
+                  : 'Full year'}
               </span>
               <span className='px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold'>
                 {selectedBus.length > 0
                   ? `BUs: ${selectedBus.join(', ')}`
                   : 'All BUs'}
               </span>
+              {isProcurement && (
+                <span className='text-sm text-gray-500'>Mn</span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h2 className='text-xl font-bold text-gray-900'>Key Call Out</h2>
-              <p className='text-sm text-gray-500 mt-1'>
-                {selectedBus.length > 0
-                  ? `Selected BUs: ${selectedBus.join(', ')}`
-                  : 'All BUs'}
-              </p>
+        {isProcurement ? (
+          <>
+            <div className='space-y-3'>
+              <h2 className='text-lg font-semibold text-gray-900'>
+                Key call-outs
+              </h2>
+              <div className='rounded-lg border border-gray-200 bg-white p-6'>
+                <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                  {aiSummaryInsights.map((insight) => (
+                    <li key={insight}>{insight}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-              <span className='text-sm'>✨</span>
-              <span>AI</span>
-            </span>
-          </div>
-          <div className='space-y-3 text-sm text-gray-700'>
-            <p className='leading-relaxed'>{keyCallout.headline}</p>
-            <ul className='list-disc list-inside space-y-1'>
-              {keyCallout.bullets.map((bullet) => (
-                <li key={bullet}>{bullet}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-            <div className='flex items-center gap-2 mb-3 text-sm text-gray-500'>
-              <ChartBarIcon className='w-4 h-4 text-primary-600' />
-              <span>Budget</span>
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 space-y-4'>
+              <div>
+                <h2 className='text-lg font-semibold text-gray-900'>
+                  Deviation by category
+                </h2>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Total spend, USD Mn
+                </p>
+              </div>
+              <div className='overflow-hidden rounded-lg border border-gray-200'>
+                <table className='w-full text-sm'>
+                  <thead className='bg-gray-50 border-b border-gray-200'>
+                    <tr>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        Category
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Budget
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Actual
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Delta vs budget
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {procurementCategories.flatMap((row) => {
+                      const delta = row.actual - row.budget;
+                      const isSelected = selectedCategoryIds.has(row.id);
+                      const parentRow = (
+                        <tr
+                          key={row.id}
+                          className='border-b border-gray-200 last:border-b-0'>
+                          <td className='px-4 py-3'>
+                            <label className='flex items-center gap-3 text-gray-700'>
+                              <input
+                                type='checkbox'
+                                checked={isSelected}
+                                onChange={() => {
+                                  setSelectedCategoryIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(row.id)) {
+                                      next.delete(row.id);
+                                    } else {
+                                      next.add(row.id);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className='font-semibold text-gray-900'>
+                                {row.label}
+                              </span>
+                            </label>
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.budget)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.actual)}
+                          </td>
+                          <td className='px-4 py-3 text-right font-semibold'>
+                            <span
+                              className={
+                                delta >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                              }>
+                              {formatMn(delta)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+
+                      const children = row.children?.map((child) => {
+                        const childDelta = child.actual - child.budget;
+                        const isChildSelected = selectedCategoryIds.has(
+                          child.id
+                        );
+                        return (
+                          <tr
+                            key={child.id}
+                            className='border-b border-gray-100 last:border-b-0 bg-slate-50'>
+                            <td className='px-4 py-2'>
+                              <label className='flex items-center gap-3 text-gray-600'>
+                                <input
+                                  type='checkbox'
+                                  checked={isChildSelected}
+                                  onChange={() => {
+                                    setSelectedCategoryIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(child.id)) {
+                                        next.delete(child.id);
+                                      } else {
+                                        next.add(child.id);
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className='pl-6 text-sm'>
+                                  {child.label}
+                                </span>
+                              </label>
+                            </td>
+                            <td className='px-4 py-2 text-right text-gray-600'>
+                              {formatMn(child.budget)}
+                            </td>
+                            <td className='px-4 py-2 text-right text-gray-600'>
+                              {formatMn(child.actual)}
+                            </td>
+                            <td className='px-4 py-2 text-right font-semibold'>
+                              <span
+                                className={
+                                  childDelta >= 0
+                                    ? 'text-emerald-600'
+                                    : 'text-rose-600'
+                                }>
+                                {formatMn(childDelta)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      });
+
+                      return [parentRow, ...(children ?? [])];
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className='text-3xl font-bold text-gray-900'>
-              {formatMn(scaledFunctionRow?.ytmBudget ?? 0)}
+
+            <FunctionalPerformanceWaterfall
+              stages={procurementWaterfallStages}
+              title='Deviation waterfall of functional performance - Procurement'
+              description='Procurement cost, USD Mn'
+              onStageClick={(stage) => {
+                if (
+                  stage.id === 'volume-change' ||
+                  stage.id === 'l3-deviation' ||
+                  stage.id === 'l4-deviation'
+                ) {
+                  setActiveBucketId(stage.id);
+                }
+              }}
+            />
+          </>
+        ) : isManufacturing ? (
+          <>
+            <div className='space-y-3'>
+              <h2 className='text-lg font-semibold text-gray-900'>
+                Key call-outs
+              </h2>
+              <div className='rounded-lg border border-gray-200 bg-white p-6'>
+                <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                  {manufacturingInsights.map((insight) => (
+                    <li key={insight}>{insight}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <p className='text-xs text-gray-500 mt-2'>YTM budget</p>
-          </div>
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-            <div className='flex items-center gap-2 mb-3 text-sm text-gray-500'>
-              <ChartBarIcon className='w-4 h-4 text-primary-600' />
-              <span>Actual</span>
+
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 space-y-4'>
+              <div>
+                <h2 className='text-lg font-semibold text-gray-900'>
+                  Deviation by site
+                </h2>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Total MVA cost, USD Mn
+                </p>
+              </div>
+              <div className='overflow-hidden rounded-lg border border-gray-200'>
+                <table className='w-full text-sm'>
+                  <thead className='bg-gray-50 border-b border-gray-200'>
+                    <tr>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        Site
+                      </th>
+                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
+                        DL
+                      </th>
+                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
+                        IDL
+                      </th>
+                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
+                        G&amp;A
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {manufacturingSites.flatMap((row) => {
+                      const isSelected = selectedCategoryIds.has(row.id);
+                      const renderCell = (metric: {
+                        budget: number;
+                        actual: number;
+                      }) => (
+                        <div className='text-sm text-gray-700'>
+                          <div className='font-semibold'>
+                            {formatMn(metric.actual)} (actuals)
+                          </div>
+                          <div className='text-xs text-gray-500'>
+                            vs {formatMn(metric.budget)} (budget)
+                          </div>
+                        </div>
+                      );
+                      const parentRow = (
+                        <tr key={row.id} className='border-b border-gray-200'>
+                          <td className='px-4 py-3'>
+                            <label className='flex items-center gap-3 text-gray-700'>
+                              <input
+                                type='checkbox'
+                                checked={isSelected}
+                                onChange={() => {
+                                  setSelectedCategoryIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(row.id)) {
+                                      next.delete(row.id);
+                                    } else {
+                                      next.add(row.id);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className='font-semibold text-gray-900'>
+                                {row.label}
+                              </span>
+                            </label>
+                          </td>
+                          <td className='px-4 py-3 text-center'>
+                            {renderCell(row.dl)}
+                          </td>
+                          <td className='px-4 py-3 text-center'>
+                            {renderCell(row.idl)}
+                          </td>
+                          <td className='px-4 py-3 text-center'>
+                            {renderCell(row.ga)}
+                          </td>
+                        </tr>
+                      );
+
+                      const children = row.children?.map((child) => (
+                        <tr
+                          key={child.id}
+                          className='border-b border-gray-100 bg-slate-50'>
+                          <td className='px-4 py-2'>
+                            <label className='flex items-center gap-3 text-gray-600'>
+                              <input
+                                type='checkbox'
+                                checked={selectedCategoryIds.has(child.id)}
+                                onChange={() => {
+                                  setSelectedCategoryIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(child.id)) {
+                                      next.delete(child.id);
+                                    } else {
+                                      next.add(child.id);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className='pl-6 text-sm'>
+                                {child.label}
+                              </span>
+                            </label>
+                          </td>
+                          <td className='px-4 py-2 text-center'>
+                            {renderCell(child.dl)}
+                          </td>
+                          <td className='px-4 py-2 text-center'>
+                            {renderCell(child.idl)}
+                          </td>
+                          <td className='px-4 py-2 text-center'>
+                            {renderCell(child.ga)}
+                          </td>
+                        </tr>
+                      ));
+
+                      return [parentRow, ...(children ?? [])];
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className='text-3xl font-bold text-gray-900'>
-              {formatMn(scaledFunctionRow?.ytmActuals ?? 0)}
+
+            <FunctionalPerformanceWaterfall
+              stages={manufacturingWaterfallStages}
+              title='Deviation waterfall by key value drivers'
+              emphasisStageId='dl-efficiency'
+              description='MVA cost, USD Mn'
+              barSize={32}
+              onStageClick={(stage) => {
+                if (stage.id === 'dl-efficiency') {
+                  setActiveBucketId(stage.id);
+                }
+              }}
+            />
+          </>
+        ) : isRnD ? (
+          <>
+            <div className='space-y-3'>
+              <h2 className='text-lg font-semibold text-gray-900'>
+                Key call-outs
+              </h2>
+              <div className='rounded-lg border border-gray-200 bg-white p-6'>
+                <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                  {rndInsights.map((insight) => (
+                    <li key={insight}>{insight}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <p className='text-xs text-gray-500 mt-2'>YTM actuals</p>
-          </div>
-        </div>
+
+            <FunctionalPerformanceWaterfall
+              stages={rndWaterfallStages}
+              title='Deviation waterfall by key value drivers'
+              description='R&D cost, USD Mn'
+              emphasisStageId='personnel-delta'
+              barSize={32}
+              onStageClick={(stage) => {
+                if (stage.id === 'personnel-delta') {
+                  setActiveBucketId(stage.id);
+                }
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+              <div className='flex items-center justify-between mb-4'>
+                <div>
+                  <h2 className='text-xl font-bold text-gray-900'>
+                    Key Call Out
+                  </h2>
+                  <p className='text-sm text-gray-500 mt-1'>
+                    {selectedBus.length > 0
+                      ? `Selected BUs: ${selectedBus.join(', ')}`
+                      : 'All BUs'}
+                  </p>
+                </div>
+                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                  <span className='text-sm'>✨</span>
+                  <span>AI</span>
+                </span>
+              </div>
+              <div className='space-y-3 text-sm text-gray-700'>
+                <p className='leading-relaxed'>{keyCallout.headline}</p>
+                <ul className='list-disc list-inside space-y-1'>
+                  {keyCallout.bullets.map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+                <div className='flex items-center gap-2 mb-3 text-sm text-gray-500'>
+                  <ChartBarIcon className='w-4 h-4 text-primary-600' />
+                  <span>Budget</span>
+                </div>
+                <div className='text-3xl font-bold text-gray-900'>
+                  {formatMn(scaledFunctionRow?.ytmBudget ?? 0)}
+                </div>
+                <p className='text-xs text-gray-500 mt-2'>YTM budget</p>
+              </div>
+              <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+                <div className='flex items-center gap-2 mb-3 text-sm text-gray-500'>
+                  <ChartBarIcon className='w-4 h-4 text-primary-600' />
+                  <span>Actual</span>
+                </div>
+                <div className='text-3xl font-bold text-gray-900'>
+                  {formatMn(scaledFunctionRow?.ytmActuals ?? 0)}
+                </div>
+                <p className='text-xs text-gray-500 mt-2'>YTM actuals</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {activeBucketId && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4'
+          onClick={() => setActiveBucketId(null)}>
+          <div
+            className='w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl border border-gray-200'
+            onClick={(event) => event.stopPropagation()}>
+            {activeBucketId === 'dl-efficiency' ? (
+              <>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <h3 className='text-lg font-semibold text-gray-900'>
+                      Top initiative deviation
+                    </h3>
+                  </div>
+                  <button
+                    type='button'
+                    className='rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300'
+                    onClick={() => setActiveBucketId(null)}>
+                    Close
+                  </button>
+                </div>
+                <div className='mt-4 space-y-6 text-sm text-gray-700'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Top initiative deviation
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          KPI impacted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          name: 'Initiative 1',
+                          gap: '-2.0Mn',
+                          kpi: 'UPPH',
+                        },
+                        {
+                          name: 'Initiative 2',
+                          gap: '-1.3Mn',
+                          kpi: 'UPPH, OEE',
+                        },
+                      ].map((row) => (
+                        <tr key={row.name} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.name}</td>
+                          <td className='py-2'>{row.gap}</td>
+                          <td className='py-2'>{row.kpi}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div>
+                    <h4 className='text-lg font-semibold text-gray-900 mb-2'>
+                      Key Performance Foundations
+                    </h4>
+                    <table className='w-full text-sm'>
+                      <thead>
+                        <tr>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Initiative
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            KPI impacted
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Process confirmation date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          {
+                            name: '17. Performance mgmt.',
+                            kpi: 'UPPH',
+                            date: '2025.1',
+                          },
+                          {
+                            name: '19. Frontline capabilities',
+                            kpi: 'UPPH',
+                            date: '2025.4',
+                          },
+                          {
+                            name: '20. Asset / labor productivity',
+                            kpi: 'UPPH, OEE',
+                            date: '2024.9',
+                          },
+                          {
+                            name: '21. Automation',
+                            kpi: 'UPPH',
+                            date: '2024.9',
+                          },
+                        ].map((row) => (
+                          <tr key={row.name} className='border-t border-gray-200'>
+                            <td className='py-2'>{row.name}</td>
+                            <td className='py-2'>{row.kpi}</td>
+                            <td className='py-2'>{row.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : activeBucketId === 'personnel-delta' ? (
+              <>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <h3 className='text-lg font-semibold text-gray-900'>
+                      Top initiative deviation
+                    </h3>
+                  </div>
+                  <button
+                    type='button'
+                    className='rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300'
+                    onClick={() => setActiveBucketId(null)}>
+                    Close
+                  </button>
+                </div>
+                <div className='mt-4 space-y-6 text-sm text-gray-700'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Top initiative deviation
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          KPI impacted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          name: 'Initiative 1',
+                          gap: '-1.8Mn',
+                          kpi: 'HC',
+                        },
+                        {
+                          name: 'Initiative 2',
+                          gap: '-2.6Mn',
+                          kpi: 'HC',
+                        },
+                      ].map((row) => (
+                        <tr key={row.name} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.name}</td>
+                          <td className='py-2'>{row.gap}</td>
+                          <td className='py-2'>{row.kpi}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div>
+                    <h4 className='text-lg font-semibold text-gray-900 mb-2'>
+                      Key Performance Foundations
+                    </h4>
+                    <table className='w-full text-sm'>
+                      <thead>
+                        <tr>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Initiative
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            KPI impacted
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Process confirmation date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          {
+                            name: '11. Resourcing & project mgmt.',
+                            kpi: 'HC',
+                            date: '2025.4',
+                          },
+                          {
+                            name: '12. Labor productivity (ME / EE design)',
+                            kpi: 'HC',
+                            date: '2024.6',
+                          },
+                        ].map((row) => (
+                          <tr key={row.name} className='border-t border-gray-200'>
+                            <td className='py-2'>{row.name}</td>
+                            <td className='py-2'>{row.kpi}</td>
+                            <td className='py-2'>{row.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : activeBucket ? (
+              <>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <p className='text-xs uppercase tracking-wide text-gray-500'>
+                      Procurement details
+                    </p>
+                    <h3 className='text-lg font-semibold text-gray-900'>
+                      {activeBucket.label}
+                    </h3>
+                  </div>
+                  <button
+                    type='button'
+                    className='rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300'
+                    onClick={() => setActiveBucketId(null)}>
+                    Close
+                  </button>
+                </div>
+                <div className='mt-4 space-y-3 text-sm text-gray-600'>
+                  <p>
+                    Impact:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatMn(activeBucket.delta)}
+                    </span>
+                  </p>
+                  <ul className='list-disc list-inside space-y-1'>
+                    {activeBucket.details.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

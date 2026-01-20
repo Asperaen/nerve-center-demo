@@ -929,6 +929,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Key Call Out card with AI insight
    - Budget and Actual cards with large values for the selected function, scaled to match selected BU totals
   - Route segments: `/topline`, `/procurement`, `/mva`, `/rd` with optional `?bu=x,y,z`
+  - Procurement view includes AI summary bullets, category + subcategory spend table, and a functional performance waterfall with clickable buckets that open detail modals
 
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
