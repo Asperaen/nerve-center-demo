@@ -18,10 +18,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.12
-          cache: pnpm
 
       - name: Enable pnpm via Corepack
-        run: corepack enable && corepack prepare pnpm@9 --activate
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm --version
 
       - name: Install dependencies
         run: pnpm install
