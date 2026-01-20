@@ -320,7 +320,7 @@ export default function FinanceReviewPage() {
       {/* Key Call Out Section */}
       <div className='lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
         <div className='flex items-center justify-between mb-4'>
-          <h2 className='text-lg font-bold text-gray-900'>Key Call Out</h2>
+          <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
           <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
             <span className='text-sm'>✨</span>
             <span>AI</span>

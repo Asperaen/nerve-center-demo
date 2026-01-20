@@ -20,6 +20,7 @@ interface TimeframePickerProps {
   label?: string | null;
   className?: string;
   variant?: PickerVariant;
+  options?: TimeframeOptionItem[];
 }
 
 export default function TimeframePicker({
@@ -28,6 +29,7 @@ export default function TimeframePicker({
   label = 'Timeframe',
   className = '',
   variant = 'default',
+  options = TIMEFRAME_OPTIONS,
 }: TimeframePickerProps) {
   const containerStyles =
     variant === 'compact'
@@ -53,7 +55,7 @@ export default function TimeframePicker({
         <span className='text-sm font-medium text-gray-600 w-32'>{label}</span>
       )}
       <div className={containerStyles}>
-        {TIMEFRAME_OPTIONS.map((option) => (
+        {options.map((option) => (
           <button
             key={option.value}
             onClick={() => onTimeframeChange(option.value)}

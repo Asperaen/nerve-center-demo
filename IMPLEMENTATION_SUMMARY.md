@@ -897,6 +897,8 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 2. **Home Page** (http://localhost:5173/) - Demonstrate:
 
    - **Timeframe Filter**: Shared TimeframePicker component with options: Full year forecast, Year to Month actuals, Rolling 3 months, In-month (default: Year to Month actuals)
+   - **Home Toggle**: Budget/YTM/Full Year toggle now respects user selection unless overridden by a `?toggle=` link
+   - **BU Auto-Select**: `?bu=` query param auto-selects the active BU across Budget/Actual/Forecast
    - **Business Group Performance**: Table showing financial metrics by business group
      - Business groups: HH, FII, FIH, FIT, Others, Overall consolidated
      - Expandable rows to show sub-groups
@@ -922,10 +924,16 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - **Root Cause Analysis**: Integrated AI sidebar for insights on selected items
 
 3. **Performance Intelligence Page** (http://localhost:5173/business-group-performance) - Demonstrate:
+4. **BU Function Performance Page** (http://localhost:5173/business-unit-performance/functional-performance) - Demonstrate:
+
+   - Key Call Out card with AI insight
+   - Budget and Actual cards with large values for the selected function, scaled to match selected BU totals
+   - Query params: `function=TopLine` and `bu=x,y,z`
+
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
    - **Detailed Table**: Same table as Home page but with more space and focus
-   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver with YTM budget/actual aligned to the BU totals and cumulative bars maintained
+   - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver with YTM budget/actual aligned to the BU totals, plus a BU selection indicator with hover list
    - **Deviation Waterfall**: Shows the BU performance deviation waterfall by value driver
    - **Row Selection**: Select rows to scale the waterfall to the chosen business units
    - **Ideation Progress Link**: Click L3+ vs target or L4+ vs planned to open Ideation Progress
@@ -933,7 +941,7 @@ The application is **fully functional** and ready for CEO demonstration. All pla
      - Sites tab with MVA waterfall and site table
      - Products tab with product family breakdown
    - **Breadcrumb Navigation**: Clear path with clickable links
-   - **Timeframe Filtering**: Full year forecast, Year to Month actuals, Rolling 3 months, In-month options (default: Year to Month actuals)
+   - **Timeframe Filtering**: Full year forecast and Year to Month actuals (default: Year to Month actuals)
 
 4. **External Pulse Page** (http://localhost:5173/external-pulse) - Access via direct URL (not in sidebar menu):
 
@@ -1429,6 +1437,8 @@ pnpm lint
     - Each cell shows absolute value (e.g., "$14.8M") with comparison baseline ("vs budget $X.XM")
     - Color-coded percentage badges (green positive, red negative, gray flat)
     - Row selection controls to compare specific business units against the waterfall
+    - Deviation-by-functions section shows selected BU indicator with hover list
+    - Hover feedback and per-row drilldown actions on the deviation-by-functions table
     - Hover tooltips with rich content:
       - 12-month trend sparkline chart (SVG visualization)
       - Color-coded trend line matching performance direction
