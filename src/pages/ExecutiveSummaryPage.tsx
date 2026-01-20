@@ -106,9 +106,13 @@ export default function ExecutiveSummaryPage({
       toggleParam === 'ytm' ||
       toggleParam === 'full-year'
     ) {
-      setHomeToggle(toggleParam);
+      if (isBudgetView && toggleParam === 'budget') {
+        setHomeToggle('full-year');
+      } else {
+        setHomeToggle(toggleParam);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, isBudgetView]);
 
   useEffect(() => {
     const buParam = searchParams.get('bu');
@@ -1023,11 +1027,17 @@ export default function ExecutiveSummaryPage({
                   Timeframe
                 </span>
                 <div className='flex bg-gray-100 rounded-lg p-1'>
-                  {[
+              {(isBudgetView
+                ? [
+                    { id: 'full-year', label: 'Full year' },
+                    { id: 'ytm', label: 'Remainder' },
+                  ]
+                : [
                     { id: 'budget', label: 'Budget' },
                     { id: 'ytm', label: 'Year to Month actuals' },
                     { id: 'full-year', label: 'Full year forecast' },
-                  ].map((option) => (
+                  ]
+              ).map((option) => (
                     <button
                       key={option.id}
                       onClick={() => {

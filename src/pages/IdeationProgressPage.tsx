@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -538,6 +539,7 @@ export default function IdeationProgressPage() {
     getStoredTimeframe()
   );
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -624,24 +626,9 @@ export default function IdeationProgressPage() {
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
           {activeTab === 'plans' ? (
             <div className='space-y-6'>
-              <div className='flex items-center gap-6'>
-                <span className='text-sm font-semibold text-gray-700'>
-                  Timeframe
-                </span>
-                <div className='flex items-center gap-2 bg-gray-100 rounded-full p-1'>
-                  {TIMEFRAME_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setActiveTimeframe(option.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                        activeTimeframe === option.value
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <span className='font-semibold text-gray-700'>From</span>
+                <span>{todayLabel}</span>
               </div>
 
               <div className='overflow-x-auto'>
@@ -766,26 +753,9 @@ export default function IdeationProgressPage() {
             </div>
           ) : (
             <div className='space-y-6'>
-              <div className='flex items-center gap-6'>
-                <span className='text-sm font-semibold text-gray-700'>
-                  Timeframe
-                </span>
-                <div className='flex items-center gap-2 bg-gray-100 rounded-full p-1'>
-                  {TIMEFRAME_OPTIONS.filter(
-                    (option) => option.value !== 'full-year'
-                  ).map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setActiveTimeframe(option.value)}
-                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                        activeTimeframe === option.value
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+              <div className='flex items-center gap-2 text-sm text-gray-600'>
+                <span className='font-semibold text-gray-700'>From</span>
+                <span>{todayLabel}</span>
               </div>
 
               <div className='overflow-x-auto'>

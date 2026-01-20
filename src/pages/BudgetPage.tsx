@@ -4,7 +4,7 @@ export default function BudgetPage() {
   return (
     <ExecutiveSummaryPage
       isBudgetView
-      defaultHomeToggle='budget'
+      defaultHomeToggle='full-year'
       pageTitle='Budget'
     />
   );

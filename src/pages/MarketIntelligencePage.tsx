@@ -16,6 +16,7 @@ import CreateActionModalGlobal from '../components/CreateActionModal';
 import HeaderFilters from '../components/HeaderFilters';
 import TimeframePicker, {
   type TimeframeOption,
+  type TimeframeOptionItem,
 } from '../components/TimeframePicker';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -118,6 +119,11 @@ export default function MarketIntelligencePage() {
       return next;
     });
   };
+
+  const forecastTimeframeOptions: TimeframeOptionItem[] = [
+    { value: 'full-year', label: 'Full year' },
+    { value: 'ytm', label: 'Remainder' },
+  ];
 
   const focusOptions = [
     {
@@ -574,6 +580,7 @@ export default function MarketIntelligencePage() {
               <TimeframePicker
                 selectedTimeframe={selectedTimeframe}
                 onTimeframeChange={setSelectedTimeframe}
+                options={forecastTimeframeOptions}
               />
             }
             buOptions={mainBuOptions}
