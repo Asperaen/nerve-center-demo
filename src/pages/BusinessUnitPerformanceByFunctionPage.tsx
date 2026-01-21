@@ -2,7 +2,7 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import FunctionalPerformanceWaterfall, {
-  type FunctionalPerformanceStage,
+    type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
@@ -332,30 +332,48 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       id: 'volume-change',
       label: 'Volume change variance',
       delta: -4.8,
-      details: [
-        'Lower volume in Category A',
-        'Mix shift toward lower spend items',
-        'Demand pull-forward',
+      initiatives: [
+        { name: 'Initiative 1', gap: '-1.6Mn', kpi: 'Unit price' },
+        { name: 'Initiative 2', gap: '-2.2Mn', kpi: 'Unit price' },
+      ],
+      foundations: [
+        {
+          name: 'Category & spend optimization',
+          kpi: 'Unit price',
+          date: '2025.2',
+        },
       ],
     },
     {
       id: 'l3-deviation',
       label: 'L3 deviation vs target',
       delta: 6.2,
-      details: [
-        'Supplier renegotiations delayed',
-        'Target execution variance in EMS',
-        'Pipeline pull-through',
+      initiatives: [
+        { name: 'Initiative 1', gap: '-1.4Mn', kpi: 'Unit price' },
+        { name: 'Initiative 2', gap: '-2.0Mn', kpi: 'Unit price' },
+      ],
+      foundations: [
+        {
+          name: 'Category & spend optimization',
+          kpi: 'Unit price',
+          date: '2025.2',
+        },
       ],
     },
     {
       id: 'l4-deviation',
       label: 'L4 deviation vs L3 plan',
       delta: 3.4,
-      details: [
-        'Late sourcing events',
-        'Commodity reset lag',
-        'Freight variance',
+      initiatives: [
+        { name: 'Initiative 1', gap: '-1.2Mn', kpi: 'Unit price' },
+        { name: 'Initiative 2', gap: '-1.8Mn', kpi: 'Unit price' },
+      ],
+      foundations: [
+        {
+          name: 'Category & spend optimization',
+          kpi: 'Unit price',
+          date: '2025.2',
+        },
       ],
     },
   ];
@@ -1386,11 +1404,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               <>
                 <div className='flex items-start justify-between'>
                   <div>
-                    <p className='text-xs uppercase tracking-wide text-gray-500'>
-                      Procurement details
-                    </p>
                     <h3 className='text-lg font-semibold text-gray-900'>
-                      {activeBucket.label}
+                      Top initiative deviation
                     </h3>
                   </div>
                   <button
@@ -1400,18 +1415,61 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Close
                   </button>
                 </div>
-                <div className='mt-4 space-y-3 text-sm text-gray-600'>
-                  <p>
-                    Impact:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatMn(activeBucket.delta)}
-                    </span>
-                  </p>
-                  <ul className='list-disc list-inside space-y-1'>
-                    {activeBucket.details.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
+                <div className='mt-4 space-y-6 text-sm text-gray-700'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Top initiative deviation
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          KPI impacted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeBucket.initiatives.map((row) => (
+                        <tr key={row.name} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.name}</td>
+                          <td className='py-2'>{row.gap}</td>
+                          <td className='py-2'>{row.kpi}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div>
+                    <h4 className='text-lg font-semibold text-gray-900 mb-2'>
+                      Key Performance Foundations
+                    </h4>
+                    <table className='w-full text-sm'>
+                      <thead>
+                        <tr>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Initiative
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            KPI impacted
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Process confirmation date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeBucket.foundations.map((row) => (
+                          <tr key={row.name} className='border-t border-gray-200'>
+                            <td className='py-2'>{row.name}</td>
+                            <td className='py-2'>{row.kpi}</td>
+                            <td className='py-2'>{row.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             ) : null}

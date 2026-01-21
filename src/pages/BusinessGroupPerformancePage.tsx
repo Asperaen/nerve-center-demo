@@ -1,10 +1,10 @@
 import {
-  ChartBarIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  InformationCircleIcon,
-  SparklesIcon,
-  XMarkIcon,
+    ChartBarIcon,
+    ChevronDownIcon,
+    ChevronRightIcon,
+    InformationCircleIcon,
+    SparklesIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,32 +12,32 @@ import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall
 import BusinessGroupPerformanceWaterfall from '../components/BusinessGroupPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import {
-  CostImpactBreakdownLayer,
-  MVABreakdownLayer,
-  ProductAnalysisLayer,
+    CostImpactBreakdownLayer,
+    MVABreakdownLayer,
+    ProductAnalysisLayer,
 } from '../components/layers';
 import TimeframePicker, { type TimeframeOption } from '../components/TimeframePicker';
 import {
-  getAllBusinessGroupData,
-  getMainBusinessGroupOptions,
-  getSubBusinessGroups,
-  getSubBusinessGroupsWithOverall,
-  type BusinessGroupData,
-  type BusinessGroupMetricWithTrend,
+    getAllBusinessGroupData,
+    getMainBusinessGroupOptions,
+    getSubBusinessGroups,
+    getSubBusinessGroupsWithOverall,
+    type BusinessGroupData,
+    type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
 import {
-  mockBudgetForecastStages,
-  mockFunctionDeviationRows,
-  type FunctionDeviationRow,
+    mockBudgetForecastStages,
+    mockFunctionDeviationRows,
+    type FunctionDeviationRow,
 } from '../data/mockForecast';
 import type {
-  BreadcrumbItem,
-  BudgetForecastStage,
-  NavigationLayer,
+    BreadcrumbItem,
+    BudgetForecastStage,
+    NavigationLayer,
 } from '../types';
 import {
-  getStoredTimeframe,
-  setStoredTimeframe,
+    getStoredTimeframe,
+    setStoredTimeframe,
 } from '../utils/timeframeStorage';
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
@@ -631,150 +631,55 @@ export default function BusinessGroupPerformancePage() {
     }
 
     if (selectedTimeframe === 'budget') {
-      const budgetStageRows: Record<
-        string,
+      if (activeDeviationStage.stage !== 'one-off-adjustments') {
+        return null;
+      }
+
+      const oneOffItems: {
+        sbu: string;
+        items: { label: string; type: 'One-off' | 'Headwind'; amount: number }[];
+      }[] = [
         {
-          rows: { sbu: string; drivers: string[] }[];
-        }
-      > = {
-        budget: {
-          rows: [
-            { sbu: 'IDS', drivers: ['Baseline roll-forward', 'Budget carryover'] },
-            { sbu: 'EMS', drivers: ['FY target allocation', 'Capacity plan'] },
+          sbu: 'IDS',
+          items: [
+            { label: 'ZZ cleanup costs', type: 'One-off', amount: -2.4 },
+            { label: 'Warranty true-up', type: 'Headwind', amount: -1.1 },
+            { label: 'One-time rebates', type: 'One-off', amount: -0.8 },
           ],
         },
-        'one-off-adjustments': {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['ZZ cleanup costs', 'Warranty true-up', 'One-time rebates'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['VN retention bonus', 'Material revaluation', 'FX hedge'],
-            },
+        {
+          sbu: 'EMS',
+          items: [
+            { label: 'VN retention bonus', type: 'One-off', amount: -1.6 },
+            { label: 'Material revaluation', type: 'Headwind', amount: -0.9 },
+            { label: 'FX hedge', type: 'One-off', amount: 0.6 },
           ],
         },
-        'market-performance': {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['New pricing mix', 'Customer pull-in', 'Channel inventory'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['Material tailwind', 'Volume headwind', 'Mix shift'],
-            },
-          ],
-        },
-        'l4-to-l5-leakage': {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['Baseline conversion', 'Cost carryforward', 'Timing'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['Run-rate ops', 'Seasonality', 'Utilization'],
-            },
-          ],
-        },
-        'l4-vs-planned': {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['Ramp L4 wave 3', 'Supplier yield uplift', 'Freight reset'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['Line balance gains', 'Scrap reduction', 'Labor efficiency'],
-            },
-          ],
-        },
-        'l3-vs-target': {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['New consolidation', 'Tooling savings', 'Vendor switch'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['New sourcing event', 'Localization', 'Scale benefits'],
-            },
-          ],
-        },
-        forecast: {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['Transformation pipeline impact', 'Execution pacing'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['Delivery cadence', 'Capacity readiness'],
-            },
-          ],
-        },
-        actuals: {
-          rows: [
-            {
-              sbu: 'IDS',
-              drivers: ['Target vs pipeline gap', 'Finalized commitments'],
-            },
-            {
-              sbu: 'EMS',
-              drivers: ['Stretch targets', 'Funding approval'],
-            },
-          ],
-        },
-      };
-
-      const defaultDriversByStage: Record<string, string[]> = {
-        'l4-to-l5-leakage': [
-          'Baseline operations',
-          'Seasonality',
-          'Utilization',
-        ],
-        forecast: ['Pipeline realized', 'Transformation impact', 'Timing'],
-      };
-
-      const baseRows =
-        budgetStageRows[activeDeviationStage.stage]?.rows ?? [
-          {
-            sbu: 'IDS',
-            drivers: ['Operational mix', 'Customer timing', 'Other factors'],
-          },
-          {
-            sbu: 'EMS',
-            drivers: ['Execution cadence', 'Supply variance', 'Timing'],
-          },
-        ];
-
-      const stageDefaults =
-        defaultDriversByStage[activeDeviationStage.stage] ?? [
-          'Operational mix',
-          'Customer timing',
-          'Other factors',
-        ];
+      ];
 
       const targetBus =
-        selectedBuNames.length > 0 ? selectedBuNames : ['IDS', 'EMS', 'FMC', 'APS'];
-
-      const budgetRows = targetBus.map((sbu) => {
-        const existing = baseRows.find((row) => row.sbu === sbu);
-        if (existing) {
-          return existing;
-        }
-        return {
-          sbu,
-          drivers: stageDefaults,
-        };
+        selectedBuNames.length > 0 ? selectedBuNames : ['IDS', 'EMS'];
+      const rows = targetBus.map((sbu) => {
+        const existing = oneOffItems.find((row) => row.sbu === sbu);
+        return (
+          existing ?? {
+            sbu,
+            items: [
+              {
+                label: 'One-off adjustment',
+                type: 'One-off',
+                amount: -0.4,
+              },
+              { label: 'Headwind', type: 'Headwind', amount: -0.3 },
+            ],
+          }
+        );
       });
 
       return {
-        type: 'budget-table' as const,
+        type: 'one-off-items' as const,
         totalImpact: activeDeviationStage.delta ?? 0,
-        rows: budgetRows,
+        rows,
       };
     }
 
@@ -1546,9 +1451,14 @@ export default function BusinessGroupPerformancePage() {
                 )}
               </span>
             }
-            onStageClick={(stage: BudgetForecastStage) =>
-              setActiveDeviationStage(stage)
-            }
+            onStageClick={(stage: BudgetForecastStage) => {
+              if (
+                stage.stage === 'ideation' ||
+                stage.stage === 'one-off-adjustments'
+              ) {
+                setActiveDeviationStage(stage);
+              }
+            }}
           />
         ) : (
           <BusinessGroupPerformanceWaterfall
@@ -1793,7 +1703,7 @@ export default function BusinessGroupPerformancePage() {
                       ))}
                     </tbody>
                   </table>
-                ) : activeDeviationDetails.type === 'budget-table' ? (
+                ) : activeDeviationDetails.type === 'one-off-items' ? (
                   <table className='w-full text-sm'>
                     <thead className='bg-gray-50 border-b border-gray-200'>
                       <tr>
@@ -1801,31 +1711,37 @@ export default function BusinessGroupPerformancePage() {
                           SBU
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Major drivers
+                          Major one-off/headwind items
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Type
+                        </th>
+                        <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                          Amount
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {activeDeviationDetails.rows.map((row) => (
-                        <tr
-                          key={row.sbu}
-                          className='border-b border-gray-200 last:border-b-0'>
-                          <td className='px-4 py-3 font-semibold text-gray-900'>
-                            {row.sbu}
-                          </td>
-                          <td className='px-4 py-3 text-gray-600'>
-                            <div className='space-y-1'>
-                              {row.drivers.map((driver) => (
-                                <div
-                                  key={driver}
-                                  className='border-b border-dashed border-gray-300 pb-1 last:border-b-0 last:pb-0'>
-                                  {driver}
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {activeDeviationDetails.rows.flatMap((row) =>
+                        row.items.map((item, index) => (
+                          <tr
+                            key={`${row.sbu}-${item.label}-${index}`}
+                            className='border-b border-gray-200 last:border-b-0'>
+                            <td className='px-4 py-3 font-semibold text-gray-900'>
+                              {row.sbu}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {item.label}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {item.type}
+                            </td>
+                            <td className='px-4 py-3 text-right font-semibold text-gray-900'>
+                              {formatMn(item.amount)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 ) : (

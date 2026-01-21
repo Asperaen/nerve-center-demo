@@ -929,7 +929,9 @@ The application is **fully functional** and ready for CEO demonstration. All pla
    - Key Call Out card with AI insight
    - Budget and Actual cards with large values for the selected function, scaled to match selected BU totals
   - Route segments: `/topline`, `/procurement`, `/mva`, `/rd` with optional `?bu=x,y,z`
-  - Procurement view includes AI summary bullets, category + subcategory spend table, and a functional performance waterfall with clickable buckets that open detail modals
+  - Procurement view includes AI summary bullets, category + subcategory spend table, and a functional performance waterfall (Procurement cost, USD Mn) with clickable buckets that open detail modals
+  - Manufacturing (MVA) view includes AI summary bullets, deviation-by-site table (DL/IDL/G&A actual vs budget), and a key driver waterfall (MVA cost, USD Mn) with a DL efficiency modal
+  - R&D view includes AI summary bullets and a detailed waterfall (R&D cost, USD Mn) with Personnel delta modal content
 
 
    - **Filtering**: Query parameter `?bu=<group_id>` for business group filtering
