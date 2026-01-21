@@ -19,6 +19,7 @@ interface BudgetForecastActualWaterfallProps {
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string; // Stage ID to highlight (e.g., 'market-performance')
+  colorByDelta?: boolean;
 }
 
 export default function BudgetForecastActualWaterfall({
@@ -27,6 +28,7 @@ export default function BudgetForecastActualWaterfall({
   subtitle,
   onStageClick,
   highlightedStage,
+  colorByDelta = false,
 }: BudgetForecastActualWaterfallProps) {
   const navigate = useNavigate();
 
@@ -71,6 +73,9 @@ export default function BudgetForecastActualWaterfall({
     }
     if (stage.type === 'baseline') {
       return '#6b7280'; // gray-500 for baseline/absolute bars
+    }
+    if (colorByDelta) {
+      return (stage.delta ?? stage.value) >= 0 ? '#10b981' : '#ef4444';
     }
     return stage.type === 'positive' ? '#10b981' : '#ef4444'; // opportunity green / risk red
   };

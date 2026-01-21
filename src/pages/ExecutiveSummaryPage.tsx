@@ -402,7 +402,7 @@ export default function ExecutiveSummaryPage({
     return [
       makeStage(
         'budget',
-        'Past year operating profit',
+        'Last year OP',
         roundToOne(budgetValue),
         roundToOne(budgetValue),
         'baseline'
@@ -451,7 +451,7 @@ export default function ExecutiveSummaryPage({
       ),
       makeStage(
         'ideation',
-        'Ideation',
+        'Current year ideation target',
         afterIdeation,
         ideationDelta,
         getBudgetStageType('ideation', ideationDelta, 'positive')
@@ -852,7 +852,6 @@ export default function ExecutiveSummaryPage({
                   {(isBudgetView
                     ? [
                         { id: 'full-year', label: 'Full year' },
-                        { id: 'ytm', label: 'Remainder of the year' },
                       ]
                     : [
                         { id: 'budget', label: 'Budget' },

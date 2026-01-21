@@ -799,8 +799,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               </span>
               <span className='px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold'>
                 {selectedBus.length > 0
-                  ? `BUs: ${selectedBus.join(', ')}`
-                  : 'All BUs'}
+                  ? `BGs: ${selectedBus.join(', ')}`
+                  : 'All BGs'}
               </span>
               {isProcurement && (
                 <span className='text-sm text-gray-500'>Mn</span>
@@ -1160,8 +1160,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   </h2>
                   <p className='text-sm text-gray-500 mt-1'>
                     {selectedBus.length > 0
-                      ? `Selected BUs: ${selectedBus.join(', ')}`
-                      : 'All BUs'}
+                      ? `Selected BGs: ${selectedBus.join(', ')}`
+                      : 'All BGs'}
                   </p>
                 </div>
                 <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>

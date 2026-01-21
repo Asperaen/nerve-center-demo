@@ -9,7 +9,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import CreateActionModalGlobal from '../components/CreateActionModal';
@@ -96,11 +96,6 @@ export default function MarketIntelligencePage() {
     BudgetForecastStage['stage'] | null
   >(null);
 
-  const forecastTimeframeOptions: TimeframeOptionItem[] = [
-    { value: 'full-year', label: 'Full year' },
-    { value: 'ytm', label: 'Remainder of the year' },
-  ];
-
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
   }, [selectedTimeframe]);
@@ -112,28 +107,10 @@ export default function MarketIntelligencePage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const timeframeParam = searchParams.get('timeframe');
-    if (!timeframeParam) {
-      return;
-    }
-    const allowed = new Set(
-      forecastTimeframeOptions.map((option) => option.value)
-    );
-    if (allowed.has(timeframeParam as TimeframeOption)) {
-      setSelectedTimeframe(timeframeParam as TimeframeOption);
-      return;
-    }
-    const fallback =
-      forecastTimeframeOptions.find((option) => option.value === 'full-year') ??
-      forecastTimeframeOptions[0];
-    setSelectedTimeframe(fallback.value);
-  }, [searchParams]);
-
   const mainBuOptions = getMainBusinessGroupOptions();
   const selectedBuName =
     selectedBu === 'all'
-      ? 'All BUs'
+      ? 'All BGs'
       : mainBuOptions.find((bu) => bu.id === selectedBu)?.name ??
         selectedBu.toUpperCase();
 
@@ -146,7 +123,46 @@ export default function MarketIntelligencePage() {
     });
   };
 
+  const forecastTimeframeOptions: TimeframeOptionItem[] = [
+    { value: 'full-year', label: 'Full year' },
+  ];
 
+  const focusOptions = [
+    {
+      id: 'market-performance',
+      label: 'Market performance',
+      subtitle:
+        'Market Performance analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l3-vs-target',
+      label: 'L3+ vs target',
+      subtitle:
+        'L3+ vs target analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l4-vs-planned',
+      label: 'L4+ vs planned',
+      subtitle:
+        'L4+ vs planned analysis - You are here. Toggle assumptions below to see impact.',
+    },
+  ] as const;
+
+  type FocusOptionId = (typeof focusOptions)[number]['id'];
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolveFocus = useCallback((value: string | null): FocusOptionId => {
+    const match = focusOptions.find((option) => option.id === value);
+    return match?.id ?? 'market-performance';
+  }, [focusOptions]);
+
+  const [selectedFocusStage, setSelectedFocusStage] = useState<FocusOptionId>(
+    resolveFocus(searchParams.get('focus'))
+  );
+
+  useEffect(() => {
+    setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
+  }, [searchParams]);
 
   const forecastWaterfallStages = useMemo(() => {
     const budgetStageValue =
@@ -248,90 +264,6 @@ export default function MarketIntelligencePage() {
     enabledSuggestedAssumptionIds,
     suggestedAssumptions,
   ]);
-
-  const stageAppliedAssumptions = useMemo(() => {
-    const getByName = (needle: string) =>
-      appliedAssumptions.find((assumption) =>
-        assumption.name.toLowerCase().includes(needle.toLowerCase())
-      );
-
-    const aiDataCenter =
-      getByName('ai data center') ??
-      ({
-        id: 'assum-volume-ai',
-        name: 'AI Data Center',
-        description: 'AI data center demand driving volume and mix.',
-        impact: 4.2,
-        targetStage: 'market-performance',
-        impactType: 'positive',
-        isApplied: true,
-        color: '#10b981',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const appleAirPods =
-      getByName('airpods') ??
-      ({
-        id: 'assum-volume-airpods',
-        name: 'Apple Air Pods Launch Delay',
-        description: 'Launch timing shifts soften near-term volume/mix.',
-        impact: -3.4,
-        targetStage: 'market-performance',
-        impactType: 'negative',
-        isApplied: true,
-        color: '#f59e0b',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const copper =
-      getByName('copper') ??
-      ({
-        id: 'assum-other-copper',
-        name: 'Copper',
-        description: 'Copper price pressure increasing material costs.',
-        impact: -2.6,
-        targetStage: 'one-off-adjustments',
-        impactType: 'negative',
-        isApplied: true,
-        color: '#ef4444',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const initiativeOverdelivery = {
-      id: 'assum-initiative-over',
-      name: 'Overdelivery x',
-      description: 'Initiatives outperforming plan on delivered savings.',
-      impact: 3.1,
-      targetStage: 'l3-vs-target',
-      impactType: 'positive',
-      isApplied: true,
-      color: '#10b981',
-      valueDriverChanges: [],
-    } as AppliedAssumption;
-
-    const initiativeUnderdelivery = {
-      id: 'assum-initiative-under',
-      name: 'Underdelivery x',
-      description: 'Lagging initiatives and timing delays versus plan.',
-      impact: -2.4,
-      targetStage: 'l3-vs-target',
-      impactType: 'negative',
-      isApplied: true,
-      color: '#f59e0b',
-      valueDriverChanges: [],
-    } as AppliedAssumption;
-
-    switch (activePerformanceSection) {
-      case 'market-performance':
-        return [aiDataCenter, appleAirPods];
-      case 'l3-vs-target':
-        return [initiativeOverdelivery, initiativeUnderdelivery];
-      case 'one-off-adjustments':
-        return [copper];
-      default:
-        return [];
-    }
-  }, [activePerformanceSection, appliedAssumptions]);
 
   const handleToggleAssumption = (assumptionId: string) => {
     setEnabledAssumptionIds((prev) => {
@@ -623,9 +555,161 @@ export default function MarketIntelligencePage() {
               stages={forecastWaterfallStages}
               title='Forecast - Performance Waterfall'
               subtitle={`${selectedBuName} view`}
-              highlightedStage={activePerformanceSection ?? undefined}
+              highlightedStage={activePerformanceSection ?? selectedFocusStage}
               onStageClick={(stage) => setActivePerformanceSection(stage.stage)}
             />
+            {activePerformanceSection && (
+              <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+                <div className='flex items-center justify-between'>
+                  <h3 className='text-lg font-bold text-gray-900'>
+                    {
+                      forecastWaterfallStages.find(
+                        (stage) => stage.stage === activePerformanceSection
+                      )?.label
+                    }
+                  </h3>
+                  <span className='text-xs font-semibold text-gray-500'>
+                    Selected
+                  </span>
+                </div>
+
+                {activePerformanceSection === 'market-performance' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      AI data center demand and Apple mix shifts are driving the
+                      largest volume and price/mix moves this period.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            AI data center demand
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
+                            +12.4 Mn USD
+                          </span>
+                          <span>+3.1% volume</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Hyperscaler build-outs lifted server-related volume
+                          and premium mix across key platforms.
+                        </p>
+                      </div>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Apple mix shift
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
+                            +6.8 Mn USD
+                          </span>
+                          <span>+1.8% ASP</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Stronger Pro mix and accessory attach rates supported
+                          ASPs and offset unit softness.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePerformanceSection === 'l3-vs-target' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      Top initiatives split by overdelivered and underdelivered
+                      outcomes versus plan.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-emerald-200 bg-emerald-50/50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <CheckCircleIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-emerald-900'>
+                            Overdelivered
+                          </h4>
+                        </div>
+                        <div className='mt-2 text-xs font-semibold text-emerald-700'>
+                          +7.7 Mn USD net impact
+                        </div>
+                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
+                          <li>Smart automation sprint (+4.2 Mn USD)</li>
+                          <li>Supplier yield recovery (+2.1 Mn USD)</li>
+                          <li>Logistics consolidation (+1.4 Mn USD)</li>
+                        </ul>
+                      </div>
+                      <div className='rounded-lg border border-rose-200 bg-rose-50/50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ExclamationTriangleIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-rose-900'>
+                            Underdelivered
+                          </h4>
+                        </div>
+                        <div className='mt-2 text-xs font-semibold text-rose-700'>
+                          -7.2 Mn USD net impact
+                        </div>
+                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
+                          <li>New product ramp (-3.6 Mn USD)</li>
+                          <li>Procurement renegotiation (-2.4 Mn USD)</li>
+                          <li>Energy efficiency program (-1.2 Mn USD)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePerformanceSection === 'one-off-adjustments' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      One-off external factors pressuring the forecast.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Copper price surge
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
+                            -3.1 Mn USD
+                          </span>
+                          <span>+9.4% spot price</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Raw material spot prices surged, increasing BOM costs
+                          across connectors and coils.
+                        </p>
+                      </div>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Vietnam salary raise
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
+                            -2.4 Mn USD
+                          </span>
+                          <span>+6.2% wage rate</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Wage adjustments in Vietnam raised labor expense and
+                          compressed near-term margins.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Assumptions Section - Side by Side Layout */}
@@ -660,10 +744,7 @@ export default function MarketIntelligencePage() {
               </div>
 
               <div className='space-y-4'>
-                {(activePerformanceSection
-                  ? stageAppliedAssumptions
-                  : appliedAssumptions
-                ).map((assumption) => {
+                {appliedAssumptions.map((assumption) => {
                   const isEnabled = enabledAssumptionIds.has(assumption.id);
                   const stageLabel =
                     mockOPWaterfallStages.find(

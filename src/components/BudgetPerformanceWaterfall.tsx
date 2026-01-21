@@ -24,6 +24,7 @@ export default function BudgetPerformanceWaterfall({
       subtitle={subtitle}
       onStageClick={onStageClick}
       highlightedStage={highlightedStage}
+      colorByDelta
     />
   );
 }

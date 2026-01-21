@@ -23,7 +23,7 @@ export default function HeaderFilters({
       {showBu && (
         <div className='flex items-center gap-4'>
           <span className='text-sm font-medium text-gray-600 w-32'>
-            Select BU
+            Select BG
           </span>
           <div className='flex bg-gray-100 rounded-lg p-1'>
             <button
@@ -33,7 +33,7 @@ export default function HeaderFilters({
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}>
-              All BUs
+              All BGs
             </button>
             {buOptions.map((bu) => (
               <button

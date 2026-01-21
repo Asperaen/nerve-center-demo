@@ -1,10 +1,10 @@
 import {
-    ChartBarIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    InformationCircleIcon,
-    SparklesIcon,
-    XMarkIcon,
+  ChartBarIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  InformationCircleIcon,
+  SparklesIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,28 +12,28 @@ import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall
 import BusinessGroupPerformanceWaterfall from '../components/BusinessGroupPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import {
-    CostImpactBreakdownLayer,
-    MVABreakdownLayer,
-    ProductAnalysisLayer,
+  CostImpactBreakdownLayer,
+  MVABreakdownLayer,
+  ProductAnalysisLayer,
 } from '../components/layers';
 import TimeframePicker, { type TimeframeOption } from '../components/TimeframePicker';
 import {
-    getAllBusinessGroupData,
-    getMainBusinessGroupOptions,
-    getSubBusinessGroups,
-    getSubBusinessGroupsWithOverall,
-    type BusinessGroupData,
-    type BusinessGroupMetricWithTrend,
+  getAllBusinessGroupData,
+  getMainBusinessGroupOptions,
+  getSubBusinessGroups,
+  getSubBusinessGroupsWithOverall,
+  type BusinessGroupData,
+  type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
 import {
-    mockBudgetForecastStages,
-    mockFunctionDeviationRows,
-    type FunctionDeviationRow,
+  mockBudgetForecastStages,
+  mockFunctionDeviationRows,
+  type FunctionDeviationRow,
 } from '../data/mockForecast';
 import type {
-    BreadcrumbItem,
-    BudgetForecastStage,
-    NavigationLayer,
+  BreadcrumbItem,
+  BudgetForecastStage,
+  NavigationLayer,
 } from '../types';
 import { setStoredTimeframe } from '../utils/timeframeStorage';
 
@@ -56,7 +56,7 @@ export default function BusinessGroupPerformancePage() {
   const [activeDeviationStage, setActiveDeviationStage] =
     useState<BudgetForecastStage | null>(null);
 
-  // Expanded rows state (for "All BUs" view)
+  // Expanded rows state (for "All BGs" view)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Comparison details toggle
@@ -253,7 +253,7 @@ export default function BusinessGroupPerformancePage() {
 
   const sectionTitle = useMemo(() => {
     if (selectedBu === 'all') {
-      return 'All BUs';
+      return 'All BGs';
     }
     const bg = mainBuOptions.find((b) => b.id === selectedBu);
     return bg?.name || selectedBu.toUpperCase();
@@ -427,7 +427,8 @@ export default function BusinessGroupPerformancePage() {
   };
 
   const performanceWaterfallStages = useMemo(
-    () => buildScaledWaterfallStages(),
+    () =>
+      buildScaledWaterfallStages().filter((stage) => stage.stage !== 'forecast'),
     [selectionMetrics.selectedNpBaseline, selectionMetrics.selectedNpValue]
   );
 
@@ -497,7 +498,7 @@ export default function BusinessGroupPerformancePage() {
     return [
       makeStage(
         'budget',
-        'Past year operating profit',
+        'Last year OP',
         roundToOne(budgetValue),
         roundToOne(budgetValue),
         'baseline'
@@ -546,7 +547,7 @@ export default function BusinessGroupPerformancePage() {
       ),
       makeStage(
         'ideation',
-        'Ideation',
+        'Current year ideation target',
         afterIdeation,
         ideationDelta,
         getBudgetStageType('ideation', ideationDelta, 'positive')
@@ -1131,7 +1132,7 @@ export default function BusinessGroupPerformancePage() {
       row.id === 'mva' ||
       row.id === 'rd';
     const highlightRow = showDrilldown;
-    const valueColor = highlightRow ? 'text-red-700' : 'text-gray-700';
+    const valueColor = 'text-gray-900';
     const deltaColor = highlightRow
       ? 'text-red-700'
       : delta > 0
