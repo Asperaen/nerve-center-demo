@@ -26,10 +26,30 @@ export default function MVABreakdownLayer({
   breadcrumbs,
   onBack,
 }: MVABreakdownLayerProps) {
+  const orderedStages = useMemo(() => {
+    const order = [
+      'budget-mva-cost',
+      'vol-mix-variance',
+      'dl-hourly-rate-impact',
+      'dl-efficiency-gap',
+      'idl-efficiency-gap',
+      'variable-moh-efficiency-gap',
+      'fixed-moh-efficiency-gap',
+      'fix-impact',
+      'actual-mva-cost',
+    ];
+    const orderIndex = new Map(order.map((id, index) => [id, index]));
+    return [...mockMVABreakdownStages].sort(
+      (a, b) =>
+        (orderIndex.get(a.stage) ?? Number.MAX_SAFE_INTEGER) -
+        (orderIndex.get(b.stage) ?? Number.MAX_SAFE_INTEGER)
+    );
+  }, []);
+
   // Prepare chart data for MVA Breakdown
   const mvaChartData = useMemo(() => {
-    return mockMVABreakdownStages.map((stage, index) => {
-      const prevValue = index > 0 ? mockMVABreakdownStages[index - 1].value : 0;
+    return orderedStages.map((stage, index) => {
+      const prevValue = index > 0 ? orderedStages[index - 1].value : 0;
       const currentValue = stage.value;
       const delta =
         stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
@@ -49,7 +69,7 @@ export default function MVABreakdownLayer({
         isPositive: delta >= 0,
       };
     });
-  }, []);
+  }, [orderedStages]);
 
   return (
     <div className='space-y-6 animate-in slide-in-from-right duration-300'>
@@ -112,15 +132,15 @@ export default function MVABreakdownLayer({
                 angle={-15}
                 textAnchor='end'
                 height={120}
-                style={{ fontSize: '11px' }}
+                style={{ fontSize: '12px' }}
               />
               <YAxis
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '13px' }}
                 label={{
                   value: 'MVA Cost',
                   angle: -90,
                   position: 'insideLeft',
-                  style: { fontSize: '12px' },
+                  style: { fontSize: '13px' },
                 }}
               />
               <Tooltip
@@ -162,7 +182,7 @@ export default function MVABreakdownLayer({
                 dataKey='barValue'
                 stackId='a'
                 name='MVA Breakdown'>
-                {mockMVABreakdownStages.map((stage, index) => {
+                {orderedStages.map((stage, index) => {
                   const isBaseline = stage.type === 'baseline';
                   const isPositive = stage.type === 'positive';
 
