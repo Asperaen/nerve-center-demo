@@ -71,7 +71,7 @@ function App() {
               element={<BusinessGroupPerformancePage />}
             />
             <Route
-              path='business-unit-performance/functional-performance'
+              path='business-unit-performance/functional-performance/:functionId'
               element={<BusinessUnitPerformanceByFunctionPage />}
             />
             <Route

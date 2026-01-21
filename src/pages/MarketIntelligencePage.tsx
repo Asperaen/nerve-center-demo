@@ -92,6 +92,9 @@ export default function MarketIntelligencePage() {
     useState<Proposal | null>(null);
   const [isCreateActionGlobalModalOpen, setIsCreateActionGlobalModalOpen] =
     useState(false);
+  const [activePerformanceSection, setActivePerformanceSection] = useState<
+    BudgetForecastStage['stage'] | null
+  >(null);
 
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
@@ -166,14 +169,20 @@ export default function MarketIntelligencePage() {
     const budgetStageValue =
       mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
         ?.value ?? 0;
+    const marketDelta =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'market-performance')
+        ?.delta ?? 0;
     const l3Delta =
       mockBudgetForecastStages.find((stage) => stage.stage === 'l3-vs-target')
         ?.delta ?? 0;
     const l4Delta =
       mockBudgetForecastStages.find((stage) => stage.stage === 'l4-vs-planned')
         ?.delta ?? 0;
-    const initiativeOver = Math.max(0, l3Delta);
-    const initiativeUnder = Math.min(0, l4Delta);
+    const leakageDelta =
+      mockBudgetForecastStages.find(
+        (stage) => stage.stage === 'l4-to-l5-leakage'
+      )?.delta ?? 0;
+    const initiativePerformanceDelta = l3Delta + l4Delta;
 
     const enabledApplied = appliedAssumptions.filter((assumption) =>
       enabledAssumptionIds.has(assumption.id)
@@ -216,33 +225,27 @@ export default function MarketIntelligencePage() {
         delta,
         type: delta >= 0 ? 'positive' : 'negative',
         description,
-        isClickable: false,
+        isClickable: true,
       });
     };
 
     addStage(
       'market-performance',
-      'New Tailwind',
-      tailwind,
-      'Tailwind impact from enabled assumptions'
-    );
-    addStage(
-      'one-off-adjustments',
-      'New Headwind',
-      headwind,
-      'Headwind impact from enabled assumptions'
+      'Volume / mix changes',
+      marketDelta + tailwind,
+      'Volume and mix changes including tailwinds'
     );
     addStage(
       'l3-vs-target',
-      'Initiative Over-delivery',
-      initiativeOver,
-      'Initiative over-delivery impact'
+      'Initiative performance',
+      initiativePerformanceDelta,
+      'Initiative performance vs plan'
     );
     addStage(
-      'l4-vs-planned',
-      'Initiative Under-delivery',
-      initiativeUnder,
-      'Initiative under-delivery impact'
+      'one-off-adjustments',
+      'Other factors',
+      headwind + leakageDelta,
+      'Other factors including headwinds and leakage'
     );
 
     stages.push({
@@ -553,8 +556,161 @@ export default function MarketIntelligencePage() {
               stages={forecastWaterfallStages}
               title='Forecast - Performance Waterfall'
               subtitle={`${selectedBuName} view`}
-              highlightedStage={selectedFocusStage}
+              highlightedStage={activePerformanceSection ?? selectedFocusStage}
+              onStageClick={(stage) => setActivePerformanceSection(stage.stage)}
             />
+            {activePerformanceSection && (
+              <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+                <div className='flex items-center justify-between'>
+                  <h3 className='text-lg font-bold text-gray-900'>
+                    {
+                      forecastWaterfallStages.find(
+                        (stage) => stage.stage === activePerformanceSection
+                      )?.label
+                    }
+                  </h3>
+                  <span className='text-xs font-semibold text-gray-500'>
+                    Selected
+                  </span>
+                </div>
+
+                {activePerformanceSection === 'market-performance' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      AI data center demand and Apple mix shifts are driving the
+                      largest volume and price/mix moves this period.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            AI data center demand
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
+                            +12.4 Mn USD
+                          </span>
+                          <span>+3.1% volume</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Hyperscaler build-outs lifted server-related volume
+                          and premium mix across key platforms.
+                        </p>
+                      </div>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Apple mix shift
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
+                            +6.8 Mn USD
+                          </span>
+                          <span>+1.8% ASP</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Stronger Pro mix and accessory attach rates supported
+                          ASPs and offset unit softness.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePerformanceSection === 'l3-vs-target' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      Top initiatives split by overdelivered and underdelivered
+                      outcomes versus plan.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-emerald-200 bg-emerald-50/50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <CheckCircleIcon className='h-5 w-5 text-emerald-600' />
+                          <h4 className='text-sm font-semibold text-emerald-900'>
+                            Overdelivered
+                          </h4>
+                        </div>
+                        <div className='mt-2 text-xs font-semibold text-emerald-700'>
+                          +7.7 Mn USD net impact
+                        </div>
+                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
+                          <li>Smart automation sprint (+4.2 Mn USD)</li>
+                          <li>Supplier yield recovery (+2.1 Mn USD)</li>
+                          <li>Logistics consolidation (+1.4 Mn USD)</li>
+                        </ul>
+                      </div>
+                      <div className='rounded-lg border border-rose-200 bg-rose-50/50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ExclamationTriangleIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-rose-900'>
+                            Underdelivered
+                          </h4>
+                        </div>
+                        <div className='mt-2 text-xs font-semibold text-rose-700'>
+                          -7.2 Mn USD net impact
+                        </div>
+                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
+                          <li>New product ramp (-3.6 Mn USD)</li>
+                          <li>Procurement renegotiation (-2.4 Mn USD)</li>
+                          <li>Energy efficiency program (-1.2 Mn USD)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePerformanceSection === 'one-off-adjustments' && (
+                  <div className='mt-4 space-y-4'>
+                    <p className='text-sm text-gray-600'>
+                      One-off external factors pressuring the forecast.
+                    </p>
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Copper price surge
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
+                            -3.1 Mn USD
+                          </span>
+                          <span>+9.4% spot price</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Raw material spot prices surged, increasing BOM costs
+                          across connectors and coils.
+                        </p>
+                      </div>
+                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                        <div className='flex items-center gap-2'>
+                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
+                          <h4 className='text-sm font-semibold text-gray-900'>
+                            Vietnam salary raise
+                          </h4>
+                        </div>
+                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
+                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
+                            -2.4 Mn USD
+                          </span>
+                          <span>+6.2% wage rate</span>
+                        </div>
+                        <p className='mt-2 text-sm text-gray-600'>
+                          Wage adjustments in Vietnam raised labor expense and
+                          compressed near-term margins.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Assumptions Section - Side by Side Layout */}
@@ -682,8 +838,9 @@ export default function MarketIntelligencePage() {
             </div>
           </div>
 
-          {/* Initiative Proposals - Based on Applied Assumptions */}
-          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
+          {/* Initiative Proposals - hidden for now */}
+          {false && (
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
             <div className='flex items-center justify-between mb-8'>
               <div>
                 <h2 className='text-2xl font-bold text-gray-900 mb-1'>
@@ -887,7 +1044,8 @@ export default function MarketIntelligencePage() {
                 );
               })}
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -181,7 +181,9 @@ export default function BudgetForecastActualWaterfall({
                 }
 
                 if (isClickable) {
-                  tooltipLines.push('Click to navigate →');
+                  tooltipLines.push(
+                    onStageClick ? 'Click for details →' : 'Click to navigate →'
+                  );
                 }
 
                 return tooltipLines.join('\n');

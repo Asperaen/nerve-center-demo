@@ -1,38 +1,40 @@
 import {
-  ArrowRightIcon,
-  CalendarIcon,
-  ChartBarIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  SparklesIcon,
+    ArrowRightIcon,
+    CalendarIcon,
+    ChartBarIcon,
+    ChevronDownIcon,
+    ChevronRightIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline';
  
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Link,
-  useNavigate,
-  useOutletContext,
-  useSearchParams,
+    Link,
+    useNavigate,
+    useOutletContext,
+    useSearchParams,
 } from 'react-router-dom';
+import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import { type TimeframeOption } from '../components/TimeframePicker';
 import {
-  getAllBusinessGroupData,
-  getMainBusinessGroupOptions,
-  getSubBusinessGroups,
-  getSubBusinessGroupsWithOverall,
-  type BusinessGroupData,
-  type BusinessGroupMetricWithTrend,
+    getAllBusinessGroupData,
+    getMainBusinessGroupOptions,
+    getSubBusinessGroups,
+    getSubBusinessGroupsWithOverall,
+    type BusinessGroupData,
+    type BusinessGroupMetricWithTrend,
 } from '../data/mockBusinessGroupPerformance';
+import { mockBudgetForecastStages } from '../data/mockForecast';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import {
-  getStoredTimeframe,
-  setStoredTimeframe,
+    getStoredTimeframe,
+    setStoredTimeframe,
 } from '../utils/timeframeStorage';
 
 interface ExecutiveSummaryPageContext {
@@ -236,7 +238,6 @@ export default function ExecutiveSummaryPage({
     );
   };
 
-
   const tableData = useMemo(() => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
@@ -244,6 +245,72 @@ export default function ExecutiveSummaryPage({
     }
     return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
   }, [selectedBu, selectedTimeframe]);
+
+  const budgetWaterfallStages = useMemo(() => {
+    if (!isBudgetView) {
+      return [];
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return mockBudgetForecastStages;
+    }
+
+    const budgetValue = overallRow.np.baseline;
+    const actualValue = overallRow.np.value;
+    const baseBudgetValue =
+      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
+        ?.value ?? 0;
+    const scaleFactor =
+      baseBudgetValue === 0 ? 1 : budgetValue / baseBudgetValue;
+
+    const roundToOne = (value: number) => Math.round(value * 10) / 10;
+    let runningValue = roundToOne(budgetValue);
+
+    return mockBudgetForecastStages.map((stage) => {
+      if (stage.stage === 'budget') {
+        runningValue = roundToOne(budgetValue);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.stage === 'actuals') {
+        runningValue = roundToOne(actualValue);
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      if (stage.type === 'baseline') {
+        return {
+          ...stage,
+          value: runningValue,
+          delta: runningValue,
+        };
+      }
+
+      const scaledDelta =
+        stage.delta === undefined
+          ? undefined
+          : roundToOne(stage.delta * scaleFactor);
+      if (scaledDelta !== undefined) {
+        runningValue = roundToOne(runningValue + scaledDelta);
+      }
+
+      return {
+        ...stage,
+        value: runningValue,
+        delta: scaledDelta,
+      };
+    });
+  }, [isBudgetView, tableData]);
 
   const getExpandedSubGroups = (bgId: string) => {
     const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
@@ -274,13 +341,7 @@ export default function ExecutiveSummaryPage({
     const handleCellClick = (e: React.MouseEvent) => {
       if (isNavigable && groupId) {
         e.stopPropagation(); // Prevent row expansion from triggering
-        if (homeToggle === 'budget') {
-          navigate(`/budget?bu=${groupId}&toggle=budget`);
-        } else if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bu=${groupId}&toggle=full-year`);
-        } else {
-          navigate(`/business-group-performance?bu=${groupId}&toggle=ytm`);
-        }
+        navigate(`/business-group-performance?bu=${groupId}&toggle=${homeToggle}`);
       }
     };
     const percentColor =
@@ -363,11 +424,13 @@ export default function ExecutiveSummaryPage({
               {percentSign}
               {metric.percent.toFixed(1)}%
             </span>
-            <span
-              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-              {percentSign}
-              {metric.percent.toFixed(1)}%
-            </span>
+            {!isBudgetView && (
+              <span
+                className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+                {percentSign}
+                {metric.percent.toFixed(1)}%
+              </span>
+            )}
           </div>
         </div>
 
@@ -464,6 +527,12 @@ export default function ExecutiveSummaryPage({
     const isMetricNavigable =
       !isSubGroup && !isOverallRow && group.id !== 'overall';
 
+    const handleRowClick = () => {
+      if (isMetricNavigable) {
+        navigate(`/business-group-performance?bu=${group.id}&toggle=${homeToggle}`);
+      }
+    };
+
     return (
       <tr
         key={group.id}
@@ -473,18 +542,24 @@ export default function ExecutiveSummaryPage({
             : isSubGroup
             ? 'bg-gray-50'
             : 'hover:bg-gray-50 transition-colors'
-        } ${isExpandable ? 'cursor-pointer' : ''}`}
-        onClick={isExpandable ? () => toggleRowExpansion(group.id) : undefined}>
+        } ${isMetricNavigable ? 'cursor-pointer' : ''}`}
+        onClick={isMetricNavigable ? handleRowClick : undefined}>
         <td className='px-6 py-3 border-b border-r border-gray-200'>
           <div className='flex items-center gap-2'>
             {isExpandable && (
-              <span className='text-gray-400'>
+              <button
+                type='button'
+                className='text-gray-400'
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleRowExpansion(group.id);
+                }}>
                 {isExpanded ? (
                   <ChevronDownIcon className='w-4 h-4' />
                 ) : (
                   <ChevronRightIcon className='w-4 h-4' />
                 )}
-              </span>
+              </button>
             )}
             {isSubGroup && <span className='w-4' />}
             <span
@@ -610,6 +685,12 @@ export default function ExecutiveSummaryPage({
                     <button
                       key={option.id}
                       onClick={() => {
+                        if (!isBudgetView && option.id === 'budget') {
+                          const params = new URLSearchParams();
+                          params.set('bu', selectedBu);
+                          navigate(`/budget?${params.toString()}`);
+                          return;
+                        }
                         setHomeToggle(
                           option.id as 'budget' | 'ytm' | 'full-year'
                         );
@@ -739,6 +820,15 @@ export default function ExecutiveSummaryPage({
                 </tbody>
               </table>
             </div>
+            {isBudgetView && budgetWaterfallStages.length > 0 && (
+              <div className='mt-6'>
+                <BudgetForecastActualWaterfall
+                  stages={budgetWaterfallStages}
+                  title='Budget Waterfall'
+                  subtitle='Net Profit, Mn USD'
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

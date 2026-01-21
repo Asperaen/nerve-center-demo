@@ -352,6 +352,7 @@ export type BudgetForecastStageType =
   | 'l3-vs-target'
   | 'l4-vs-planned'
   | 'one-off-adjustments'
+  | 'ideation'
   | 'forecast'
   | 'l4-to-l5-leakage'
   | 'actuals';
