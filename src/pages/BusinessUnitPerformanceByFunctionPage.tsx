@@ -393,7 +393,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const budgetValue = procurementTotals.budgetTotal;
     const actualValue = procurementTotals.actualTotal;
     const totalDelta = actualValue - budgetValue;
-    const split = [0.28, 0.22, 0.18, 0.2, 0.12];
+    const split = [0.18, 0.26, 0.24, 0.22, 0.1];
     const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
     const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
     deltas[deltas.length - 1] = Number(
@@ -406,6 +406,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       running = Number((running + delta).toFixed(1));
       return running;
     };
+    const getCostStageType = (delta: number): 'positive' | 'negative' =>
+      delta <= 0 ? 'positive' : 'negative';
 
     return [
       {
@@ -420,7 +422,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'Volume change variance',
         value: nextValue(volumeDelta),
         delta: volumeDelta,
-        type: volumeDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(volumeDelta),
         isClickable: true,
       },
       {
@@ -428,7 +430,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'L3 deviation vs target',
         value: nextValue(l3Delta),
         delta: l3Delta,
-        type: l3Delta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(l3Delta),
         isClickable: true,
       },
       {
@@ -436,7 +438,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'L4 deviation vs L3 plan',
         value: nextValue(l4Delta),
         delta: l4Delta,
-        type: l4Delta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(l4Delta),
         isClickable: true,
       },
       {
@@ -444,14 +446,14 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'Part price variance',
         value: nextValue(partPriceDelta),
         delta: partPriceDelta,
-        type: partPriceDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(partPriceDelta),
       },
       {
         id: 'fx-impact',
         label: 'FX impact',
         value: nextValue(fxDelta),
         delta: fxDelta,
-        type: fxDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(fxDelta),
       },
       {
         id: 'actual-spend',
@@ -525,27 +527,35 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const budgetValue = manufacturingTotals.budgetTotal;
     const actualValue = manufacturingTotals.actualTotal;
     const totalDelta = actualValue - budgetValue;
-    const split = [0.22, 0.18, 0.14, 0.12, 0.16, 0.08, 0.1];
-    const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
+    const displayScale = 4;
+    const displayDelta = Number((totalDelta * displayScale).toFixed(1));
+    const displayActualValue = Number((budgetValue + displayDelta).toFixed(1));
+    const split = [0.12, 0.22, 0.2, 0.18, 0.14, 0.08, 0.06];
+    const deltas = split.map((ratio) =>
+      Number((displayDelta * ratio).toFixed(1))
+    );
+    deltas[2] = Number((deltas[2] * 1.6).toFixed(1));
     const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
     deltas[deltas.length - 1] = Number(
-      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+      (displayDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
     );
 
     const [
-      fxDelta,
-      gaVariableDelta,
+      volMixDelta,
       laborRateDelta,
       dlEfficiencyDelta,
       idlHcDelta,
+      gaVariableDelta,
       gaFixedDelta,
-      volMixDelta,
+      fxDelta,
     ] = deltas;
     let running = budgetValue;
     const nextValue = (delta: number) => {
       running = Number((running + delta).toFixed(1));
       return running;
     };
+    const getCostStageType = (delta: number): 'positive' | 'negative' =>
+      delta <= 0 ? 'positive' : 'negative';
 
     return [
       {
@@ -556,60 +566,60 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: 'baseline',
       },
       {
-        id: 'fx-impact',
-        label: 'FX impact',
-        value: nextValue(fxDelta),
-        delta: fxDelta,
-        type: fxDelta >= 0 ? 'positive' : 'negative',
-      },
-      {
-        id: 'ga-variable-gap',
-        label: 'G&A variable efficiency gap',
-        value: nextValue(gaVariableDelta),
-        delta: gaVariableDelta,
-        type: gaVariableDelta >= 0 ? 'positive' : 'negative',
+        id: 'vol-mix-change',
+        label: 'Vol mix change',
+        value: nextValue(volMixDelta),
+        delta: volMixDelta,
+        type: getCostStageType(volMixDelta),
       },
       {
         id: 'labor-rate-impact',
-        label: 'Labor rate impact',
+        label: 'Labour rate impact',
         value: nextValue(laborRateDelta),
         delta: laborRateDelta,
-        type: laborRateDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(laborRateDelta),
       },
       {
         id: 'dl-efficiency',
-        label: 'DL - efficiency gap',
+        label: 'DL efficiency gap',
         value: nextValue(dlEfficiencyDelta),
         delta: dlEfficiencyDelta,
-        type: dlEfficiencyDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(dlEfficiencyDelta),
         isClickable: true,
       },
       {
         id: 'idl-hc-gap',
-        label: 'IDL - HC gap',
+        label: 'IDL HC gap',
         value: nextValue(idlHcDelta),
         delta: idlHcDelta,
-        type: idlHcDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(idlHcDelta),
+      },
+      {
+        id: 'ga-variable-gap',
+        label: 'GA variable efficiency',
+        value: nextValue(gaVariableDelta),
+        delta: gaVariableDelta,
+        type: getCostStageType(gaVariableDelta),
       },
       {
         id: 'ga-fixed-gap',
-        label: 'G&A fixed cost gap',
+        label: 'GA fixed cost gap',
         value: nextValue(gaFixedDelta),
         delta: gaFixedDelta,
-        type: gaFixedDelta >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(gaFixedDelta),
       },
       {
-        id: 'vol-mix-change',
-        label: 'Vol / mix change',
-        value: nextValue(volMixDelta),
-        delta: volMixDelta,
-        type: volMixDelta >= 0 ? 'positive' : 'negative',
+        id: 'fx-impact',
+        label: 'Fx impact',
+        value: nextValue(fxDelta),
+        delta: fxDelta,
+        type: getCostStageType(fxDelta),
       },
       {
         id: 'actual-mva',
         label: 'Actual MVA cost',
-        value: Number(actualValue.toFixed(1)),
-        delta: Number(actualValue.toFixed(1)),
+        value: displayActualValue,
+        delta: displayActualValue,
         type: 'baseline',
       },
     ];
@@ -626,19 +636,18 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const actualValue = rndTotals.actualValue;
     const totalDelta = actualValue - budgetValue;
     const split = [
-      0.18,
-      -0.1,
-      0.06,
+      0.12,
+      -0.06,
+      0.05,
       0.04,
       0.03,
+      0.16,
       0.1,
       0.08,
-      0.04,
-      0.02,
-      0.03,
-      0.02,
-      0.04,
-      0.04,
+      0.07,
+      0.05,
+      0.08,
+      0.08,
     ];
     const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
     const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
@@ -650,6 +659,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       running = Number((running + delta).toFixed(1));
       return running;
     };
+    const getCostStageType = (delta: number): 'positive' | 'negative' =>
+      delta <= 0 ? 'positive' : 'negative';
 
     return [
       {
@@ -664,92 +675,92 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'Project newly added',
         value: nextValue(deltas[0]),
         delta: deltas[0],
-        type: deltas[0] >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(deltas[0]),
       },
       {
         id: 'project-cancelled',
         label: 'Project cancelled',
         value: nextValue(deltas[1]),
         delta: deltas[1],
-        type: deltas[1] >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(deltas[1]),
       },
       {
         id: 'customer-request',
         label: 'Customer request item',
         value: nextValue(deltas[2]),
         delta: deltas[2],
-        type: deltas[2] >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(deltas[2]),
       },
       {
         id: 'timeline-change',
         label: 'Timeline change',
         value: nextValue(deltas[3]),
         delta: deltas[3],
-        type: deltas[3] >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(deltas[3]),
       },
       {
         id: 'cost-accounting',
         label: 'Cost per accounting rule (64) delta',
         value: nextValue(deltas[4]),
         delta: deltas[4],
-        type: deltas[4] >= 0 ? 'positive' : 'negative',
+        type: getCostStageType(deltas[4]),
       },
       {
         id: 'rnd-budget-control',
         label: 'R&D budget controlled by R&D',
-        value: nextValue(deltas[5]),
-        delta: deltas[5],
-        type: deltas[5] >= 0 ? 'positive' : 'negative',
+        value: Number(running.toFixed(1)),
+        delta: Number(running.toFixed(1)),
+        type: 'baseline',
       },
       {
         id: 'personnel-delta',
         label: 'Personnel (61) delta',
-        value: nextValue(deltas[6]),
-        delta: deltas[6],
-        type: deltas[6] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[5]),
+        delta: deltas[5],
+        type: getCostStageType(deltas[5]),
         isClickable: true,
       },
       {
         id: 'rental-dep',
         label: 'Rental & Dep. (62) delta',
-        value: nextValue(deltas[7]),
-        delta: deltas[7],
-        type: deltas[7] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[6]),
+        delta: deltas[6],
+        type: getCostStageType(deltas[6]),
       },
       {
         id: 'travel',
         label: 'Travel (63) delta',
-        value: nextValue(deltas[8]),
-        delta: deltas[8],
-        type: deltas[8] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[7]),
+        delta: deltas[7],
+        type: getCostStageType(deltas[7]),
       },
       {
         id: 'prototype',
         label: 'Prototype & testing (64) delta',
-        value: nextValue(deltas[9]),
-        delta: deltas[9],
-        type: deltas[9] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[8]),
+        delta: deltas[8],
+        type: getCostStageType(deltas[8]),
       },
       {
         id: 'logistics',
         label: 'Logistics (65) delta',
-        value: nextValue(deltas[10]),
-        delta: deltas[10],
-        type: deltas[10] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[9]),
+        delta: deltas[9],
+        type: getCostStageType(deltas[9]),
       },
       {
         id: 'central-support',
         label: 'Central & cross BU support',
-        value: nextValue(deltas[11]),
-        delta: deltas[11],
-        type: deltas[11] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[10]),
+        delta: deltas[10],
+        type: getCostStageType(deltas[10]),
       },
       {
         id: 'fx-impact',
         label: 'FX Impact',
-        value: nextValue(deltas[12]),
-        delta: deltas[12],
-        type: deltas[12] >= 0 ? 'positive' : 'negative',
+        value: nextValue(deltas[11]),
+        delta: deltas[11],
+        type: getCostStageType(deltas[11]),
       },
       {
         id: 'rnd-expense-actual',
@@ -879,7 +890,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                           <td className='px-4 py-3 text-right font-semibold'>
                             <span
                               className={
-                                delta >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                                delta <= 0 ? 'text-emerald-600' : 'text-rose-600'
                               }>
                               {formatMn(delta)}
                             </span>
@@ -927,7 +938,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             <td className='px-4 py-2 text-right font-semibold'>
                               <span
                                 className={
-                                  childDelta >= 0
+                                  childDelta <= 0
                                     ? 'text-emerald-600'
                                     : 'text-rose-600'
                                 }>
@@ -1131,7 +1142,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={rndWaterfallStages}
               title='Deviation waterfall by key value drivers'
               description='R&D cost, USD Mn'
-              emphasisStageId='personnel-delta'
               barSize={32}
               onStageClick={(stage) => {
                 if (stage.id === 'personnel-delta') {

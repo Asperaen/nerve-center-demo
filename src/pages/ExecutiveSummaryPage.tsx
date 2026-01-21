@@ -7,14 +7,14 @@ import {
     SparklesIcon,
 } from '@heroicons/react/24/outline';
  
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Link,
     useNavigate,
     useOutletContext,
     useSearchParams,
 } from 'react-router-dom';
-import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
+import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
@@ -29,7 +29,12 @@ import {
 } from '../data/mockBusinessGroupPerformance';
 import { mockBudgetForecastStages } from '../data/mockForecast';
 import { internalPulseColumns } from '../data/mockInternalPulse';
-import type { Meeting, MeetingMaterial, PulseMetric } from '../types';
+import type {
+  BudgetForecastStage,
+  Meeting,
+  MeetingMaterial,
+  PulseMetric,
+} from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import {
@@ -68,13 +73,20 @@ export default function ExecutiveSummaryPage({
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const mainBuOptions = getMainBusinessGroupOptions();
 
+  const selectedBuLabel = useMemo(() => {
+    if (selectedBu === 'all') {
+      return 'Overall';
+    }
+    return mainBuOptions.find((bu) => bu.id === selectedBu)?.name ?? 'Overall';
+  }, [selectedBu, mainBuOptions]);
+
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const [showComparisonDetails, setShowComparisonDetails] =
     useState<boolean>(true);
 
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>(
-    () => getStoredTimeframe()
+    () => (isBudgetView ? 'full-year' : getStoredTimeframe())
   );
   const [homeToggle, setHomeToggle] = useState<'budget' | 'ytm' | 'full-year'>(
     defaultHomeToggle
@@ -104,6 +116,10 @@ export default function ExecutiveSummaryPage({
       } else {
         setHomeToggle(toggleParam);
       }
+      return;
+    }
+    if (toggleParam) {
+      setHomeToggle(isBudgetView ? 'full-year' : 'ytm');
     }
   }, [searchParams, isBudgetView]);
 
@@ -124,11 +140,17 @@ export default function ExecutiveSummaryPage({
 
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('bu', buId);
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        if (prev.get('bu') === buId) {
+          return prev;
+        }
+        const next = new URLSearchParams(prev);
+        next.set('bu', buId);
+        return next;
+      },
+      { replace: true }
+    );
   };
 
   // Get Financial and Topline KPIs from Internal Pulse
@@ -267,10 +289,14 @@ export default function ExecutiveSummaryPage({
       baseBudgetValue === 0 ? 1 : budgetValue / baseBudgetValue;
 
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
-    let runningValue = roundToOne(budgetValue);
 
-    return mockBudgetForecastStages.map((stage) => {
-      if (stage.stage === 'budget') {
+    let runningValue = roundToOne(budgetValue);
+    const baseStages = mockBudgetForecastStages.map((stage) => {
+      const isBaselineStage = stage.type === 'baseline';
+      const isBudgetStage = stage.stage === 'budget';
+      const isActualStage = stage.stage === 'actuals';
+
+      if (isBudgetStage) {
         runningValue = roundToOne(budgetValue);
         return {
           ...stage,
@@ -279,7 +305,7 @@ export default function ExecutiveSummaryPage({
         };
       }
 
-      if (stage.stage === 'actuals') {
+      if (isActualStage) {
         runningValue = roundToOne(actualValue);
         return {
           ...stage,
@@ -288,7 +314,7 @@ export default function ExecutiveSummaryPage({
         };
       }
 
-      if (stage.type === 'baseline') {
+      if (isBaselineStage) {
         return {
           ...stage,
           value: runningValue,
@@ -310,6 +336,134 @@ export default function ExecutiveSummaryPage({
         delta: scaledDelta,
       };
     });
+
+    const stageById = new Map(
+      baseStages.map((stage) => [stage.stage, stage])
+    );
+
+    const totalChange = roundToOne(actualValue - budgetValue);
+    const fallbackShare = (ratio: number) =>
+      totalChange === 0
+        ? roundToOne(budgetValue * ratio)
+        : roundToOne(totalChange * ratio);
+
+    const oneOffDeltaRaw =
+      stageById.get('one-off-adjustments')?.delta ?? fallbackShare(0.12);
+    const oneOffDelta = -Math.abs(oneOffDeltaRaw);
+    const headwindsDelta =
+      stageById.get('market-performance')?.delta ?? fallbackShare(0.28);
+    const l4Delta =
+      stageById.get('l4-vs-planned')?.delta ?? fallbackShare(0.22);
+    const l3Delta =
+      stageById.get('l3-vs-target')?.delta ?? fallbackShare(0.18);
+
+    const afterOneOff = roundToOne(budgetValue + oneOffDelta);
+    const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
+    const beforePipeline = afterHeadwinds;
+    const afterL4 = roundToOne(beforePipeline + l4Delta);
+    const afterL3 = roundToOne(afterL4 + l3Delta);
+    const withPipeline =
+      stageById.get('forecast')?.value ?? roundToOne(afterL3);
+    const ideationDelta =
+      totalChange === 0
+        ? fallbackShare(0.2)
+        : roundToOne(actualValue - withPipeline);
+    const afterIdeation = roundToOne(withPipeline + ideationDelta);
+
+    const makeStage = (
+      stage: BudgetForecastStage['stage'],
+      label: string,
+      value: number,
+      delta: number,
+      type: BudgetForecastStage['type']
+    ): BudgetForecastStage => ({
+      stage,
+      label,
+      value,
+      delta,
+      type,
+      isClickable: true,
+    });
+
+    const getBudgetStageType = (
+      stage: BudgetForecastStage['stage'],
+      delta: number,
+      fallback: BudgetForecastStage['type']
+    ): BudgetForecastStage['type'] => {
+      if (fallback === 'baseline') {
+        return fallback;
+      }
+      if (stage === 'market-performance' || stage === 'one-off-adjustments') {
+        return delta >= 0 ? 'positive' : 'negative';
+      }
+      return 'positive';
+    };
+
+    return [
+      makeStage(
+        'budget',
+        'Past year operating profit',
+        roundToOne(budgetValue),
+        roundToOne(budgetValue),
+        'baseline'
+      ),
+      makeStage(
+        'one-off-adjustments',
+        'One-off items',
+        afterOneOff,
+        roundToOne(oneOffDelta),
+        getBudgetStageType('one-off-adjustments', oneOffDelta, 'positive')
+      ),
+      makeStage(
+        'market-performance',
+        'Headwinds/Tailwinds',
+        afterHeadwinds,
+        roundToOne(headwindsDelta),
+        getBudgetStageType('market-performance', headwindsDelta, 'positive')
+      ),
+      makeStage(
+        'l4-to-l5-leakage',
+        'Current year OP before transformation pipeline',
+        beforePipeline,
+        beforePipeline,
+        'baseline'
+      ),
+      makeStage(
+        'l4-vs-planned',
+        'Ramp up of already implemented (L4) initiatives',
+        afterL4,
+        roundToOne(l4Delta),
+        getBudgetStageType('l4-vs-planned', l4Delta, 'positive')
+      ),
+      makeStage(
+        'l3-vs-target',
+        'Initiatives to be implemented (L3)',
+        afterL3,
+        roundToOne(l3Delta),
+        getBudgetStageType('l3-vs-target', l3Delta, 'positive')
+      ),
+      makeStage(
+        'forecast',
+        'Current year OP with transformation pipeline',
+        roundToOne(withPipeline),
+        roundToOne(withPipeline),
+        'baseline'
+      ),
+      makeStage(
+        'ideation',
+        'Ideation',
+        afterIdeation,
+        ideationDelta,
+        getBudgetStageType('ideation', ideationDelta, 'positive')
+      ),
+      makeStage(
+        'actuals',
+        'Current year OP target',
+        roundToOne(actualValue),
+        roundToOne(actualValue),
+        'baseline'
+      ),
+    ];
   }, [isBudgetView, tableData]);
 
   const getExpandedSubGroups = (bgId: string) => {
@@ -341,6 +495,18 @@ export default function ExecutiveSummaryPage({
     const handleCellClick = (e: React.MouseEvent) => {
       if (isNavigable && groupId) {
         e.stopPropagation(); // Prevent row expansion from triggering
+        if (isBudgetView) {
+          handleBuChange(groupId === 'overall' ? 'all' : groupId);
+          return;
+        }
+        if (homeToggle === 'budget') {
+          navigate(`/budget?bu=${groupId}`);
+          return;
+        }
+        if (homeToggle === 'full-year') {
+          navigate(`/market-intelligence?bu=${groupId}&timeframe=full-year`);
+          return;
+        }
         navigate(`/business-group-performance?bu=${groupId}&toggle=${homeToggle}`);
       }
     };
@@ -523,13 +689,25 @@ export default function ExecutiveSummaryPage({
     isOverallRow: boolean = false
   ) => {
     const isExpanded = expandedRows.has(group.id);
-    // Only main business groups (not sub-groups, not overall/Grand Total) should navigate on click
-    const isMetricNavigable =
-      !isSubGroup && !isOverallRow && group.id !== 'overall';
+    // Only main business groups (including overall/Grand Total) should navigate on click
+    const isMetricNavigable = !isSubGroup;
 
     const handleRowClick = () => {
       if (isMetricNavigable) {
-        navigate(`/business-group-performance?bu=${group.id}&toggle=${homeToggle}`);
+        const buId = isOverallRow ? 'all' : group.id;
+        if (isBudgetView) {
+          handleBuChange(buId);
+          return;
+        }
+        if (homeToggle === 'budget') {
+          navigate(`/budget?bu=${buId}`);
+          return;
+        }
+        if (homeToggle === 'full-year') {
+          navigate(`/market-intelligence?bu=${buId}&timeframe=full-year`);
+          return;
+        }
+        navigate(`/business-group-performance?bu=${buId}&toggle=${homeToggle}`);
       }
     };
 
@@ -685,12 +863,6 @@ export default function ExecutiveSummaryPage({
                     <button
                       key={option.id}
                       onClick={() => {
-                        if (!isBudgetView && option.id === 'budget') {
-                          const params = new URLSearchParams();
-                          params.set('bu', selectedBu);
-                          navigate(`/budget?${params.toString()}`);
-                          return;
-                        }
                         setHomeToggle(
                           option.id as 'budget' | 'ytm' | 'full-year'
                         );
@@ -803,7 +975,7 @@ export default function ExecutiveSummaryPage({
                     const isExpanded = expandedRows.has(group.id);
 
                     return (
-                      <>
+                      <React.Fragment key={group.id}>
                         {renderTableRow(
                           group,
                           isExpandable,
@@ -814,7 +986,7 @@ export default function ExecutiveSummaryPage({
                           getExpandedSubGroups(group.id).map((subGroup) =>
                             renderTableRow(subGroup, false, true, false)
                           )}
-                      </>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -822,10 +994,10 @@ export default function ExecutiveSummaryPage({
             </div>
             {isBudgetView && budgetWaterfallStages.length > 0 && (
               <div className='mt-6'>
-                <BudgetForecastActualWaterfall
+                <BudgetPerformanceWaterfall
                   stages={budgetWaterfallStages}
-                  title='Budget Waterfall'
-                  subtitle='Net Profit, Mn USD'
+                  title='Budget deviation waterfall of BU performance by value driver'
+                  subtitle={`Mn USD • ${selectedBuLabel}`}
                 />
               </div>
             )}

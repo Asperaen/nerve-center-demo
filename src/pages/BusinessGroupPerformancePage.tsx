@@ -35,10 +35,7 @@ import type {
     BudgetForecastStage,
     NavigationLayer,
 } from '../types';
-import {
-    getStoredTimeframe,
-    setStoredTimeframe,
-} from '../utils/timeframeStorage';
+import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 
@@ -51,7 +48,7 @@ export default function BusinessGroupPerformancePage() {
 
   // Filter states
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<TimeframeOption>(() => getStoredTimeframe());
+    useState<TimeframeOption>(() => 'ytm');
   const [selectedBu, setSelectedBu] = useState<string>(initialBu);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
@@ -159,14 +156,22 @@ export default function BusinessGroupPerformancePage() {
   }, [selectedTimeframe]);
 
   useEffect(() => {
-    const toggleParam = searchParams.get('toggle');
-    if (
-      toggleParam === 'budget' ||
-      toggleParam === 'ytm' ||
-      toggleParam === 'full-year'
-    ) {
-      setSelectedTimeframe(toggleParam);
+    if (selectedTimeframe !== 'ytm') {
+      setSelectedTimeframe('ytm');
     }
+  }, [selectedTimeframe]);
+
+  useEffect(() => {
+    const toggleParam = searchParams.get('toggle');
+    if (!toggleParam) {
+      return;
+    }
+    if (toggleParam === 'ytm') {
+      setSelectedTimeframe('ytm');
+      return;
+    }
+    // If an invalid timeframe is preselected, default to the first option (YTM).
+    setSelectedTimeframe('ytm');
   }, [searchParams]);
 
   const isOverallRowId = (id: string) =>
@@ -475,6 +480,20 @@ export default function BusinessGroupPerformancePage() {
       isClickable: true,
     });
 
+    const getBudgetStageType = (
+      stage: BudgetForecastStage['stage'],
+      delta: number,
+      fallback: BudgetForecastStage['type']
+    ): BudgetForecastStage['type'] => {
+      if (fallback === 'baseline') {
+        return fallback;
+      }
+      if (stage === 'market-performance' || stage === 'one-off-adjustments') {
+        return delta >= 0 ? 'positive' : 'negative';
+      }
+      return 'positive';
+    };
+
     return [
       makeStage(
         'budget',
@@ -488,14 +507,14 @@ export default function BusinessGroupPerformancePage() {
         'One-off items',
         afterOneOff,
         roundToOne(oneOffDelta),
-        oneOffDelta >= 0 ? 'positive' : 'negative'
+        getBudgetStageType('one-off-adjustments', oneOffDelta, 'positive')
       ),
       makeStage(
         'market-performance',
         'Headwinds/Tailwinds',
         afterHeadwinds,
         roundToOne(headwindsDelta),
-        headwindsDelta >= 0 ? 'positive' : 'negative'
+        getBudgetStageType('market-performance', headwindsDelta, 'positive')
       ),
       makeStage(
         'l4-to-l5-leakage',
@@ -509,14 +528,14 @@ export default function BusinessGroupPerformancePage() {
         'Ramp up of already implemented (L4) initiatives',
         afterL4,
         roundToOne(l4Delta),
-        l4Delta >= 0 ? 'positive' : 'negative'
+        getBudgetStageType('l4-vs-planned', l4Delta, 'positive')
       ),
       makeStage(
         'l3-vs-target',
         'Initiatives to be implemented (L3)',
         afterL3,
         roundToOne(l3Delta),
-        l3Delta >= 0 ? 'positive' : 'negative'
+        getBudgetStageType('l3-vs-target', l3Delta, 'positive')
       ),
       makeStage(
         'forecast',
@@ -530,7 +549,7 @@ export default function BusinessGroupPerformancePage() {
         'Ideation',
         afterIdeation,
         ideationDelta,
-        ideationDelta >= 0 ? 'positive' : 'negative'
+        getBudgetStageType('ideation', ideationDelta, 'positive')
       ),
       makeStage(
         'actuals',
@@ -1107,17 +1126,19 @@ export default function BusinessGroupPerformancePage() {
       : 'text-gray-700';
     const insight = getFunctionInsight(row);
     const delta = row.ytmActuals - row.ytmBudget;
-    const deltaColor =
-      delta > 0
-        ? 'text-opportunity-700'
-        : delta < 0
-        ? 'text-risk-700'
-        : 'text-gray-600';
     const showDrilldown =
-      row.id === 'topline' ||
       row.id === 'procurement' ||
       row.id === 'mva' ||
       row.id === 'rd';
+    const highlightRow = showDrilldown;
+    const valueColor = highlightRow ? 'text-red-700' : 'text-gray-700';
+    const deltaColor = highlightRow
+      ? 'text-red-700'
+      : delta > 0
+      ? 'text-opportunity-700'
+      : delta < 0
+      ? 'text-risk-700'
+      : 'text-gray-600';
     const handleRowDrillDown = () => {
       if (!showDrilldown) {
         return;
@@ -1148,10 +1169,10 @@ export default function BusinessGroupPerformancePage() {
             {row.label}
           </div>
         </td>
-        <td className='px-6 py-3 text-right text-gray-700'>
+        <td className={`px-6 py-3 text-right ${valueColor}`}>
           {formatMn(row.ytmBudget)}
         </td>
-        <td className='px-6 py-3 text-right text-gray-700'>
+        <td className={`px-6 py-3 text-right ${valueColor}`}>
           {formatMn(row.ytmActuals)}
         </td>
         <td className='px-6 py-3 text-right'>
@@ -1195,20 +1216,9 @@ export default function BusinessGroupPerformancePage() {
   ) => {
     const isExpanded = expandedRows.has(group.id);
     const isClickable = isExpandable || isSubGroup;
-    const canDrillDown = !isOverallRow;
 
     const handleRowClick = () => {
-      if (isExpandable) {
-        toggleRowExpansion(group.id);
-      } else if (isSubGroup) {
-        navigateToLayer(2, group.name);
-      }
-    };
-
-    const handleRowDrillDown = () => {
-      if (canDrillDown) {
-        navigateToLayer(2, group.name);
-      }
+      toggleGroupSelection(group.id);
     };
 
     return (
@@ -1221,9 +1231,7 @@ export default function BusinessGroupPerformancePage() {
             ? 'bg-gray-50 hover:bg-gray-100 transition-colors'
             : 'hover:bg-indigo-50/60 transition-colors'
         } ${isClickable ? 'cursor-pointer' : ''}`}
-        onClick={isClickable ? handleRowClick : undefined}
-        onDoubleClick={canDrillDown ? handleRowDrillDown : undefined}
-        title={canDrillDown ? 'Double click to drill down' : undefined}>
+        onClick={isClickable ? handleRowClick : undefined}>
         <td className='px-6 py-3 border-b border-r border-gray-200'>
           <div className='flex items-center gap-2'>
             <input
@@ -1235,13 +1243,19 @@ export default function BusinessGroupPerformancePage() {
               aria-label={`Select ${group.name}`}
             />
             {isExpandable && (
-              <span className='text-gray-400'>
+              <button
+                type='button'
+                className='text-gray-400'
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleRowExpansion(group.id);
+                }}>
                 {isExpanded ? (
                   <ChevronDownIcon className='w-4 h-4' />
                 ) : (
                   <ChevronRightIcon className='w-4 h-4' />
                 )}
-              </span>
+              </button>
             )}
             {isSubGroup && <span className='w-4' />}
             <span
@@ -1281,9 +1295,7 @@ export default function BusinessGroupPerformancePage() {
                 selectedTimeframe={selectedTimeframe}
                 onTimeframeChange={setSelectedTimeframe}
                 options={[
-                  { value: 'budget', label: 'Budget' },
                   { value: 'ytm', label: 'Year to Month actuals' },
-                  { value: 'full-year', label: 'Full year forecast' },
                 ]}
               />
             }
@@ -1489,9 +1501,21 @@ export default function BusinessGroupPerformancePage() {
                 )}
               </span>
             }
-            onStageClick={(stage: BudgetForecastStage) =>
-              setActiveDeviationStage(stage)
-            }
+            onStageClick={(stage: BudgetForecastStage) => {
+              if (stage.stage === 'l3-vs-target') {
+                navigate(
+                  `/initiative-performance?tab=execution&bu=${selectedBu}&timeframe=full-year`
+                );
+                return;
+              }
+              if (stage.stage === 'l4-vs-planned') {
+                navigate(
+                  `/initiative-performance?tab=execution&bu=${selectedBu}&timeframe=full-year`
+                );
+                return;
+              }
+              setActiveDeviationStage(stage);
+            }}
           />
         )}
       </div>

@@ -68,19 +68,19 @@ export default function FunctionalPerformanceWaterfall({
             <CartesianGrid strokeDasharray='3 3' />
             <XAxis
               dataKey='label'
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 12 }}
               angle={-25}
               textAnchor='end'
               interval={0}
               height={110}
             />
             <YAxis
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 12 }}
               label={{
                 value: 'USD Mn',
                 angle: -90,
                 position: 'insideLeft',
-                style: { fontSize: '11px' },
+                style: { fontSize: '12px' },
               }}
             />
             <Tooltip
@@ -127,24 +127,24 @@ export default function FunctionalPerformanceWaterfall({
               {stages.map((stage, index) => {
                 const isEmphasized = emphasisStageId === stage.id;
                 return (
-                <Cell
-                  key={`${stage.id}-${index}`}
-                  fill={getFillColor(stage)}
-                  style={{
-                    cursor: stage.isClickable ? 'pointer' : 'default',
-                    stroke: isEmphasized ? '#1d4ed8' : 'none',
-                    strokeWidth: isEmphasized ? 3 : 0,
-                    filter: isEmphasized
-                      ? 'drop-shadow(0 4px 6px rgba(29, 78, 216, 0.35))'
-                      : 'none',
-                  }}
-                  onClick={() => {
-                    if (stage.isClickable && onStageClick) {
-                      onStageClick(stage);
-                    }
-                  }}
-                />
-              );
+                  <Cell
+                    key={`${stage.id}-${index}`}
+                    fill={getFillColor(stage)}
+                    style={{
+                      cursor: stage.isClickable ? 'pointer' : 'default',
+                      stroke: isEmphasized ? '#1d4ed8' : 'none',
+                      strokeWidth: isEmphasized ? 3 : 0,
+                      filter: isEmphasized
+                        ? 'drop-shadow(0 4px 6px rgba(29, 78, 216, 0.35))'
+                        : 'none',
+                    }}
+                    onClick={() => {
+                      if (stage.isClickable && onStageClick) {
+                        onStageClick(stage);
+                      }
+                    }}
+                  />
+                );
               })}
             </Bar>
           </ComposedChart>

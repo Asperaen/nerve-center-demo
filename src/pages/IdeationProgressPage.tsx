@@ -554,6 +554,13 @@ export default function IdeationProgressPage() {
   }, [initialTab]);
 
   useEffect(() => {
+    const timeframeParam = searchParams.get('timeframe');
+    if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
+      setActiveTimeframe(timeframeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (activeTimeframe !== 'ytm' && activeTimeframe !== 'full-year') {
       setActiveTimeframe('full-year');
     }
@@ -622,6 +629,15 @@ export default function IdeationProgressPage() {
     });
   };
 
+  const handleTimeframeChange = (timeframe: TimeframeOption) => {
+    setActiveTimeframe(timeframe);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('timeframe', timeframe);
+      return next;
+    });
+  };
+
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
     setSearchParams((prev) => {
@@ -638,7 +654,7 @@ export default function IdeationProgressPage() {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
-      <div className='p-8 max-w-[1440px] mx-auto'>
+      <div className='p-8 max-w-[1920px] mx-auto'>
         <div className='mb-6'>
           <h1 className='text-3xl font-bold text-gray-900'>
             Initiative Performance
@@ -654,7 +670,7 @@ export default function IdeationProgressPage() {
             timeframeContent={
               <TimeframePicker
                 selectedTimeframe={activeTimeframe}
-                onTimeframeChange={setActiveTimeframe}
+                onTimeframeChange={handleTimeframeChange}
                 options={timeframeOptions}
               />
             }

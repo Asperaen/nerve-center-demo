@@ -482,7 +482,7 @@ export interface AppliedAssumption {
   name: string;
   description: string;
   impact: number; // Impact in millions USD
-  targetStage: OPWaterfallStageType; // Which waterfall stage it affects
+  targetStage: OPWaterfallStageType | BudgetForecastStageType; // Which waterfall stage it affects
   impactType: 'positive' | 'negative'; // tailwind vs headwind
   isApplied?: boolean; // Default true, since these are "already baked in"
   color: string; // Color for visualization in waterfall chart
