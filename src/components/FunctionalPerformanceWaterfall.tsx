@@ -369,7 +369,7 @@ export default function FunctionalPerformanceWaterfall({
       <p className='text-sm text-gray-500 mb-4'>{description}</p>
       <div className='h-80'>
         <ResponsiveContainer width='100%' height='100%'>
-          <ComposedChart data={chartData}>
+          <ComposedChart data={chartData} margin={{ top: 25, right: 20, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray='3 3' />
             {hasNegativeYValues && (
               <ReferenceLine y={0} stroke='#374151' strokeWidth={2} strokeDasharray='4 4' />

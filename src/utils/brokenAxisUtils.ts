@@ -67,7 +67,6 @@ export function calculateBrokenAxis(
   }
 
   const maxDelta = Math.max(...deltaValues);
-  const totalDeltaRange = deltaValues.reduce((sum, d) => sum + d, 0);
 
   // Calculate the ratio of baseline to max delta
   const baselineToDeltaRatio = minBaseline / maxDelta;
@@ -78,32 +77,27 @@ export function calculateBrokenAxis(
   }
 
   // Calculate the skip range
-  // We want to skip from 0 to a point that leaves enough space for deltas to be visible
+  // Skip from 0 to 50 below the smallest value across ALL bars (including baselines)
   
-  // Find the minimum cumulative value (lowest point the waterfall reaches)
-  const allValues = stages.map((s) => s.value);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
+  // Find the minimum value across all stages (both baseline and delta bars)
+  const allStageValues = stages.map((s) => s.value);
+  const minValue = Math.min(...allStageValues);
+  const maxValue = Math.max(...allStageValues);
   
-  // Calculate the visible range needed after the break
-  // We want deltas to be clearly visible, so we need enough vertical space
-  const visibleRangeNeeded = Math.max(
-    totalDeltaRange * 3, // At least 3x the total delta range
-    maxDelta * 8,        // At least 8x the max delta for visibility
-    (maxValue - minValue) * 2.5 // At least 2.5x the actual range
-  );
-  
-  // Skip from 0 up to just below the minimum value, leaving room for deltas
-  let skipEnd = minValue - visibleRangeNeeded;
+  // Skip ends 50 below the smallest bar value
+  let skipEnd = minValue - 50;
   
   // Ensure skipEnd is positive and rounded nicely
-  skipEnd = Math.max(0, Math.floor(skipEnd / 100) * 100);
+  skipEnd = Math.max(0, Math.floor(skipEnd / 50) * 50);
   
-  // If skipEnd is still too small to be worthwhile (less than 70% of minValue), apply anyway
-  // because the ratio check already confirmed we need a broken axis
-  if (skipEnd <= 0) {
-    // Calculate a reasonable skip that leaves visible space
-    skipEnd = Math.floor((minValue * 0.9) / 100) * 100;
+  // Also ensure the visible range (maxValue - skipEnd) is meaningful
+  // The visible portion should be at least 2x the max delta so bars look proportional
+  const minVisibleRange = maxDelta * 2;
+  const currentVisibleRange = maxValue - skipEnd;
+  
+  if (currentVisibleRange < minVisibleRange) {
+    skipEnd = Math.floor((maxValue - minVisibleRange) / 50) * 50;
+    skipEnd = Math.max(0, skipEnd);
   }
 
   return {
