@@ -299,7 +299,7 @@ interface ExecutiveSummaryPageProps {
 
 export default function ExecutiveSummaryPage({
   isBudgetView = false,
-  defaultHomeToggle = 'full-year',
+  defaultHomeToggle = 'ytm',
   pageTitle,
 }: ExecutiveSummaryPageProps) {
   useOutletContext<ExecutiveSummaryPageContext>();
