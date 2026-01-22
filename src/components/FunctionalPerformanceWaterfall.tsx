@@ -137,9 +137,25 @@ const BrokenBarShape = (props: {
 
   const isBaseline = payload?.type === 'baseline';
   const breakIndicatorHeight = 10;
+  const minHeightForBreakIndicator = 40; // Minimum bar height to show break indicator
 
   if (!isBaseline) {
     // Regular bar without break
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={fill}
+        rx={2}
+        ry={2}
+      />
+    );
+  }
+
+  // If bar is too short, render simple bar without break indicator
+  if (height < minHeightForBreakIndicator) {
     return (
       <rect
         x={x}
@@ -462,7 +478,7 @@ export default function FunctionalPerformanceWaterfall({
                   const displayValue = numericValue.toFixed(0);
                   
                   if (brokenAxis && isBaseline) {
-                    // For baseline bars with broken axis: show label above bar in darker color
+                    // For baseline bars with broken axis: show label directly above the bar
                     return (
                       <text
                         x={x + (width ?? 0) / 2}

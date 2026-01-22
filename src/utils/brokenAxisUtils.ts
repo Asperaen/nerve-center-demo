@@ -68,6 +68,11 @@ export function calculateBrokenAxis(
 
   const maxDelta = Math.max(...deltaValues);
 
+  // If max delta is very small or zero, don't use broken axis
+  if (maxDelta < 1) {
+    return { shouldUseBrokenAxis: false, brokenAxis: undefined };
+  }
+
   // Calculate the ratio of baseline to max delta
   const baselineToDeltaRatio = minBaseline / maxDelta;
 
@@ -77,26 +82,31 @@ export function calculateBrokenAxis(
   }
 
   // Calculate the skip range
-  // Skip from 0 to 50 below the smallest value across ALL bars (including baselines)
+  // Skip from 0 to a value that ensures all bars are clearly visible
   
-  // Find the minimum value across all stages (both baseline and delta bars)
+  // Find the minimum and maximum values across all stages
   const allStageValues = stages.map((s) => s.value);
   const minValue = Math.min(...allStageValues);
   const maxValue = Math.max(...allStageValues);
   
-  // Skip ends 50 below the smallest bar value
-  let skipEnd = minValue - 50;
+  // Ensure the smallest bar (minValue) has enough visible height
+  // The smallest bar should be at least 1.5x the max delta height so it's clearly visible
+  const minBarHeight = maxDelta * 1.5;
+  
+  // Calculate skipEnd such that: minValue - skipEnd >= minBarHeight
+  // So: skipEnd <= minValue - minBarHeight
+  let skipEnd = minValue - minBarHeight;
   
   // Ensure skipEnd is positive and rounded nicely
-  skipEnd = Math.max(0, Math.floor(skipEnd / 50) * 50);
+  skipEnd = Math.max(0, Math.floor(skipEnd / 100) * 100);
   
   // Also ensure the visible range (maxValue - skipEnd) is meaningful
-  // The visible portion should be at least 2x the max delta so bars look proportional
-  const minVisibleRange = maxDelta * 2;
+  // The visible portion should be at least 3x the max delta so bars look proportional
+  const minVisibleRange = maxDelta * 3;
   const currentVisibleRange = maxValue - skipEnd;
   
   if (currentVisibleRange < minVisibleRange) {
-    skipEnd = Math.floor((maxValue - minVisibleRange) / 50) * 50;
+    skipEnd = Math.floor((maxValue - minVisibleRange) / 100) * 100;
     skipEnd = Math.max(0, skipEnd);
   }
 

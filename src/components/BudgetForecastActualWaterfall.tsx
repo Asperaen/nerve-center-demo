@@ -20,7 +20,9 @@ interface BudgetForecastActualWaterfallProps {
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string; // Stage ID to highlight (e.g., 'market-performance')
+  highlightedStageColor?: string; // Custom color for highlighted stage bar
   colorByDelta?: boolean;
+  hideLegend?: boolean;
   /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
   brokenAxis?: BrokenAxisConfig | 'auto';
 }
@@ -102,7 +104,9 @@ export default function BudgetForecastActualWaterfall({
   subtitle,
   onStageClick,
   highlightedStage,
+  highlightedStageColor,
   colorByDelta = false,
+  hideLegend = false,
   brokenAxis: brokenAxisProp = 'auto',
 }: BudgetForecastActualWaterfallProps) {
   const navigate = useNavigate();
@@ -175,10 +179,11 @@ export default function BudgetForecastActualWaterfall({
 
   // Get fill color based on stage type
   const getFillColor = (stage: BudgetForecastStage): string => {
-    // Use a special highlight color for the highlighted stage
-    if (highlightedStage && stage.stage === highlightedStage) {
-      return '#3b82f6'; // blue-500 for highlighted stage
+    // Use custom color for highlighted stage if provided
+    if (highlightedStageColor && highlightedStage === stage.stage) {
+      return highlightedStageColor;
     }
+    // Always use green/red/gray based on stage type, even for highlighted
     if (stage.type === 'baseline') {
       return '#6b7280'; // gray-500 for baseline/absolute bars
     }
@@ -200,16 +205,18 @@ export default function BudgetForecastActualWaterfall({
           <h2 className='text-2xl font-bold text-gray-900'>{title}</h2>
           {subtitle && <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>}
         </div>
-        <div className='flex items-center gap-4'>
-          <div className='flex items-center gap-2'>
-            <div className='w-3 h-3 rounded-full bg-opportunity-500'></div>
-            <span className='text-sm text-gray-700'>Favourable</span>
+        {!hideLegend && (
+          <div className='flex items-center gap-4'>
+            <div className='flex items-center gap-2'>
+              <div className='w-3 h-3 rounded-full bg-opportunity-500'></div>
+              <span className='text-sm text-gray-700'>Favourable</span>
+            </div>
+            <div className='flex items-center gap-2'>
+              <div className='w-3 h-3 rounded-full bg-risk-500'></div>
+              <span className='text-sm text-gray-700'>Adverse</span>
+            </div>
           </div>
-          <div className='flex items-center gap-2'>
-            <div className='w-3 h-3 rounded-full bg-risk-500'></div>
-            <span className='text-sm text-gray-700'>Adverse</span>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className='h-96'>
@@ -353,12 +360,35 @@ export default function BudgetForecastActualWaterfall({
                   const isBaseline = stage?.type === 'baseline';
                   const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
                   const displayValue = numericValue.toFixed(0);
+                  const barHeight = height ?? 0;
+                  const barY = y ?? 0;
                   
-                  if (brokenAxis && isBaseline) {
+                  // Minimum bar height to fit text inside (in pixels)
+                  const minHeightForInside = 12;
+                  const canFitInside = barHeight >= minHeightForInside;
+                  
+                  // Baseline bars: show label inside if it fits, otherwise above
+                  if (isBaseline) {
+                    if (canFitInside) {
+                      return (
+                        <text
+                          x={x + (width ?? 0) / 2}
+                          y={barY + barHeight / 2 + 4}
+                          textAnchor='middle'
+                          fill='white'
+                          fontSize={11}
+                          fontWeight='bold'
+                        >
+                          {displayValue}
+                        </text>
+                      );
+                    }
+                    // Dynamic offset for baseline labels above bar
+                    const baselineOffset = 14 + Math.max(0, 10 - barHeight);
                     return (
                       <text
                         x={x + (width ?? 0) / 2}
-                        y={(y ?? 0) - 8}
+                        y={barY - baselineOffset}
                         textAnchor='middle'
                         fill='#4b5563'
                         fontSize={11}
@@ -369,12 +399,42 @@ export default function BudgetForecastActualWaterfall({
                     );
                   }
                   
+                  // Calculate label position - always center it in the bar
+                  const insideLabelY = barY + barHeight / 2 + 4;
+                  
+                  // Calculate outside position (above bar for all delta bars)
+                  // Dynamic offset: base offset (14px for text) + extra clearance for short bars
+                  const baseOffset = 14;
+                  const extraClearance = Math.max(0, 10 - barHeight); // Add more offset for very short bars
+                  const outsideLabelY = barY - baseOffset - extraClearance;
+                  
+                  // Determine if label should be inside or outside
+                  // If bar is tall enough, put label inside with white text
+                  // Otherwise, put label outside with colored text
+                  if (canFitInside) {
+                    // Label inside bar - always use WHITE text for contrast
+                    return (
+                      <text
+                        x={x + (width ?? 0) / 2}
+                        y={insideLabelY}
+                        textAnchor='middle'
+                        fill='white'
+                        fontSize={11}
+                        fontWeight='bold'
+                      >
+                        {displayValue}
+                      </text>
+                    );
+                  }
+                  
+                  // Label outside bar - use colored text matching bar type
+                  const labelColor = stage?.type === 'positive' ? '#059669' : '#dc2626';
                   return (
                     <text
                       x={x + (width ?? 0) / 2}
-                      y={(y ?? 0) + (height ?? 0) / 2 + 4}
+                      y={outsideLabelY}
                       textAnchor='middle'
-                      fill='white'
+                      fill={labelColor}
                       fontSize={11}
                       fontWeight='bold'
                     >
@@ -386,6 +446,18 @@ export default function BudgetForecastActualWaterfall({
               {stages.map((stage, index) => {
                 const fillColor = getFillColor(stage);
                 const highlighted = isHighlighted(stage);
+                // Use a darker shade of the fill color for stroke instead of blue
+                const getDarkerColor = () => {
+                  if (stage.type === 'baseline') return '#4b5563'; // darker gray
+                  return stage.type === 'positive' ? '#059669' : '#dc2626'; // darker green or red
+                };
+                const strokeColor = stage.isClickable ? getDarkerColor() : 'none';
+                // Shadow color matches the bar type
+                const shadowColor = stage.type === 'positive' 
+                  ? 'rgba(16, 185, 129, 0.5)' // green shadow
+                  : stage.type === 'negative'
+                    ? 'rgba(239, 68, 68, 0.5)' // red shadow
+                    : 'rgba(107, 114, 128, 0.5)'; // gray shadow
 
                 return (
                   <Cell
@@ -393,15 +465,11 @@ export default function BudgetForecastActualWaterfall({
                     fill={fillColor}
                     style={{
                       cursor: stage.isClickable ? 'pointer' : 'default',
-                      stroke: highlighted
-                        ? '#1d4ed8'
-                        : stage.isClickable
-                        ? '#3b82f6'
-                        : 'none',
+                      stroke: strokeColor,
                       strokeWidth: highlighted ? 4 : stage.isClickable ? 2 : 0,
                       opacity: highlighted ? 1 : stage.isClickable ? 1 : 0.9,
                       filter: highlighted
-                        ? 'drop-shadow(0 4px 6px rgba(59, 130, 246, 0.5))'
+                        ? `drop-shadow(0 4px 6px ${shadowColor})`
                         : 'none',
                     }}
                     onClick={() => handleBarClick(stage)}

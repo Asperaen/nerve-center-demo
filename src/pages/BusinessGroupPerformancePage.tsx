@@ -671,6 +671,32 @@ export default function BusinessGroupPerformancePage() {
     const scaleFactor =
       totalNpBaseline === 0 ? 1 : selectedNpBaseline / totalNpBaseline;
 
+    // Calculate ideation target based on selected business units
+    const getIdeationForSelection = () => {
+      if (selectedBu === 'all') {
+        // Sum ideation from all business groups
+        return BUSINESS_GROUP_DATA.reduce(
+          (sum, group) =>
+            sum +
+            group.businessUnits.reduce(
+              (unitSum, unit) => unitSum + unit.ideationTarget,
+              0
+            ),
+          0
+        );
+      }
+      // Sum ideation from the selected business group's units
+      const selectedGroup = BUSINESS_GROUP_DATA.find(
+        (group) => normalizeGroupId(group.group) === selectedBu
+      );
+      if (!selectedGroup) return 0;
+      return selectedGroup.businessUnits.reduce(
+        (sum, unit) => sum + unit.ideationTarget,
+        0
+      );
+    };
+    const selectedIdeation = roundToOne(toMillions(getIdeationForSelection()));
+
     return {
       totalNpBaseline,
       totalNpValue,
@@ -681,8 +707,9 @@ export default function BusinessGroupPerformancePage() {
       selectedOpBaseline,
       selectedOpValue,
       scaleFactor,
+      selectedIdeation,
     };
-  }, [selectedGroupIds, tableData, unitRowsById]);
+  }, [selectedGroupIds, tableData, unitRowsById, selectedBu]);
 
   const formatMn = (value: number) =>
     value.toLocaleString('en-US', {
@@ -867,37 +894,51 @@ export default function BusinessGroupPerformancePage() {
   );
 
   const budgetWaterfallStages = useMemo(() => {
-    const baseStages = buildScaledWaterfallStages();
-    const stageById = new Map(
-      baseStages.map((stage) => [stage.stage, stage])
-    );
-
+    // budgetValue = Last Year OP (starting point)
+    // actualValue = Current Year OP Target (ending point)
     const budgetValue = selectionMetrics.selectedNpBaseline;
     const actualValue = selectionMetrics.selectedNpValue;
-    const totalChange = roundToOne(actualValue - budgetValue);
-    const fallbackShare = (ratio: number) =>
-      totalChange === 0 ? roundToOne(budgetValue * ratio) : roundToOne(totalChange * ratio);
 
-    const oneOffDelta =
-      stageById.get('one-off-adjustments')?.delta ?? fallbackShare(0.12);
-    const headwindsDelta =
-      stageById.get('market-performance')?.delta ?? fallbackShare(0.28);
-    const l4Delta =
-      stageById.get('l4-vs-planned')?.delta ?? fallbackShare(0.22);
-    const l3Delta =
-      stageById.get('l3-vs-target')?.delta ?? fallbackShare(0.18);
+    // Ideation is a fixed calculated value that cannot be adjusted
+    const ideationDelta = selectionMetrics.selectedIdeation;
+
+    // Work backwards: withPipeline + ideationDelta = actualValue
+    const withPipeline = roundToOne(actualValue - ideationDelta);
+
+    // The remaining change from budgetValue to withPipeline must be distributed
+    // among one-off items, headwinds/tailwinds, L4, and L3
+    const remainingChange = roundToOne(withPipeline - budgetValue);
+
+    // Create variation with both favorable (positive) and adverse (negative) deltas
+    // Make deltas visible by basing them on the baseline value, not remaining change
+    // One-off items: Always adverse (reduces value) - represents one-time costs
+    // Headwinds/Tailwinds: Variable - can be favorable or adverse based on market
+    // L4 and L3: Always favorable (pipeline initiatives add value)
+    
+    // One-off is a visible adverse impact (8% of last year OP)
+    const oneOffDelta = roundToOne(-Math.abs(budgetValue * 0.08));
+    
+    // Headwinds/Tailwinds: Variable based on overall performance (6% of last year OP)
+    // If growth is strong (>20%), headwinds are favorable; otherwise adverse
+    const growthRate = budgetValue === 0 ? 0 : (actualValue - budgetValue) / budgetValue;
+    const headwindsIsFavorable = growthRate > 0.20;
+    const headwindsMagnitude = Math.abs(budgetValue * 0.06);
+    const headwindsDelta = headwindsIsFavorable 
+      ? roundToOne(headwindsMagnitude) 
+      : roundToOne(-headwindsMagnitude);
+    
+    // Calculate what L4 and L3 need to cover (the remaining gap after one-off and headwinds)
+    const pipelineNeeded = roundToOne(remainingChange - oneOffDelta - headwindsDelta);
+    
+    // L4 gets 40% of pipeline needed, L3 gets the rest
+    const l4Delta = roundToOne(pipelineNeeded * 0.40);
+    const l3Delta = roundToOne(pipelineNeeded - l4Delta);
 
     const afterOneOff = roundToOne(budgetValue + oneOffDelta);
     const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
     const beforePipeline = afterHeadwinds;
     const afterL4 = roundToOne(beforePipeline + l4Delta);
     const afterL3 = roundToOne(afterL4 + l3Delta);
-    const withPipeline =
-      stageById.get('forecast')?.value ?? roundToOne(afterL3);
-    const ideationDelta =
-      totalChange === 0
-        ? fallbackShare(0.2)
-        : roundToOne(actualValue - withPipeline);
     const afterIdeation = roundToOne(withPipeline + ideationDelta);
 
     const makeStage = (
@@ -916,17 +957,15 @@ export default function BusinessGroupPerformancePage() {
     });
 
     const getBudgetStageType = (
-      stage: BudgetForecastStage['stage'],
+      _stage: BudgetForecastStage['stage'],
       delta: number,
       fallback: BudgetForecastStage['type']
     ): BudgetForecastStage['type'] => {
       if (fallback === 'baseline') {
         return fallback;
       }
-      if (stage === 'market-performance' || stage === 'one-off-adjustments') {
-        return delta >= 0 ? 'positive' : 'negative';
-      }
-      return 'positive';
+      // For all non-baseline stages, color based on delta sign
+      return delta >= 0 ? 'positive' : 'negative';
     };
 
     return [
@@ -997,6 +1036,7 @@ export default function BusinessGroupPerformancePage() {
   }, [
     selectionMetrics.selectedNpBaseline,
     selectionMetrics.selectedNpValue,
+    selectionMetrics.selectedIdeation,
   ]);
 
   const activeDeviationDetails = useMemo(() => {
