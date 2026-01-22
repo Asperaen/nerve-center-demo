@@ -103,6 +103,8 @@ const buildGroupRow = (
   units: BusinessUnitSource[],
   scale: number,
   valueMode: 'actual' | 'budget' | 'forecast',
+  budgetMode: 'full-year' | 'ytm',
+  lastYearMode: 'full-year' | 'ytm',
   idOverride?: string,
   nameOverride?: string
 ): BusinessGroupData => {
@@ -116,10 +118,18 @@ const buildGroupRow = (
       acc.grossProfitBudget += unit.grossProfitBudget;
       acc.operatingProfitBudget += unit.operatingProfitBudget;
       acc.netProfitBudget += unit.netProfitBudget;
+      acc.ytmRevenueBudget += unit.ytmRevenueBudget ?? 0;
+      acc.ytmGrossProfitBudget += unit.ytmGrossProfitBudget ?? 0;
+      acc.ytmOperatingProfitBudget += unit.ytmOperatingProfitBudget ?? 0;
+      acc.ytmNetProfitBudget += unit.ytmNetProfitBudget ?? 0;
       acc.lastYearRevenue += unit.lastYearRevenue;
       acc.lastYearGrossProfit += unit.lastYearGrossProfit;
       acc.lastYearOperatingProfit += unit.lastYearOperatingProfit;
       acc.lastYearNetProfit += unit.lastYearNetProfit;
+      acc.ytmLastYearRevenue += unit.ytmLastYearRevenue ?? 0;
+      acc.ytmLastYearGrossProfit += unit.ytmLastYearGrossProfit ?? 0;
+      acc.ytmLastYearOperatingProfit += unit.ytmLastYearOperatingProfit ?? 0;
+      acc.ytmLastYearNetProfit += unit.ytmLastYearNetProfit ?? 0;
       acc.forecastRevenue += unit.forecastRevenue;
       acc.forecastGrossProfit += unit.forecastGrossProfit;
       acc.forecastOperatingProfit += unit.forecastOperatingProfit;
@@ -135,10 +145,18 @@ const buildGroupRow = (
       grossProfitBudget: 0,
       operatingProfitBudget: 0,
       netProfitBudget: 0,
+      ytmRevenueBudget: 0,
+      ytmGrossProfitBudget: 0,
+      ytmOperatingProfitBudget: 0,
+      ytmNetProfitBudget: 0,
       lastYearRevenue: 0,
       lastYearGrossProfit: 0,
       lastYearOperatingProfit: 0,
       lastYearNetProfit: 0,
+      ytmLastYearRevenue: 0,
+      ytmLastYearGrossProfit: 0,
+      ytmLastYearOperatingProfit: 0,
+      ytmLastYearNetProfit: 0,
       forecastRevenue: 0,
       forecastGrossProfit: 0,
       forecastOperatingProfit: 0,
@@ -177,6 +195,36 @@ const buildGroupRow = (
       ? totals.forecastNetProfit
       : totals.netProfit
   ) * scale;
+  const revenueBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget
+  ) * scale;
+  const grossProfitBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
+  ) * scale;
+  const operatingProfitBudget = toMillions(
+    budgetMode === 'ytm'
+      ? totals.ytmOperatingProfitBudget
+      : totals.operatingProfitBudget
+  ) * scale;
+  const netProfitBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget
+  ) * scale;
+  const lastYearRevenue = toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue
+  ) * scale;
+  const lastYearGrossProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? totals.ytmLastYearGrossProfit
+      : totals.lastYearGrossProfit
+  ) * scale;
+  const lastYearOperatingProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? totals.ytmLastYearOperatingProfit
+      : totals.lastYearOperatingProfit
+  ) * scale;
+  const lastYearNetProfit = toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
+  ) * scale;
   const percentBasis = valueMode === 'budget' ? 'last-year' : 'budget';
 
   return {
@@ -184,29 +232,29 @@ const buildGroupRow = (
     name,
     rev: buildMetric(
       revenue,
-      toMillions(totals.revenueBudget) * scale,
-      toMillions(totals.lastYearRevenue) * scale,
+      revenueBudget,
+      lastYearRevenue,
       `${insightBase} Revenue trends align with group mix.`,
       percentBasis
     ),
     gp: buildMetric(
       grossProfit,
-      toMillions(totals.grossProfitBudget) * scale,
-      toMillions(totals.lastYearGrossProfit) * scale,
+      grossProfitBudget,
+      lastYearGrossProfit,
       `${insightBase} Gross profit reflects mix and cost discipline.`,
       percentBasis
     ),
     op: buildMetric(
       operatingProfit,
-      toMillions(totals.operatingProfitBudget) * scale,
-      toMillions(totals.lastYearOperatingProfit) * scale,
+      operatingProfitBudget,
+      lastYearOperatingProfit,
       `${insightBase} Operating profit tracks execution momentum.`,
       percentBasis
     ),
     np: buildMetric(
       netProfit,
-      toMillions(totals.netProfitBudget) * scale,
-      toMillions(totals.lastYearNetProfit) * scale,
+      netProfitBudget,
+      lastYearNetProfit,
       `${insightBase} Net profit reflects margin resilience.`,
       percentBasis
     ),
@@ -217,7 +265,9 @@ const buildUnitRow = (
   groupId: string,
   unit: BusinessUnitSource,
   scale: number,
-  valueMode: 'actual' | 'budget' | 'forecast'
+  valueMode: 'actual' | 'budget' | 'forecast',
+  budgetMode: 'full-year' | 'ytm',
+  lastYearMode: 'full-year' | 'ytm'
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
@@ -250,6 +300,36 @@ const buildUnitRow = (
       ? unit.forecastNetProfit
       : unit.netProfit
   ) * scale;
+  const revenueBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget
+  ) * scale;
+  const grossProfitBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
+  ) * scale;
+  const operatingProfitBudget = toMillions(
+    budgetMode === 'ytm'
+      ? unit.ytmOperatingProfitBudget
+      : unit.operatingProfitBudget
+  ) * scale;
+  const netProfitBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget
+  ) * scale;
+  const lastYearRevenue = toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue
+  ) * scale;
+  const lastYearGrossProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearGrossProfit
+      : unit.lastYearGrossProfit
+  ) * scale;
+  const lastYearOperatingProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearOperatingProfit
+      : unit.lastYearOperatingProfit
+  ) * scale;
+  const lastYearNetProfit = toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
+  ) * scale;
   const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
   const percentBasis = valueMode === 'budget' ? 'last-year' : 'budget';
 
@@ -258,29 +338,29 @@ const buildUnitRow = (
     name: unit.name,
     rev: buildMetric(
       revenue,
-      toMillions(unit.revenueBudget) * scale,
-      toMillions(unit.lastYearRevenue) * scale,
+      revenueBudget,
+      lastYearRevenue,
       `${insightBase} Revenue outlook follows segment demand.`,
       percentBasis
     ),
     gp: buildMetric(
       grossProfit,
-      toMillions(unit.grossProfitBudget) * scale,
-      toMillions(unit.lastYearGrossProfit) * scale,
+      grossProfitBudget,
+      lastYearGrossProfit,
       `${insightBase} GP reflects product mix and cost structure.`,
       percentBasis
     ),
     op: buildMetric(
       operatingProfit,
-      toMillions(unit.operatingProfitBudget) * scale,
-      toMillions(unit.lastYearOperatingProfit) * scale,
+      operatingProfitBudget,
+      lastYearOperatingProfit,
       `${insightBase} OP tracks execution pace.`,
       percentBasis
     ),
     np: buildMetric(
       netProfit,
-      toMillions(unit.netProfitBudget) * scale,
-      toMillions(unit.lastYearNetProfit) * scale,
+      netProfitBudget,
+      lastYearNetProfit,
       `${insightBase} NP supported by margin discipline.`,
       percentBasis
     ),
@@ -520,15 +600,26 @@ export default function ExecutiveSummaryPage({
         : homeToggle === 'full-year'
         ? 'forecast'
         : 'actual';
+    const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
       const groupRows = BUSINESS_GROUP_DATA.map((group) =>
-        buildGroupRow(group.group, group.businessUnits, scale, valueMode)
+        buildGroupRow(
+          group.group,
+          group.businessUnits,
+          scale,
+          valueMode,
+          budgetMode,
+          lastYearMode
+        )
       );
       const overallRow = buildGroupRow(
         'Overall',
         BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits),
         scale,
         valueMode,
+        budgetMode,
+        lastYearMode,
         'overall',
         'Overall'
       );
@@ -543,13 +634,15 @@ export default function ExecutiveSummaryPage({
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     const unitRows = selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, scale, valueMode)
+      buildUnitRow(groupId, unit, scale, valueMode, budgetMode, lastYearMode)
     );
     const overallRow = buildGroupRow(
       selectedGroup.group,
       selectedGroup.businessUnits,
       scale,
       valueMode,
+      budgetMode,
+      lastYearMode,
       `${groupId}-overall`,
       `${selectedGroup.group} overall`
     );
@@ -652,8 +745,7 @@ export default function ExecutiveSummaryPage({
     const beforePipeline = afterHeadwinds;
     const afterL4 = roundToOne(beforePipeline + l4Delta);
     const afterL3 = roundToOne(afterL4 + l3Delta);
-    const withPipeline =
-      stageById.get('forecast')?.value ?? roundToOne(afterL3);
+    const withPipeline = roundToOne(afterL3);
     const ideationTotal = selectedBu === 'all'
       ? BUSINESS_GROUP_DATA.reduce(
           (sum, group) =>
@@ -780,6 +872,8 @@ export default function ExecutiveSummaryPage({
         : homeToggle === 'full-year'
         ? 'forecast'
         : 'actual';
+    const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
     const selectedGroup = BUSINESS_GROUP_DATA.find(
       (group) => normalizeGroupId(group.group) === bgId
     );
@@ -788,7 +882,7 @@ export default function ExecutiveSummaryPage({
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     return selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, scale, valueMode)
+      buildUnitRow(groupId, unit, scale, valueMode, budgetMode, lastYearMode)
     );
   };
 

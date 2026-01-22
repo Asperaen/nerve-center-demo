@@ -91,6 +91,8 @@ const buildGroupRow = (
   groupName: string,
   units: BusinessUnitSource[],
   valueMode: 'actual' | 'forecast',
+  budgetMode: 'full-year' | 'ytm',
+  lastYearMode: 'full-year' | 'ytm',
   idOverride?: string,
   nameOverride?: string
 ): BusinessGroupData => {
@@ -104,6 +106,14 @@ const buildGroupRow = (
       acc.grossProfitBudget += unit.grossProfitBudget;
       acc.operatingProfitBudget += unit.operatingProfitBudget;
       acc.netProfitBudget += unit.netProfitBudget;
+      acc.ytmRevenueBudget += unit.ytmRevenueBudget ?? 0;
+      acc.ytmGrossProfitBudget += unit.ytmGrossProfitBudget ?? 0;
+      acc.ytmOperatingProfitBudget += unit.ytmOperatingProfitBudget ?? 0;
+      acc.ytmNetProfitBudget += unit.ytmNetProfitBudget ?? 0;
+      acc.ytmLastYearRevenue += unit.ytmLastYearRevenue ?? 0;
+      acc.ytmLastYearGrossProfit += unit.ytmLastYearGrossProfit ?? 0;
+      acc.ytmLastYearOperatingProfit += unit.ytmLastYearOperatingProfit ?? 0;
+      acc.ytmLastYearNetProfit += unit.ytmLastYearNetProfit ?? 0;
       acc.lastYearRevenue += unit.lastYearRevenue;
       acc.lastYearGrossProfit += unit.lastYearGrossProfit;
       acc.lastYearOperatingProfit += unit.lastYearOperatingProfit;
@@ -123,6 +133,14 @@ const buildGroupRow = (
       grossProfitBudget: 0,
       operatingProfitBudget: 0,
       netProfitBudget: 0,
+      ytmRevenueBudget: 0,
+      ytmGrossProfitBudget: 0,
+      ytmOperatingProfitBudget: 0,
+      ytmNetProfitBudget: 0,
+      ytmLastYearRevenue: 0,
+      ytmLastYearGrossProfit: 0,
+      ytmLastYearOperatingProfit: 0,
+      ytmLastYearNetProfit: 0,
       lastYearRevenue: 0,
       lastYearGrossProfit: 0,
       lastYearOperatingProfit: 0,
@@ -151,35 +169,65 @@ const buildGroupRow = (
   const netProfit = toMillions(
     valueMode === 'forecast' ? totals.forecastNetProfit : totals.netProfit
   );
+  const revenueBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget
+  );
+  const grossProfitBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
+  );
+  const operatingProfitBudget = toMillions(
+    budgetMode === 'ytm'
+      ? totals.ytmOperatingProfitBudget
+      : totals.operatingProfitBudget
+  );
+  const netProfitBudget = toMillions(
+    budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget
+  );
+  const lastYearRevenue = toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue
+  );
+  const lastYearGrossProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? totals.ytmLastYearGrossProfit
+      : totals.lastYearGrossProfit
+  );
+  const lastYearOperatingProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? totals.ytmLastYearOperatingProfit
+      : totals.lastYearOperatingProfit
+  );
+  const lastYearNetProfit = toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
+  );
 
   return {
     id,
     name,
     rev: buildMetric(
       revenue,
-      toMillions(totals.revenueBudget),
-      toMillions(totals.lastYearRevenue),
+      revenueBudget,
+      lastYearRevenue,
       `${insightBase} Revenue trends align with group mix.`,
       'budget'
     ),
     gp: buildMetric(
       grossProfit,
-      toMillions(totals.grossProfitBudget),
-      toMillions(totals.lastYearGrossProfit),
+      grossProfitBudget,
+      lastYearGrossProfit,
       `${insightBase} Gross profit reflects mix and cost discipline.`,
       'budget'
     ),
     op: buildMetric(
       operatingProfit,
-      toMillions(totals.operatingProfitBudget),
-      toMillions(totals.lastYearOperatingProfit),
+      operatingProfitBudget,
+      lastYearOperatingProfit,
       `${insightBase} Operating profit tracks execution momentum.`,
       'budget'
     ),
     np: buildMetric(
       netProfit,
-      toMillions(totals.netProfitBudget),
-      toMillions(totals.lastYearNetProfit),
+      netProfitBudget,
+      lastYearNetProfit,
       `${insightBase} Net profit reflects margin resilience.`,
       'budget'
     ),
@@ -188,7 +236,9 @@ const buildGroupRow = (
 const buildUnitRow = (
   groupId: string,
   unit: BusinessUnitSource,
-  valueMode: 'actual' | 'forecast'
+  valueMode: 'actual' | 'forecast',
+  budgetMode: 'full-year' | 'ytm',
+  lastYearMode: 'full-year' | 'ytm'
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
@@ -207,6 +257,36 @@ const buildUnitRow = (
   const netProfit = toMillions(
     valueMode === 'forecast' ? unit.forecastNetProfit : unit.netProfit
   );
+  const revenueBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget
+  );
+  const grossProfitBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
+  );
+  const operatingProfitBudget = toMillions(
+    budgetMode === 'ytm'
+      ? unit.ytmOperatingProfitBudget
+      : unit.operatingProfitBudget
+  );
+  const netProfitBudget = toMillions(
+    budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget
+  );
+  const lastYearRevenue = toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue
+  );
+  const lastYearGrossProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearGrossProfit
+      : unit.lastYearGrossProfit
+  );
+  const lastYearOperatingProfit = toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearOperatingProfit
+      : unit.lastYearOperatingProfit
+  );
+  const lastYearNetProfit = toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
+  );
   const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
 
   return {
@@ -214,29 +294,29 @@ const buildUnitRow = (
     name: unit.name,
     rev: buildMetric(
       revenue,
-      toMillions(unit.revenueBudget),
-      toMillions(unit.lastYearRevenue),
+      revenueBudget,
+      lastYearRevenue,
       `${insightBase} Revenue outlook follows segment demand.`,
       'budget'
     ),
     gp: buildMetric(
       grossProfit,
-      toMillions(unit.grossProfitBudget),
-      toMillions(unit.lastYearGrossProfit),
+      grossProfitBudget,
+      lastYearGrossProfit,
       `${insightBase} GP reflects product mix and cost structure.`,
       'budget'
     ),
     op: buildMetric(
       operatingProfit,
-      toMillions(unit.operatingProfitBudget),
-      toMillions(unit.lastYearOperatingProfit),
+      operatingProfitBudget,
+      lastYearOperatingProfit,
       `${insightBase} OP tracks execution pace.`,
       'budget'
     ),
     np: buildMetric(
       netProfit,
-      toMillions(unit.netProfitBudget),
-      toMillions(unit.lastYearNetProfit),
+      netProfitBudget,
+      lastYearNetProfit,
       `${insightBase} NP supported by margin discipline.`,
       'budget'
     ),
@@ -393,14 +473,24 @@ export default function BusinessGroupPerformancePage() {
   // Get data based on selected BU
   const tableData = useMemo(() => {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
+    const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
       const groupRows = BUSINESS_GROUP_DATA.map((group) =>
-        buildGroupRow(group.group, group.businessUnits, valueMode)
+        buildGroupRow(
+          group.group,
+          group.businessUnits,
+          valueMode,
+          budgetMode,
+          lastYearMode
+        )
       );
       const overallRow = buildGroupRow(
         'Overall',
         BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits),
         valueMode,
+        budgetMode,
+        lastYearMode,
         'overall',
         'Overall'
       );
@@ -414,12 +504,14 @@ export default function BusinessGroupPerformancePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     const unitRows = selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, valueMode)
+      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode)
     );
     const overallRow = buildGroupRow(
       selectedGroup.group,
       selectedGroup.businessUnits,
       valueMode,
+      budgetMode,
+      lastYearMode,
       `${groupId}-overall`,
       `${selectedGroup.group} overall`
     );
@@ -428,10 +520,18 @@ export default function BusinessGroupPerformancePage() {
 
   const unitRowsById = useMemo(() => {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
+    const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     const entries = BUSINESS_GROUP_DATA.flatMap((group) => {
       const groupId = normalizeGroupId(group.group);
       return group.businessUnits.map((unit) => {
-        const row = buildUnitRow(groupId, unit, valueMode);
+        const row = buildUnitRow(
+          groupId,
+          unit,
+          valueMode,
+          budgetMode,
+          lastYearMode
+        );
         return [row.id, row] as const;
       });
     });
@@ -500,6 +600,8 @@ export default function BusinessGroupPerformancePage() {
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
+    const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     const selectedGroup = BUSINESS_GROUP_DATA.find(
       (group) => normalizeGroupId(group.group) === bgId
     );
@@ -508,7 +610,7 @@ export default function BusinessGroupPerformancePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     return selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, valueMode)
+      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode)
     );
   };
 
@@ -1145,23 +1247,28 @@ export default function BusinessGroupPerformancePage() {
 
     const totals = unitsToUse.reduce(
       (acc, { unit }) => {
-        acc.topLineBudget += unit.functionalPerformance.topLine.budget;
+        const opBudgetScale =
+          unit.operatingProfitBudget === 0
+            ? 1
+            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
+        acc.topLineBudget += unit.ytmRevenueBudget;
         acc.topLineActual += unit.functionalPerformance.topLine.actual;
-        acc.procurementBudget += unit.functionalPerformance.procurement.budget;
+        acc.procurementBudget +=
+          unit.functionalPerformance.procurement.budget * opBudgetScale;
         acc.procurementActual += unit.functionalPerformance.procurement.actual;
         acc.manufacturingBudget +=
-          unit.functionalPerformance.manufacturing.budget;
+          unit.functionalPerformance.manufacturing.budget * opBudgetScale;
         acc.manufacturingActual +=
           unit.functionalPerformance.manufacturing.actual;
-        acc.rndBudget += unit.functionalPerformance.rnd.budget;
+        acc.rndBudget += unit.functionalPerformance.rnd.budget * opBudgetScale;
         acc.rndActual += unit.functionalPerformance.rnd.actual;
-        acc.opexBudget += unit.functionalPerformance.opex.budget;
+        acc.opexBudget += unit.functionalPerformance.opex.budget * opBudgetScale;
         acc.opexActual += unit.functionalPerformance.opex.actual;
         acc.sharedExpensesBudget +=
-          unit.functionalPerformance.sharedExpenses.budget;
+          unit.functionalPerformance.sharedExpenses.budget * opBudgetScale;
         acc.sharedExpensesActual +=
           unit.functionalPerformance.sharedExpenses.actual;
-        acc.opBudget += unit.operatingProfitBudget;
+        acc.opBudget += unit.ytmOperatingProfitBudget;
         acc.opActual += unit.operatingProfit;
         return acc;
       },

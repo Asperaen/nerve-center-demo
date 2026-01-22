@@ -6,6 +6,8 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import BUSINESS_GROUP_DATA from '../data/mockBgData';
+import type { BgMonthlyImpactRow } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   getStoredTimeframe,
@@ -534,6 +536,14 @@ const getTimeframeScale = (timeframe: TimeframeOption) => {
   }
 };
 
+const normalizeGroupId = (groupName: string) => {
+  const key = groupName.trim().toLowerCase();
+  return key === 'other' ? 'others' : key;
+};
+
+const normalizeLabel = (value: string) =>
+  value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
 export default function IdeationProgressPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = useMemo<TabId>(() => {
@@ -548,6 +558,106 @@ export default function IdeationProgressPage() {
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
   const mainBuOptions = getMainBusinessGroupOptions();
+
+  const monthlyImpactPlanRows = useMemo<PlanRow[]>(() => {
+    const normalizedSelected = normalizeLabel(selectedBu);
+    const selectedGroups =
+      selectedBu === 'all'
+        ? BUSINESS_GROUP_DATA
+        : BUSINESS_GROUP_DATA.filter(
+            (group) => normalizeLabel(normalizeGroupId(group.group)) === normalizedSelected
+          );
+    const resolvedGroups =
+      selectedGroups.length > 0
+        ? selectedGroups
+        : BUSINESS_GROUP_DATA.filter((group) =>
+            group.businessUnits.some(
+              (unit) => normalizeLabel(unit.name) === normalizedSelected
+            )
+          );
+    const activeGroups =
+      resolvedGroups.length > 0 ? resolvedGroups : BUSINESS_GROUP_DATA;
+
+    const aggregated = new Map<
+      string,
+      { total: number; months: BgMonthlyImpactRow['months'] }
+    >();
+
+    activeGroups.forEach((group) => {
+      group.monthlyImpact.forEach((row) => {
+        const existing =
+          aggregated.get(row.vs) ?? {
+            total: 0,
+            months: {
+              jan: 0,
+              feb: 0,
+              mar: 0,
+              apr: 0,
+              may: 0,
+              jun: 0,
+              jul: 0,
+              aug: 0,
+              sep: 0,
+              oct: 0,
+              nov: 0,
+              dec: 0,
+            },
+          };
+        existing.total += row.total;
+        (Object.keys(existing.months) as Array<keyof BgMonthlyImpactRow['months']>).forEach(
+          (month) => {
+            existing.months[month] += row.months[month];
+          }
+        );
+        aggregated.set(row.vs, existing);
+      });
+    });
+
+    const l2ToL3Ratio = 1.05;
+    const l1ToL2Ratio = 1.05;
+    const toRow = (label: string, entry: { total: number; months: Record<string, number> }) => {
+      const total = entry.total;
+      const base = total / (1 + l2ToL3Ratio + l1ToL2Ratio * l2ToL3Ratio);
+      const l3 = base;
+      const l2 = l3 * l2ToL3Ratio;
+      const l1 = l2 * l1ToL2Ratio;
+      const pct = (value: number) =>
+        total === 0 ? 0 : Math.round((value / total) * 100);
+      const countL1 = Math.max(0, Math.round(total / 5));
+      const owners = Math.max(0, Math.round(total / 10));
+      const avgPerIo = total === 0 ? 0 : total / Math.max(1, countL1);
+      const lowerLabel = label.toLowerCase();
+      const isGroup =
+        lowerLabel.includes('total') || lowerLabel === 'procurement';
+      const isTotal = lowerLabel === 'total';
+
+      return {
+        id: label.toLowerCase().replace(/\s+/g, '-'),
+        label,
+        total,
+        l1,
+        l2,
+        l3,
+        pctL1: pct(l1),
+        pctL2: pct(l2),
+        pctL3: pct(l3),
+        countL1,
+        owners,
+        avgPerIo,
+        isGroup,
+        isTotal,
+        isSub: !isGroup,
+      } satisfies PlanRow;
+    };
+
+    if (aggregated.size === 0) {
+      return PLAN_TABLE_ROWS;
+    }
+
+    return Array.from(aggregated.entries()).map(([label, entry]) =>
+      toRow(label, entry)
+    );
+  }, [selectedBu]);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -574,9 +684,9 @@ export default function IdeationProgressPage() {
   const scaledPlanRows = useMemo(() => {
     const scale = timeframeScale;
     const round = (value: number) => Math.round(value * 10) / 10;
-    return PLAN_TABLE_ROWS.map((row) => ({
+    return monthlyImpactPlanRows.map((row) => ({
       ...row,
-      total: round(row.total * scale),
+      total: round(row.total),
       l1: round(row.l1 * scale),
       l2: round(row.l2 * scale),
       l3: round(row.l3 * scale),
@@ -584,7 +694,7 @@ export default function IdeationProgressPage() {
       owners: Math.max(0, Math.round(row.owners * scale)),
       avgPerIo: row.avgPerIo,
     }));
-  }, [timeframeScale]);
+  }, [monthlyImpactPlanRows, timeframeScale]);
 
   const scaledExecutionRows = useMemo(() => {
     const scale = timeframeScale;
@@ -617,7 +727,9 @@ export default function IdeationProgressPage() {
     const validBu = mainBuOptions.find((bu) => bu.id === buParam);
     if (validBu) {
       setSelectedBu(validBu.id);
+      return;
     }
+    setSelectedBu(buParam);
   }, [mainBuOptions, searchParams]);
 
   const handleTabChange = (tab: TabId) => {

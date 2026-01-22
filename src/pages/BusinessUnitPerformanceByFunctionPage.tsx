@@ -2,7 +2,7 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import FunctionalPerformanceWaterfall, {
-    type FunctionalPerformanceStage,
+  type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
 import BUSINESS_GROUP_DATA from '../data/mockBgData';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
@@ -282,7 +282,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const procurementOverallTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
       (acc, unit) => {
-        acc.budget += unit.functionalPerformance.procurement.budget;
+        const opBudgetScale =
+          unit.operatingProfitBudget === 0
+            ? 1
+            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
+        acc.budget += unit.functionalPerformance.procurement.budget * opBudgetScale;
         acc.actual += unit.functionalPerformance.procurement.actual;
         return acc;
       },
@@ -457,10 +461,34 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
   const procurementTotals = useMemo(() => {
     const overall = procurementCategories[0];
-    const selected = procurementCategories.filter((row) =>
-      selectedCategoryIds.has(row.id)
-    );
-    const activeRows = selected.length > 0 ? selected : [overall];
+    const hasOverall = selectedCategoryIds.has('overall');
+    if (hasOverall || !overall) {
+      const budgetTotal = overall ? overall.budget : 0;
+      const actualTotal = overall ? overall.actual : 0;
+      return { budgetTotal, actualTotal };
+    }
+
+    const activeRows: Array<{ budget: number; actual: number }> = [];
+    procurementCategories.forEach((row) => {
+      if (row.id === 'overall') {
+        return;
+      }
+      const selectedChildren =
+        row.children?.filter((child) => selectedCategoryIds.has(child.id)) ?? [];
+      if (selectedChildren.length > 0) {
+        selectedChildren.forEach((child) => {
+          activeRows.push({ budget: child.budget, actual: child.actual });
+        });
+        return;
+      }
+      if (selectedCategoryIds.has(row.id)) {
+        activeRows.push({ budget: row.budget, actual: row.actual });
+      }
+    });
+
+    if (activeRows.length === 0 && overall) {
+      return { budgetTotal: overall.budget, actualTotal: overall.actual };
+    }
     const budgetTotal = activeRows.reduce((sum, row) => sum + row.budget, 0);
     const actualTotal = activeRows.reduce((sum, row) => sum + row.actual, 0);
     return { budgetTotal, actualTotal };
@@ -554,10 +582,18 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
   const manufacturingSites = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
-  const isAllSelected =
+    const derivedGroupIds = normalizedSelected
+      .filter((value) => value.endsWith('overall') && value !== 'overall')
+      .map((value) => value.replace(/overall$/, ''))
+      .filter(Boolean);
+    const normalizedSelection = new Set([
+      ...normalizedSelected,
+      ...derivedGroupIds,
+    ]);
+    const isAllSelected =
       normalizedSelected.length === 0 ||
-      normalizedSelected.includes('all') ||
-      normalizedSelected.includes('overall');
+      normalizedSelection.has('all') ||
+      normalizedSelection.has('overall');
     
     // Get entries from matching business units (checking both group and unit names)
     const entries = isAllSelected
@@ -567,12 +603,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       : BUSINESS_GROUP_DATA.flatMap((group) => {
           const groupId = normalizeBu(group.group);
           // If the group matches, include all its units' MVA sites
-          if (normalizedSelected.includes(groupId)) {
+          if (normalizedSelection.has(groupId)) {
             return group.businessUnits.flatMap((unit) => unit.mvaSites ?? []);
           }
           // Otherwise, check if any sub-BU matches
           return group.businessUnits
-            .filter((unit) => normalizedSelected.includes(normalizeBu(unit.name)))
+            .filter((unit) => normalizedSelection.has(normalizeBu(unit.name)))
             .flatMap((unit) => unit.mvaSites ?? []);
         });
     if (entries.length === 0) {
@@ -691,6 +727,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [selectedBus, selectedCategoryIds]);
 
   useEffect(() => {
+    if (!isManufacturing) {
+      return;
+    }
     const availableIds = new Set(['overall', 'site-a', 'site-b', 'site-c']);
     const hasValidSelection = [...selectedCategoryIds].some((id) =>
       availableIds.has(id)
@@ -698,7 +737,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     if (!hasValidSelection) {
       setSelectedCategoryIds(new Set(['overall']));
     }
-  }, [manufacturingSites, selectedCategoryIds]);
+  }, [isManufacturing, manufacturingSites, selectedCategoryIds]);
 
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
     const budgetValue = manufacturingMvaTotals.budgetMvaCost;
@@ -789,7 +828,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const rndTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
       (acc, unit) => {
-        acc.budget += unit.functionalPerformance.rnd.budget;
+        const opBudgetScale =
+          unit.operatingProfitBudget === 0
+            ? 1
+            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
+        acc.budget += unit.functionalPerformance.rnd.budget * opBudgetScale;
         acc.actual += unit.functionalPerformance.rnd.actual;
         return acc;
       },
@@ -820,21 +863,28 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       0.08,
     ];
     const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
-    const minDelta = Math.max(0.9, Math.abs(totalDelta) * 0.12);
-    const boosted = deltas.map((value, index) => {
+    const weights = [
+      1.1,
+      1.25,
+      1.05,
+      0.95,
+      1.1,
+      1.45,
+      1.2,
+      1.7,
+      1.3,
+      1.45,
+      1.2,
+      1.55,
+    ];
+    const weighted = deltas.map((value, index) =>
+      Number((value * (weights[index] ?? 1)).toFixed(1))
+    );
+    const minDelta = Math.max(1.2, Math.abs(totalDelta) * 0.14);
+    const boosted = weighted.map((value) => {
       if (value === 0) return 0;
       const base = Math.max(Math.abs(value), minDelta);
-      const emphasis =
-        index === 5
-          ? 1.35
-          : index === 7
-          ? 1.45
-          : index === 9
-          ? 1.2
-          : index === 11
-          ? 1.35
-          : 1;
-      return Math.sign(value) * Number((base * emphasis).toFixed(1));
+      return Math.sign(value) * Number(base.toFixed(1));
     });
     const roundedDelta = boosted.reduce((sum, value) => sum + value, 0);
     boosted[boosted.length - 1] = Number(
@@ -859,16 +909,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       {
         id: 'project-new',
         label: 'Project newly added',
-        value: nextValue(boosted[0]),
-        delta: boosted[0],
-        type: getCostStageType(boosted[0]),
+        value: nextValue(-Math.abs(boosted[0])),
+        delta: -Math.abs(boosted[0]),
+        type: 'negative',
       },
       {
         id: 'project-cancelled',
         label: 'Project cancelled',
-        value: nextValue(boosted[1]),
-        delta: boosted[1],
-        type: getCostStageType(boosted[1]),
+        value: nextValue(Math.abs(boosted[1])),
+        delta: Math.abs(boosted[1]),
+        type: 'positive',
       },
       {
         id: 'customer-request',
@@ -1109,6 +1159,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                   onChange={() => {
                                     setSelectedCategoryIds((prev) => {
                                       const next = new Set(prev);
+                                      next.delete('overall');
                                       if (next.has(child.id)) {
                                         next.delete(child.id);
                                       } else {
@@ -1154,6 +1205,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
               description='Procurement cost, USD Mn'
+              brokenAxis='auto'
               onStageClick={(stage) => {
                 if (
                   stage.id === 'volume-change' ||
@@ -1233,6 +1285,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                 onChange={() => {
                                   setSelectedCategoryIds((prev) => {
                                     const next = new Set(prev);
+                                    if (row.id === 'overall') {
+                                      if (next.has(row.id)) {
+                                        next.delete(row.id);
+                                      } else {
+                                        next.clear();
+                                        next.add(row.id);
+                                      }
+                                      return next;
+                                    }
+                                    next.delete('overall');
                                     if (next.has(row.id)) {
                                       next.delete(row.id);
                                     } else {
@@ -1346,6 +1408,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               title='Deviation waterfall by key value drivers'
               description='R&D cost, USD Mn'
               barSize={32}
+              brokenAxis='auto'
               onStageClick={(stage) => {
                 if (stage.id === 'personnel-delta') {
                   setActiveBucketId(stage.id);
