@@ -477,12 +477,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       Math.max(absoluteDelta, minAbsoluteDelta).toFixed(1)
     );
     const split = [0.24, 0.26, 0.22, 0.18, 0.1];
+    // Make deltas negative so the waterfall goes down
     const deltas = split.map((ratio) =>
-      Math.abs(Number((totalMagnitude * ratio).toFixed(1)))
+      -Math.abs(Number((totalMagnitude * ratio).toFixed(1)))
     );
     const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
     deltas[deltas.length - 1] = Number(
-      (totalMagnitude - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+      (-totalMagnitude - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
     );
 
     const [volumeDelta, l3Delta, l4Delta, partPriceDelta, fxDelta] = deltas;
@@ -491,8 +492,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       running = Number((running + delta).toFixed(1));
       return running;
     };
-    const getCostStageType = (delta: number): 'positive' | 'negative' =>
-      delta <= 0 ? 'positive' : 'negative';
+    // For procurement costs: negative delta (going down) is adverse (red)
+    const getCostStageType = (_delta: number): 'positive' | 'negative' =>
+      'negative';
 
     return [
       {
