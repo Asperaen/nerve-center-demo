@@ -10,12 +10,85 @@ import {
   Cell,
   ComposedChart,
   Legend,
+  LabelList,
 } from 'recharts';
 import {
   mockMVABreakdownStages,
   mockMVABreakdownKeyCallOut,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem } from '../../types';
+import { calculateBrokenAxis, type BrokenAxisConfig } from '../../utils/brokenAxisUtils';
+
+// Custom Y-axis tick component with break indicator
+const BrokenAxisTick = ({
+  x,
+  y,
+  payload,
+  brokenAxis,
+  index,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: number };
+  brokenAxis: BrokenAxisConfig;
+  index?: number;
+}) => {
+  if (x === undefined || y === undefined || !payload) return null;
+  const { value } = payload;
+  const { skipRangeStart, skipRangeEnd } = brokenAxis;
+  const skipAmount = skipRangeEnd - skipRangeStart;
+
+  const actualValue = value > skipRangeStart ? value + skipAmount : value;
+  const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
+  const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={4} textAnchor='end' fill='#666' fontSize={12}>
+        {actualValue.toFixed(0)}
+      </text>
+      {shouldShowBreak && (
+        <g transform='translate(8, 12)'>
+          <rect x={-10} y={-2} width={18} height={14} fill='white' />
+          <line x1={-8} y1={0} x2={6} y2={0} stroke='#4b5563' strokeWidth={3} />
+          <line x1={-8} y1={8} x2={6} y2={8} stroke='#4b5563' strokeWidth={3} />
+        </g>
+      )}
+    </g>
+  );
+};
+
+// Custom bar shape with break indicator for baseline bars
+const BrokenBarShape = (props: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  payload?: { type?: string };
+  brokenAxis: BrokenAxisConfig;
+}) => {
+  const { x = 0, y = 0, width = 0, height = 0, fill, payload } = props;
+  const isBaseline = payload?.type === 'baseline';
+  const breakIndicatorHeight = 10;
+
+  if (!isBaseline) {
+    return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
+  }
+
+  const breakY = y + height - breakIndicatorHeight - 4;
+  const gapHeight = breakIndicatorHeight + 4;
+
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height - breakIndicatorHeight - 6} fill={fill} rx={2} ry={2} />
+      <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
+      <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
+      <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
+      <rect x={x} y={breakY + breakIndicatorHeight} width={width} height={4} fill={fill} rx={2} ry={2} />
+    </g>
+  );
+};
 
 interface MVABreakdownLayerProps {
   breadcrumbs: BreadcrumbItem[];
@@ -46,6 +119,12 @@ export default function MVABreakdownLayer({
     );
   }, []);
 
+  // Auto-calculate broken axis
+  const brokenAxis = useMemo(() => {
+    const result = calculateBrokenAxis(orderedStages);
+    return result.brokenAxis;
+  }, [orderedStages]);
+
   // Prepare chart data for MVA Breakdown
   const mvaChartData = useMemo(() => {
     return orderedStages.map((stage, index) => {
@@ -55,8 +134,33 @@ export default function MVABreakdownLayer({
         stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
 
       const isBaseline = stage.type === 'baseline';
-      const barValue = isBaseline ? currentValue : delta;
-      const baselineValue = isBaseline ? 0 : prevValue;
+      let barValue: number;
+      let baselineValue: number;
+
+      if (brokenAxis) {
+        const { skipRangeStart, skipRangeEnd } = brokenAxis;
+        const skipAmount = skipRangeEnd - skipRangeStart;
+        const transformValue = (v: number) =>
+          v > skipRangeEnd ? v - skipAmount : v > skipRangeStart ? skipRangeStart : v;
+
+        if (isBaseline) {
+          baselineValue = 0;
+          barValue = transformValue(currentValue);
+        } else {
+          const transformedPrev = transformValue(prevValue);
+          const transformedCurrent = transformValue(currentValue);
+          if (delta < 0) {
+            baselineValue = transformedCurrent;
+            barValue = Math.abs(delta);
+          } else {
+            baselineValue = transformedPrev;
+            barValue = delta;
+          }
+        }
+      } else {
+        barValue = isBaseline ? currentValue : delta;
+        baselineValue = isBaseline ? 0 : prevValue;
+      }
 
       return {
         ...stage,
@@ -67,9 +171,10 @@ export default function MVABreakdownLayer({
         baselineValue,
         barValue,
         isPositive: delta >= 0,
+        originalValue: currentValue,
       };
     });
-  }, [orderedStages]);
+  }, [orderedStages, brokenAxis]);
 
   return (
     <div className='space-y-6 animate-in slide-in-from-right duration-300'>
@@ -134,15 +239,31 @@ export default function MVABreakdownLayer({
                 height={120}
                 style={{ fontSize: '12px' }}
               />
-              <YAxis
-                style={{ fontSize: '13px' }}
-                label={{
-                  value: 'MVA Cost',
-                  angle: -90,
-                  position: 'insideLeft',
-                  style: { fontSize: '13px' },
-                }}
-              />
+              {brokenAxis ? (
+                <YAxis
+                  tick={(props) => <BrokenAxisTick {...props} brokenAxis={brokenAxis} />}
+                  domain={[
+                    0,
+                    Math.max(...orderedStages.map((s) => s.value)) - brokenAxis.skipRangeEnd + 50,
+                  ]}
+                  label={{
+                    value: 'MVA Cost',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: '13px' },
+                  }}
+                />
+              ) : (
+                <YAxis
+                  style={{ fontSize: '13px' }}
+                  label={{
+                    value: 'MVA Cost',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: '13px' },
+                  }}
+                />
+              )}
               <Tooltip
                 formatter={(value, _name, props) => {
                   const payload = props.payload as
@@ -181,7 +302,61 @@ export default function MVABreakdownLayer({
               <Bar
                 dataKey='barValue'
                 stackId='a'
-                name='MVA Breakdown'>
+                name='MVA Breakdown'
+                shape={
+                  brokenAxis
+                    ? (props: unknown) => <BrokenBarShape {...(props as Record<string, unknown>)} brokenAxis={brokenAxis} />
+                    : undefined
+                }
+              >
+                <LabelList
+                  dataKey='delta'
+                  position='middle'
+                  content={(props) => {
+                    const { x, y, width, height, value, index } = props as {
+                      x?: number;
+                      y?: number;
+                      width?: number;
+                      height?: number;
+                      value?: number;
+                      index?: number;
+                    };
+                    if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
+                    
+                    const stage = orderedStages[index];
+                    const isBaseline = stage?.type === 'baseline';
+                    const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                    const displayValue = numericValue.toFixed(0);
+                    
+                    if (brokenAxis && isBaseline) {
+                      return (
+                        <text
+                          x={x + (width ?? 0) / 2}
+                          y={(y ?? 0) - 8}
+                          textAnchor='middle'
+                          fill='#4b5563'
+                          fontSize={11}
+                          fontWeight='bold'
+                        >
+                          {displayValue}
+                        </text>
+                      );
+                    }
+                    
+                    return (
+                      <text
+                        x={x + (width ?? 0) / 2}
+                        y={(y ?? 0) + (height ?? 0) / 2 + 4}
+                        textAnchor='middle'
+                        fill='white'
+                        fontSize={11}
+                        fontWeight='bold'
+                      >
+                        {displayValue}
+                      </text>
+                    );
+                  }}
+                />
                 {orderedStages.map((stage, index) => {
                   const isBaseline = stage.type === 'baseline';
                   const isPositive = stage.type === 'positive';

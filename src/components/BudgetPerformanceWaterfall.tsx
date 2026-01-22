@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BudgetForecastStage } from '../types';
+import type { BrokenAxisConfig } from '../utils/brokenAxisUtils';
 import BudgetForecastActualWaterfall from './BudgetForecastActualWaterfall';
 
 interface BudgetPerformanceWaterfallProps {
@@ -8,6 +9,7 @@ interface BudgetPerformanceWaterfallProps {
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string;
+  brokenAxis?: BrokenAxisConfig | 'auto';
 }
 
 export default function BudgetPerformanceWaterfall({
@@ -16,6 +18,7 @@ export default function BudgetPerformanceWaterfall({
   subtitle,
   onStageClick,
   highlightedStage,
+  brokenAxis = 'auto',
 }: BudgetPerformanceWaterfallProps) {
   return (
     <BudgetForecastActualWaterfall
@@ -24,6 +27,8 @@ export default function BudgetPerformanceWaterfall({
       subtitle={subtitle}
       onStageClick={onStageClick}
       highlightedStage={highlightedStage}
+      colorByDelta
+      brokenAxis={brokenAxis}
     />
   );
 }

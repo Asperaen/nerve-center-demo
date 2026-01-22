@@ -9,7 +9,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import CreateActionModalGlobal from '../components/CreateActionModal';
@@ -18,10 +18,10 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import BUSINESS_GROUP_DATA from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   mockAppliedAssumptions,
-  mockBudgetForecastStages,
   mockOPWaterfallStages,
   mockSuggestedAssumptions,
   mockValueDriverHierarchy,
@@ -37,6 +37,13 @@ import type {
   ValueDriverChange,
 } from '../types';
 import { setStoredTimeframe } from '../utils/timeframeStorage';
+
+const toMillions = (value: number) => value / 1_000;
+const roundToOne = (value: number) => Math.round(value * 10) / 10;
+const normalizeGroupId = (groupName: string) => {
+  const key = groupName.trim().toLowerCase();
+  return key === 'other' ? 'others' : key;
+};
 
 export default function MarketIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -96,11 +103,6 @@ export default function MarketIntelligencePage() {
     BudgetForecastStage['stage'] | null
   >(null);
 
-  const forecastTimeframeOptions: TimeframeOptionItem[] = [
-    { value: 'full-year', label: 'Full year' },
-    { value: 'ytm', label: 'Remainder of the year' },
-  ];
-
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
   }, [selectedTimeframe]);
@@ -112,28 +114,10 @@ export default function MarketIntelligencePage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const timeframeParam = searchParams.get('timeframe');
-    if (!timeframeParam) {
-      return;
-    }
-    const allowed = new Set(
-      forecastTimeframeOptions.map((option) => option.value)
-    );
-    if (allowed.has(timeframeParam as TimeframeOption)) {
-      setSelectedTimeframe(timeframeParam as TimeframeOption);
-      return;
-    }
-    const fallback =
-      forecastTimeframeOptions.find((option) => option.value === 'full-year') ??
-      forecastTimeframeOptions[0];
-    setSelectedTimeframe(fallback.value);
-  }, [searchParams]);
-
   const mainBuOptions = getMainBusinessGroupOptions();
   const selectedBuName =
     selectedBu === 'all'
-      ? 'All BUs'
+      ? 'All BGs'
       : mainBuOptions.find((bu) => bu.id === selectedBu)?.name ??
         selectedBu.toUpperCase();
 
@@ -146,26 +130,119 @@ export default function MarketIntelligencePage() {
     });
   };
 
+  const forecastTimeframeOptions: TimeframeOptionItem[] = [
+    { value: 'full-year', label: 'Full year' },
+  ];
 
+  const focusOptions = [
+    {
+      id: 'market-performance',
+      label: 'Market performance',
+      subtitle:
+        'Market Performance analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l3-vs-target',
+      label: 'L3+ vs target',
+      subtitle:
+        'L3+ vs target analysis - You are here. Toggle assumptions below to see impact.',
+    },
+    {
+      id: 'l4-vs-planned',
+      label: 'L4+ vs planned',
+      subtitle:
+        'L4+ vs planned analysis - You are here. Toggle assumptions below to see impact.',
+    },
+  ] as const;
+
+  type FocusOptionId = (typeof focusOptions)[number]['id'];
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolveFocus = useCallback((value: string | null): FocusOptionId => {
+    const match = focusOptions.find((option) => option.id === value);
+    return match?.id ?? 'market-performance';
+  }, [focusOptions]);
+
+  const [selectedFocusStage, setSelectedFocusStage] = useState<FocusOptionId>(
+    resolveFocus(searchParams.get('focus'))
+  );
+
+  const assumptionStageFilters = useMemo<
+    Partial<Record<BudgetForecastStage['stage'], string[]>>
+  >(
+    () =>
+      ({
+        'market-performance': [
+          'AI Data Center Acceleration',
+          'Apple AirPods Launch Delay',
+        ],
+        'l3-vs-target': [
+          'AI Data Center Acceleration',
+          'Apple AirPods Launch Delay',
+        ],
+        'one-off-adjustments': ['Copper Price Surge'],
+      }),
+    []
+  );
+
+  const activeAssumptionFilterStage =
+    activePerformanceSection as BudgetForecastStage['stage'] | null;
+  const filteredAppliedAssumptions = useMemo(() => {
+    if (!activeAssumptionFilterStage) {
+      return appliedAssumptions;
+    }
+    const allowedNames = assumptionStageFilters[activeAssumptionFilterStage];
+    if (!allowedNames) {
+      return appliedAssumptions;
+    }
+    return appliedAssumptions.filter((assumption) =>
+      allowedNames.includes(assumption.name)
+    );
+  }, [activeAssumptionFilterStage, appliedAssumptions, assumptionStageFilters]);
+
+  const selectedForecastTotals = useMemo(() => {
+    const selectedGroups =
+      selectedBu === 'all'
+        ? BUSINESS_GROUP_DATA
+        : BUSINESS_GROUP_DATA.filter(
+            (group) => normalizeGroupId(group.group) === selectedBu
+          );
+    const activeGroups =
+      selectedGroups.length > 0 ? selectedGroups : BUSINESS_GROUP_DATA;
+    const totals = activeGroups.flatMap((group) => group.businessUnits).reduce(
+      (acc, unit) => {
+        acc.budgetOp += unit.operatingProfitBudget;
+        acc.forecastOp += unit.forecastOperatingProfit;
+        acc.actualOp += unit.operatingProfit;
+        return acc;
+      },
+      { budgetOp: 0, forecastOp: 0, actualOp: 0 }
+    );
+
+    return {
+      budget: roundToOne(toMillions(totals.budgetOp)),
+      forecast: roundToOne(toMillions(totals.forecastOp)),
+      actual: roundToOne(toMillions(totals.actualOp)),
+    };
+  }, [selectedBu]);
+
+  useEffect(() => {
+    setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
+  }, [searchParams]);
 
   const forecastWaterfallStages = useMemo(() => {
-    const budgetStageValue =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
-        ?.value ?? 0;
-    const marketDelta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'market-performance')
-        ?.delta ?? 0;
-    const l3Delta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'l3-vs-target')
-        ?.delta ?? 0;
-    const l4Delta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'l4-vs-planned')
-        ?.delta ?? 0;
-    const leakageDelta =
-      mockBudgetForecastStages.find(
-        (stage) => stage.stage === 'l4-to-l5-leakage'
-      )?.delta ?? 0;
-    const initiativePerformanceDelta = l3Delta + l4Delta;
+    const budgetStageValue = selectedForecastTotals.budget;
+    const forecastTargetValue = selectedForecastTotals.forecast;
+    const totalDelta = roundToOne(forecastTargetValue - budgetStageValue);
+    const split = [0.48, 0.32, 0.2];
+    const deltas = split.map((ratio) =>
+      roundToOne(totalDelta * ratio)
+    );
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = roundToOne(
+      totalDelta - (roundedDelta - deltas[deltas.length - 1])
+    );
+    const [marketBase, initiativeBase, otherBase] = deltas;
 
     const enabledApplied = appliedAssumptions.filter((assumption) =>
       enabledAssumptionIds.has(assumption.id)
@@ -180,6 +257,10 @@ export default function MarketIntelligencePage() {
     const headwind = allEnabled
       .filter((assumption) => assumption.impact < 0)
       .reduce((sum, assumption) => sum + assumption.impact, 0);
+
+    const marketDelta = roundToOne(marketBase + tailwind);
+    const initiativePerformanceDelta = roundToOne(initiativeBase);
+    const otherFactorsDelta = roundToOne(otherBase + headwind);
 
     let running = budgetStageValue;
     const stages: BudgetForecastStage[] = [];
@@ -215,7 +296,7 @@ export default function MarketIntelligencePage() {
     addStage(
       'market-performance',
       'Volume / mix changes',
-      marketDelta + tailwind,
+      marketDelta,
       'Volume and mix changes including tailwinds'
     );
     addStage(
@@ -227,7 +308,7 @@ export default function MarketIntelligencePage() {
     addStage(
       'one-off-adjustments',
       'Other factors',
-      headwind + leakageDelta,
+      otherFactorsDelta,
       'Other factors including headwinds and leakage'
     );
 
@@ -246,92 +327,9 @@ export default function MarketIntelligencePage() {
     appliedAssumptions,
     enabledAssumptionIds,
     enabledSuggestedAssumptionIds,
+    selectedForecastTotals,
     suggestedAssumptions,
   ]);
-
-  const stageAppliedAssumptions = useMemo(() => {
-    const getByName = (needle: string) =>
-      appliedAssumptions.find((assumption) =>
-        assumption.name.toLowerCase().includes(needle.toLowerCase())
-      );
-
-    const aiDataCenter =
-      getByName('ai data center') ??
-      ({
-        id: 'assum-volume-ai',
-        name: 'AI Data Center',
-        description: 'AI data center demand driving volume and mix.',
-        impact: 4.2,
-        targetStage: 'market-performance',
-        impactType: 'positive',
-        isApplied: true,
-        color: '#10b981',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const appleAirPods =
-      getByName('airpods') ??
-      ({
-        id: 'assum-volume-airpods',
-        name: 'Apple Air Pods Launch Delay',
-        description: 'Launch timing shifts soften near-term volume/mix.',
-        impact: -3.4,
-        targetStage: 'market-performance',
-        impactType: 'negative',
-        isApplied: true,
-        color: '#f59e0b',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const copper =
-      getByName('copper') ??
-      ({
-        id: 'assum-other-copper',
-        name: 'Copper',
-        description: 'Copper price pressure increasing material costs.',
-        impact: -2.6,
-        targetStage: 'one-off-adjustments',
-        impactType: 'negative',
-        isApplied: true,
-        color: '#ef4444',
-        valueDriverChanges: [],
-      } as AppliedAssumption);
-
-    const initiativeOverdelivery = {
-      id: 'assum-initiative-over',
-      name: 'Overdelivery x',
-      description: 'Initiatives outperforming plan on delivered savings.',
-      impact: 3.1,
-      targetStage: 'l3-vs-target',
-      impactType: 'positive',
-      isApplied: true,
-      color: '#10b981',
-      valueDriverChanges: [],
-    } as AppliedAssumption;
-
-    const initiativeUnderdelivery = {
-      id: 'assum-initiative-under',
-      name: 'Underdelivery x',
-      description: 'Lagging initiatives and timing delays versus plan.',
-      impact: -2.4,
-      targetStage: 'l3-vs-target',
-      impactType: 'negative',
-      isApplied: true,
-      color: '#f59e0b',
-      valueDriverChanges: [],
-    } as AppliedAssumption;
-
-    switch (activePerformanceSection) {
-      case 'market-performance':
-        return [aiDataCenter, appleAirPods];
-      case 'l3-vs-target':
-        return [initiativeOverdelivery, initiativeUnderdelivery];
-      case 'one-off-adjustments':
-        return [copper];
-      default:
-        return [];
-    }
-  }, [activePerformanceSection, appliedAssumptions]);
 
   const handleToggleAssumption = (assumptionId: string) => {
     setEnabledAssumptionIds((prev) => {
@@ -623,7 +621,7 @@ export default function MarketIntelligencePage() {
               stages={forecastWaterfallStages}
               title='Forecast - Performance Waterfall'
               subtitle={`${selectedBuName} view`}
-              highlightedStage={activePerformanceSection ?? undefined}
+              highlightedStage={activePerformanceSection ?? selectedFocusStage}
               onStageClick={(stage) => setActivePerformanceSection(stage.stage)}
             />
           </div>
@@ -660,10 +658,7 @@ export default function MarketIntelligencePage() {
               </div>
 
               <div className='space-y-4'>
-                {(activePerformanceSection
-                  ? stageAppliedAssumptions
-                  : appliedAssumptions
-                ).map((assumption) => {
+                {filteredAppliedAssumptions.map((assumption) => {
                   const isEnabled = enabledAssumptionIds.has(assumption.id);
                   const stageLabel =
                     mockOPWaterfallStages.find(

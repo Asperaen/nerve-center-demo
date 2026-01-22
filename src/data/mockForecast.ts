@@ -1052,7 +1052,7 @@ export const mockFunctionDeviationRows: FunctionDeviationRow[] = [
   },
   {
     id: 'opex',
-    label: 'OPEX',
+    label: 'SG&A',
     ytmBudget: -20.0,
     ytmActuals: -21.6,
     aiInsight: 'Travel and project ramp-up lift spend slightly.',
