@@ -5,6 +5,7 @@ import {
     Cell,
     ComposedChart,
     LabelList,
+    ReferenceLine,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -34,6 +35,37 @@ interface FunctionalPerformanceWaterfallProps {
   brokenAxis?: BrokenAxisConfig | 'auto';
 }
 
+// Custom Y-axis tick component to emphasize zero
+const YAxisTick = ({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: number };
+}) => {
+  if (x === undefined || y === undefined || !payload) return null;
+  const { value } = payload;
+  const isZero = value === 0;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={4}
+        textAnchor='end'
+        fill={isZero ? '#374151' : '#666'}
+        fontSize={12}
+        fontWeight={isZero ? 'bold' : 'normal'}
+      >
+        {value.toFixed(0)}
+      </text>
+    </g>
+  );
+};
+
 // Custom Y-axis tick component with break indicator
 const BrokenAxisTick = ({
   x,
@@ -55,6 +87,7 @@ const BrokenAxisTick = ({
 
   // Convert display value back to actual value
   const actualValue = value > skipRangeStart ? value + skipAmount : value;
+  const isZero = actualValue === 0;
 
   // Check if this is the first tick above the break (to render break indicator)
   const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
@@ -67,8 +100,9 @@ const BrokenAxisTick = ({
         y={0}
         dy={4}
         textAnchor='end'
-        fill='#666'
+        fill={isZero ? '#374151' : '#666'}
         fontSize={12}
+        fontWeight={isZero ? 'bold' : 'normal'}
       >
         {actualValue.toFixed(0)}
       </text>
@@ -312,6 +346,11 @@ export default function FunctionalPerformanceWaterfall({
     return ticks.sort((a, b) => a - b);
   }, [brokenAxis, yAxisDomain]);
 
+  // Check if the chart extends into negative y territory
+  const hasNegativeYValues = useMemo(() => {
+    return chartData.some((d) => d.baselineValue < 0 || d.value < 0);
+  }, [chartData]);
+
   return (
     <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
       <div className='flex items-center justify-between mb-1'>
@@ -332,6 +371,9 @@ export default function FunctionalPerformanceWaterfall({
         <ResponsiveContainer width='100%' height='100%'>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray='3 3' />
+            {hasNegativeYValues && (
+              <ReferenceLine y={0} stroke='#374151' strokeWidth={2} strokeDasharray='4 4' />
+            )}
             <XAxis
               dataKey='label'
               tick={{ fontSize: 12 }}
@@ -356,7 +398,7 @@ export default function FunctionalPerformanceWaterfall({
               />
             ) : (
               <YAxis
-                tick={{ fontSize: 12 }}
+                tick={(props) => <YAxisTick {...props} />}
                 label={{
                   value: 'USD Mn',
                   angle: -90,
