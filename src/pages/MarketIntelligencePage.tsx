@@ -18,10 +18,10 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import BUSINESS_GROUP_DATA from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   mockAppliedAssumptions,
-  mockBudgetForecastStages,
   mockOPWaterfallStages,
   mockSuggestedAssumptions,
   mockValueDriverHierarchy,
@@ -37,6 +37,13 @@ import type {
   ValueDriverChange,
 } from '../types';
 import { setStoredTimeframe } from '../utils/timeframeStorage';
+
+const toMillions = (value: number) => value / 1_000;
+const roundToOne = (value: number) => Math.round(value * 10) / 10;
+const normalizeGroupId = (groupName: string) => {
+  const key = groupName.trim().toLowerCase();
+  return key === 'other' ? 'others' : key;
+};
 
 export default function MarketIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -160,28 +167,82 @@ export default function MarketIntelligencePage() {
     resolveFocus(searchParams.get('focus'))
   );
 
+  const assumptionStageFilters = useMemo<
+    Partial<Record<BudgetForecastStage['stage'], string[]>>
+  >(
+    () =>
+      ({
+        'market-performance': [
+          'AI Data Center Acceleration',
+          'Apple AirPods Launch Delay',
+        ],
+        'l3-vs-target': [
+          'AI Data Center Acceleration',
+          'Apple AirPods Launch Delay',
+        ],
+        'one-off-adjustments': ['Copper Price Surge'],
+      }),
+    []
+  );
+
+  const activeAssumptionFilterStage =
+    activePerformanceSection as BudgetForecastStage['stage'] | null;
+  const filteredAppliedAssumptions = useMemo(() => {
+    if (!activeAssumptionFilterStage) {
+      return appliedAssumptions;
+    }
+    const allowedNames = assumptionStageFilters[activeAssumptionFilterStage];
+    if (!allowedNames) {
+      return appliedAssumptions;
+    }
+    return appliedAssumptions.filter((assumption) =>
+      allowedNames.includes(assumption.name)
+    );
+  }, [activeAssumptionFilterStage, appliedAssumptions, assumptionStageFilters]);
+
+  const selectedForecastTotals = useMemo(() => {
+    const selectedGroups =
+      selectedBu === 'all'
+        ? BUSINESS_GROUP_DATA
+        : BUSINESS_GROUP_DATA.filter(
+            (group) => normalizeGroupId(group.group) === selectedBu
+          );
+    const activeGroups =
+      selectedGroups.length > 0 ? selectedGroups : BUSINESS_GROUP_DATA;
+    const totals = activeGroups.flatMap((group) => group.businessUnits).reduce(
+      (acc, unit) => {
+        acc.budgetOp += unit.operatingProfitBudget;
+        acc.forecastOp += unit.forecastOperatingProfit;
+        acc.actualOp += unit.operatingProfit;
+        return acc;
+      },
+      { budgetOp: 0, forecastOp: 0, actualOp: 0 }
+    );
+
+    return {
+      budget: roundToOne(toMillions(totals.budgetOp)),
+      forecast: roundToOne(toMillions(totals.forecastOp)),
+      actual: roundToOne(toMillions(totals.actualOp)),
+    };
+  }, [selectedBu]);
+
   useEffect(() => {
     setSelectedFocusStage(resolveFocus(searchParams.get('focus')));
   }, [searchParams]);
 
   const forecastWaterfallStages = useMemo(() => {
-    const budgetStageValue =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
-        ?.value ?? 0;
-    const marketDelta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'market-performance')
-        ?.delta ?? 0;
-    const l3Delta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'l3-vs-target')
-        ?.delta ?? 0;
-    const l4Delta =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'l4-vs-planned')
-        ?.delta ?? 0;
-    const leakageDelta =
-      mockBudgetForecastStages.find(
-        (stage) => stage.stage === 'l4-to-l5-leakage'
-      )?.delta ?? 0;
-    const initiativePerformanceDelta = l3Delta + l4Delta;
+    const budgetStageValue = selectedForecastTotals.budget;
+    const forecastTargetValue = selectedForecastTotals.forecast;
+    const totalDelta = roundToOne(forecastTargetValue - budgetStageValue);
+    const split = [0.48, 0.32, 0.2];
+    const deltas = split.map((ratio) =>
+      roundToOne(totalDelta * ratio)
+    );
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = roundToOne(
+      totalDelta - (roundedDelta - deltas[deltas.length - 1])
+    );
+    const [marketBase, initiativeBase, otherBase] = deltas;
 
     const enabledApplied = appliedAssumptions.filter((assumption) =>
       enabledAssumptionIds.has(assumption.id)
@@ -196,6 +257,10 @@ export default function MarketIntelligencePage() {
     const headwind = allEnabled
       .filter((assumption) => assumption.impact < 0)
       .reduce((sum, assumption) => sum + assumption.impact, 0);
+
+    const marketDelta = roundToOne(marketBase + tailwind);
+    const initiativePerformanceDelta = roundToOne(initiativeBase);
+    const otherFactorsDelta = roundToOne(otherBase + headwind);
 
     let running = budgetStageValue;
     const stages: BudgetForecastStage[] = [];
@@ -231,7 +296,7 @@ export default function MarketIntelligencePage() {
     addStage(
       'market-performance',
       'Volume / mix changes',
-      marketDelta + tailwind,
+      marketDelta,
       'Volume and mix changes including tailwinds'
     );
     addStage(
@@ -243,7 +308,7 @@ export default function MarketIntelligencePage() {
     addStage(
       'one-off-adjustments',
       'Other factors',
-      headwind + leakageDelta,
+      otherFactorsDelta,
       'Other factors including headwinds and leakage'
     );
 
@@ -262,6 +327,7 @@ export default function MarketIntelligencePage() {
     appliedAssumptions,
     enabledAssumptionIds,
     enabledSuggestedAssumptionIds,
+    selectedForecastTotals,
     suggestedAssumptions,
   ]);
 
@@ -558,158 +624,6 @@ export default function MarketIntelligencePage() {
               highlightedStage={activePerformanceSection ?? selectedFocusStage}
               onStageClick={(stage) => setActivePerformanceSection(stage.stage)}
             />
-            {activePerformanceSection && (
-              <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='text-lg font-bold text-gray-900'>
-                    {
-                      forecastWaterfallStages.find(
-                        (stage) => stage.stage === activePerformanceSection
-                      )?.label
-                    }
-                  </h3>
-                  <span className='text-xs font-semibold text-gray-500'>
-                    Selected
-                  </span>
-                </div>
-
-                {activePerformanceSection === 'market-performance' && (
-                  <div className='mt-4 space-y-4'>
-                    <p className='text-sm text-gray-600'>
-                      AI data center demand and Apple mix shifts are driving the
-                      largest volume and price/mix moves this period.
-                    </p>
-                    <div className='grid gap-4 md:grid-cols-2'>
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
-                          <h4 className='text-sm font-semibold text-gray-900'>
-                            AI data center demand
-                          </h4>
-                        </div>
-                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
-                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
-                            +12.4 Mn USD
-                          </span>
-                          <span>+3.1% volume</span>
-                        </div>
-                        <p className='mt-2 text-sm text-gray-600'>
-                          Hyperscaler build-outs lifted server-related volume
-                          and premium mix across key platforms.
-                        </p>
-                      </div>
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <ArrowTrendingUpIcon className='h-5 w-5 text-emerald-600' />
-                          <h4 className='text-sm font-semibold text-gray-900'>
-                            Apple mix shift
-                          </h4>
-                        </div>
-                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
-                          <span className='rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700'>
-                            +6.8 Mn USD
-                          </span>
-                          <span>+1.8% ASP</span>
-                        </div>
-                        <p className='mt-2 text-sm text-gray-600'>
-                          Stronger Pro mix and accessory attach rates supported
-                          ASPs and offset unit softness.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activePerformanceSection === 'l3-vs-target' && (
-                  <div className='mt-4 space-y-4'>
-                    <p className='text-sm text-gray-600'>
-                      Top initiatives split by overdelivered and underdelivered
-                      outcomes versus plan.
-                    </p>
-                    <div className='grid gap-4 md:grid-cols-2'>
-                      <div className='rounded-lg border border-emerald-200 bg-emerald-50/50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <CheckCircleIcon className='h-5 w-5 text-emerald-600' />
-                          <h4 className='text-sm font-semibold text-emerald-900'>
-                            Overdelivered
-                          </h4>
-                        </div>
-                        <div className='mt-2 text-xs font-semibold text-emerald-700'>
-                          +7.7 Mn USD net impact
-                        </div>
-                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
-                          <li>Smart automation sprint (+4.2 Mn USD)</li>
-                          <li>Supplier yield recovery (+2.1 Mn USD)</li>
-                          <li>Logistics consolidation (+1.4 Mn USD)</li>
-                        </ul>
-                      </div>
-                      <div className='rounded-lg border border-rose-200 bg-rose-50/50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <ExclamationTriangleIcon className='h-5 w-5 text-rose-600' />
-                          <h4 className='text-sm font-semibold text-rose-900'>
-                            Underdelivered
-                          </h4>
-                        </div>
-                        <div className='mt-2 text-xs font-semibold text-rose-700'>
-                          -7.2 Mn USD net impact
-                        </div>
-                        <ul className='mt-3 space-y-2 text-sm text-gray-700'>
-                          <li>New product ramp (-3.6 Mn USD)</li>
-                          <li>Procurement renegotiation (-2.4 Mn USD)</li>
-                          <li>Energy efficiency program (-1.2 Mn USD)</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activePerformanceSection === 'one-off-adjustments' && (
-                  <div className='mt-4 space-y-4'>
-                    <p className='text-sm text-gray-600'>
-                      One-off external factors pressuring the forecast.
-                    </p>
-                    <div className='grid gap-4 md:grid-cols-2'>
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
-                          <h4 className='text-sm font-semibold text-gray-900'>
-                            Copper price surge
-                          </h4>
-                        </div>
-                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
-                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
-                            -3.1 Mn USD
-                          </span>
-                          <span>+9.4% spot price</span>
-                        </div>
-                        <p className='mt-2 text-sm text-gray-600'>
-                          Raw material spot prices surged, increasing BOM costs
-                          across connectors and coils.
-                        </p>
-                      </div>
-                      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-                        <div className='flex items-center gap-2'>
-                          <ArrowTrendingDownIcon className='h-5 w-5 text-rose-600' />
-                          <h4 className='text-sm font-semibold text-gray-900'>
-                            Vietnam salary raise
-                          </h4>
-                        </div>
-                        <div className='mt-2 flex items-center gap-3 text-xs text-gray-500'>
-                          <span className='rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700'>
-                            -2.4 Mn USD
-                          </span>
-                          <span>+6.2% wage rate</span>
-                        </div>
-                        <p className='mt-2 text-sm text-gray-600'>
-                          Wage adjustments in Vietnam raised labor expense and
-                          compressed near-term margins.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Assumptions Section - Side by Side Layout */}
@@ -744,7 +658,7 @@ export default function MarketIntelligencePage() {
               </div>
 
               <div className='space-y-4'>
-                {appliedAssumptions.map((assumption) => {
+                {filteredAppliedAssumptions.map((assumption) => {
                   const isEnabled = enabledAssumptionIds.has(assumption.id);
                   const stageLabel =
                     mockOPWaterfallStages.find(

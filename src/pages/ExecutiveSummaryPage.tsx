@@ -1,31 +1,29 @@
 import {
-    ArrowRightIcon,
-    CalendarIcon,
-    ChartBarIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    SparklesIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
  
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Link,
-    useNavigate,
-    useOutletContext,
-    useSearchParams,
+  Link,
+  useNavigate,
+  useOutletContext,
+  useSearchParams,
 } from 'react-router-dom';
 import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import { type TimeframeOption } from '../components/TimeframePicker';
+import BUSINESS_GROUP_DATA from '../data/mockBgData';
 import {
-    getAllBusinessGroupData,
-    getMainBusinessGroupOptions,
-    getSubBusinessGroups,
-    getSubBusinessGroupsWithOverall,
-    type BusinessGroupData,
-    type BusinessGroupMetricWithTrend,
+  type BusinessGroupData,
+  type BusinessGroupMetricWithTrend,
+  type MonthlyTrendPoint,
 } from '../data/mockBusinessGroupPerformance';
 import { mockBudgetForecastStages } from '../data/mockForecast';
 import { internalPulseColumns } from '../data/mockInternalPulse';
@@ -38,9 +36,256 @@ import type {
 import type { SelectedItem } from '../utils/meetingRelevance';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
 import {
-    getStoredTimeframe,
-    setStoredTimeframe,
+  getStoredTimeframe,
+  setStoredTimeframe,
 } from '../utils/timeframeStorage';
+
+const TREND_MONTHS = [
+  'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+];
+
+const toMillions = (value: number) => value / 1_000;
+
+const normalizeGroupId = (groupName: string) => {
+  const key = groupName.trim().toLowerCase();
+  return key === 'other' ? 'others' : key;
+};
+
+const buildTrend = (value: number): MonthlyTrendPoint[] => {
+  const start = value * 0.94;
+  const end = value * 1.06;
+  const steps = TREND_MONTHS.length - 1;
+  return TREND_MONTHS.map((month, index) => {
+    const ratio = steps === 0 ? 0 : index / steps;
+    return {
+      month,
+      value: Math.round((start + (end - start) * ratio) * 10) / 10,
+    };
+  });
+};
+
+const calcPercent = (value: number, baseline: number) => {
+  if (baseline === 0) return 0;
+  return ((value - baseline) / baseline) * 100;
+};
+
+const buildMetric = (
+  value: number,
+  budget: number,
+  lastYear: number,
+  aiInsight: string,
+  percentBasis: 'budget' | 'last-year'
+): BusinessGroupMetricWithTrend => ({
+  value,
+  baseline: budget,
+  stly: lastYear,
+  percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
+  trend: buildTrend(value),
+  aiInsight,
+});
+
+type BusinessGroupSource = (typeof BUSINESS_GROUP_DATA)[number];
+type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
+
+const buildGroupRow = (
+  groupName: string,
+  units: BusinessUnitSource[],
+  scale: number,
+  valueMode: 'actual' | 'budget' | 'forecast',
+  idOverride?: string,
+  nameOverride?: string
+): BusinessGroupData => {
+  const totals = units.reduce(
+    (acc, unit) => {
+      acc.revenue += unit.revenue;
+      acc.grossProfit += unit.grossProfit;
+      acc.operatingProfit += unit.operatingProfit;
+      acc.netProfit += unit.netProfit;
+      acc.revenueBudget += unit.revenueBudget;
+      acc.grossProfitBudget += unit.grossProfitBudget;
+      acc.operatingProfitBudget += unit.operatingProfitBudget;
+      acc.netProfitBudget += unit.netProfitBudget;
+      acc.lastYearRevenue += unit.lastYearRevenue;
+      acc.lastYearGrossProfit += unit.lastYearGrossProfit;
+      acc.lastYearOperatingProfit += unit.lastYearOperatingProfit;
+      acc.lastYearNetProfit += unit.lastYearNetProfit;
+      acc.forecastRevenue += unit.forecastRevenue;
+      acc.forecastGrossProfit += unit.forecastGrossProfit;
+      acc.forecastOperatingProfit += unit.forecastOperatingProfit;
+      acc.forecastNetProfit += unit.forecastNetProfit;
+      return acc;
+    },
+    {
+      revenue: 0,
+      grossProfit: 0,
+      operatingProfit: 0,
+      netProfit: 0,
+      revenueBudget: 0,
+      grossProfitBudget: 0,
+      operatingProfitBudget: 0,
+      netProfitBudget: 0,
+      lastYearRevenue: 0,
+      lastYearGrossProfit: 0,
+      lastYearOperatingProfit: 0,
+      lastYearNetProfit: 0,
+      forecastRevenue: 0,
+      forecastGrossProfit: 0,
+      forecastOperatingProfit: 0,
+      forecastNetProfit: 0,
+    }
+  );
+
+  const name = nameOverride ?? groupName;
+  const id = idOverride ?? normalizeGroupId(groupName);
+  const insightBase = `${name} performance from BUSINESS_GROUP_DATA.`;
+  const revenue = toMillions(
+    valueMode === 'budget'
+      ? totals.revenueBudget
+      : valueMode === 'forecast'
+      ? totals.forecastRevenue
+      : totals.revenue
+  ) * scale;
+  const grossProfit = toMillions(
+    valueMode === 'budget'
+      ? totals.grossProfitBudget
+      : valueMode === 'forecast'
+      ? totals.forecastGrossProfit
+      : totals.grossProfit
+  ) * scale;
+  const operatingProfit = toMillions(
+    valueMode === 'budget'
+      ? totals.operatingProfitBudget
+      : valueMode === 'forecast'
+      ? totals.forecastOperatingProfit
+      : totals.operatingProfit
+  ) * scale;
+  const netProfit = toMillions(
+    valueMode === 'budget'
+      ? totals.netProfitBudget
+      : valueMode === 'forecast'
+      ? totals.forecastNetProfit
+      : totals.netProfit
+  ) * scale;
+  const percentBasis = valueMode === 'budget' ? 'last-year' : 'budget';
+
+  return {
+    id,
+    name,
+    rev: buildMetric(
+      revenue,
+      toMillions(totals.revenueBudget) * scale,
+      toMillions(totals.lastYearRevenue) * scale,
+      `${insightBase} Revenue trends align with group mix.`,
+      percentBasis
+    ),
+    gp: buildMetric(
+      grossProfit,
+      toMillions(totals.grossProfitBudget) * scale,
+      toMillions(totals.lastYearGrossProfit) * scale,
+      `${insightBase} Gross profit reflects mix and cost discipline.`,
+      percentBasis
+    ),
+    op: buildMetric(
+      operatingProfit,
+      toMillions(totals.operatingProfitBudget) * scale,
+      toMillions(totals.lastYearOperatingProfit) * scale,
+      `${insightBase} Operating profit tracks execution momentum.`,
+      percentBasis
+    ),
+    np: buildMetric(
+      netProfit,
+      toMillions(totals.netProfitBudget) * scale,
+      toMillions(totals.lastYearNetProfit) * scale,
+      `${insightBase} Net profit reflects margin resilience.`,
+      percentBasis
+    ),
+  };
+};
+
+const buildUnitRow = (
+  groupId: string,
+  unit: BusinessUnitSource,
+  scale: number,
+  valueMode: 'actual' | 'budget' | 'forecast'
+): BusinessGroupData => {
+  const unitId = `${groupId}-${unit.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}`;
+  const revenue = toMillions(
+    valueMode === 'budget'
+      ? unit.revenueBudget
+      : valueMode === 'forecast'
+      ? unit.forecastRevenue
+      : unit.revenue
+  ) * scale;
+  const grossProfit = toMillions(
+    valueMode === 'budget'
+      ? unit.grossProfitBudget
+      : valueMode === 'forecast'
+      ? unit.forecastGrossProfit
+      : unit.grossProfit
+  ) * scale;
+  const operatingProfit = toMillions(
+    valueMode === 'budget'
+      ? unit.operatingProfitBudget
+      : valueMode === 'forecast'
+      ? unit.forecastOperatingProfit
+      : unit.operatingProfit
+  ) * scale;
+  const netProfit = toMillions(
+    valueMode === 'budget'
+      ? unit.netProfitBudget
+      : valueMode === 'forecast'
+      ? unit.forecastNetProfit
+      : unit.netProfit
+  ) * scale;
+  const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
+  const percentBasis = valueMode === 'budget' ? 'last-year' : 'budget';
+
+  return {
+    id: unitId,
+    name: unit.name,
+    rev: buildMetric(
+      revenue,
+      toMillions(unit.revenueBudget) * scale,
+      toMillions(unit.lastYearRevenue) * scale,
+      `${insightBase} Revenue outlook follows segment demand.`,
+      percentBasis
+    ),
+    gp: buildMetric(
+      grossProfit,
+      toMillions(unit.grossProfitBudget) * scale,
+      toMillions(unit.lastYearGrossProfit) * scale,
+      `${insightBase} GP reflects product mix and cost structure.`,
+      percentBasis
+    ),
+    op: buildMetric(
+      operatingProfit,
+      toMillions(unit.operatingProfitBudget) * scale,
+      toMillions(unit.lastYearOperatingProfit) * scale,
+      `${insightBase} OP tracks execution pace.`,
+      percentBasis
+    ),
+    np: buildMetric(
+      netProfit,
+      toMillions(unit.netProfitBudget) * scale,
+      toMillions(unit.lastYearNetProfit) * scale,
+      `${insightBase} NP supported by margin discipline.`,
+      percentBasis
+    ),
+  };
+};
 
 interface ExecutiveSummaryPageContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
@@ -71,7 +316,14 @@ export default function ExecutiveSummaryPage({
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
-  const mainBuOptions = getMainBusinessGroupOptions();
+  const mainBuOptions = useMemo(
+    () =>
+      BUSINESS_GROUP_DATA.map((group) => ({
+        id: normalizeGroupId(group.group),
+        name: group.group,
+      })),
+    []
+  );
 
   const selectedBuLabel = useMemo(() => {
     if (selectedBu === 'all') {
@@ -261,12 +513,48 @@ export default function ExecutiveSummaryPage({
   };
 
   const tableData = useMemo(() => {
-    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
+    const scale = 1;
+    const valueMode =
+      isBudgetView || homeToggle === 'budget'
+        ? 'budget'
+        : homeToggle === 'full-year'
+        ? 'forecast'
+        : 'actual';
     if (selectedBu === 'all') {
-      return getAllBusinessGroupData(dataTimeframe);
+      const groupRows = BUSINESS_GROUP_DATA.map((group) =>
+        buildGroupRow(group.group, group.businessUnits, scale, valueMode)
+      );
+      const overallRow = buildGroupRow(
+        'Overall',
+        BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits),
+        scale,
+        valueMode,
+        'overall',
+        'Overall'
+      );
+      return [...groupRows, overallRow];
     }
-    return getSubBusinessGroupsWithOverall(selectedBu, dataTimeframe);
-  }, [selectedBu, selectedTimeframe]);
+
+    const selectedGroup = BUSINESS_GROUP_DATA.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup) {
+      return [];
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const unitRows = selectedGroup.businessUnits.map((unit) =>
+      buildUnitRow(groupId, unit, scale, valueMode)
+    );
+    const overallRow = buildGroupRow(
+      selectedGroup.group,
+      selectedGroup.businessUnits,
+      scale,
+      valueMode,
+      `${groupId}-overall`,
+      `${selectedGroup.group} overall`
+    );
+    return [...unitRows, overallRow];
+  }, [selectedBu, selectedTimeframe, homeToggle, isBudgetView]);
 
   const budgetWaterfallStages = useMemo(() => {
     if (!isBudgetView) {
@@ -280,24 +568,24 @@ export default function ExecutiveSummaryPage({
       return mockBudgetForecastStages;
     }
 
-    const budgetValue = overallRow.np.baseline;
-    const actualValue = overallRow.np.value;
+    const lastYearOpValue = overallRow.op.stly;
+    const budgetOpValue = overallRow.op.value;
     const baseBudgetValue =
       mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
         ?.value ?? 0;
     const scaleFactor =
-      baseBudgetValue === 0 ? 1 : budgetValue / baseBudgetValue;
+      baseBudgetValue === 0 ? 1 : lastYearOpValue / baseBudgetValue;
 
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
 
-    let runningValue = roundToOne(budgetValue);
+    let runningValue = roundToOne(lastYearOpValue);
     const baseStages = mockBudgetForecastStages.map((stage) => {
       const isBaselineStage = stage.type === 'baseline';
       const isBudgetStage = stage.stage === 'budget';
       const isActualStage = stage.stage === 'actuals';
 
       if (isBudgetStage) {
-        runningValue = roundToOne(budgetValue);
+        runningValue = roundToOne(lastYearOpValue);
         return {
           ...stage,
           value: runningValue,
@@ -306,7 +594,7 @@ export default function ExecutiveSummaryPage({
       }
 
       if (isActualStage) {
-        runningValue = roundToOne(actualValue);
+        runningValue = roundToOne(budgetOpValue);
         return {
           ...stage,
           value: runningValue,
@@ -341,10 +629,10 @@ export default function ExecutiveSummaryPage({
       baseStages.map((stage) => [stage.stage, stage])
     );
 
-    const totalChange = roundToOne(actualValue - budgetValue);
+    const totalChange = roundToOne(budgetOpValue - lastYearOpValue);
     const fallbackShare = (ratio: number) =>
       totalChange === 0
-        ? roundToOne(budgetValue * ratio)
+        ? roundToOne(lastYearOpValue * ratio)
         : roundToOne(totalChange * ratio);
 
     const oneOffDeltaRaw =
@@ -352,22 +640,37 @@ export default function ExecutiveSummaryPage({
     const oneOffDelta = -Math.abs(oneOffDeltaRaw);
     const headwindsDelta =
       stageById.get('market-performance')?.delta ?? fallbackShare(0.28);
-    const l4Delta =
+    const l4DeltaRaw =
       stageById.get('l4-vs-planned')?.delta ?? fallbackShare(0.22);
-    const l3Delta =
+    const l3DeltaRaw =
       stageById.get('l3-vs-target')?.delta ?? fallbackShare(0.18);
+    const l4Delta = Math.abs(l4DeltaRaw);
+    const l3Delta = Math.abs(l3DeltaRaw);
 
-    const afterOneOff = roundToOne(budgetValue + oneOffDelta);
+    const afterOneOff = roundToOne(lastYearOpValue + oneOffDelta);
     const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
     const beforePipeline = afterHeadwinds;
     const afterL4 = roundToOne(beforePipeline + l4Delta);
     const afterL3 = roundToOne(afterL4 + l3Delta);
     const withPipeline =
       stageById.get('forecast')?.value ?? roundToOne(afterL3);
-    const ideationDelta =
-      totalChange === 0
-        ? fallbackShare(0.2)
-        : roundToOne(actualValue - withPipeline);
+    const ideationTotal = selectedBu === 'all'
+      ? BUSINESS_GROUP_DATA.reduce(
+          (sum, group) =>
+            sum +
+            group.businessUnits.reduce(
+              (unitSum, unit) => unitSum + unit.ideationTarget,
+              0
+            ),
+          0
+        )
+      : BUSINESS_GROUP_DATA.find(
+          (group) => normalizeGroupId(group.group) === selectedBu
+        )?.businessUnits.reduce(
+          (sum, unit) => sum + unit.ideationTarget,
+          0
+        ) ?? 0;
+    const ideationDelta = roundToOne(toMillions(ideationTotal));
     const afterIdeation = roundToOne(withPipeline + ideationDelta);
 
     const makeStage = (
@@ -396,6 +699,9 @@ export default function ExecutiveSummaryPage({
       if (stage === 'market-performance' || stage === 'one-off-adjustments') {
         return delta >= 0 ? 'positive' : 'negative';
       }
+      if (stage === 'l3-vs-target' || stage === 'l4-vs-planned' || stage === 'ideation') {
+        return 'positive';
+      }
       return 'positive';
     };
 
@@ -403,8 +709,8 @@ export default function ExecutiveSummaryPage({
       makeStage(
         'budget',
         'Last year OP',
-        roundToOne(budgetValue),
-        roundToOne(budgetValue),
+        roundToOne(lastYearOpValue),
+        roundToOne(lastYearOpValue),
         'baseline'
       ),
       makeStage(
@@ -459,16 +765,31 @@ export default function ExecutiveSummaryPage({
       makeStage(
         'actuals',
         'Current year OP target',
-        roundToOne(actualValue),
-        roundToOne(actualValue),
+        roundToOne(budgetOpValue),
+        roundToOne(budgetOpValue),
         'baseline'
       ),
     ];
-  }, [isBudgetView, tableData]);
+  }, [isBudgetView, tableData, selectedBu]);
 
   const getExpandedSubGroups = (bgId: string) => {
-    const dataTimeframe = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
-    return getSubBusinessGroups(bgId, dataTimeframe);
+    const scale = 1;
+    const valueMode =
+      isBudgetView || homeToggle === 'budget'
+        ? 'budget'
+        : homeToggle === 'full-year'
+        ? 'forecast'
+        : 'actual';
+    const selectedGroup = BUSINESS_GROUP_DATA.find(
+      (group) => normalizeGroupId(group.group) === bgId
+    );
+    if (!selectedGroup) {
+      return [];
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    return selectedGroup.businessUnits.map((unit) =>
+      buildUnitRow(groupId, unit, scale, valueMode)
+    );
   };
 
   const toggleRowExpansion = (bgId: string) => {
@@ -510,13 +831,23 @@ export default function ExecutiveSummaryPage({
         navigate(`/business-group-performance?bu=${groupId}&toggle=${homeToggle}`);
       }
     };
+    const budgetPercent = calcPercent(metric.value, metric.baseline);
+    const lastYearPercent = calcPercent(metric.value, metric.stly);
+    const primaryPercent = isBudgetMode ? lastYearPercent : budgetPercent;
     const percentColor =
-      metric.percent > 0
+      primaryPercent > 0
         ? 'bg-green-100 text-green-700'
-        : metric.percent < 0
+        : primaryPercent < 0
         ? 'bg-red-100 text-red-700'
         : 'bg-gray-100 text-gray-600';
-    const percentSign = metric.percent > 0 ? '+' : '';
+    const percentSign = primaryPercent > 0 ? '+' : '';
+    const lastYearPercentColor =
+      lastYearPercent > 0
+        ? 'bg-green-100 text-green-700'
+        : lastYearPercent < 0
+        ? 'bg-red-100 text-red-700'
+        : 'bg-gray-100 text-gray-600';
+    const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
 
     // Calculate trend line for sparkline
     const trendValues = metric.trend.map((t) => t.value);
@@ -534,9 +865,9 @@ export default function ExecutiveSummaryPage({
       .join(' ');
 
     const trendColor =
-      metric.percent > 0
+      primaryPercent > 0
         ? '#22c55e'
-        : metric.percent < 0
+        : primaryPercent < 0
         ? '#ef4444'
         : '#6b7280';
 
@@ -552,7 +883,7 @@ export default function ExecutiveSummaryPage({
           }`}>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${(isBudgetMode ? metric.baseline : metric.value).toFixed(1)}B
+              ${metric.value.toFixed(0)}M
             </div>
           </div>
         </td>
@@ -571,31 +902,31 @@ export default function ExecutiveSummaryPage({
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${(isBudgetMode ? metric.baseline : metric.value).toFixed(0)}M
+              ${metric.value.toFixed(0)}M
             </div>
           </div>
           <div className='text-center'>
             {!isBudgetMode && (
-              <div className='text-xs text-gray-500 mb-0.5'>
-                vs budget ${metric.baseline.toFixed(0)}M
-              </div>
+            <div className='text-xs text-gray-500 mb-0.5'>
+              vs budget ${metric.baseline.toFixed(0)}M
+            </div>
             )}
             <div className='text-xs text-gray-500'>
-              vs Last Year ${metric.baseline.toFixed(0)}M
+              vs Last Year ${metric.stly.toFixed(0)}M
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>
             <span
               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
               {percentSign}
-              {metric.percent.toFixed(1)}%
+              {primaryPercent.toFixed(1)}%
             </span>
             {!isBudgetView && (
-              <span
-                className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
-                {percentSign}
-                {metric.percent.toFixed(1)}%
-              </span>
+            <span
+                className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
+                {lastYearPercentSign}
+                {lastYearPercent.toFixed(1)}%
+            </span>
             )}
           </div>
         </div>
@@ -611,7 +942,7 @@ export default function ExecutiveSummaryPage({
               <span
                 className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
                 {percentSign}
-                {metric.percent.toFixed(1)}%
+                {primaryPercent.toFixed(1)}%
               </span>
             </div>
 
@@ -891,7 +1222,7 @@ export default function ExecutiveSummaryPage({
           />
         </div>
 
-        {/* Business Group Performance Section */}
+        {/* Business Group Performance Section */}  
         <div className='mb-8'>
           <div
             className={
@@ -899,81 +1230,81 @@ export default function ExecutiveSummaryPage({
                 ? 'bg-white rounded-xl border border-gray-200/60 shadow-sm p-6'
                 : ''
             }>
-            <div className='flex items-center justify-between mb-4'>
-              <div>
-                <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
-                  <ChartBarIcon className='w-6 h-6 text-primary-600' />
-                  Business Group Performance
-                </h2>
+          <div className='flex items-center justify-between mb-4'>
+            <div>
+              <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+                <ChartBarIcon className='w-6 h-6 text-primary-600' />
+                Business Group Performance
+              </h2>
                 <p className='text-sm text-gray-600 mt-1'>Mn, USD</p>
-              </div>
-              <div className='flex items-center gap-4'>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm text-gray-600'>Show Details</span>
-                  <button
-                    onClick={() =>
-                      setShowComparisonDetails(!showComparisonDetails)
-                    }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                      showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
-                    }`}>
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            </div>
+            <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-gray-600'>Show Details</span>
+                <button
+                  onClick={() =>
+                    setShowComparisonDetails(!showComparisonDetails)
+                  }
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                         showComparisonDetails
                           ? 'translate-x-6'
                           : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <Link
-                  to='/business-group-performance?bu=all'
-                  className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
-                  Business Group Details
-                  <ArrowRightIcon className='w-4 h-4' />
-                </Link>
+                    }`}
+                  />
+                </button>
               </div>
+              <Link
+                to='/business-group-performance?bu=all'
+                className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
+                Business Group Details
+                <ArrowRightIcon className='w-4 h-4' />
+              </Link>
             </div>
-            <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='bg-gray-50'>
-                    <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
-                      <span className='text-sm font-semibold text-gray-700'>
-                        Business Group
-                      </span>
-                    </th>
-                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                      <span className='text-sm font-bold text-gray-900'>
-                        Revenue
-                      </span>
-                    </th>
-                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                      <span className='text-sm font-bold text-gray-900'>
-                        Gross Profit
-                      </span>
-                    </th>
-                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                      <span className='text-sm font-bold text-gray-900'>
-                        Operating Profit
-                      </span>
-                    </th>
-                    <th className='text-center px-4 py-3 border-b border-gray-200'>
-                      <span className='text-sm font-bold text-gray-900'>
-                        Net Profit
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableData.map((group) => {
-                    const isOverallRow =
-                      group.id === 'overall' || group.id.endsWith('-overall');
-                    const isExpandable =
-                      selectedBu === 'all' && group.id !== 'overall';
-                    const isExpanded = expandedRows.has(group.id);
+          </div>
+          <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
+            <table className='w-full'>
+              <thead>
+                <tr className='bg-gray-50'>
+                  <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-semibold text-gray-700'>
+                      Business Group
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Revenue
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Gross Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Operating Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Net Profit
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((group) => {
+                  const isOverallRow =
+                    group.id === 'overall' || group.id.endsWith('-overall');
+                  const isExpandable =
+                    selectedBu === 'all' && group.id !== 'overall';
+                  const isExpanded = expandedRows.has(group.id);
 
-                    return (
+                  return (
                       <React.Fragment key={group.id}>
                         {renderTableRow(
                           group,
@@ -981,16 +1312,16 @@ export default function ExecutiveSummaryPage({
                           false,
                           isOverallRow
                         )}
-                        {isExpanded &&
-                          getExpandedSubGroups(group.id).map((subGroup) =>
-                            renderTableRow(subGroup, false, true, false)
-                          )}
+                      {isExpanded &&
+                        getExpandedSubGroups(group.id).map((subGroup) =>
+                          renderTableRow(subGroup, false, true, false)
+                        )}
                       </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
             {isBudgetView && budgetWaterfallStages.length > 0 && (
               <div className='mt-6'>
                 <BudgetPerformanceWaterfall
@@ -998,7 +1329,7 @@ export default function ExecutiveSummaryPage({
                   title='Budget deviation waterfall of BU performance by value driver'
                   subtitle={`Mn USD • ${selectedBuLabel}`}
                 />
-              </div>
+        </div>
             )}
           </div>
         </div>
