@@ -663,11 +663,6 @@ export default function ExecutiveSummaryPage({
 
     const lastYearOpValue = overallRow.op.stly;
     const budgetOpValue = overallRow.op.value;
-    const baseBudgetValue =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
-        ?.value ?? 0;
-    const scaleFactor =
-      baseBudgetValue === 0 ? 1 : lastYearOpValue / baseBudgetValue;
 
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
 
@@ -745,7 +740,8 @@ export default function ExecutiveSummaryPage({
     const beforePipeline = afterHeadwinds;
     const afterL4 = roundToOne(beforePipeline + l4Delta);
     const afterL3 = roundToOne(afterL4 + l3Delta);
-    const withPipeline = roundToOne(afterL3);
+    const withPipeline =
+      stageById.get('forecast')?.value ?? roundToOne(afterL3);
     const ideationTotal = selectedBu === 'all'
       ? BUSINESS_GROUP_DATA.reduce(
           (sum, group) =>
@@ -763,6 +759,44 @@ export default function ExecutiveSummaryPage({
           0
         ) ?? 0;
     const ideationDelta = roundToOne(toMillions(ideationTotal));
+
+    // Work backwards: withPipeline + ideationDelta = budgetOpValue
+    const withPipeline = roundToOne(budgetOpValue - ideationDelta);
+
+    // The remaining change from lastYearOpValue to withPipeline must be distributed
+    // among one-off items, headwinds/tailwinds, L4, and L3
+    const remainingChange = roundToOne(withPipeline - lastYearOpValue);
+
+    // Create variation with both favorable (positive) and adverse (negative) deltas
+    // Make deltas visible by basing them on the baseline value, not remaining change
+    // One-off items: Always adverse (reduces value) - represents one-time costs
+    // Headwinds/Tailwinds: Variable - can be favorable or adverse based on market
+    // L4 and L3: Always favorable (pipeline initiatives add value)
+    
+    // One-off is a visible adverse impact (8% of last year OP)
+    const oneOffDelta = roundToOne(-Math.abs(lastYearOpValue * 0.08));
+    
+    // Headwinds/Tailwinds: Variable based on overall performance (6% of last year OP)
+    // If growth is strong (>20%), headwinds are favorable; otherwise adverse
+    const growthRate = lastYearOpValue === 0 ? 0 : (budgetOpValue - lastYearOpValue) / lastYearOpValue;
+    const headwindsIsFavorable = growthRate > 0.20;
+    const headwindsMagnitude = Math.abs(lastYearOpValue * 0.06);
+    const headwindsDelta = headwindsIsFavorable 
+      ? roundToOne(headwindsMagnitude) 
+      : roundToOne(-headwindsMagnitude);
+    
+    // Calculate what L4 and L3 need to cover (the remaining gap after one-off and headwinds)
+    const pipelineNeeded = roundToOne(remainingChange - oneOffDelta - headwindsDelta);
+    
+    // L4 gets 40% of pipeline needed, L3 gets the rest
+    const l4Delta = roundToOne(pipelineNeeded * 0.40);
+    const l3Delta = roundToOne(pipelineNeeded - l4Delta);
+
+    const afterOneOff = roundToOne(lastYearOpValue + oneOffDelta);
+    const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
+    const beforePipeline = afterHeadwinds;
+    const afterL4 = roundToOne(beforePipeline + l4Delta);
+    const afterL3 = roundToOne(afterL4 + l3Delta);
     const afterIdeation = roundToOne(withPipeline + ideationDelta);
 
     const makeStage = (
@@ -781,20 +815,15 @@ export default function ExecutiveSummaryPage({
     });
 
     const getBudgetStageType = (
-      stage: BudgetForecastStage['stage'],
+      _stage: BudgetForecastStage['stage'],
       delta: number,
       fallback: BudgetForecastStage['type']
     ): BudgetForecastStage['type'] => {
       if (fallback === 'baseline') {
         return fallback;
       }
-      if (stage === 'market-performance' || stage === 'one-off-adjustments') {
-        return delta >= 0 ? 'positive' : 'negative';
-      }
-      if (stage === 'l3-vs-target' || stage === 'l4-vs-planned' || stage === 'ideation') {
-        return 'positive';
-      }
-      return 'positive';
+      // For all non-baseline stages, color based on delta sign
+      return delta >= 0 ? 'positive' : 'negative';
     };
 
     return [

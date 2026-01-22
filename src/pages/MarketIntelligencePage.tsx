@@ -622,6 +622,8 @@ export default function MarketIntelligencePage() {
               title='Forecast - Performance Waterfall'
               subtitle={`${selectedBuName} view`}
               highlightedStage={activePerformanceSection ?? selectedFocusStage}
+              highlightedStageColor='#3b82f6'
+              hideLegend
               onStageClick={(stage) => setActivePerformanceSection(stage.stage)}
             />
           </div>

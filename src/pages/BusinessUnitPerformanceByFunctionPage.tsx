@@ -35,8 +35,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const isManufacturing =
     normalizedFunction === 'mva' || normalizedFunction === 'manufacturing';
   const isRnD = normalizedFunction === 'rd' || normalizedFunction === 'r&d';
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(
-    new Set(['overall'])
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    ['overall']
   );
   const [activeBucketId, setActiveBucketId] = useState<string | null>(null);
   const buParam = searchParams.get('bu') ?? '';
@@ -304,19 +304,19 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       id: 'overall',
       label: 'Overall all',
       budget: 120,
-      actual: 135,
+      actual: 110,
       children: [
         {
           id: 'overall-direct',
           label: 'Direct materials',
           budget: 70,
-          actual: 78,
+          actual: 62,
         },
         {
           id: 'overall-indirect',
           label: 'Indirect materials',
           budget: 50,
-          actual: 57,
+          actual: 48,
         },
       ],
     },
@@ -344,19 +344,19 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       id: 'category-b',
       label: 'Category B',
       budget: 35,
-      actual: 38,
+      actual: 28,
       children: [
         {
           id: 'category-b-logistics',
           label: 'Logistics',
           budget: 18,
-          actual: 20,
+          actual: 14,
         },
         {
           id: 'category-b-suppliers',
           label: 'Supplier services',
           budget: 17,
-          actual: 18,
+          actual: 14,
         },
       ],
     },
@@ -364,7 +364,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       id: 'category-c',
       label: 'Category C',
       budget: 43,
-      actual: 50,
+      actual: 35,
       children: [
         {
           id: 'category-c-energy',
@@ -376,7 +376,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           id: 'category-c-consumables',
           label: 'Consumables',
           budget: 21,
-          actual: 24,
+          actual: 9,
         },
       ],
     },
@@ -387,23 +387,21 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     if (!baseOverall) {
       return baseProcurementCategories;
     }
-    const budgetScale =
+    // Use single scale factor based on budget to preserve budget/actual ratios
+    const scale = Math.abs(
       baseOverall.budget === 0
         ? 1
-        : procurementOverallTotals.budget / baseOverall.budget;
-    const actualScale =
-      baseOverall.actual === 0
-        ? 1
-        : procurementOverallTotals.actual / baseOverall.actual;
+        : procurementOverallTotals.budget / baseOverall.budget
+    );
 
     return baseProcurementCategories.map((category) => ({
       ...category,
-      budget: roundToOne(category.budget * budgetScale),
-      actual: roundToOne(category.actual * actualScale),
+      budget: roundToOne(category.budget * scale),
+      actual: roundToOne(category.actual * scale),
       children: category.children?.map((child) => ({
         ...child,
-        budget: roundToOne(child.budget * budgetScale),
-        actual: roundToOne(child.actual * actualScale),
+        budget: roundToOne(child.budget * scale),
+        actual: roundToOne(child.actual * scale),
       })),
     }));
   }, [baseProcurementCategories, procurementOverallTotals]);
@@ -461,34 +459,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
   const procurementTotals = useMemo(() => {
     const overall = procurementCategories[0];
-    const hasOverall = selectedCategoryIds.has('overall');
-    if (hasOverall || !overall) {
-      const budgetTotal = overall ? overall.budget : 0;
-      const actualTotal = overall ? overall.actual : 0;
-      return { budgetTotal, actualTotal };
-    }
-
-    const activeRows: Array<{ budget: number; actual: number }> = [];
-    procurementCategories.forEach((row) => {
-      if (row.id === 'overall') {
-        return;
-      }
-      const selectedChildren =
-        row.children?.filter((child) => selectedCategoryIds.has(child.id)) ?? [];
-      if (selectedChildren.length > 0) {
-        selectedChildren.forEach((child) => {
-          activeRows.push({ budget: child.budget, actual: child.actual });
-        });
-        return;
-      }
-      if (selectedCategoryIds.has(row.id)) {
-        activeRows.push({ budget: row.budget, actual: row.actual });
-      }
-    });
-
-    if (activeRows.length === 0 && overall) {
-      return { budgetTotal: overall.budget, actualTotal: overall.actual };
-    }
+    const selected = procurementCategories.filter((row) =>
+      selectedCategoryIds.has(row.id)
+    );
+    const activeRows = selected.length > 0 ? selected : [overall];
     const budgetTotal = activeRows.reduce((sum, row) => sum + row.budget, 0);
     const actualTotal = activeRows.reduce((sum, row) => sum + row.actual, 0);
     return { budgetTotal, actualTotal };
@@ -499,19 +473,19 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const rawActualValue = procurementTotals.actualTotal;
     const budgetValue = Math.abs(rawBudgetValue);
     const actualValue = Math.abs(rawActualValue);
-    const absoluteDelta = Math.abs(actualValue - budgetValue);
-    const minAbsoluteDelta = budgetValue * 0.25;
-    const totalMagnitude = Number(
-      Math.max(absoluteDelta, minAbsoluteDelta).toFixed(1)
-    );
+    
+    // Total change from budget to actual (negative = costs decreased, positive = costs increased)
+    const totalChange = actualValue - budgetValue;
+    
     const split = [0.24, 0.26, 0.22, 0.18, 0.1];
-    // Make deltas negative so the waterfall goes down
+    // Distribute the total change proportionally
     const deltas = split.map((ratio) =>
-      -Math.abs(Number((totalMagnitude * ratio).toFixed(1)))
+      Number((totalChange * ratio).toFixed(1))
     );
-    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    // Adjust last delta to ensure exact sum
+    const currentSum = deltas.reduce((sum, value) => sum + value, 0);
     deltas[deltas.length - 1] = Number(
-      (-totalMagnitude - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
+      (deltas[deltas.length - 1] + (totalChange - currentSum)).toFixed(1)
     );
 
     const [volumeDelta, l3Delta, l4Delta, partPriceDelta, fxDelta] = deltas;
@@ -520,9 +494,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       running = Number((running + delta).toFixed(1));
       return running;
     };
-    // For procurement costs: negative delta (going down) is adverse (red)
-    const getCostStageType = (_delta: number): 'positive' | 'negative' =>
-      'negative';
+    // Negative delta (cost decrease) is favorable/green, positive is adverse/red
+    const getCostStageType = (delta: number): 'positive' | 'negative' =>
+      delta <= 0 ? 'positive' : 'negative';
 
     return [
       {
@@ -689,10 +663,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       'site-c': 'Site C',
     };
     const selectedSiteNames =
-      selectedCategoryIds.size === 0 || selectedCategoryIds.has('overall')
+      selectedCategoryIds.length === 0 || selectedCategoryIds.includes('overall')
         ? new Set(['Overall'])
         : new Set(
-            [...selectedCategoryIds]
+            selectedCategoryIds
               .map((id) => siteIdToName[id])
               .filter(Boolean)
           );
@@ -727,17 +701,14 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [selectedBus, selectedCategoryIds]);
 
   useEffect(() => {
-    if (!isManufacturing) {
-      return;
-    }
     const availableIds = new Set(['overall', 'site-a', 'site-b', 'site-c']);
     const hasValidSelection = [...selectedCategoryIds].some((id) =>
       availableIds.has(id)
     );
     if (!hasValidSelection) {
-      setSelectedCategoryIds(new Set(['overall']));
+      setSelectedCategoryIds(['overall']);
     }
-  }, [isManufacturing, manufacturingSites, selectedCategoryIds]);
+  }, [manufacturingSites, selectedCategoryIds]);
 
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
     const budgetValue = manufacturingMvaTotals.budgetMvaCost;
@@ -1089,8 +1060,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   </thead>
                   <tbody>
                     {procurementCategories.flatMap((row) => {
-                      const delta = row.actual - row.budget;
-                      const isSelected = selectedCategoryIds.has(row.id);
+                      const delta = row.budget - row.actual;
+                      const childIds = row.children?.map(c => c.id) ?? [];
+                      // Parent is only checked when consolidated (all children selected → parent ID stored)
+                      const isSelected = selectedCategoryIds.includes(row.id);
                       const parentRow = (
                         <tr
                           key={row.id}
@@ -1103,18 +1076,26 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                 onChange={() => {
                                   setSelectedCategoryIds((prev) => {
                                     if (row.id === 'overall') {
-                                      return new Set(['overall']);
+                                      return ['overall'];
                                     }
-                                    const next = new Set(prev);
-                                    next.delete('overall');
-                                    if (next.has(row.id)) {
-                                      next.delete(row.id);
+                                    let next = prev.filter(id => id !== 'overall');
+                                    
+                                    // Check if parent is consolidated (parent ID in selection)
+                                    const isConsolidated = next.includes(row.id);
+                                    // Check if any children are selected
+                                    const hasChildrenSelected = childIds.some(id => next.includes(id));
+                                    
+                                    if (isConsolidated || hasChildrenSelected) {
+                                      // Deselect: remove parent and all children
+                                      next = next.filter(id => id !== row.id && !childIds.includes(id));
                                     } else {
-                                      next.add(row.id);
+                                      // Select: add all children (no consolidation - parent stays unchecked)
+                                      childIds.forEach(id => {
+                                        if (!next.includes(id)) next.push(id);
+                                      });
                                     }
-                                    return next.size === 0
-                                      ? new Set(['overall'])
-                                      : next;
+                                    
+                                    return next.length === 0 ? ['overall'] : next;
                                   });
                                 }}
                               />
@@ -1132,9 +1113,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                           <td className='px-4 py-3 text-right font-semibold'>
                             <span
                               className={
-                                Math.abs(row.actual) > Math.abs(row.budget)
-                                  ? 'text-rose-600'
-                                  : 'text-emerald-600'
+                                delta >= 0
+                                  ? 'text-emerald-600'
+                                  : 'text-rose-600'
                               }>
                               {formatMn(delta)}
                             </span>
@@ -1143,10 +1124,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       );
 
                       const children = row.children?.map((child) => {
-                        const childDelta = child.actual - child.budget;
-                        const isChildSelected = selectedCategoryIds.has(
-                          child.id
-                        );
+                        const childDelta = child.budget - child.actual;
+                        const isChildSelected = selectedCategoryIds.includes(child.id);
+                        const siblingIds = row.children?.map(c => c.id) ?? [];
+                        
                         return (
                           <tr
                             key={child.id}
@@ -1159,13 +1140,22 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                   onChange={() => {
                                     setSelectedCategoryIds((prev) => {
                                       const next = new Set(prev);
-                                      next.delete('overall');
                                       if (next.has(child.id)) {
                                         next.delete(child.id);
                                       } else {
-                                        next.add(child.id);
+                                        // Selecting this child
+                                        next = [...next, child.id];
+                                        
+                                        // Check if all siblings are now selected → consolidate to parent
+                                        const allSiblingsSelected = siblingIds.every(id => next.includes(id));
+                                        if (allSiblingsSelected) {
+                                          // Remove all children, add parent instead
+                                          next = next.filter(id => !siblingIds.includes(id));
+                                          next.push(row.id);
+                                        }
                                       }
-                                      return next;
+                                      
+                                      return next.length === 0 ? ['overall'] : next;
                                     });
                                   }}
                                 />
@@ -1183,9 +1173,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             <td className='px-4 py-2 text-right font-semibold'>
                               <span
                                 className={
-                                  Math.abs(child.actual) > Math.abs(child.budget)
-                                    ? 'text-rose-600'
-                                    : 'text-emerald-600'
+                                  childDelta >= 0
+                                    ? 'text-emerald-600'
+                                    : 'text-rose-600'
                                 }>
                                 {formatMn(childDelta)}
                               </span>
@@ -1205,7 +1195,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
               description='Procurement cost, USD Mn'
-              brokenAxis='auto'
               onStageClick={(stage) => {
                 if (
                   stage.id === 'volume-change' ||
@@ -1261,7 +1250,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   </thead>
                   <tbody>
                     {manufacturingSites.flatMap((row) => {
-                      const isSelected = selectedCategoryIds.has(row.id);
+                      const isSelected = selectedCategoryIds.includes(row.id);
                       const renderCell = (metric: {
                         budget: number;
                         actual: number;
@@ -1285,22 +1274,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                 onChange={() => {
                                   setSelectedCategoryIds((prev) => {
                                     const next = new Set(prev);
-                                    if (row.id === 'overall') {
-                                      if (next.has(row.id)) {
-                                        next.delete(row.id);
-                                      } else {
-                                        next.clear();
-                                        next.add(row.id);
-                                      }
-                                      return next;
-                                    }
-                                    next.delete('overall');
                                     if (next.has(row.id)) {
                                       next.delete(row.id);
                                     } else {
-                                      next.add(row.id);
+                                      return [...prev, row.id];
                                     }
-                                    return next;
                                   });
                                 }}
                               />
@@ -1334,19 +1312,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             <label className='flex items-center gap-3 text-gray-600'>
                               <input
                                 type='checkbox'
-                                checked={selectedCategoryIds.has(child.id)}
+                                checked={selectedCategoryIds.includes(child.id)}
                                 onChange={() => {
                                   setSelectedCategoryIds((prev) => {
-                                    const next = new Set(prev);
-                                    next.delete('overall');
-                                    if (next.has(child.id)) {
-                                      next.delete(child.id);
+                                    const next = prev.filter(id => id !== 'overall');
+                                    if (next.includes(child.id)) {
+                                      const filtered = next.filter(id => id !== child.id);
+                                      return filtered.length === 0 ? ['overall'] : filtered;
                                     } else {
-                                      next.add(child.id);
+                                      return [...next, child.id];
                                     }
-                                    return next.size === 0
-                                      ? new Set(['overall'])
-                                      : next;
                                   });
                                 }}
                               />
@@ -1408,7 +1383,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               title='Deviation waterfall by key value drivers'
               description='R&D cost, USD Mn'
               barSize={32}
-              brokenAxis='auto'
               onStageClick={(stage) => {
                 if (stage.id === 'personnel-delta') {
                   setActiveBucketId(stage.id);
