@@ -1369,7 +1369,7 @@ export default function BusinessGroupPerformancePage() {
           } relative group`}>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${displayValue.toFixed(1)}B
+              ${displayValue.toFixed(1)}M
             </div>
           </div>
         </td>
