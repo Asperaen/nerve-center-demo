@@ -10,6 +10,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
 
 export interface FunctionalPerformanceStage {
   id: string;
@@ -20,10 +21,7 @@ export interface FunctionalPerformanceStage {
   isClickable?: boolean;
 }
 
-interface BrokenAxisConfig {
-  skipRangeStart: number;
-  skipRangeEnd: number;
-}
+export type { BrokenAxisConfig };
 
 interface FunctionalPerformanceWaterfallProps {
   stages: FunctionalPerformanceStage[];
@@ -32,7 +30,8 @@ interface FunctionalPerformanceWaterfallProps {
   emphasisStageId?: string;
   barSize?: number;
   description?: string;
-  brokenAxis?: BrokenAxisConfig;
+  /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
+  brokenAxis?: BrokenAxisConfig | 'auto';
 }
 
 // Custom Y-axis tick component with break indicator
@@ -184,8 +183,17 @@ export default function FunctionalPerformanceWaterfall({
   onStageClick,
   emphasisStageId,
   barSize = 26,
-  brokenAxis,
+  brokenAxis: brokenAxisProp,
 }: FunctionalPerformanceWaterfallProps) {
+  // Calculate effective broken axis config (auto-detect or use provided)
+  const brokenAxis = useMemo(() => {
+    if (brokenAxisProp === 'auto') {
+      const result = calculateBrokenAxis(stages);
+      return result.brokenAxis;
+    }
+    return brokenAxisProp;
+  }, [brokenAxisProp, stages]);
+
   const chartData = useMemo(() => {
     return stages.map((stage, index) => {
       const isAbsolute = stage.type === 'baseline';

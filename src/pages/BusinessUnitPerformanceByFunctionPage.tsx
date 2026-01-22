@@ -1298,7 +1298,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               emphasisStageId='dl-efficiency'
               description='MVA cost, USD Mn'
               barSize={32}
-              brokenAxis={{ skipRangeStart: 0, skipRangeEnd: 7300 }}
+              brokenAxis="auto"
               onStageClick={(stage) => {
                 if (stage.id === 'dl-efficiency') {
                   setActiveBucketId(stage.id);
