@@ -554,18 +554,27 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
   const manufacturingSites = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
-    const isAllSelected =
+  const isAllSelected =
       normalizedSelected.length === 0 ||
       normalizedSelected.includes('all') ||
       normalizedSelected.includes('overall');
-    const selectedGroups = isAllSelected
-      ? BUSINESS_GROUP_DATA
-      : BUSINESS_GROUP_DATA.filter((group) =>
-          normalizedSelected.includes(normalizeBu(group.group))
-        );
-    const entries = selectedGroups.flatMap((group) =>
-      group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
-    );
+    
+    // Get entries from matching business units (checking both group and unit names)
+    const entries = isAllSelected
+      ? BUSINESS_GROUP_DATA.flatMap((group) =>
+          group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
+        )
+      : BUSINESS_GROUP_DATA.flatMap((group) => {
+          const groupId = normalizeBu(group.group);
+          // If the group matches, include all its units' MVA sites
+          if (normalizedSelected.includes(groupId)) {
+            return group.businessUnits.flatMap((unit) => unit.mvaSites ?? []);
+          }
+          // Otherwise, check if any sub-BU matches
+          return group.businessUnits
+            .filter((unit) => normalizedSelected.includes(normalizeBu(unit.name)))
+            .flatMap((unit) => unit.mvaSites ?? []);
+        });
     if (entries.length === 0) {
       return [];
     }
@@ -619,14 +628,23 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       normalizedSelected.length === 0 ||
       normalizedSelected.includes('all') ||
       normalizedSelected.includes('overall');
-    const selectedGroups = isAllSelected
-      ? BUSINESS_GROUP_DATA
-      : BUSINESS_GROUP_DATA.filter((group) =>
-          normalizedSelected.includes(normalizeBu(group.group))
-        );
-    const entries = selectedGroups.flatMap((group) =>
-      group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
-    );
+    
+    // Get entries from matching business units (checking both group and unit names)
+    const entries = isAllSelected
+      ? BUSINESS_GROUP_DATA.flatMap((group) =>
+          group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
+        )
+      : BUSINESS_GROUP_DATA.flatMap((group) => {
+          const groupId = normalizeBu(group.group);
+          // If the group matches, include all its units' MVA sites
+          if (normalizedSelected.includes(groupId)) {
+            return group.businessUnits.flatMap((unit) => unit.mvaSites ?? []);
+          }
+          // Otherwise, check if any sub-BU matches
+          return group.businessUnits
+            .filter((unit) => normalizedSelected.includes(normalizeBu(unit.name)))
+            .flatMap((unit) => unit.mvaSites ?? []);
+        });
 
     const siteIdToName: Record<string, string> = {
       overall: 'Overall',
