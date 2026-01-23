@@ -1,51 +1,51 @@
-import { useState, useEffect, useMemo } from 'react';
-import ScenarioCreationModal from '../components/ScenarioCreationModal';
-import CreateActionModalGlobal from '../components/CreateActionModal';
 import {
-  mockOPWaterfallStages,
-  mockValueDriverHierarchy,
-  mockAppliedAssumptions,
-  mockSuggestedAssumptions,
-} from '../data/mockForecast';
-import {
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  XMarkIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  ChartBarIcon,
   ArrowLeftIcon,
+  ArrowTrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ChartBarIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
   ComposedChart,
   Legend,
   Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
+import CreateActionModalGlobal from '../components/CreateActionModal';
+import ScenarioCreationModal from '../components/ScenarioCreationModal';
+import {
+  mockAppliedAssumptions,
+  mockOPWaterfallStages,
+  mockSuggestedAssumptions,
+  mockValueDriverHierarchy,
+} from '../data/mockForecast';
 import type {
   ActionProposal,
-  ValueDriverScenario,
   AppliedAssumption,
   FinancialCategoryGroup,
-  ValueDriverChange,
   Proposal,
+  ValueDriverChange,
+  ValueDriverScenario,
 } from '../types';
-import {
-  calculateScenarioWaterfall,
-  getNextScenarioColor,
-} from '../utils/scenarioUtils';
 import {
   getBestScenario,
   getWorstScenario,
   sortScenariosByImpact,
 } from '../utils/scenarioComparison';
+import {
+  calculateScenarioWaterfall,
+  getNextScenarioColor,
+} from '../utils/scenarioUtils';
 
 export default function FinancePage() {
   const [scenarios, setScenarios] = useState<ValueDriverScenario[]>([]);
@@ -994,11 +994,6 @@ export default function FinancePage() {
                   <h2 className='text-2xl font-bold text-gray-900 mb-1'>
                     Applied Assumptions
                   </h2>
-                  <p className='text-sm text-gray-500'>
-                    {isDragOverApplied
-                      ? 'Drop assumption here to apply it'
-                      : 'Assumptions already baked into the waterfall forecast'}
-                  </p>
                 </div>
                 <button
                   onClick={handleViewOverallValueDrivers}

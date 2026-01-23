@@ -314,7 +314,25 @@ export default function ActualInitiativeImplementationPage() {
   }, [activeTimeframe]);
 
   useEffect(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bgs');
     const buParam = searchParams.get('bu');
+    if (bgParam) {
+      const bgList = bgParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (bgList.length !== 1 || bgList[0] === 'all') {
+        setSelectedBu('all');
+        return;
+      }
+      const validBg = mainBuOptions.find((bu) => bu.id === bgList[0]);
+      if (validBg) {
+        setSelectedBu(validBg.id);
+        return;
+      }
+      setSelectedBu(bgList[0]);
+      return;
+    }
     if (!buParam) {
       return;
     }
@@ -354,6 +372,17 @@ export default function ActualInitiativeImplementationPage() {
   }, [selectedBu]);
 
   useEffect(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bgs');
+    if (selectedBu === 'all' && bgParam) {
+      const bgIds = bgParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (bgIds.length > 0) {
+        setSelectedGroupIds(new Set(bgIds));
+        return;
+      }
+    }
     if (!selectedGroupInfo) {
       setSelectedGroupIds(new Set());
       return;
@@ -366,12 +395,42 @@ export default function ActualInitiativeImplementationPage() {
       );
       return;
     }
+    const unitsParam = searchParams.get('bg')
+      ? searchParams.get('bu')
+      : searchParams.get('units');
+    if (unitsParam) {
+      const requestedUnits = unitsParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (requestedUnits.length === 0) {
+        setSelectedGroupIds(new Set([overallId]));
+        return;
+      }
+      const unitIds = requestedUnits
+        .map((unitName) => getUnitId(groupId, unitName))
+        .filter((unitId) =>
+          selectedGroupInfo.group.businessUnits.some(
+            (unit) => getUnitId(groupId, unit.name) === unitId
+          )
+        );
+      if (unitIds.length > 0) {
+        setSelectedGroupIds(new Set(unitIds));
+        return;
+      }
+    }
     setSelectedGroupIds(new Set([overallId]));
-  }, [selectedGroupInfo]);
+  }, [selectedGroupInfo, searchParams]);
 
   const selectedUnits = useMemo(() => {
     if (selectedBu === 'all') {
-      return businessGroups.flatMap((group) =>
+      const filteredGroups =
+        selectedGroupIds.size > 0
+          ? businessGroups.filter((group) =>
+              selectedGroupIds.has(normalizeGroupId(group.group))
+            )
+          : businessGroups;
+      return filteredGroups.flatMap((group) =>
         group.businessUnits.map((unit) => ({
           group: group.group,
           unit: unit.name,
@@ -462,7 +521,7 @@ export default function ActualInitiativeImplementationPage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       return next;
     });
   };

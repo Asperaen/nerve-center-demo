@@ -53,7 +53,7 @@ export default function MarketIntelligencePage() {
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>('full-year');
   const [selectedBu, setSelectedBu] = useState<string>(
-    searchParams.get('bu') || 'all'
+    searchParams.get('bg') || searchParams.get('bu') || 'all'
   );
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
@@ -113,7 +113,7 @@ export default function MarketIntelligencePage() {
   }, [selectedTimeframe]);
 
   useEffect(() => {
-    const buParam = searchParams.get('bu');
+    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (buParam) {
       setSelectedBu(buParam);
     }
@@ -141,7 +141,7 @@ export default function MarketIntelligencePage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       return next;
     });
   };
@@ -906,11 +906,6 @@ export default function MarketIntelligencePage() {
                   <h2 className='text-2xl font-bold text-gray-900 mb-1'>
                     Applied Assumptions
                   </h2>
-                  <p className='text-sm text-gray-500'>
-                    {isDragOverApplied
-                      ? 'Drop assumption here to apply it'
-                      : 'Assumptions already baked into the waterfall forecast'}
-                  </p>
                 </div>
                 <button
                   onClick={handleViewOverallValueDrivers}

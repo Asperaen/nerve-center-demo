@@ -154,7 +154,7 @@ const buildGroupRow = (
 
   const name = nameOverride ?? groupName;
   const id = idOverride ?? normalizeGroupId(groupName);
-  const insightBase = `${name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${name} performance`;
   const revenue = toMillions(
     valueMode === 'forecast' ? totals.forecastRevenue : totals.revenue
   );
@@ -287,7 +287,7 @@ const buildUnitRow = (
   const lastYearNetProfit = toMillions(
     lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
   );
-  const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${unit.name} performance.`;
 
   return {
     id: unitId,
@@ -332,7 +332,8 @@ export default function BusinessGroupPerformancePage() {
   const { businessGroups } = useBudgets();
 
   // Get initial BU from query param
-  const initialBuParam = searchParams.get('bu') || 'all';
+  const initialBuParam =
+    searchParams.get('bg') || searchParams.get('bu') || 'all';
   const initialBu =
     initialBuParam === 'all' ? 'all' : normalizeGroupId(initialBuParam);
 
@@ -430,7 +431,7 @@ export default function BusinessGroupPerformancePage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       next.set('toggle', selectedTimeframe);
       return next;
     });
@@ -603,6 +604,37 @@ export default function BusinessGroupPerformancePage() {
       }
     }
   }, [selectedGroupIds, tableData]);
+
+  useEffect(() => {
+    if (selectedBu === 'all') {
+      return;
+    }
+    const unitsParam =
+      searchParams.get('bg') ? searchParams.get('bu') : searchParams.get('units');
+    if (!unitsParam) {
+      return;
+    }
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup) {
+      return;
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const unitIds = unitsParam
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((unitName) => getUnitId(groupId, unitName));
+    const validUnitIds = unitIds.filter((unitId) =>
+      selectedGroup.businessUnits.some(
+        (unit) => getUnitId(groupId, unit.name) === unitId
+      )
+    );
+    if (validUnitIds.length > 0) {
+      setSelectedGroupIds(new Set(validUnitIds));
+    }
+  }, [businessGroups, searchParams, selectedBu]);
 
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
@@ -1034,11 +1066,13 @@ export default function BusinessGroupPerformancePage() {
         };
       }
       const delta = adjustedMap.get(stage.stage) ?? stage.delta ?? 0;
+      const resolvedType = delta >= 0 ? 'positive' : 'negative';
       runningValue = roundToOne(runningValue + delta);
       return {
         ...stage,
         value: runningValue,
         delta,
+        type: resolvedType,
       };
     });
 
@@ -1309,9 +1343,8 @@ export default function BusinessGroupPerformancePage() {
 
     const driversByStage: Record<string, string[]> = {
       'market-performance': [
-        'Volume demand shift',
-        'Price and mix',
-        'Portfolio mix',
+        'Customer H total shipment increase by 2% vs FY shipment forecast budgeted',
+        'Customer D increased shipment of Gaming Series X by 5%, which has 3p.p. higher GP margin',
       ],
       'l3-vs-target': [
         'Initiative ramp',
@@ -1340,20 +1373,41 @@ export default function BusinessGroupPerformancePage() {
         'Customer timing',
         'Other factors',
       ];
-    const baseImpact = (activeDeviationStage.delta ?? 0) /
-      Math.max(1, selectedBuNames.length);
-    const rows = (selectedBuNames.length > 0 ? selectedBuNames : ['Overall']).map(
-      (name, index) => ({
-        bu: name,
-        driver: drivers[index % drivers.length],
-        impact: roundToOne(baseImpact + (index - 1) * 0.2),
-      })
-    );
+    const totalImpact = activeDeviationStage.delta ?? 0;
+    const buLabel =
+      selectedBuNames.length > 0 ? selectedBuNames[0] : 'Overall';
+    const rows =
+      activeDeviationStage.stage === 'market-performance'
+        ? [
+            {
+              bu: buLabel,
+              driver: drivers[0],
+              impact: 3.4,
+            },
+            {
+              bu: buLabel,
+              driver: drivers[1],
+              impact: 2.3,
+            },
+          ]
+        : (selectedBuNames.length > 0 ? selectedBuNames : ['Overall']).map(
+            (name, index) => ({
+              bu: name,
+              driver: drivers[index % drivers.length],
+              impact: roundToOne(
+                totalImpact / Math.max(1, selectedBuNames.length) +
+                  (index - 1) * 0.2
+              ),
+            })
+          );
 
     return {
       type: 'default' as const,
       rows,
-      totalImpact: activeDeviationStage.delta ?? 0,
+      totalImpact:
+        activeDeviationStage.stage === 'market-performance'
+          ? 5.7
+          : totalImpact,
     };
   }, [
     activeDeviationStage,
@@ -1836,14 +1890,31 @@ export default function BusinessGroupPerformancePage() {
       if (!showDrilldown) {
         return;
       }
-      const selectedRows =
-        selectedGroupIds.size === 0
-          ? tableData.filter((row) => isOverallRowId(row.id))
-          : tableData.filter((row) => selectedGroupIds.has(row.id));
-      const buParam = selectedRows.map((row) => row.name).join(',');
+      const resolvedBgName = (() => {
+        if (selectedBu === 'all') {
+          return 'all';
+        }
+        const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
+        if (directMatch) {
+          return directMatch.name;
+        }
+        const matchedGroup = businessGroups.find((group) => {
+          const groupId = normalizeGroupId(group.group);
+          return group.businessUnits.some(
+            (unit) => getUnitId(groupId, unit.name) === selectedBu
+          );
+        });
+        return matchedGroup?.group ?? sectionTitle;
+      })();
+      const buParam = resolvedBgName;
+      const bgParam = selectedBu === 'all' ? 'all' : '';
       const params = new URLSearchParams();
       if (buParam) {
-        params.set('bu', buParam);
+        params.set('bg', buParam);
+      }
+      if (bgParam) {
+        params.set('bg', bgParam);
+        params.delete('bu');
       }
       navigate(
         `/business-unit-performance/functional-performance/${row.id}?${params.toString()}`
@@ -2272,15 +2343,32 @@ export default function BusinessGroupPerformancePage() {
             }
             brokenAxis="auto"
             onStageClick={(stage: BudgetForecastStage) => {
+              const selectedUnitNames = Array.from(selectedGroupIds)
+                .map((id) => unitRowsById.get(id)?.name)
+                .filter((name): name is string => Boolean(name));
+              const unitParam = selectedUnitNames.length
+                ? `&bu=${encodeURIComponent(selectedUnitNames.join(','))}`
+                : '';
+              const selectedGroupNames = Array.from(selectedGroupIds).filter(
+                (id) => !isOverallRowId(id) && !unitRowsById.has(id)
+              );
+              const resolvedBgParam =
+                selectedBu === 'all' && selectedGroupNames.length > 0
+                  ? selectedGroupNames.join(',')
+                  : selectedBu;
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bg=${encodeURIComponent(
+                    resolvedBgParam
+                  )}&timeframe=full-year${unitParam}`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bg=${encodeURIComponent(
+                    resolvedBgParam
+                  )}&timeframe=full-year${unitParam}`
                 );
                 return;
               }
@@ -2432,8 +2520,8 @@ export default function BusinessGroupPerformancePage() {
                   </p>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
-                  <p className='text-xs uppercase tracking-wide text-gray-500'>
-                    Selected BUs
+                  <p className='text-xs tracking-wide text-gray-500'>
+                    SELECTED BUs
                   </p>
                   <p className='mt-2 text-lg font-semibold text-gray-900'>
                     {selectedBuLabel}

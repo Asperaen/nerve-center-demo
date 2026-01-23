@@ -41,7 +41,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   );
   const [activeBucketId, setActiveBucketId] = useState<string | null>(null);
   const buParam = searchParams.get('bu') ?? '';
+  const bgsParam = searchParams.get('bg') ?? searchParams.get('bgs') ?? '';
   const selectedBus = buParam
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const normalized = normalizeBu(item);
+      return normalized !== 'overall' && normalized !== 'all';
+    });
+  const selectedBgs = bgsParam
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
@@ -51,7 +60,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const dataTimeframe = timeframe === 'ytm' ? 'ytm' : 'full-year';
     const tableData = getAllBusinessGroupData(dataTimeframe);
     const overallRow = tableData.find((row) => row.id === 'overall');
-    const normalizedSelected = selectedBus.map(normalizeBu);
+    const normalizedSelected = [
+      ...selectedBus,
+      ...selectedBgs,
+    ].map(normalizeBu);
     const selectedRows =
       normalizedSelected.length === 0
         ? overallRow

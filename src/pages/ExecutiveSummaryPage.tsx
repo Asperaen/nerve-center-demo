@@ -169,7 +169,7 @@ const buildGroupRow = (
 
   const name = nameOverride ?? groupName;
   const id = idOverride ?? normalizeGroupId(groupName);
-  const insightBase = `${name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${name} performance.`;
   const revenue = toMillions(
     valueMode === 'budget'
       ? totals.revenueBudget
@@ -333,7 +333,7 @@ const buildUnitRow = (
   const lastYearNetProfit = toMillions(
     lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
   ) * scale;
-  const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${unit.name} performance.`;
   const percentBasis = valueMode === 'budget' ? 'last-year' : 'budget';
 
   return {
@@ -776,7 +776,7 @@ export default function ExecutiveSummaryPage({
   }, [searchParams, isBudgetView]);
 
   useEffect(() => {
-    const buParam = searchParams.get('bu');
+    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (!buParam) {
       return;
     }
@@ -794,11 +794,11 @@ export default function ExecutiveSummaryPage({
     setSelectedBu(buId);
     setSearchParams(
       (prev) => {
-        if (prev.get('bu') === buId) {
+        if (prev.get('bg') === buId) {
           return prev;
         }
         const next = new URLSearchParams(prev);
-        next.set('bu', buId);
+        next.set('bg', buId);
         return next;
       },
       { replace: true }
@@ -1213,25 +1213,35 @@ export default function ExecutiveSummaryPage({
     metricName: string,
     isLast: boolean = false,
     groupId?: string,
-    isNavigable?: boolean
+    isNavigable?: boolean,
+    isSubGroup?: boolean
   ) => {
     const isBudgetMode = isBudgetView || homeToggle === 'budget';
     const handleCellClick = (e: React.MouseEvent) => {
       if (isNavigable && groupId) {
         e.stopPropagation(); // Prevent row expansion from triggering
         if (isBudgetView) {
+          if (selectedBu !== 'all') {
+            const unitsParam = isSubGroup
+              ? `&bu=${encodeURIComponent(groupName)}`
+              : '';
+            navigate(
+              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
+            );
+            return;
+          }
           handleBuChange(groupId === 'overall' ? 'all' : groupId);
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bu=${groupId}`);
+          navigate(`/budget?bg=${groupId}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bu=${groupId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${groupId}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bu=${groupId}&toggle=${homeToggle}`);
+        navigate(`/business-group-performance?bg=${groupId}&toggle=${homeToggle}`);
       }
     };
     const budgetPercent = calcPercent(metric.value, metric.baseline);
@@ -1423,25 +1433,35 @@ export default function ExecutiveSummaryPage({
     isOverallRow: boolean = false
   ) => {
     const isExpanded = expandedRows.has(group.id);
-    // Only main business groups (including overall/Grand Total) should navigate on click
-    const isMetricNavigable = !isSubGroup;
+    // Allow BU row navigation in budget view when a BG is selected
+    const isMetricNavigable =
+      isBudgetView && selectedBu !== 'all' ? true : !isSubGroup;
 
     const handleRowClick = () => {
       if (isMetricNavigable) {
         const buId = isOverallRow ? 'all' : group.id;
         if (isBudgetView) {
+          if (selectedBu !== 'all') {
+            const unitsParam = isSubGroup
+              ? `&bu=${encodeURIComponent(group.name)}`
+              : '';
+            navigate(
+              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
+            );
+            return;
+          }
           handleBuChange(buId);
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bu=${buId}`);
+          navigate(`/budget?bg=${buId}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bu=${buId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${buId}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bu=${buId}&toggle=${homeToggle}`);
+        navigate(`/business-group-performance?bg=${buId}&toggle=${homeToggle}`);
       }
     };
 
@@ -1488,7 +1508,8 @@ export default function ExecutiveSummaryPage({
           'Revenue',
           false,
           group.id,
-          isMetricNavigable
+          isMetricNavigable,
+          isSubGroup
         )}
         {renderMetricCell(
           group.gp,
@@ -1496,7 +1517,8 @@ export default function ExecutiveSummaryPage({
           'Gross Profit',
           false,
           group.id,
-          isMetricNavigable
+          isMetricNavigable,
+          isSubGroup
         )}
         {renderMetricCell(
           group.op,
@@ -1504,7 +1526,8 @@ export default function ExecutiveSummaryPage({
           'Operating Profit',
           false,
           group.id,
-          isMetricNavigable
+          isMetricNavigable,
+          isSubGroup
         )}
         {renderMetricCell(
           group.np,
@@ -1512,7 +1535,8 @@ export default function ExecutiveSummaryPage({
           'Net Profit',
           true,
           group.id,
-          isMetricNavigable
+          isMetricNavigable,
+          isSubGroup
         )}
       </tr>
     );
@@ -1663,7 +1687,7 @@ export default function ExecutiveSummaryPage({
                 </button>
               </div>
               <Link
-                to='/business-group-performance?bu=all'
+                to='/business-group-performance?bg=all'
                 className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
                 Business Group Details
                 <ArrowRightIcon className='w-4 h-4' />
@@ -1789,7 +1813,7 @@ export default function ExecutiveSummaryPage({
                   </p>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
-                  <p className='text-xs uppercase tracking-wide text-gray-500'>
+                  <p className='text-xs tracking-wide text-gray-500'>
                     Selected BGs
                   </p>
                   <p className='mt-2 text-lg font-semibold text-gray-900'>
