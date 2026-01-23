@@ -10,6 +10,7 @@ interface BudgetPerformanceWaterfallProps {
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string;
   brokenAxis?: BrokenAxisConfig | 'auto';
+  tooltipContent?: (stage: BudgetForecastStage) => ReactNode | null;
 }
 
 export default function BudgetPerformanceWaterfall({
@@ -19,6 +20,7 @@ export default function BudgetPerformanceWaterfall({
   onStageClick,
   highlightedStage,
   brokenAxis = 'auto',
+  tooltipContent,
 }: BudgetPerformanceWaterfallProps) {
   return (
     <BudgetForecastActualWaterfall
@@ -28,6 +30,7 @@ export default function BudgetPerformanceWaterfall({
       onStageClick={onStageClick}
       highlightedStage={highlightedStage}
       colorByDelta
+      tooltipContent={tooltipContent}
       brokenAxis={brokenAxis}
     />
   );

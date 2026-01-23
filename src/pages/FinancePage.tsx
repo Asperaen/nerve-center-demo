@@ -418,7 +418,7 @@ export default function FinancePage() {
       baselineDelta: number;
       stage: string;
       label: string;
-      type: 'baseline' | 'positive' | 'negative';
+      type: 'baseline' | 'positive' | 'negative' | 'preliminary';
       description?: string;
     }> = [];
 

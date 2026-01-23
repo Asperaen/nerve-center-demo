@@ -72,13 +72,8 @@ export default function ActionTrackerPage() {
         </div>
       </div>
 
-      {/* Action Tracker Content */}
-      <div className='w-full'>
-        <ActionTracker activeTab={activeTab} />
-      </div>
-
       {/* Action Items Requiring Attention */}
-      <div className='mt-10'>
+      <div className='mb-10'>
         <div className='flex items-center justify-between mb-4'>
           <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
             <ClipboardDocumentListIcon className='w-6 h-6 text-primary-600' />
@@ -165,6 +160,11 @@ export default function ActionTrackerPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Action Tracker Content */}
+      <div className='w-full'>
+        <ActionTracker activeTab={activeTab} />
       </div>
 
       {/* Create Action Modal */}

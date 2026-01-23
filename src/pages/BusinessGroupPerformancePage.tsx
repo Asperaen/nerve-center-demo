@@ -6,7 +6,7 @@ import {
   SparklesIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import BusinessGroupPerformanceWaterfall from '../components/BusinessGroupPerformanceWaterfall';
@@ -17,7 +17,7 @@ import {
   ProductAnalysisLayer,
 } from '../components/layers';
 import TimeframePicker, { type TimeframeOption } from '../components/TimeframePicker';
-import BUSINESS_GROUP_DATA from '../data/mockBgData';
+import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
 import {
   type BusinessGroupData,
   type BusinessGroupMetricWithTrend,
@@ -85,7 +85,7 @@ const buildMetric = (
   trend: buildTrend(value),
   aiInsight,
 });
-type BusinessGroupSource = (typeof BUSINESS_GROUP_DATA)[number];
+type BusinessGroupSource = BusinessGroup;
 type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
 const buildGroupRow = (
   groupName: string,
@@ -323,9 +323,13 @@ const buildUnitRow = (
   };
 };
 
+const getUnitId = (groupId: string, unitName: string) =>
+  `${groupId}-${unitName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
 export default function BusinessGroupPerformancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { businessGroups } = useBudgets();
 
   // Get initial BU from query param
   const initialBuParam = searchParams.get('bu') || 'all';
@@ -341,6 +345,9 @@ export default function BusinessGroupPerformancePage() {
   );
   const [activeDeviationStage, setActiveDeviationStage] =
     useState<BudgetForecastStage | null>(null);
+  const [impactRationaleFilter, setImpactRationaleFilter] =
+    useState<string>('all');
+  const [impactSearch, setImpactSearch] = useState<string>('');
 
   // Expanded rows state (for "All BGs" view)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -358,11 +365,11 @@ export default function BusinessGroupPerformancePage() {
   // Get main BU options
   const mainBuOptions = useMemo(
     () =>
-      BUSINESS_GROUP_DATA.map((group) => ({
+      businessGroups.map((group) => ({
         id: normalizeGroupId(group.group),
         name: group.group,
       })),
-    []
+    [businessGroups]
   );
 
   // Navigation handlers
@@ -476,7 +483,7 @@ export default function BusinessGroupPerformancePage() {
     const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
-      const groupRows = BUSINESS_GROUP_DATA.map((group) =>
+      const groupRows = businessGroups.map((group) =>
         buildGroupRow(
           group.group,
           group.businessUnits,
@@ -487,7 +494,7 @@ export default function BusinessGroupPerformancePage() {
       );
       const overallRow = buildGroupRow(
         'Overall',
-        BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits),
+        businessGroups.flatMap((group) => group.businessUnits),
         valueMode,
         budgetMode,
         lastYearMode,
@@ -496,7 +503,7 @@ export default function BusinessGroupPerformancePage() {
       );
       return [...groupRows, overallRow];
     }
-    const selectedGroup = BUSINESS_GROUP_DATA.find(
+    const selectedGroup = businessGroups.find(
       (group) => normalizeGroupId(group.group) === selectedBu
     );
     if (!selectedGroup) {
@@ -516,13 +523,13 @@ export default function BusinessGroupPerformancePage() {
       `${selectedGroup.group} overall`
     );
     return [...unitRows, overallRow];
-  }, [selectedBu, selectedTimeframe]);
+  }, [businessGroups, selectedBu, selectedTimeframe]);
 
   const unitRowsById = useMemo(() => {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
     const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
-    const entries = BUSINESS_GROUP_DATA.flatMap((group) => {
+    const entries = businessGroups.flatMap((group) => {
       const groupId = normalizeGroupId(group.group);
       return group.businessUnits.map((unit) => {
         const row = buildUnitRow(
@@ -536,7 +543,7 @@ export default function BusinessGroupPerformancePage() {
       });
     });
     return new Map(entries);
-  }, [selectedTimeframe]);
+  }, [businessGroups, selectedTimeframe]);
 
   const toggleGroupSelection = (bgId: string) => {
     setSelectedGroupIds((prev) => {
@@ -602,7 +609,7 @@ export default function BusinessGroupPerformancePage() {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
     const budgetMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode = selectedTimeframe === 'ytm' ? 'ytm' : 'full-year';
-    const selectedGroup = BUSINESS_GROUP_DATA.find(
+    const selectedGroup = businessGroups.find(
       (group) => normalizeGroupId(group.group) === bgId
     );
     if (!selectedGroup) {
@@ -675,7 +682,7 @@ export default function BusinessGroupPerformancePage() {
     const getIdeationForSelection = () => {
       if (selectedBu === 'all') {
         // Sum ideation from all business groups
-        return BUSINESS_GROUP_DATA.reduce(
+        return businessGroups.reduce(
           (sum, group) =>
             sum +
             group.businessUnits.reduce(
@@ -686,7 +693,7 @@ export default function BusinessGroupPerformancePage() {
         );
       }
       // Sum ideation from the selected business group's units
-      const selectedGroup = BUSINESS_GROUP_DATA.find(
+      const selectedGroup = businessGroups.find(
         (group) => normalizeGroupId(group.group) === selectedBu
       );
       if (!selectedGroup) return 0;
@@ -709,7 +716,7 @@ export default function BusinessGroupPerformancePage() {
       scaleFactor,
       selectedIdeation,
     };
-  }, [selectedGroupIds, tableData, unitRowsById, selectedBu]);
+  }, [businessGroups, selectedGroupIds, tableData, unitRowsById, selectedBu]);
 
   const formatMn = (value: number) =>
     value.toLocaleString('en-US', {
@@ -777,6 +784,156 @@ export default function BusinessGroupPerformancePage() {
       .filter((row) => selectedGroupIds.has(row.id))
       .map((row) => row.name);
   }, [selectedGroupIds, tableData]);
+
+  const selectedBuSuffix = useMemo(() => {
+    if (selectedGroupIds.size !== 1) {
+      return undefined;
+    }
+    const [selectedId] = Array.from(selectedGroupIds);
+    const unitRow = unitRowsById.get(selectedId);
+    return unitRow?.name;
+  }, [selectedGroupIds, unitRowsById]);
+
+  const selectedBuTitle = useMemo(() => selectedBuNames.join(', '), [
+    selectedBuNames,
+  ]);
+
+  const selectedImpactUnits = useMemo(() => {
+    const hasOverallSelected =
+      selectedGroupIds.size === 0 ||
+      Array.from(selectedGroupIds).some((id) => isOverallRowId(id));
+
+    if (selectedBu === 'all') {
+      if (hasOverallSelected) {
+        return businessGroups.flatMap((group) => group.businessUnits);
+      }
+      const selectedGroups = businessGroups.filter((group) =>
+        selectedGroupIds.has(normalizeGroupId(group.group))
+      );
+      return selectedGroups.length > 0
+        ? selectedGroups.flatMap((group) => group.businessUnits)
+        : businessGroups.flatMap((group) => group.businessUnits);
+    }
+
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup) {
+      return [];
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    if (hasOverallSelected) {
+      return selectedGroup.businessUnits;
+    }
+    return selectedGroup.businessUnits.filter((unit) =>
+      selectedGroupIds.has(getUnitId(groupId, unit.name))
+    );
+  }, [businessGroups, selectedBu, selectedGroupIds]);
+
+  const opImpactRows = useMemo(
+    () =>
+      selectedImpactUnits.flatMap((unit) =>
+        (unit.opImpactDetails ?? []).map((detail) => ({
+          ...detail,
+          bu: unit.name,
+        }))
+      ),
+    [selectedImpactUnits]
+  );
+  const opImpactTotals = useMemo(() => {
+    const oneOff = opImpactRows
+      .filter((row) => row.category.toLowerCase().includes('one-off'))
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    const headwinds = opImpactRows
+      .filter((row) => {
+        const category = row.category.toLowerCase();
+        return category.includes('headwind') || category.includes('tailwind');
+      })
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    return { oneOff, headwinds };
+  }, [opImpactRows]);
+  const impactRationaleOptions = useMemo(
+    () =>
+      Array.from(new Set(opImpactRows.map((row) => row.costRationale))).filter(
+        Boolean
+      ),
+    [opImpactRows]
+  );
+
+  const getOpImpactRowsForStage = useCallback(
+    (stage: BudgetForecastStage) => {
+      if (opImpactRows.length === 0) {
+        return [];
+      }
+      const normalized = (value: string) => value.toLowerCase();
+      if (stage.stage === 'one-off-adjustments') {
+        return opImpactRows.filter((row) =>
+          normalized(row.category).includes('one-off')
+        );
+      }
+      if (stage.stage === 'market-performance') {
+        return opImpactRows.filter((row) => {
+          const category = normalized(row.category);
+          return category.includes('headwind') || category.includes('tailwind');
+        });
+      }
+      return [];
+    },
+    [opImpactRows]
+  );
+
+  const renderOpImpactTooltip = useCallback(
+    (stage: BudgetForecastStage) => {
+      if (
+        stage.stage !== 'one-off-adjustments' &&
+        stage.stage !== 'market-performance'
+      ) {
+        return null;
+      }
+      const stageRows = getOpImpactRowsForStage(stage);
+      const totalImpact = stageRows.reduce((sum, row) => sum + row.opImpact, 0);
+      const topItems = [...stageRows]
+        .sort((a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact))
+        .slice(0, 4);
+
+      if (topItems.length === 0) {
+        return (
+          <p className='text-xs text-gray-500'>
+            No op-impact items available.
+          </p>
+        );
+      }
+      const remainingCount = Math.max(0, stageRows.length - topItems.length);
+
+      return (
+        <div className='space-y-2'>
+          <p className='text-3xl font-semibold text-gray-900'>
+            {formatMn(totalImpact)}M
+          </p>
+          <p className='text-xs font-semibold text-gray-700'>
+            Items
+          </p>
+          <ul className='space-y-1'>
+            {topItems.map((item, index) => (
+              <li key={`${item.bu}-${item.item}-${index}`} className='text-xs'>
+                <span className='font-semibold text-gray-900'>{item.bu}</span>
+                <span className='text-gray-600'> — {item.item}</span>
+                <span className='ml-2 font-semibold text-gray-900'>
+                  {formatMn(item.opImpact)}M
+                </span>
+              </li>
+            ))}
+          </ul>
+          {remainingCount > 0 && (
+            <p className='text-[11px] text-gray-500'>
+              +{remainingCount} more items
+            </p>
+          )}
+        </div>
+      );
+    },
+    [formatMn, getOpImpactRowsForStage]
+  );
 
   const buildScaledWaterfallStages = (): BudgetForecastStage[] => {
     const budgetValue = selectionMetrics.selectedOpBaseline;
@@ -915,17 +1072,8 @@ export default function BusinessGroupPerformancePage() {
     // Headwinds/Tailwinds: Variable - can be favorable or adverse based on market
     // L4 and L3: Always favorable (pipeline initiatives add value)
     
-    // One-off is a visible adverse impact (8% of last year OP)
-    const oneOffDelta = roundToOne(-Math.abs(budgetValue * 0.08));
-    
-    // Headwinds/Tailwinds: Variable based on overall performance (6% of last year OP)
-    // If growth is strong (>20%), headwinds are favorable; otherwise adverse
-    const growthRate = budgetValue === 0 ? 0 : (actualValue - budgetValue) / budgetValue;
-    const headwindsIsFavorable = growthRate > 0.20;
-    const headwindsMagnitude = Math.abs(budgetValue * 0.06);
-    const headwindsDelta = headwindsIsFavorable 
-      ? roundToOne(headwindsMagnitude) 
-      : roundToOne(-headwindsMagnitude);
+    const oneOffDelta = roundToOne(opImpactTotals.oneOff);
+    const headwindsDelta = roundToOne(opImpactTotals.headwinds);
     
     // Calculate what L4 and L3 need to cover (the remaining gap after one-off and headwinds)
     const pipelineNeeded = roundToOne(remainingChange - oneOffDelta - headwindsDelta);
@@ -1034,6 +1182,7 @@ export default function BusinessGroupPerformancePage() {
       ),
     ];
   }, [
+    opImpactTotals,
     selectionMetrics.selectedNpBaseline,
     selectionMetrics.selectedNpValue,
     selectionMetrics.selectedIdeation,
@@ -1125,55 +1274,36 @@ export default function BusinessGroupPerformancePage() {
     }
 
     if (selectedTimeframe === 'budget') {
-      if (activeDeviationStage.stage !== 'one-off-adjustments') {
+      if (
+        activeDeviationStage.stage !== 'one-off-adjustments' &&
+        activeDeviationStage.stage !== 'market-performance'
+      ) {
         return null;
       }
-
-      const oneOffItems: {
-        sbu: string;
-        items: { label: string; type: 'One-off' | 'Headwind'; amount: number }[];
-      }[] = [
-        {
-          sbu: 'IDS',
-          items: [
-            { label: 'ZZ cleanup costs', type: 'One-off', amount: -2.4 },
-            { label: 'Warranty true-up', type: 'Headwind', amount: -1.1 },
-            { label: 'One-time rebates', type: 'One-off', amount: -0.8 },
-          ],
-        },
-        {
-          sbu: 'EMS',
-          items: [
-            { label: 'VN retention bonus', type: 'One-off', amount: -1.6 },
-            { label: 'Material revaluation', type: 'Headwind', amount: -0.9 },
-            { label: 'FX hedge', type: 'One-off', amount: 0.6 },
-          ],
-        },
-      ];
-
-      const targetBus =
-        selectedBuNames.length > 0 ? selectedBuNames : ['IDS', 'EMS'];
-      const rows = targetBus.map((sbu) => {
-        const existing = oneOffItems.find((row) => row.sbu === sbu);
+      const rows = getOpImpactRowsForStage(activeDeviationStage);
+      const normalizedSearch = impactSearch.trim().toLowerCase();
+      const filteredRows = rows.filter((row) => {
+        if (impactRationaleFilter !== 'all' && row.costRationale !== impactRationaleFilter) {
+          return false;
+        }
+        if (!normalizedSearch) {
+          return true;
+        }
         return (
-          existing ?? {
-            sbu,
-            items: [
-              {
-                label: 'One-off adjustment',
-                type: 'One-off',
-                amount: -0.4,
-              },
-              { label: 'Headwind', type: 'Headwind', amount: -0.3 },
-            ],
-          }
+          row.bu.toLowerCase().includes(normalizedSearch) ||
+          row.item.toLowerCase().includes(normalizedSearch) ||
+          row.lineItem.toLowerCase().includes(normalizedSearch)
         );
       });
 
+      const sortedRows = [...filteredRows].sort(
+        (a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact)
+      );
+
       return {
-        type: 'one-off-items' as const,
-        totalImpact: activeDeviationStage.delta ?? 0,
-        rows,
+        type: 'op-impact' as const,
+        totalImpact: rows.reduce((sum, row) => sum + row.opImpact, 0),
+        rows: sortedRows,
       };
     }
 
@@ -1225,7 +1355,14 @@ export default function BusinessGroupPerformancePage() {
       rows,
       totalImpact: activeDeviationStage.delta ?? 0,
     };
-  }, [activeDeviationStage, selectedBuNames, selectedTimeframe]);
+  }, [
+    activeDeviationStage,
+    getOpImpactRowsForStage,
+    impactRationaleFilter,
+    impactSearch,
+    selectedBuNames,
+    selectedTimeframe,
+  ]);
 
   const selectedGroupLabel = useMemo(() => {
     if (selectedGroupIds.size === 0) {
@@ -1248,7 +1385,7 @@ export default function BusinessGroupPerformancePage() {
     const unitIdFor = (groupId: string, unitName: string) =>
       `${groupId}-${unitName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
-    const allUnits = BUSINESS_GROUP_DATA.flatMap((group) =>
+    const allUnits = businessGroups.flatMap((group) =>
       group.businessUnits.map((unit) => ({
         groupId: normalizeGroupId(group.group),
         unit,
@@ -1257,7 +1394,7 @@ export default function BusinessGroupPerformancePage() {
     const selectedGroup =
       selectedBu === 'all'
         ? null
-        : BUSINESS_GROUP_DATA.find(
+        : businessGroups.find(
             (group) => normalizeGroupId(group.group) === selectedBu
           );
     const selectedGroupUnits = selectedGroup
@@ -1284,6 +1421,18 @@ export default function BusinessGroupPerformancePage() {
         });
 
     const unitsToUse = selectedUnits.length > 0 ? selectedUnits : allUnits;
+
+    const mvaTotals = unitsToUse
+      .flatMap(({ unit }) => unit.mvaSites ?? [])
+      .filter((entry) => entry.site === 'Overall')
+      .reduce(
+        (acc, entry) => {
+          acc.budgetMvaCost += entry.budgetMvaCost;
+          acc.actualMvaCost += entry.actualMvaCost;
+          return acc;
+        },
+        { budgetMvaCost: 0, actualMvaCost: 0 }
+      );
 
     const totals = unitsToUse.reduce(
       (acc, { unit }) => {
@@ -1352,6 +1501,8 @@ export default function BusinessGroupPerformancePage() {
     const sharedExpensesActual = roundToOne(
       toMillions(totals.sharedExpensesActual)
     );
+    const mvaBudget = roundToOne(mvaTotals.budgetMvaCost);
+    const mvaActual = roundToOne(mvaTotals.actualMvaCost);
     const budgetSubtotal =
       topLineBudget +
       procurementBudget +
@@ -1396,7 +1547,7 @@ export default function BusinessGroupPerformancePage() {
       ['topline', { budget: topLineBudget, actual: topLineActual }],
       ['cost', { budget: costBudget, actual: costActual }],
       ['procurement', { budget: procurementBudget, actual: procurementActual }],
-      ['mva', { budget: manufacturingBudget, actual: manufacturingActual }],
+      ['mva', { budget: mvaBudget, actual: mvaActual }],
       ['rd', { budget: rndBudget, actual: rndActual }],
       ['opex', { budget: opexBudget, actual: opexActual }],
       [
@@ -1432,7 +1583,14 @@ export default function BusinessGroupPerformancePage() {
       }));
     }
     return scaledRows;
-  }, [selectedGroupIds, tableData, selectedGroupLabel, isBudgetMode]);
+  }, [
+    businessGroups,
+    selectedBu,
+    selectedGroupIds,
+    tableData,
+    selectedGroupLabel,
+    isBudgetMode,
+  ]);
 
   const getFunctionInsight = (row: FunctionDeviationRow) => {
     if (row.ytmBudget === 0) {
@@ -1816,7 +1974,9 @@ export default function BusinessGroupPerformancePage() {
       <div className='bg-white border-b border-gray-200 shadow-sm'>
         <div className='max-w-[1920px] mx-auto px-8 py-6'>
           <h1 className='text-3xl font-bold text-gray-900'>
-            Business groups performance
+            {`Financial actual performance review - ${sectionTitle}${
+              selectedBuSuffix ? ` - ${selectedBuSuffix}` : ''
+            }`}
           </h1>
         </div>
       </div>
@@ -1838,6 +1998,78 @@ export default function BusinessGroupPerformancePage() {
             selectedBu={selectedBu}
             onBuChange={handleBuChange}
           />
+          {selectedBu !== 'all' && (
+            <div className='mt-4 flex items-center gap-4'>
+              <span className='text-sm font-medium text-gray-600 w-32'>
+                Select BU
+              </span>
+              <div className='flex flex-wrap bg-gray-100 rounded-lg p-1'>
+                {(() => {
+                  const selectedGroup = businessGroups.find(
+                    (group) => normalizeGroupId(group.group) === selectedBu
+                  );
+                  if (!selectedGroup) {
+                    return null;
+                  }
+                  const groupId = normalizeGroupId(selectedGroup.group);
+                  const overallId = `${groupId}-overall`;
+                  const isAllSelected = selectedGroupIds.has(overallId);
+
+                  const toggleUnit = (unitId: string | 'all') => {
+                    setSelectedGroupIds((prev) => {
+                      const next = new Set(prev);
+                      if (unitId === 'all') {
+                        next.clear();
+                        next.add(overallId);
+                        return next;
+                      }
+                      next.delete(overallId);
+                      if (next.has(unitId)) {
+                        next.delete(unitId);
+                      } else {
+                        next.add(unitId);
+                      }
+                      if (next.size === 0) {
+                        next.add(overallId);
+                      }
+                      return next;
+                    });
+                  };
+
+                  return (
+                    <>
+                      <button
+                        onClick={() => toggleUnit('all')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                          isAllSelected
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}>
+                        All BUs
+                      </button>
+                      {selectedGroup.businessUnits.map((unit) => {
+                        const unitId = getUnitId(groupId, unit.name);
+                        const isSelected =
+                          !isAllSelected && selectedGroupIds.has(unitId);
+                        return (
+                          <button
+                            key={unitId}
+                            onClick={() => toggleUnit(unitId)}
+                            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                              isSelected
+                                ? 'bg-white text-gray-900 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}>
+                            {unit.name}
+                          </button>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1880,7 +2112,7 @@ export default function BusinessGroupPerformancePage() {
                 <div className='flex items-center gap-2'>
                   <ChartBarIcon className='w-5 h-5 text-primary-600' />
                   <h2 className='text-2xl font-bold text-gray-900'>
-                    Decomposition by BU - {sectionTitle}
+                    Financial actuals by BU - {sectionTitle}
                   </h2>
                 </div>
                 <div className='flex items-center gap-4'>
@@ -1972,7 +2204,7 @@ export default function BusinessGroupPerformancePage() {
         {selectedTimeframe === 'budget' ? (
           <BudgetPerformanceWaterfall
             stages={budgetWaterfallStages}
-            title='Budget deviation waterfall of BU performance by value driver'
+            title='Budget waterfall by value driver'
             subtitle={
               <span className='inline-flex items-center gap-1.5 text-sm text-gray-500'>
                 <span>Operating Profit, Mn USD • {selectedBuLabel}</span>
@@ -2001,16 +2233,18 @@ export default function BusinessGroupPerformancePage() {
             onStageClick={(stage: BudgetForecastStage) => {
               if (
                 stage.stage === 'ideation' ||
-                stage.stage === 'one-off-adjustments'
+                stage.stage === 'one-off-adjustments' ||
+                stage.stage === 'market-performance'
               ) {
                 setActiveDeviationStage(stage);
               }
             }}
+            tooltipContent={renderOpImpactTooltip}
           />
         ) : (
           <BusinessGroupPerformanceWaterfall
             stages={performanceWaterfallStages}
-            title='Deviation waterfall of BU performance by value driver'
+            title={`Performance deviation waterfall - ${sectionTitle} - ${selectedBuTitle}`}
             subtitle={
               <span className='inline-flex items-center gap-1.5 text-sm text-gray-500'>
                 <span>Operating Profit, Mn USD • {selectedBuLabel}</span>
@@ -2036,16 +2270,17 @@ export default function BusinessGroupPerformancePage() {
                 )}
               </span>
             }
+            brokenAxis="auto"
             onStageClick={(stage: BudgetForecastStage) => {
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/initiative-performance?tab=execution&bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/initiative-performance?tab=execution&bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
                 );
                 return;
               }
@@ -2158,7 +2393,7 @@ export default function BusinessGroupPerformancePage() {
           className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6'
           onClick={() => setActiveDeviationStage(null)}>
           <div
-            className='w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200'
+            className='flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 max-h-[80vh]'
             onClick={(event: MouseEvent<HTMLDivElement>) =>
               event.stopPropagation()
             }>
@@ -2186,7 +2421,7 @@ export default function BusinessGroupPerformancePage() {
                 <XMarkIcon className='h-4 w-4' />
               </button>
             </div>
-            <div className='p-6 space-y-5'>
+            <div className='flex-1 overflow-y-auto p-6 space-y-5'>
               <div className='grid gap-4 sm:grid-cols-3'>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
                   <p className='text-xs uppercase tracking-wide text-gray-500'>
@@ -2213,6 +2448,29 @@ export default function BusinessGroupPerformancePage() {
                   </p>
                 </div>
               </div>
+              {activeDeviationDetails.type === 'op-impact' && (
+                <div className='flex flex-wrap gap-3'>
+                  <select
+                    className='rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700'
+                    value={impactRationaleFilter}
+                    onChange={(event) =>
+                      setImpactRationaleFilter(event.target.value)
+                    }>
+                    <option value='all'>All rationales</option>
+                    {impactRationaleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className='flex-1 min-w-[200px] rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700'
+                    placeholder='Filter items...'
+                    value={impactSearch}
+                    onChange={(event) => setImpactSearch(event.target.value)}
+                  />
+                </div>
+              )}
               <div className='overflow-hidden rounded-lg border border-gray-200'>
                 {activeDeviationDetails.type === 'ideation' ? (
                   <table className='w-full text-xs'>
@@ -2262,41 +2520,55 @@ export default function BusinessGroupPerformancePage() {
                       ))}
                     </tbody>
                   </table>
-                ) : activeDeviationDetails.type === 'one-off-items' ? (
+                ) : activeDeviationDetails.type === 'op-impact' ? (
                   <table className='w-full text-sm'>
                     <thead className='bg-gray-50 border-b border-gray-200'>
                       <tr>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          SBU
+                          BU
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Major one-off/headwind items
+                          Line item
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Type
+                          Cost rationale
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Item
                         </th>
                         <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                          Amount
+                          OP impact (Mn USD)
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {activeDeviationDetails.rows.flatMap((row) =>
-                        row.items.map((item, index) => (
+                      {activeDeviationDetails.rows.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className='px-4 py-6 text-center text-sm text-gray-500'>
+                            No op-impact items available.
+                          </td>
+                        </tr>
+                      ) : (
+                        activeDeviationDetails.rows.map((row, index) => (
                           <tr
-                            key={`${row.sbu}-${item.label}-${index}`}
+                            key={`${row.bu}-${row.item}-${index}`}
                             className='border-b border-gray-200 last:border-b-0'>
                             <td className='px-4 py-3 font-semibold text-gray-900'>
-                              {row.sbu}
+                              {row.bu}
                             </td>
                             <td className='px-4 py-3 text-gray-600'>
-                              {item.label}
+                              {row.lineItem}
                             </td>
                             <td className='px-4 py-3 text-gray-600'>
-                              {item.type}
+                              {row.costRationale}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {row.item}
                             </td>
                             <td className='px-4 py-3 text-right font-semibold text-gray-900'>
-                              {formatMn(item.amount)}
+                              {formatMn(row.opImpact)}
                             </td>
                           </tr>
                         ))

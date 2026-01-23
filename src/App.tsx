@@ -1,8 +1,10 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import MeetingDetailView from './components/MeetingDetailView';
 import { ActionsProvider } from './contexts/ActionsContext';
+import { BudgetProvider } from './contexts/BudgetContext';
 import MainLayout from './layouts/MainLayout';
 import ActionTrackerPage from './pages/ActionTrackerPage';
+import ActualInitiativeImplementationPage from './pages/ActualInitiativeImplementationPage';
 import BudgetPage from './pages/BudgetPage';
 import BusinessGroupPerformancePage from './pages/BusinessGroupPerformancePage';
 import BusinessUnitPerformanceByFunctionPage from './pages/BusinessUnitPerformanceByFunctionPage';
@@ -20,12 +22,13 @@ import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
 
 function App() {
   return (
-    <ActionsProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path='/'
-            element={<MainLayout />}>
+    <BudgetProvider>
+      <ActionsProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path='/'
+              element={<MainLayout />}>
             <Route
               index
               element={<ExecutiveSummaryPage />}
@@ -71,6 +74,10 @@ function App() {
               element={<BusinessGroupPerformancePage />}
             />
             <Route
+              path='actual-initiative-implementation'
+              element={<ActualInitiativeImplementationPage />}
+            />
+            <Route
               path='business-unit-performance/functional-performance/:functionId'
               element={<BusinessUnitPerformanceByFunctionPage />}
             />
@@ -91,9 +98,10 @@ function App() {
               element={<IdeationProgressPage />}
             />
           </Route>
-        </Routes>
-      </BrowserRouter>
-    </ActionsProvider>
+          </Routes>
+        </BrowserRouter>
+      </ActionsProvider>
+    </BudgetProvider>
   );
 }
 

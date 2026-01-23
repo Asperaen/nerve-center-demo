@@ -233,7 +233,7 @@ export default function FunctionalPerformanceWaterfall({
   onStageClick,
   emphasisStageId,
   barSize = 26,
-  brokenAxis: brokenAxisProp,
+  brokenAxis: brokenAxisProp = 'auto',
 }: FunctionalPerformanceWaterfallProps) {
   // Calculate effective broken axis config (auto-detect or use provided)
   const brokenAxis = useMemo(() => {
@@ -452,6 +452,12 @@ export default function FunctionalPerformanceWaterfall({
               dataKey='barValue'
               stackId='a'
               barSize={barSize}
+              onClick={(_data, index) => {
+                const stage = stages[index];
+                if (stage?.isClickable && onStageClick) {
+                  onStageClick(stage);
+                }
+              }}
               shape={
                 brokenAxis
                   ? (props: unknown) => <BrokenBarShape {...(props as Record<string, unknown>)} brokenAxis={brokenAxis} />

@@ -23,6 +23,7 @@ interface BudgetForecastActualWaterfallProps {
   highlightedStageColor?: string; // Custom color for highlighted stage bar
   colorByDelta?: boolean;
   hideLegend?: boolean;
+  tooltipContent?: (stage: BudgetForecastStage) => ReactNode | null;
   /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
   brokenAxis?: BrokenAxisConfig | 'auto';
 }
@@ -73,15 +74,41 @@ const BrokenBarShape = (props: {
   width?: number;
   height?: number;
   fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  strokeDasharray?: string;
   payload?: { type?: string };
   brokenAxis: BrokenAxisConfig;
 }) => {
-  const { x = 0, y = 0, width = 0, height = 0, fill, payload } = props;
+  const {
+    x = 0,
+    y = 0,
+    width = 0,
+    height = 0,
+    fill,
+    stroke,
+    strokeWidth,
+    strokeDasharray,
+    payload,
+  } = props;
   const isBaseline = payload?.type === 'baseline';
   const breakIndicatorHeight = 10;
 
   if (!isBaseline) {
-    return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        rx={2}
+        ry={2}
+      />
+    );
   }
 
   const breakY = y + height - breakIndicatorHeight - 4;
@@ -89,11 +116,33 @@ const BrokenBarShape = (props: {
 
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height - breakIndicatorHeight - 6} fill={fill} rx={2} ry={2} />
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height - breakIndicatorHeight - 6}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        rx={2}
+        ry={2}
+      />
       <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
       <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
       <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
-      <rect x={x} y={breakY + breakIndicatorHeight} width={width} height={4} fill={fill} rx={2} ry={2} />
+      <rect
+        x={x}
+        y={breakY + breakIndicatorHeight}
+        width={width}
+        height={4}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        rx={2}
+        ry={2}
+      />
     </g>
   );
 };
@@ -107,6 +156,7 @@ export default function BudgetForecastActualWaterfall({
   highlightedStageColor,
   colorByDelta = false,
   hideLegend = false,
+  tooltipContent,
   brokenAxis: brokenAxisProp = 'auto',
 }: BudgetForecastActualWaterfallProps) {
   const navigate = useNavigate();
@@ -168,12 +218,12 @@ export default function BudgetForecastActualWaterfall({
   }, [stages, brokenAxis]);
 
   const handleBarClick = (stage: BudgetForecastStage) => {
-    if (stage.isClickable) {
-      if (onStageClick) {
-        onStageClick(stage);
-      } else if (stage.navigationTarget) {
-        navigate(stage.navigationTarget);
-      }
+    if (onStageClick) {
+      onStageClick(stage);
+      return;
+    }
+    if (stage.isClickable && stage.navigationTarget) {
+      navigate(stage.navigationTarget);
     }
   };
 
@@ -186,6 +236,9 @@ export default function BudgetForecastActualWaterfall({
     // Always use green/red/gray based on stage type, even for highlighted
     if (stage.type === 'baseline') {
       return '#6b7280'; // gray-500 for baseline/absolute bars
+    }
+    if (stage.type === 'preliminary') {
+      return '#ffffff'; // white fill for preliminary bars
     }
     if (colorByDelta) {
       return (stage.delta ?? stage.value) >= 0 ? '#10b981' : '#ef4444';
@@ -215,6 +268,10 @@ export default function BudgetForecastActualWaterfall({
               <div className='w-3 h-3 rounded-full bg-risk-500'></div>
               <span className='text-sm text-gray-700'>Adverse</span>
             </div>
+            <div className='flex items-center gap-2'>
+              <div className='w-3 h-3 rounded border border-gray-900 bg-white'></div>
+              <span className='text-sm text-gray-700'>Preliminary</span>
+            </div>
           </div>
         )}
       </div>
@@ -229,13 +286,18 @@ export default function BudgetForecastActualWaterfall({
               dataKey='label'
               angle={-15}
               textAnchor='end'
-              height={120}
+              height={140}
               tick={(props) => {
                 const { x, y, payload } = props;
                 const stage = stages.find((s) => s.label === payload.value);
                 const isClickable = stage?.isClickable ?? false;
                 const isHighlightedLabel =
                   highlightedStage && stage?.stage === highlightedStage;
+                const groupLabel =
+                  stage?.stage === 'l3-vs-target' ||
+                  stage?.stage === 'l4-vs-planned'
+                    ? 'Initiative performance'
+                    : undefined;
                 return (
                   <text
                     x={x}
@@ -245,9 +307,9 @@ export default function BudgetForecastActualWaterfall({
                     style={{
                       fontSize: isHighlightedLabel ? '13px' : '11px',
                       fill: isHighlightedLabel
-                        ? '#1d4ed8'
+                        ? '#111827'
                         : isClickable
-                        ? '#1e3a8a'
+                        ? '#1f2937'
                         : '#374151',
                       fontWeight: isHighlightedLabel
                         ? '800'
@@ -256,8 +318,15 @@ export default function BudgetForecastActualWaterfall({
                         : 'normal',
                       cursor: isClickable ? 'pointer' : 'default',
                     }}>
-                    {payload.value}
-                    {isHighlightedLabel && ' ★'}
+                    <tspan x={x} dy={0}>
+                      {payload.value}
+                      {isHighlightedLabel && ' ★'}
+                    </tspan>
+                    {groupLabel && (
+                      <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
+                        {groupLabel}
+                      </tspan>
+                    )}
                   </text>
                 );
               }}
@@ -288,41 +357,50 @@ export default function BudgetForecastActualWaterfall({
               />
             )}
             <Tooltip
-              formatter={(value, _name, props) => {
-                const payload = props.payload as
-                  | {
-                      cumulativeValue?: number;
-                      delta?: number;
-                      label?: string;
-                      isClickable?: boolean;
-                      description?: string;
-                    }
-                  | undefined;
-                const numericValue =
-                  typeof value === 'number'
-                    ? value
-                    : Number(Array.isArray(value) ? value[0] : value ?? 0);
-                const cumulative = payload?.cumulativeValue ?? numericValue;
-                const delta = payload?.delta;
-                const isClickable = payload?.isClickable;
-
-                const tooltipLines: string[] = [
-                  `Value: $${cumulative.toFixed(1)}M`,
-                ];
-
-                if (delta !== undefined && delta !== cumulative) {
-                  tooltipLines.push(
-                    `Change: ${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
-                  );
+              wrapperStyle={{ pointerEvents: 'none' }}
+              content={(props) => {
+                if (!props.active || !props.payload || props.payload.length === 0) {
+                  return null;
                 }
-
-                if (isClickable) {
-                  tooltipLines.push(
-                    onStageClick ? 'Click for details →' : 'Click to navigate →'
-                  );
+                const payload = props.payload[0]
+                  ?.payload as BudgetForecastStage & {
+                  cumulativeValue?: number;
+                  delta?: number;
+                  isClickable?: boolean;
+                };
+                if (!payload) {
+                  return null;
                 }
+                const stage =
+                  stages.find((item) => item.stage === payload.stage) ?? payload;
+                const cumulative = payload.cumulativeValue ?? stage.value;
+                const delta = payload.delta ?? stage.delta ?? stage.value;
+                const isClickable = payload.isClickable ?? stage.isClickable;
+                const customContent = tooltipContent?.(stage);
 
-                return tooltipLines.join('\n');
+                return (
+                  <div className='rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-lg'>
+                    <p className='font-semibold text-gray-900'>{stage.label}</p>
+                    {customContent ? (
+                      <div className='mt-2'>{customContent}</div>
+                    ) : (
+                      <>
+                        <p className='mt-1'>Value: ${cumulative.toFixed(1)}M</p>
+                        {delta !== cumulative && (
+                          <p>
+                            Change: {delta > 0 ? '+' : ''}
+                            ${delta.toFixed(1)}M
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {isClickable && (
+                      <p className='mt-2 text-[11px] text-gray-500'>
+                        {onStageClick ? 'Click for details →' : 'Click to navigate →'}
+                      </p>
+                    )}
+                  </div>
+                );
               }}
             />
             {/* Baseline transparent spacer bar */}
@@ -330,12 +408,20 @@ export default function BudgetForecastActualWaterfall({
               dataKey='baselineValue'
               stackId='a'
               fill='transparent'
+              fillOpacity={0}
+              style={{ pointerEvents: 'none' }}
             />
             {/* Actual value bars */}
             <Bar
               dataKey='barValue'
               stackId='a'
               name='Budget Forecast Actual'
+              onClick={(data) => {
+                const payload = (data as { payload?: BudgetForecastStage }).payload;
+                if (payload) {
+                  handleBarClick(payload);
+                }
+              }}
               shape={
                 brokenAxis
                   ? (props: unknown) => <BrokenBarShape {...(props as Record<string, unknown>)} brokenAxis={brokenAxis} />
@@ -412,13 +498,15 @@ export default function BudgetForecastActualWaterfall({
                   // If bar is tall enough, put label inside with white text
                   // Otherwise, put label outside with colored text
                   if (canFitInside) {
-                    // Label inside bar - always use WHITE text for contrast
+                    const insideColor =
+                      stage?.type === 'preliminary' ? '#111827' : 'white';
+                    // Label inside bar - default to white text for contrast
                     return (
                       <text
                         x={x + (width ?? 0) / 2}
                         y={insideLabelY}
                         textAnchor='middle'
-                        fill='white'
+                        fill={insideColor}
                         fontSize={11}
                         fontWeight='bold'
                       >
@@ -428,7 +516,12 @@ export default function BudgetForecastActualWaterfall({
                   }
                   
                   // Label outside bar - use colored text matching bar type
-                  const labelColor = stage?.type === 'positive' ? '#059669' : '#dc2626';
+                  const labelColor =
+                    stage?.type === 'preliminary'
+                      ? '#111827'
+                      : stage?.type === 'positive'
+                      ? '#059669'
+                      : '#dc2626';
                   return (
                     <text
                       x={x + (width ?? 0) / 2}
@@ -449,9 +542,15 @@ export default function BudgetForecastActualWaterfall({
                 // Use a darker shade of the fill color for stroke instead of blue
                 const getDarkerColor = () => {
                   if (stage.type === 'baseline') return '#4b5563'; // darker gray
+                  if (stage.type === 'preliminary') return '#111827'; // gray-900
                   return stage.type === 'positive' ? '#059669' : '#dc2626'; // darker green or red
                 };
-                const strokeColor = stage.isClickable ? getDarkerColor() : 'none';
+                const strokeColor =
+                  stage.type === 'preliminary'
+                    ? '#111827'
+                    : stage.isClickable || onStageClick
+                    ? getDarkerColor()
+                    : 'none';
                 // Shadow color matches the bar type
                 const shadowColor = stage.type === 'positive' 
                   ? 'rgba(16, 185, 129, 0.5)' // green shadow
@@ -463,11 +562,21 @@ export default function BudgetForecastActualWaterfall({
                   <Cell
                     key={`cell-${index}`}
                     fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={
+                      highlighted
+                        ? 4
+                        : stage.type === 'preliminary'
+                        ? 2
+                        : stage.isClickable
+                        ? 2
+                        : 0
+                    }
+                    strokeDasharray={stage.type === 'preliminary' ? '4 2' : undefined}
                     style={{
-                      cursor: stage.isClickable ? 'pointer' : 'default',
-                      stroke: strokeColor,
-                      strokeWidth: highlighted ? 4 : stage.isClickable ? 2 : 0,
-                      opacity: highlighted ? 1 : stage.isClickable ? 1 : 0.9,
+                      cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                      opacity:
+                        highlighted || stage.isClickable || onStageClick ? 1 : 0.9,
                       filter: highlighted
                         ? `drop-shadow(0 4px 6px ${shadowColor})`
                         : 'none',
@@ -476,13 +585,11 @@ export default function BudgetForecastActualWaterfall({
                     onMouseEnter={(e) => {
                       if (stage.isClickable && !highlighted) {
                         (e.currentTarget as SVGElement).style.opacity = '0.8';
-                        (e.currentTarget as SVGElement).style.strokeWidth = '3';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (stage.isClickable && !highlighted) {
                         (e.currentTarget as SVGElement).style.opacity = '1';
-                        (e.currentTarget as SVGElement).style.strokeWidth = '2';
                       }
                     }}
                   />
