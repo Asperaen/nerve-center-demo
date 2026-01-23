@@ -55,15 +55,56 @@ const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
   return key === 'other' ? 'others' : key;
 };
-const buildTrend = (value: number): MonthlyTrendPoint[] => {
-  const start = value * 0.94;
-  const end = value * 1.06;
+const buildTrend = (
+  value: number,
+  baseline: number,
+  _lastYear: number
+): MonthlyTrendPoint[] => {
+  // Calculate performance vs budget to determine trend direction
+  // The chart should visually align with the % badge:
+  // - Positive % (outperforming) = upward slope
+  // - Negative % (underperforming) = downward slope
+  const percentVsBudget = baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
+  const isOutperforming = percentVsBudget >= 0;
+  
+  // Calculate the magnitude of variance (capped for visual consistency)
+  const varianceMagnitude = Math.min(Math.abs(percentVsBudget), 50) / 100;
+  
+  // For outperforming: start lower, end at current value (upward slope)
+  // For underperforming: start higher, end at current value (downward slope)
+  const trendRange = value * (0.1 + varianceMagnitude * 0.15);
+  
+  const startValue = isOutperforming 
+    ? value - trendRange  // Start lower, trend up
+    : value + trendRange; // Start higher, trend down
+  const endValue = value;
+  
   const steps = TREND_MONTHS.length - 1;
+  
   return TREND_MONTHS.map((month, index) => {
     const ratio = steps === 0 ? 0 : index / steps;
+    
+    // Base linear interpolation
+    let baseValue = startValue + (endValue - startValue) * ratio;
+    
+    // Add curve variation based on performance magnitude
+    if (isOutperforming) {
+      // Outperformers: accelerating growth curve
+      const curve = Math.pow(ratio, 1.3);
+      baseValue = startValue + (endValue - startValue) * curve;
+    } else {
+      // Underperformers: decelerating decline (steep early, flattening)
+      const curve = 1 - Math.pow(1 - ratio, 1.3);
+      baseValue = startValue + (endValue - startValue) * curve;
+    }
+    
+    // Add small variation for realism
+    const noise = Math.sin(index * 2.5) * (value * 0.015);
+    baseValue += noise;
+    
     return {
       month,
-      value: Math.round((start + (end - start) * ratio) * 10) / 10,
+      value: Math.round(baseValue * 10) / 10,
     };
   });
 };
@@ -82,7 +123,7 @@ const buildMetric = (
   baseline: budget,
   stly: lastYear,
   percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
-  trend: buildTrend(value),
+  trend: buildTrend(value, budget, lastYear),
   aiInsight,
 });
 type BusinessGroupSource = BusinessGroup;
@@ -475,6 +516,28 @@ export default function BusinessGroupPerformancePage() {
     setSelectedTimeframe('ytm');
   }, [searchParams]);
 
+  // Sync selectedBu with URL bg parameter when navigating to this page
+  useEffect(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bu');
+    if (!bgParam) {
+      return;
+    }
+    const normalizedBg = bgParam === 'all' ? 'all' : normalizeGroupId(bgParam);
+    // Only update if the value actually changed to avoid unnecessary re-renders
+    setSelectedBu((current) => (current !== normalizedBg ? normalizedBg : current));
+  }, [searchParams]);
+
+  // Sync selectedGroupIds with URL selected parameter when navigating to this page
+  useEffect(() => {
+    const selectedParam = searchParams.get('selected');
+    if (!selectedParam) {
+      return;
+    }
+    const normalizedSelected = normalizeGroupId(selectedParam);
+    // Set the selected group IDs based on the URL parameter
+    setSelectedGroupIds(new Set([normalizedSelected]));
+  }, [searchParams]);
+
   const isOverallRowId = (id: string) =>
     id === 'overall' || id.endsWith('-overall');
 
@@ -588,22 +651,32 @@ export default function BusinessGroupPerformancePage() {
   }, [tableData]);
 
   useEffect(() => {
+    // Don't override if a specific BU is selected via URL parameter
+    const selectedParam = searchParams.get('selected');
+    if (selectedParam) {
+      return;
+    }
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
     if (overallRow) {
       setSelectedGroupIds(new Set([overallRow.id]));
     } else if (tableData.length === 0) {
       setSelectedGroupIds(new Set());
     }
-  }, [tableData]);
+  }, [tableData, searchParams]);
 
   useEffect(() => {
+    // Don't override if a specific BU is selected via URL parameter
+    const selectedParam = searchParams.get('selected');
+    if (selectedParam) {
+      return;
+    }
     if (selectedGroupIds.size === 0) {
       const overallRow = tableData.find((row) => isOverallRowId(row.id));
       if (overallRow) {
         setSelectedGroupIds(new Set([overallRow.id]));
       }
     }
-  }, [selectedGroupIds, tableData]);
+  }, [selectedGroupIds, tableData, searchParams]);
 
   useEffect(() => {
     if (selectedBu === 'all') {

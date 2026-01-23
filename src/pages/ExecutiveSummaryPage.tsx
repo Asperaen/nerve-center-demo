@@ -1214,7 +1214,8 @@ export default function ExecutiveSummaryPage({
     isLast: boolean = false,
     groupId?: string,
     isNavigable?: boolean,
-    isSubGroup?: boolean
+    isSubGroup?: boolean,
+    parentBgId?: string
   ) => {
     const isBudgetMode = isBudgetView || homeToggle === 'budget';
     const handleCellClick = (e: React.MouseEvent) => {
@@ -1226,7 +1227,7 @@ export default function ExecutiveSummaryPage({
               ? `&bu=${encodeURIComponent(groupName)}`
               : '';
             navigate(
-              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
+              `/business-group-performance?bg=${encodeURIComponent(selectedBu)}${unitsParam}&toggle=ytm`
             );
             return;
           }
@@ -1234,14 +1235,27 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bg=${groupId}`);
+          navigate(`/budget?bg=${encodeURIComponent(groupId)}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bg=${groupId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${encodeURIComponent(groupId)}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bg=${groupId}&toggle=${homeToggle}`);
+        // Navigate to business group performance with the BG and BU selected
+        // For sub-rows (expanded BUs under a BG), use the parent BG and select this BU
+        if (isSubGroup && parentBgId) {
+          navigate(`/business-group-performance?bg=${encodeURIComponent(parentBgId)}&selected=${encodeURIComponent(groupId)}&toggle=${homeToggle}`);
+          return;
+        }
+        // When a specific BG is already selected on home page, pass both BG and BU selection
+        if (selectedBu !== 'all' && groupId !== 'overall' && !groupId?.endsWith('-overall')) {
+          // Clicking on a BU row when a BG is selected - pass both bg and selected params
+          navigate(`/business-group-performance?bg=${encodeURIComponent(selectedBu)}&selected=${encodeURIComponent(groupId)}&toggle=${homeToggle}`);
+          return;
+        }
+        const bgParam = groupId !== 'overall' ? groupId : 'all';
+        navigate(`/business-group-performance?bg=${encodeURIComponent(bgParam)}&toggle=${homeToggle}`);
       }
     };
     const budgetPercent = calcPercent(metric.value, metric.baseline);
@@ -1430,12 +1444,13 @@ export default function ExecutiveSummaryPage({
     group: BusinessGroupData,
     isExpandable: boolean = false,
     isSubGroup: boolean = false,
-    isOverallRow: boolean = false
+    isOverallRow: boolean = false,
+    parentBgId?: string
   ) => {
     const isExpanded = expandedRows.has(group.id);
-    // Allow BU row navigation in budget view when a BG is selected
-    const isMetricNavigable =
-      isBudgetView && selectedBu !== 'all' ? true : !isSubGroup;
+    // All rows are navigable - main rows AND expanded sub-rows (like A Group, B Group under HH)
+    // This allows users to click on any BG row to navigate to the Business Group Performance page
+    const isMetricNavigable = true;
 
     const handleRowClick = () => {
       if (isMetricNavigable) {
@@ -1446,7 +1461,7 @@ export default function ExecutiveSummaryPage({
               ? `&bu=${encodeURIComponent(group.name)}`
               : '';
             navigate(
-              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
+              `/business-group-performance?bg=${encodeURIComponent(selectedBu)}${unitsParam}&toggle=ytm`
             );
             return;
           }
@@ -1454,14 +1469,27 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bg=${buId}`);
+          navigate(`/budget?bg=${encodeURIComponent(buId)}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bg=${buId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${encodeURIComponent(buId)}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bg=${buId}&toggle=${homeToggle}`);
+        // Navigate to business group performance with the BG and BU selected
+        // For sub-rows (expanded BUs under a BG), use the parent BG and select this BU
+        if (isSubGroup && parentBgId) {
+          navigate(`/business-group-performance?bg=${encodeURIComponent(parentBgId)}&selected=${encodeURIComponent(group.id)}&toggle=${homeToggle}`);
+          return;
+        }
+        // When a specific BG is already selected on home page, pass both BG and BU selection
+        if (selectedBu !== 'all' && !isOverallRow) {
+          // Clicking on a BU row when a BG is selected - pass both bg and selected params
+          navigate(`/business-group-performance?bg=${encodeURIComponent(selectedBu)}&selected=${encodeURIComponent(group.id)}&toggle=${homeToggle}`);
+          return;
+        }
+        const bgParam = buId !== 'all' ? buId : 'all';
+        navigate(`/business-group-performance?bg=${encodeURIComponent(bgParam)}&toggle=${homeToggle}`);
       }
     };
 
@@ -1476,7 +1504,7 @@ export default function ExecutiveSummaryPage({
             : 'hover:bg-gray-50 transition-colors'
         } ${isMetricNavigable ? 'cursor-pointer' : ''}`}
         onClick={isMetricNavigable ? handleRowClick : undefined}>
-        <td className='px-6 py-3 border-b border-r border-gray-200'>
+        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isMetricNavigable ? 'cursor-pointer' : ''}`}>
           <div className='flex items-center gap-2'>
             {isExpandable && (
               <button
@@ -1509,7 +1537,8 @@ export default function ExecutiveSummaryPage({
           false,
           group.id,
           isMetricNavigable,
-          isSubGroup
+          isSubGroup,
+          parentBgId
         )}
         {renderMetricCell(
           group.gp,
@@ -1518,7 +1547,8 @@ export default function ExecutiveSummaryPage({
           false,
           group.id,
           isMetricNavigable,
-          isSubGroup
+          isSubGroup,
+          parentBgId
         )}
         {renderMetricCell(
           group.op,
@@ -1527,7 +1557,8 @@ export default function ExecutiveSummaryPage({
           false,
           group.id,
           isMetricNavigable,
-          isSubGroup
+          isSubGroup,
+          parentBgId
         )}
         {renderMetricCell(
           group.np,
@@ -1536,7 +1567,8 @@ export default function ExecutiveSummaryPage({
           true,
           group.id,
           isMetricNavigable,
-          isSubGroup
+          isSubGroup,
+          parentBgId
         )}
       </tr>
     );
@@ -1743,7 +1775,7 @@ export default function ExecutiveSummaryPage({
                         )}
                       {isExpanded &&
                         getExpandedSubGroups(group.id).map((subGroup) =>
-                          renderTableRow(subGroup, false, true, false)
+                          renderTableRow(subGroup, false, true, false, group.id)
                         )}
                       </React.Fragment>
                   );

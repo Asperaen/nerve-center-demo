@@ -1654,7 +1654,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       <thead>
                         <tr>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
-                            Initiative
+                            Performance foundation
                           </th>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
                             KPI impacted
@@ -1758,7 +1758,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       <thead>
                         <tr>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
-                            Initiative
+                            Performance foundation
                           </th>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
                             KPI impacted
@@ -1841,7 +1841,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       <thead>
                         <tr>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
-                            Initiative
+                            Performance foundation
                           </th>
                           <th className='text-left font-semibold text-gray-700 pb-2'>
                             KPI impacted
