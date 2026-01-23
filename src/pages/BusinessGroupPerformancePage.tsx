@@ -1034,11 +1034,13 @@ export default function BusinessGroupPerformancePage() {
         };
       }
       const delta = adjustedMap.get(stage.stage) ?? stage.delta ?? 0;
+      const resolvedType = delta >= 0 ? 'positive' : 'negative';
       runningValue = roundToOne(runningValue + delta);
       return {
         ...stage,
         value: runningValue,
         delta,
+        type: resolvedType,
       };
     });
 
@@ -1309,9 +1311,8 @@ export default function BusinessGroupPerformancePage() {
 
     const driversByStage: Record<string, string[]> = {
       'market-performance': [
-        'Volume demand shift',
-        'Price and mix',
-        'Portfolio mix',
+        'Customer H total shipment increase by 10% vs plan',
+        'Customer D reduce projection volume by 12k units',
       ],
       'l3-vs-target': [
         'Initiative ramp',
@@ -1340,20 +1341,38 @@ export default function BusinessGroupPerformancePage() {
         'Customer timing',
         'Other factors',
       ];
-    const baseImpact = (activeDeviationStage.delta ?? 0) /
-      Math.max(1, selectedBuNames.length);
-    const rows = (selectedBuNames.length > 0 ? selectedBuNames : ['Overall']).map(
-      (name, index) => ({
-        bu: name,
-        driver: drivers[index % drivers.length],
-        impact: roundToOne(baseImpact + (index - 1) * 0.2),
-      })
-    );
+    const totalImpact = activeDeviationStage.delta ?? 0;
+    const buLabel =
+      selectedBuNames.length > 0 ? selectedBuNames[0] : 'Overall';
+    const rows =
+      activeDeviationStage.stage === 'market-performance'
+        ? [
+            {
+              bu: buLabel,
+              driver: drivers[0],
+              impact: roundToOne(totalImpact * 0.6),
+            },
+            {
+              bu: buLabel,
+              driver: drivers[1],
+              impact: roundToOne(totalImpact * 0.4),
+            },
+          ]
+        : (selectedBuNames.length > 0 ? selectedBuNames : ['Overall']).map(
+            (name, index) => ({
+              bu: name,
+              driver: drivers[index % drivers.length],
+              impact: roundToOne(
+                totalImpact / Math.max(1, selectedBuNames.length) +
+                  (index - 1) * 0.2
+              ),
+            })
+          );
 
     return {
       type: 'default' as const,
       rows,
-      totalImpact: activeDeviationStage.delta ?? 0,
+      totalImpact,
     };
   }, [
     activeDeviationStage,
@@ -2432,8 +2451,8 @@ export default function BusinessGroupPerformancePage() {
                   </p>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
-                  <p className='text-xs uppercase tracking-wide text-gray-500'>
-                    Selected BUs
+                  <p className='text-xs tracking-wide text-gray-500'>
+                    SELECTED BUs
                   </p>
                   <p className='mt-2 text-lg font-semibold text-gray-900'>
                     {selectedBuLabel}

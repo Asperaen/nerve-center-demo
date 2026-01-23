@@ -906,11 +906,6 @@ export default function MarketIntelligencePage() {
                   <h2 className='text-2xl font-bold text-gray-900 mb-1'>
                     Applied Assumptions
                   </h2>
-                  <p className='text-sm text-gray-500'>
-                    {isDragOverApplied
-                      ? 'Drop assumption here to apply it'
-                      : 'Assumptions already baked into the waterfall forecast'}
-                  </p>
                 </div>
                 <button
                   onClick={handleViewOverallValueDrivers}

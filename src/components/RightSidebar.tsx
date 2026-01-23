@@ -44,16 +44,16 @@ export default function RightSidebar({
       icon: SparklesIcon,
     },
     {
-      id: 'business-group-performance',
-      label: 'Actual - Business Group Performance',
-      path: '/business-group-performance',
-      icon: BuildingOffice2Icon,
-    },
-    {
       id: 'actual-initiative-implementation',
       label: 'Actual - Initiative Implementation dashboard',
       path: '/actual-initiative-implementation',
       icon: DocumentCheckIcon,
+    },
+    {
+      id: 'business-group-performance',
+      label: 'Actual - Business Group Performance',
+      path: '/business-group-performance',
+      icon: BuildingOffice2Icon,
     },
     {
       id: 'market-intelligence',

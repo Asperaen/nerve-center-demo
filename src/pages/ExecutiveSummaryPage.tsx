@@ -1789,7 +1789,7 @@ export default function ExecutiveSummaryPage({
                   </p>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
-                  <p className='text-xs uppercase tracking-wide text-gray-500'>
+                  <p className='text-xs tracking-wide text-gray-500'>
                     Selected BGs
                   </p>
                   <p className='mt-2 text-lg font-semibold text-gray-900'>
