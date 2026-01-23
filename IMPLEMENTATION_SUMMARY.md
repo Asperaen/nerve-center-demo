@@ -427,6 +427,7 @@ The application uses a flat route structure with standalone pages for each major
 - ✅ No Redux (not needed for mockup)
 - ✅ Props passing for data flow
 - ✅ Event handlers for interactions
+- ✅ BudgetContext for app-wide budget edits and changelog (in-memory)
 
 ### Routing
 
@@ -965,6 +966,12 @@ The application is **fully functional** and ready for CEO demonstration. All pla
 
    - **Performance Waterfall** updates with assumption toggles
    - **Focus Toggle** defaults from the inbound link and controls the highlighted stage
+   - **Revise Budget Target** modal:
+     - Disabled unless a specific BU is selected
+     - BU list derived from selected BG (no All BUs option)
+     - Tabular budget inputs with optional change note
+     - Changelog panel with fixed height + scroll
+     - Only changed fields are logged to the changelog
 
 
    - **Tab Switcher**: Two tabs at the top - "KPIs and operational indicators" and "Wave"

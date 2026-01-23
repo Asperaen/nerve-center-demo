@@ -5,21 +5,24 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   SparklesIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
  
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Link,
   useNavigate,
   useOutletContext,
   useSearchParams,
 } from 'react-router-dom';
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import { type TimeframeOption } from '../components/TimeframePicker';
-import BUSINESS_GROUP_DATA from '../data/mockBgData';
+import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
+import type { FunctionTargetRow, ValueDriverRow } from '../data/mockBgData';
 import {
   type BusinessGroupData,
   type BusinessGroupMetricWithTrend,
@@ -95,7 +98,7 @@ const buildMetric = (
   aiInsight,
 });
 
-type BusinessGroupSource = (typeof BUSINESS_GROUP_DATA)[number];
+type BusinessGroupSource = BusinessGroup;
 type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
 
 const buildGroupRow = (
@@ -385,6 +388,7 @@ export default function ExecutiveSummaryPage({
   useOutletContext<ExecutiveSummaryPageContext>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { businessGroups } = useBudgets();
 
   // Selection state
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
@@ -396,13 +400,18 @@ export default function ExecutiveSummaryPage({
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
+  const [activeBudgetStage, setActiveBudgetStage] =
+    useState<BudgetForecastStage | null>(null);
+  const [impactRationaleFilter, setImpactRationaleFilter] =
+    useState<string>('all');
+  const [impactSearch, setImpactSearch] = useState<string>('');
   const mainBuOptions = useMemo(
     () =>
-      BUSINESS_GROUP_DATA.map((group) => ({
+      businessGroups.map((group) => ({
         id: normalizeGroupId(group.group),
         name: group.group,
       })),
-    []
+    [businessGroups]
   );
 
   const selectedBuLabel = useMemo(() => {
@@ -411,6 +420,317 @@ export default function ExecutiveSummaryPage({
     }
     return mainBuOptions.find((bu) => bu.id === selectedBu)?.name ?? 'Overall';
   }, [selectedBu, mainBuOptions]);
+
+  const formatMn = (value: number) =>
+    value.toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+
+  const selectedImpactUnits = useMemo(() => {
+    if (selectedBu === 'all') {
+      return businessGroups.flatMap((group) => group.businessUnits);
+    }
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    return selectedGroup?.businessUnits ?? [];
+  }, [businessGroups, selectedBu]);
+
+  const opImpactRows = useMemo(
+    () =>
+      selectedImpactUnits.flatMap((unit) =>
+        (unit.opImpactDetails ?? []).map((detail) => ({
+          ...detail,
+          bu: unit.name,
+        }))
+      ),
+    [selectedImpactUnits]
+  );
+  const opImpactTotals = useMemo(() => {
+    const oneOff = opImpactRows
+      .filter((row) => row.category.toLowerCase().includes('one-off'))
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    const headwinds = opImpactRows
+      .filter((row) => {
+        const category = row.category.toLowerCase();
+        return category.includes('headwind') || category.includes('tailwind');
+      })
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    return { oneOff, headwinds };
+  }, [opImpactRows]);
+
+  const ideationValueRows = useMemo(() => {
+    if (selectedBu === 'all') {
+      return null;
+    }
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup || selectedGroup.businessUnits.length === 0) {
+      return null;
+    }
+    const baseRows =
+      selectedGroup.businessUnits[0]?.valueDriverBreakdown ?? [];
+    if (baseRows.length === 0) {
+      return null;
+    }
+    const rowOrder = baseRows.map((row) => row.vs);
+    const aggregateMap = new Map<string, ValueDriverRow>();
+
+    selectedGroup.businessUnits.forEach((unit) => {
+      const rows = unit.valueDriverBreakdown ?? [];
+      rows.forEach((row) => {
+        const existing = aggregateMap.get(row.vs) ?? {
+          vs: row.vs,
+          topline: 0,
+          bomGtk: 0,
+          bomNonGtk: 0,
+          mfg: 0,
+          rnd: 0,
+          sga: 0,
+        };
+        const mergeValue = (prev: number | string, next: number | string) => {
+          if (typeof next === 'number') {
+            return (typeof prev === 'number' ? prev : 0) + next;
+          }
+          return prev || next;
+        };
+        aggregateMap.set(row.vs, {
+          vs: row.vs,
+          topline: mergeValue(existing.topline, row.topline),
+          bomGtk: mergeValue(existing.bomGtk, row.bomGtk),
+          bomNonGtk: mergeValue(existing.bomNonGtk, row.bomNonGtk),
+          mfg: mergeValue(existing.mfg, row.mfg),
+          rnd: mergeValue(existing.rnd, row.rnd),
+          sga: mergeValue(existing.sga, row.sga),
+        });
+      });
+    });
+
+    return rowOrder
+      .map((vs) => aggregateMap.get(vs))
+      .filter((row): row is ValueDriverRow => Boolean(row));
+  }, [businessGroups, selectedBu]);
+
+  const functionTargetRows = useMemo(() => {
+    if (selectedBu === 'all') {
+      return null;
+    }
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup || selectedGroup.businessUnits.length === 0) {
+      return null;
+    }
+    const baseRows =
+      selectedGroup.businessUnits[0]?.functionTargetBreakdown ?? [];
+    if (baseRows.length === 0) {
+      return null;
+    }
+    const rowOrder = baseRows.map(
+      (row) => `${row.function}|${row.coreKpi}|${row.coreImprovementTarget}`
+    );
+    const aggregateMap = new Map<string, FunctionTargetRow>();
+
+    selectedGroup.businessUnits.forEach((unit) => {
+      const rows = unit.functionTargetBreakdown ?? [];
+      rows.forEach((row) => {
+        const key = `${row.function}|${row.coreKpi}|${row.coreImprovementTarget}`;
+        const existing = aggregateMap.get(key) ?? {
+          function: row.function,
+          opTarget: 0,
+          coreKpi: row.coreKpi,
+          coreImprovementTarget: row.coreImprovementTarget,
+        };
+        const nextValue =
+          typeof row.opTarget === 'number'
+            ? (typeof existing.opTarget === 'number' ? existing.opTarget : 0) +
+              row.opTarget
+            : existing.opTarget || row.opTarget;
+        aggregateMap.set(key, {
+          function: row.function,
+          opTarget: nextValue,
+          coreKpi: row.coreKpi,
+          coreImprovementTarget: row.coreImprovementTarget,
+        });
+      });
+    });
+
+    return rowOrder
+      .map((key) => aggregateMap.get(key))
+      .filter((row): row is FunctionTargetRow => Boolean(row));
+  }, [businessGroups, selectedBu]);
+  const impactRationaleOptions = useMemo(
+    () =>
+      Array.from(new Set(opImpactRows.map((row) => row.costRationale))).filter(
+        Boolean
+      ),
+    [opImpactRows]
+  );
+
+  const getOpImpactRowsForStage = useCallback(
+    (stage: BudgetForecastStage) => {
+      if (opImpactRows.length === 0) {
+        return [];
+      }
+      const normalized = (value: string) => value.toLowerCase();
+      if (stage.stage === 'one-off-adjustments') {
+        return opImpactRows.filter((row) =>
+          normalized(row.category).includes('one-off')
+        );
+      }
+      if (stage.stage === 'market-performance') {
+        return opImpactRows.filter((row) => {
+          const category = normalized(row.category);
+          return category.includes('headwind') || category.includes('tailwind');
+        });
+      }
+      return [];
+    },
+    [opImpactRows]
+  );
+
+  const renderOpImpactTooltip = useCallback(
+    (stage: BudgetForecastStage) => {
+      if (
+        stage.stage !== 'one-off-adjustments' &&
+        stage.stage !== 'market-performance'
+      ) {
+        return null;
+      }
+      const stageRows = getOpImpactRowsForStage(stage);
+      const totalImpact = stageRows.reduce((sum, row) => sum + row.opImpact, 0);
+      const topItems = [...stageRows]
+        .sort((a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact))
+        .slice(0, 4);
+
+      if (topItems.length === 0) {
+        return (
+          <p className='text-xs text-gray-500'>
+            No op-impact items available.
+          </p>
+        );
+      }
+      const remainingCount = Math.max(0, stageRows.length - topItems.length);
+
+      return (
+        <div className='space-y-2'>
+          <p className='text-2xl font-semibold text-gray-900'>
+            {formatMn(totalImpact)}M
+          </p>
+          <p className='text-xs font-semibold text-gray-700'>
+            Items
+          </p>
+          <ul className='space-y-1'>
+            {topItems.map((item, index) => (
+              <li key={`${item.bu}-${item.item}-${index}`} className='text-xs'>
+                <span className='font-semibold text-gray-900'>{item.bu}</span>
+                <span className='text-gray-600'> — {item.item}</span>
+                <span className='ml-2 font-semibold text-gray-900'>
+                  {formatMn(item.opImpact)}M
+                </span>
+              </li>
+            ))}
+          </ul>
+          {remainingCount > 0 && (
+            <p className='text-[11px] text-gray-500'>
+              +{remainingCount} more items
+            </p>
+          )}
+        </div>
+      );
+    },
+    [formatMn, getOpImpactRowsForStage]
+  );
+
+  const renderIdeationTooltip = useCallback(
+    (stage: BudgetForecastStage) => {
+      if (stage.stage !== 'ideation') {
+        return null;
+      }
+      if (!ideationValueRows || ideationValueRows.length === 0) {
+        return (
+          <p className='text-xs text-gray-500'>
+            Select a BG to view ideation value drivers.
+          </p>
+        );
+      }
+      const formatValue = (value: number | string) =>
+        typeof value === 'number' ? formatMn(value) : value || '-';
+
+      return (
+        <div className='max-w-[560px]'>
+          <p className='text-xs font-semibold text-gray-700 mb-2'>
+            Ideation value drivers (Mn USD)
+          </p>
+          <div className='overflow-hidden rounded-md border border-gray-200'>
+            <table className='w-full text-xs'>
+              <thead className='bg-gray-50 border-b border-gray-200'>
+                <tr>
+                  <th className='px-2 py-2 text-left font-semibold text-gray-700'>
+                    VS
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    Topline
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    BOM - GTK
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    BOM - Non GTK
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    MFG
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    R&D
+                  </th>
+                  <th className='px-2 py-2 text-right font-semibold text-gray-700'>
+                    SG&A
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {ideationValueRows.map((row) => (
+                  <tr
+                    key={row.vs}
+                    className='border-b border-gray-200 last:border-b-0'>
+                    <td className='px-2 py-2 text-gray-700'>{row.vs}</td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.topline)}
+                    </td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.bomGtk)}
+                    </td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.bomNonGtk)}
+                    </td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.mfg)}
+                    </td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.rnd)}
+                    </td>
+                    <td className='px-2 py-2 text-right text-gray-700'>
+                      {formatValue(row.sga)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    },
+    [formatMn, ideationValueRows]
+  );
+
+  const renderBudgetTooltip = useCallback(
+    (stage: BudgetForecastStage) =>
+      renderIdeationTooltip(stage) ?? renderOpImpactTooltip(stage),
+    [renderIdeationTooltip, renderOpImpactTooltip]
+  );
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -603,7 +923,7 @@ export default function ExecutiveSummaryPage({
     const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
-      const groupRows = BUSINESS_GROUP_DATA.map((group) =>
+      const groupRows = businessGroups.map((group) =>
         buildGroupRow(
           group.group,
           group.businessUnits,
@@ -615,7 +935,7 @@ export default function ExecutiveSummaryPage({
       );
       const overallRow = buildGroupRow(
         'Overall',
-        BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits),
+        businessGroups.flatMap((group) => group.businessUnits),
         scale,
         valueMode,
         budgetMode,
@@ -626,7 +946,7 @@ export default function ExecutiveSummaryPage({
       return [...groupRows, overallRow];
     }
 
-    const selectedGroup = BUSINESS_GROUP_DATA.find(
+    const selectedGroup = businessGroups.find(
       (group) => normalizeGroupId(group.group) === selectedBu
     );
     if (!selectedGroup) {
@@ -647,7 +967,7 @@ export default function ExecutiveSummaryPage({
       `${selectedGroup.group} overall`
     );
     return [...unitRows, overallRow];
-  }, [selectedBu, selectedTimeframe, homeToggle, isBudgetView]);
+  }, [businessGroups, selectedBu, selectedTimeframe, homeToggle, isBudgetView]);
 
   const budgetWaterfallStages = useMemo(() => {
     if (!isBudgetView) {
@@ -666,130 +986,37 @@ export default function ExecutiveSummaryPage({
 
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
 
-    let runningValue = roundToOne(lastYearOpValue);
-    const baseStages = mockBudgetForecastStages.map((stage) => {
-      const isBaselineStage = stage.type === 'baseline';
-      const isBudgetStage = stage.stage === 'budget';
-      const isActualStage = stage.stage === 'actuals';
-
-      if (isBudgetStage) {
-        runningValue = roundToOne(lastYearOpValue);
-        return {
-          ...stage,
-          value: runningValue,
-          delta: runningValue,
-        };
-      }
-
-      if (isActualStage) {
-        runningValue = roundToOne(budgetOpValue);
-        return {
-          ...stage,
-          value: runningValue,
-          delta: runningValue,
-        };
-      }
-
-      if (isBaselineStage) {
-        return {
-          ...stage,
-          value: runningValue,
-          delta: runningValue,
-        };
-      }
-
-      const scaledDelta =
-        stage.delta === undefined
-          ? undefined
-          : roundToOne(stage.delta * scaleFactor);
-      if (scaledDelta !== undefined) {
-        runningValue = roundToOne(runningValue + scaledDelta);
-      }
-
-      return {
-        ...stage,
-        value: runningValue,
-        delta: scaledDelta,
-      };
-    });
-
-    const stageById = new Map(
-      baseStages.map((stage) => [stage.stage, stage])
-    );
-
-    const totalChange = roundToOne(budgetOpValue - lastYearOpValue);
-    const fallbackShare = (ratio: number) =>
-      totalChange === 0
-        ? roundToOne(lastYearOpValue * ratio)
-        : roundToOne(totalChange * ratio);
-
-    const oneOffDeltaRaw =
-      stageById.get('one-off-adjustments')?.delta ?? fallbackShare(0.12);
-    const oneOffDelta = -Math.abs(oneOffDeltaRaw);
-    const headwindsDelta =
-      stageById.get('market-performance')?.delta ?? fallbackShare(0.28);
-    const l4DeltaRaw =
-      stageById.get('l4-vs-planned')?.delta ?? fallbackShare(0.22);
-    const l3DeltaRaw =
-      stageById.get('l3-vs-target')?.delta ?? fallbackShare(0.18);
-    const l4Delta = Math.abs(l4DeltaRaw);
-    const l3Delta = Math.abs(l3DeltaRaw);
-
-    const afterOneOff = roundToOne(lastYearOpValue + oneOffDelta);
-    const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
-    const beforePipeline = afterHeadwinds;
-    const afterL4 = roundToOne(beforePipeline + l4Delta);
-    const afterL3 = roundToOne(afterL4 + l3Delta);
-    const withPipeline =
-      stageById.get('forecast')?.value ?? roundToOne(afterL3);
-    const ideationTotal = selectedBu === 'all'
-      ? BUSINESS_GROUP_DATA.reduce(
-          (sum, group) =>
-            sum +
-            group.businessUnits.reduce(
-              (unitSum, unit) => unitSum + unit.ideationTarget,
-              0
-            ),
-          0
-        )
-      : BUSINESS_GROUP_DATA.find(
-          (group) => normalizeGroupId(group.group) === selectedBu
-        )?.businessUnits.reduce(
-          (sum, unit) => sum + unit.ideationTarget,
-          0
-        ) ?? 0;
+    const ideationTotal =
+      selectedBu === 'all'
+        ? businessGroups.reduce(
+            (sum, group) =>
+              sum +
+              group.businessUnits.reduce(
+                (unitSum, unit) => unitSum + unit.ideationTarget,
+                0
+              ),
+            0
+          )
+        : businessGroups.find(
+            (group) => normalizeGroupId(group.group) === selectedBu
+          )?.businessUnits.reduce(
+            (sum, unit) => sum + unit.ideationTarget,
+            0
+          ) ?? 0;
     const ideationDelta = roundToOne(toMillions(ideationTotal));
 
     // Work backwards: withPipeline + ideationDelta = budgetOpValue
     const withPipeline = roundToOne(budgetOpValue - ideationDelta);
 
-    // The remaining change from lastYearOpValue to withPipeline must be distributed
-    // among one-off items, headwinds/tailwinds, L4, and L3
+    // Remaining change from last year to pipeline value
     const remainingChange = roundToOne(withPipeline - lastYearOpValue);
 
-    // Create variation with both favorable (positive) and adverse (negative) deltas
-    // Make deltas visible by basing them on the baseline value, not remaining change
-    // One-off items: Always adverse (reduces value) - represents one-time costs
-    // Headwinds/Tailwinds: Variable - can be favorable or adverse based on market
-    // L4 and L3: Always favorable (pipeline initiatives add value)
-    
-    // One-off is a visible adverse impact (8% of last year OP)
-    const oneOffDelta = roundToOne(-Math.abs(lastYearOpValue * 0.08));
-    
-    // Headwinds/Tailwinds: Variable based on overall performance (6% of last year OP)
-    // If growth is strong (>20%), headwinds are favorable; otherwise adverse
-    const growthRate = lastYearOpValue === 0 ? 0 : (budgetOpValue - lastYearOpValue) / lastYearOpValue;
-    const headwindsIsFavorable = growthRate > 0.20;
-    const headwindsMagnitude = Math.abs(lastYearOpValue * 0.06);
-    const headwindsDelta = headwindsIsFavorable 
-      ? roundToOne(headwindsMagnitude) 
-      : roundToOne(-headwindsMagnitude);
-    
-    // Calculate what L4 and L3 need to cover (the remaining gap after one-off and headwinds)
+    const oneOffDelta = roundToOne(opImpactTotals.oneOff);
+    const headwindsDelta = roundToOne(opImpactTotals.headwinds);
+
+    // L4 and L3 cover the remaining gap after one-off and headwinds
     const pipelineNeeded = roundToOne(remainingChange - oneOffDelta - headwindsDelta);
-    
-    // L4 gets 40% of pipeline needed, L3 gets the rest
-    const l4Delta = roundToOne(pipelineNeeded * 0.40);
+    const l4Delta = roundToOne(pipelineNeeded * 0.4);
     const l3Delta = roundToOne(pipelineNeeded - l4Delta);
 
     const afterOneOff = roundToOne(lastYearOpValue + oneOffDelta);
@@ -857,14 +1084,14 @@ export default function ExecutiveSummaryPage({
       ),
       makeStage(
         'l4-vs-planned',
-        'Ramp up of already implemented (L4) initiatives',
+        'Remaining impact of initiatives implemented in previous year',
         afterL4,
         roundToOne(l4Delta),
         getBudgetStageType('l4-vs-planned', l4Delta, 'positive')
       ),
       makeStage(
         'l3-vs-target',
-        'Initiatives to be implemented (L3)',
+        'Impact of initiatives planned in previous year but not yet implemented',
         afterL3,
         roundToOne(l3Delta),
         getBudgetStageType('l3-vs-target', l3Delta, 'positive')
@@ -891,7 +1118,60 @@ export default function ExecutiveSummaryPage({
         'baseline'
       ),
     ];
-  }, [isBudgetView, tableData, selectedBu]);
+  }, [businessGroups, isBudgetView, opImpactTotals, tableData, selectedBu]);
+
+  const activeBudgetDetails = useMemo(() => {
+    if (!activeBudgetStage) {
+      return null;
+    }
+    if (activeBudgetStage.stage === 'ideation') {
+      return {
+        type: 'ideation' as const,
+        totalImpact: activeBudgetStage.delta ?? 0,
+        rows: functionTargetRows ?? [],
+      };
+    }
+    if (
+      activeBudgetStage.stage !== 'one-off-adjustments' &&
+      activeBudgetStage.stage !== 'market-performance'
+    ) {
+      return null;
+    }
+    const rows = getOpImpactRowsForStage(activeBudgetStage);
+    const normalizedSearch = impactSearch.trim().toLowerCase();
+    const filteredRows = rows.filter((row) => {
+      if (
+        impactRationaleFilter !== 'all' &&
+        row.costRationale !== impactRationaleFilter
+      ) {
+        return false;
+      }
+      if (!normalizedSearch) {
+        return true;
+      }
+      return (
+        row.bu.toLowerCase().includes(normalizedSearch) ||
+        row.item.toLowerCase().includes(normalizedSearch) ||
+        row.lineItem.toLowerCase().includes(normalizedSearch)
+      );
+    });
+
+    const sortedRows = [...filteredRows].sort(
+      (a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact)
+    );
+
+    return {
+      type: 'op-impact' as const,
+      totalImpact: rows.reduce((sum, row) => sum + row.opImpact, 0),
+      rows: sortedRows,
+    };
+  }, [
+    activeBudgetStage,
+    getOpImpactRowsForStage,
+    functionTargetRows,
+    impactRationaleFilter,
+    impactSearch,
+  ]);
 
   const getExpandedSubGroups = (bgId: string) => {
     const scale = 1;
@@ -903,7 +1183,7 @@ export default function ExecutiveSummaryPage({
         : 'actual';
     const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
-    const selectedGroup = BUSINESS_GROUP_DATA.find(
+    const selectedGroup = businessGroups.find(
       (group) => normalizeGroupId(group.group) === bgId
     );
     if (!selectedGroup) {
@@ -1044,7 +1324,7 @@ export default function ExecutiveSummaryPage({
               {percentSign}
               {primaryPercent.toFixed(1)}%
             </span>
-            {!isBudgetView && (
+            {!isBudgetMode && (
             <span
                 className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
                 {lastYearPercentSign}
@@ -1357,7 +1637,9 @@ export default function ExecutiveSummaryPage({
             <div>
               <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
                 <ChartBarIcon className='w-6 h-6 text-primary-600' />
-                Business Group Performance
+                {isBudgetView
+                  ? 'Budget by Business Group'
+                  : 'Business Group Performance'}
               </h2>
                 <p className='text-sm text-gray-600 mt-1'>Mn, USD</p>
             </div>
@@ -1451,12 +1733,265 @@ export default function ExecutiveSummaryPage({
                   stages={budgetWaterfallStages}
                   title='Budget deviation waterfall of BU performance by value driver'
                   subtitle={`Mn USD • ${selectedBuLabel}`}
+                  onStageClick={(stage) => {
+                    if (
+                      stage.stage === 'one-off-adjustments' ||
+                      stage.stage === 'market-performance' ||
+                      stage.stage === 'ideation'
+                    ) {
+                      setActiveBudgetStage(stage);
+                    }
+                  }}
+                  tooltipContent={renderBudgetTooltip}
                 />
         </div>
             )}
           </div>
         </div>
       </div>
+
+      {activeBudgetStage && activeBudgetDetails && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6'
+          onClick={() => setActiveBudgetStage(null)}>
+          <div
+            className='flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 max-h-[80vh]'
+            onClick={(event: React.MouseEvent<HTMLDivElement>) =>
+              event.stopPropagation()
+            }>
+            <div className='flex items-start justify-between gap-4 border-b border-gray-200 p-6'>
+              <div>
+                <p className='text-xs uppercase tracking-wide text-gray-500'>
+                  Metric details
+                </p>
+                <h3 className='text-xl font-bold text-gray-900'>
+                  {activeBudgetStage.label}
+                </h3>
+                <p className='text-sm text-gray-500 mt-1'>
+                  {selectedBuLabel} • Budget
+                </p>
+              </div>
+              <button
+                type='button'
+                className='rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-gray-700 hover:border-gray-300'
+                onClick={() => setActiveBudgetStage(null)}>
+                <XMarkIcon className='h-4 w-4' />
+              </button>
+            </div>
+            <div className='flex-1 overflow-y-auto p-6 space-y-5'>
+              <div className='grid gap-4 sm:grid-cols-3'>
+                <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
+                  <p className='text-xs uppercase tracking-wide text-gray-500'>
+                    Total impact
+                  </p>
+                  <p className='mt-2 text-2xl font-semibold text-gray-900'>
+                    {formatMn(activeBudgetDetails.totalImpact)} Mn USD
+                  </p>
+                </div>
+                <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
+                  <p className='text-xs uppercase tracking-wide text-gray-500'>
+                    Selected BGs
+                  </p>
+                  <p className='mt-2 text-lg font-semibold text-gray-900'>
+                    {selectedBuLabel}
+                  </p>
+                </div>
+                <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
+                  <p className='text-xs uppercase tracking-wide text-gray-500'>
+                    Context
+                  </p>
+                  <p className='mt-2 text-lg font-semibold text-gray-900'>
+                    Operating Profit
+                  </p>
+                </div>
+              </div>
+              {activeBudgetDetails.type === 'op-impact' && (
+                <div className='flex flex-wrap gap-3'>
+                  <select
+                    className='rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700'
+                    value={impactRationaleFilter}
+                    onChange={(event) =>
+                      setImpactRationaleFilter(event.target.value)
+                    }>
+                    <option value='all'>All rationales</option>
+                    {impactRationaleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className='flex-1 min-w-[200px] rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700'
+                    placeholder='Filter items...'
+                    value={impactSearch}
+                    onChange={(event) => setImpactSearch(event.target.value)}
+                  />
+                </div>
+              )}
+              <div className='overflow-hidden rounded-lg border border-gray-200'>
+                {activeBudgetDetails.type === 'ideation' ? (
+                  <table className='w-full text-sm'>
+                    <thead className='bg-gray-50 border-b border-gray-200'>
+                      <tr>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Function
+                        </th>
+                        <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                          OP Target
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Core KPI
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Core improvement target
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          KPI ramp up target
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeBudgetDetails.rows.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className='px-4 py-6 text-center text-sm text-gray-500'>
+                            Select a BG to view ideation targets.
+                          </td>
+                        </tr>
+                      ) : (
+                        activeBudgetDetails.rows.map((row) => (
+                          <tr
+                            key={`${row.function}-${row.coreKpi}-${row.coreImprovementTarget}`}
+                            className='border-b border-gray-200 last:border-b-0'>
+                            <td className='px-4 py-3 text-gray-700'>
+                              {row.function}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {typeof row.opTarget === 'number'
+                                ? formatMn(row.opTarget)
+                                : row.opTarget || '-'}
+                            </td>
+                            <td className='px-4 py-3 text-gray-700'>
+                              {row.coreKpi}
+                            </td>
+                            <td className='px-4 py-3 text-gray-700'>
+                              {row.coreImprovementTarget}
+                            </td>
+                            <td className='px-4 py-3 text-gray-700'>
+                              {(() => {
+                                const seed =
+                                  row.coreKpi.length +
+                                  row.function.length +
+                                  row.coreImprovementTarget.length;
+                                const isPositive = seed % 2 === 0;
+                                const color = isPositive ? '#16a34a' : '#dc2626';
+                                const base = isPositive ? 3 : 7;
+                                const points = Array.from({ length: 7 }, (_, i) => {
+                                  const trend = isPositive ? i : -i;
+                                  const wobble = (seed + i * 3) % 4;
+                                  return { index: i, value: base + trend + (wobble - 1.5) * 0.4 };
+                                });
+                                return (
+                                  <div className='h-8 w-24'>
+                                    <ResponsiveContainer width='100%' height='100%'>
+                                      <LineChart data={points} margin={{ top: 2, right: 4, left: 4, bottom: 2 }}>
+                                        <XAxis
+                                          dataKey='index'
+                                          hide={false}
+                                          axisLine
+                                          tick={false}
+                                          tickLine={false}
+                                          height={8}
+                                        />
+                                        <YAxis
+                                          hide={false}
+                                          axisLine
+                                          tick={false}
+                                          tickLine={false}
+                                          domain={['auto', 'auto']}
+                                          width={8}
+                                        />
+                                        <Line
+                                          type='monotone'
+                                          dataKey='value'
+                                          stroke={color}
+                                          strokeWidth={2}
+                                          dot={false}
+                                          isAnimationActive={false}
+                                        />
+                                      </LineChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                );
+                              })()}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className='w-full text-sm'>
+                    <thead className='bg-gray-50 border-b border-gray-200'>
+                      <tr>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          BU
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Line item
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Cost rationale
+                        </th>
+                        <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                          Item
+                        </th>
+                        <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                          OP impact (Mn USD)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeBudgetDetails.rows.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className='px-4 py-6 text-center text-sm text-gray-500'>
+                            No op-impact items available.
+                          </td>
+                        </tr>
+                      ) : (
+                        activeBudgetDetails.rows.map((row, index) => (
+                          <tr
+                            key={`${row.bu}-${row.item}-${index}`}
+                            className='border-b border-gray-200 last:border-b-0'>
+                            <td className='px-4 py-3 font-semibold text-gray-900'>
+                              {row.bu}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {row.lineItem}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {row.costRationale}
+                            </td>
+                            <td className='px-4 py-3 text-gray-600'>
+                              {row.item}
+                            </td>
+                            <td className='px-4 py-3 text-right font-semibold text-gray-900'>
+                              {formatMn(row.opImpact)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Analysis Sidebar */}
       <RootCauseAnalysisSidebar

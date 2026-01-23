@@ -318,7 +318,7 @@ export interface OPWaterfallStage {
   label: string;
   value: number; // Cumulative OP value in millions
   delta?: number; // Change from previous stage in millions
-  type: 'baseline' | 'positive' | 'negative'; // For color coding
+  type: 'baseline' | 'positive' | 'negative' | 'preliminary'; // For color coding
   description?: string;
 }
 
@@ -355,14 +355,16 @@ export type BudgetForecastStageType =
   | 'ideation'
   | 'forecast'
   | 'l4-to-l5-leakage'
-  | 'actuals';
+  | 'actuals'
+  | 'early-signals'
+  | 'forecast-with-early';
 
 export interface BudgetForecastStage {
   stage: BudgetForecastStageType;
   label: string;
   value: number; // Cumulative value in millions
   delta?: number; // Change from previous stage in millions
-  type: 'baseline' | 'positive' | 'negative'; // For color coding
+  type: 'baseline' | 'positive' | 'negative' | 'preliminary'; // For color coding
   description?: string;
   isClickable?: boolean; // Whether the bar is clickable for navigation
   navigationTarget?: string; // Route to navigate to when clicked

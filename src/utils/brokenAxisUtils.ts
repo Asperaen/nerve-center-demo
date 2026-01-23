@@ -16,7 +16,7 @@ export interface BrokenAxisResult {
 interface WaterfallStage {
   value: number;
   delta?: number;
-  type: 'baseline' | 'positive' | 'negative';
+  type: 'baseline' | 'positive' | 'negative' | 'preliminary';
 }
 
 /**

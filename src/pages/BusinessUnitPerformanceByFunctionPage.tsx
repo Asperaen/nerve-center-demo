@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import FunctionalPerformanceWaterfall, {
   type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
-import BUSINESS_GROUP_DATA from '../data/mockBgData';
+import { useBudgets } from '../contexts/BudgetContext';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
 import { getStoredTimeframe } from '../utils/timeframeStorage';
@@ -26,6 +26,7 @@ const formatMn = (value: number) => {
 export default function BusinessUnitPerformanceByFunctionPage() {
   const { functionId } = useParams<{ functionId?: string }>();
   const [searchParams] = useSearchParams();
+  const { businessGroups } = useBudgets();
   const functionParam =
     functionId ??
     searchParams.get('function') ??
@@ -264,7 +265,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       normalizedSelection.has('all') ||
       normalizedSelection.has('allbgs');
 
-    const selectedUnits = BUSINESS_GROUP_DATA.flatMap((group) => {
+    const selectedUnits = businessGroups.flatMap((group) => {
       const groupId = normalizeBu(group.group);
       if (includeAll || normalizedSelection.has(groupId)) {
         return group.businessUnits;
@@ -276,8 +277,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
     return selectedUnits.length > 0
       ? selectedUnits
-      : BUSINESS_GROUP_DATA.flatMap((group) => group.businessUnits);
-  }, [selectedBus]);
+      : businessGroups.flatMap((group) => group.businessUnits);
+  }, [businessGroups, selectedBus]);
 
   const procurementOverallTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
@@ -387,21 +388,25 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     if (!baseOverall) {
       return baseProcurementCategories;
     }
-    // Use single scale factor based on budget to preserve budget/actual ratios
-    const scale = Math.abs(
+    const budgetScale = Math.abs(
       baseOverall.budget === 0
         ? 1
         : procurementOverallTotals.budget / baseOverall.budget
     );
+    const actualScale = Math.abs(
+      baseOverall.actual === 0
+        ? 1
+        : procurementOverallTotals.actual / baseOverall.actual
+    );
 
     return baseProcurementCategories.map((category) => ({
       ...category,
-      budget: roundToOne(category.budget * scale),
-      actual: roundToOne(category.actual * scale),
+      budget: roundToOne(category.budget * budgetScale),
+      actual: roundToOne(category.actual * actualScale),
       children: category.children?.map((child) => ({
         ...child,
-        budget: roundToOne(child.budget * scale),
-        actual: roundToOne(child.actual * scale),
+        budget: roundToOne(child.budget * budgetScale),
+        actual: roundToOne(child.actual * actualScale),
       })),
     }));
   }, [baseProcurementCategories, procurementOverallTotals]);
@@ -457,10 +462,125 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     },
   ];
 
+  const manufacturingBuckets = [
+    {
+      id: 'vol-mix-change',
+      label: 'Vol mix change',
+      delta: -2.4,
+      initiatives: [
+        { name: 'Line balancing initiative', gap: '-0.9Mn', kpi: 'UPPH' },
+        { name: 'Shift mix optimization', gap: '-1.1Mn', kpi: 'OEE' },
+      ],
+      foundations: [
+        {
+          name: 'Factory scheduling cadence',
+          kpi: 'OEE',
+          date: '2025.3',
+        },
+      ],
+    },
+    {
+      id: 'labor-rate-impact',
+      label: 'Labour rate impact',
+      delta: 1.6,
+      initiatives: [
+        { name: 'Overtime control', gap: '+0.6Mn', kpi: 'Labor cost' },
+        { name: 'Skill premium adjustment', gap: '+0.8Mn', kpi: 'Labor cost' },
+      ],
+      foundations: [
+        {
+          name: 'Workforce planning discipline',
+          kpi: 'Labor cost',
+          date: '2025.4',
+        },
+      ],
+    },
+    {
+      id: 'dl-efficiency',
+      label: 'DL efficiency gap',
+      delta: -1.9,
+      initiatives: [
+        { name: 'UPPH stabilization', gap: '-0.8Mn', kpi: 'UPPH' },
+        { name: 'Automation ramp', gap: '-1.1Mn', kpi: 'OEE' },
+      ],
+      foundations: [
+        {
+          name: 'Frontline capability program',
+          kpi: 'UPPH',
+          date: '2025.2',
+        },
+      ],
+    },
+    {
+      id: 'idl-hc-gap',
+      label: 'IDL HC gap',
+      delta: 0.7,
+      initiatives: [
+        { name: 'Support headcount control', gap: '+0.4Mn', kpi: 'HC' },
+        { name: 'Span of control review', gap: '+0.3Mn', kpi: 'HC' },
+      ],
+      foundations: [
+        {
+          name: 'Org design refresh',
+          kpi: 'HC',
+          date: '2025.5',
+        },
+      ],
+    },
+    {
+      id: 'ga-variable-gap',
+      label: 'GA variable efficiency',
+      delta: -0.6,
+      initiatives: [
+        { name: 'Utility usage reduction', gap: '-0.3Mn', kpi: 'OPEX' },
+        { name: 'Consumables optimization', gap: '-0.3Mn', kpi: 'OPEX' },
+      ],
+      foundations: [
+        {
+          name: 'Cost governance cadence',
+          kpi: 'OPEX',
+          date: '2025.1',
+        },
+      ],
+    },
+    {
+      id: 'ga-fixed-gap',
+      label: 'GA fixed cost gap',
+      delta: 0.9,
+      initiatives: [
+        { name: 'Facility lease reset', gap: '+0.5Mn', kpi: 'Fixed cost' },
+        { name: 'Maintenance contract uplift', gap: '+0.4Mn', kpi: 'Fixed cost' },
+      ],
+      foundations: [
+        {
+          name: 'Contract governance',
+          kpi: 'Fixed cost',
+          date: '2025.6',
+        },
+      ],
+    },
+    {
+      id: 'fx-impact',
+      label: 'Fx impact',
+      delta: -0.8,
+      initiatives: [
+        { name: 'Hedge coverage expansion', gap: '-0.4Mn', kpi: 'FX' },
+        { name: 'Supplier currency alignment', gap: '-0.4Mn', kpi: 'FX' },
+      ],
+      foundations: [
+        {
+          name: 'FX risk playbook',
+          kpi: 'FX',
+          date: '2025.7',
+        },
+      ],
+    },
+  ];
+
   const procurementTotals = useMemo(() => {
     const overall = procurementCategories[0];
     const selected = procurementCategories.filter((row) =>
-      selectedCategoryIds.has(row.id)
+      selectedCategoryIds.includes(row.id)
     );
     const activeRows = selected.length > 0 ? selected : [overall];
     const budgetTotal = activeRows.reduce((sum, row) => sum + row.budget, 0);
@@ -571,10 +691,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     
     // Get entries from matching business units (checking both group and unit names)
     const entries = isAllSelected
-      ? BUSINESS_GROUP_DATA.flatMap((group) =>
+      ? businessGroups.flatMap((group) =>
           group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
         )
-      : BUSINESS_GROUP_DATA.flatMap((group) => {
+      : businessGroups.flatMap((group) => {
           const groupId = normalizeBu(group.group);
           // If the group matches, include all its units' MVA sites
           if (normalizedSelection.has(groupId)) {
@@ -630,7 +750,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         children: [siteA, siteB, siteC].filter(Boolean),
       },
     ];
-  }, [selectedBus]);
+  }, [businessGroups, selectedBus]);
 
   const manufacturingMvaTotals = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
@@ -641,10 +761,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     
     // Get entries from matching business units (checking both group and unit names)
     const entries = isAllSelected
-      ? BUSINESS_GROUP_DATA.flatMap((group) =>
+      ? businessGroups.flatMap((group) =>
           group.businessUnits.flatMap((unit) => unit.mvaSites ?? [])
         )
-      : BUSINESS_GROUP_DATA.flatMap((group) => {
+      : businessGroups.flatMap((group) => {
           const groupId = normalizeBu(group.group);
           // If the group matches, include all its units' MVA sites
           if (normalizedSelected.includes(groupId)) {
@@ -698,11 +818,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           actualMvaCost: 0,
         }
       );
-  }, [selectedBus, selectedCategoryIds]);
+  }, [businessGroups, selectedBus, selectedCategoryIds]);
 
   useEffect(() => {
     const availableIds = new Set(['overall', 'site-a', 'site-b', 'site-c']);
-    const hasValidSelection = [...selectedCategoryIds].some((id) =>
+    const hasValidSelection = selectedCategoryIds.some((id) =>
       availableIds.has(id)
     );
     if (!hasValidSelection) {
@@ -711,6 +831,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [manufacturingSites, selectedCategoryIds]);
 
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
+    const manufacturingClickableIds = new Set(
+      manufacturingBuckets.map((bucket) => bucket.id)
+    );
     const budgetValue = manufacturingMvaTotals.budgetMvaCost;
     const actualValue = manufacturingMvaTotals.actualMvaCost;
     const volMixDelta = manufacturingMvaTotals.volMixChange;
@@ -742,6 +865,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(volMixDelta),
         delta: volMixDelta,
         type: getCostStageType(volMixDelta),
+        isClickable: manufacturingClickableIds.has('vol-mix-change'),
       },
       {
         id: 'labor-rate-impact',
@@ -749,6 +873,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(laborRateDelta),
         delta: laborRateDelta,
         type: getCostStageType(laborRateDelta),
+        isClickable: manufacturingClickableIds.has('labor-rate-impact'),
       },
       {
         id: 'dl-efficiency',
@@ -756,7 +881,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(dlEfficiencyDelta),
         delta: dlEfficiencyDelta,
         type: getCostStageType(dlEfficiencyDelta),
-        isClickable: true,
+        isClickable: manufacturingClickableIds.has('dl-efficiency'),
       },
       {
         id: 'idl-hc-gap',
@@ -764,6 +889,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(idlHcDelta),
         delta: idlHcDelta,
         type: getCostStageType(idlHcDelta),
+        isClickable: manufacturingClickableIds.has('idl-hc-gap'),
       },
       {
         id: 'ga-variable-gap',
@@ -771,6 +897,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(gaVariableDelta),
         delta: gaVariableDelta,
         type: getCostStageType(gaVariableDelta),
+        isClickable: manufacturingClickableIds.has('ga-variable-gap'),
       },
       {
         id: 'ga-fixed-gap',
@@ -778,6 +905,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(gaFixedDelta),
         delta: gaFixedDelta,
         type: getCostStageType(gaFixedDelta),
+        isClickable: manufacturingClickableIds.has('ga-fixed-gap'),
       },
       {
         id: 'fx-impact',
@@ -785,6 +913,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(fxDelta),
         delta: fxDelta,
         type: getCostStageType(fxDelta),
+        isClickable: manufacturingClickableIds.has('fx-impact'),
       },
       {
         id: 'actual-mva',
@@ -794,7 +923,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: 'baseline',
       },
     ];
-  }, [manufacturingMvaTotals]);
+  }, [manufacturingBuckets, manufacturingMvaTotals]);
 
   const rndTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
@@ -979,7 +1108,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     ];
   }, [rndTotals]);
 
-  const activeBucket = procurementBuckets.find(
+  const activeBucket = [...procurementBuckets, ...manufacturingBuckets].find(
     (bucket) => bucket.id === activeBucketId
   );
 
@@ -1139,22 +1268,22 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                   checked={isChildSelected}
                                   onChange={() => {
                                     setSelectedCategoryIds((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(child.id)) {
-                                        next.delete(child.id);
+                                      let next = [...prev];
+                                      if (next.includes(child.id)) {
+                                        next = next.filter((id) => id !== child.id);
                                       } else {
-                                        // Selecting this child
                                         next = [...next, child.id];
-                                        
-                                        // Check if all siblings are now selected → consolidate to parent
-                                        const allSiblingsSelected = siblingIds.every(id => next.includes(id));
+                                        const allSiblingsSelected = siblingIds.every((id) =>
+                                          next.includes(id)
+                                        );
                                         if (allSiblingsSelected) {
-                                          // Remove all children, add parent instead
-                                          next = next.filter(id => !siblingIds.includes(id));
+                                          next = next.filter(
+                                            (id) => !siblingIds.includes(id)
+                                          );
                                           next.push(row.id);
                                         }
                                       }
-                                      
+
                                       return next.length === 0 ? ['overall'] : next;
                                     });
                                   }}
@@ -1195,6 +1324,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
               description='Procurement cost, USD Mn'
+              brokenAxis="auto"
               onStageClick={(stage) => {
                 if (
                   stage.id === 'volume-change' ||
@@ -1273,12 +1403,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                 checked={isSelected}
                                 onChange={() => {
                                   setSelectedCategoryIds((prev) => {
-                                    const next = new Set(prev);
-                                    if (next.has(row.id)) {
-                                      next.delete(row.id);
-                                    } else {
-                                      return [...prev, row.id];
+                                    if (prev.includes(row.id)) {
+                                      const filtered = prev.filter((id) => id !== row.id);
+                                      return filtered.length === 0 ? ['overall'] : filtered;
                                     }
+                                    return [...prev, row.id];
                                   });
                                 }}
                               />
@@ -1357,7 +1486,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               barSize={32}
               brokenAxis="auto"
               onStageClick={(stage) => {
-                if (stage.id === 'dl-efficiency') {
+                if (stage.isClickable) {
                   setActiveBucketId(stage.id);
                 }
               }}
@@ -1383,6 +1512,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               title='Deviation waterfall by key value drivers'
               description='R&D cost, USD Mn'
               barSize={32}
+              brokenAxis="auto"
               onStageClick={(stage) => {
                 if (stage.id === 'personnel-delta') {
                   setActiveBucketId(stage.id);
