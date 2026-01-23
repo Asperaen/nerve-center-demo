@@ -71,7 +71,7 @@ export default function MarketIntelligencePage() {
   const [appliedAssumptions, setAppliedAssumptions] = useState(
     mockAppliedAssumptions
   );
-  const [enabledSuggestedAssumptionIds, setEnabledSuggestedAssumptionIds] =
+  const [_enabledSuggestedAssumptionIds, setEnabledSuggestedAssumptionIds] =
     useState<Set<string>>(new Set());
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     assumptionId: string;
@@ -377,21 +377,15 @@ export default function MarketIntelligencePage() {
   const forecastWaterfallStages = useMemo(() => {
     const budgetStageValue = selectedForecastTotals.budget;
     const forecastTargetValue = selectedForecastTotals.forecast;
-    const enabledSuggested = suggestedAssumptions.filter((assumption) =>
-      enabledSuggestedAssumptionIds.has(assumption.id)
+    // Calculate early signals from enabled applied assumptions
+    const enabledApplied = appliedAssumptions.filter((assumption) =>
+      enabledAssumptionIds.has(assumption.id)
     );
-    const rawEarlySignals = enabledSuggested.reduce(
+    const rawEarlySignals = enabledApplied.reduce(
       (sum, assumption) => sum + assumption.impact,
       0
     );
-    const minEarlySignals = 30;
-    const earlySignalsDelta = roundToOne(
-      rawEarlySignals === 0
-        ? minEarlySignals
-        : rawEarlySignals > 0
-        ? Math.max(minEarlySignals, rawEarlySignals)
-        : -Math.max(minEarlySignals, Math.abs(rawEarlySignals))
-    );
+    const earlySignalsDelta = roundToOne(rawEarlySignals);
     const baseForecastValue = roundToOne(forecastTargetValue - earlySignalsDelta);
     const totalDelta = roundToOne(baseForecastValue - budgetStageValue);
 
@@ -489,9 +483,9 @@ export default function MarketIntelligencePage() {
 
     return stages;
   }, [
-    enabledSuggestedAssumptionIds,
+    appliedAssumptions,
+    enabledAssumptionIds,
     selectedForecastTotals,
-    suggestedAssumptions,
   ]);
 
   const handleToggleAssumption = (assumptionId: string) => {

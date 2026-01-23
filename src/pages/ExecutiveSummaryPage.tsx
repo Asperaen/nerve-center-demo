@@ -65,15 +65,112 @@ const normalizeGroupId = (groupName: string) => {
   return key === 'other' ? 'others' : key;
 };
 
-const buildTrend = (value: number): MonthlyTrendPoint[] => {
-  const start = value * 0.94;
-  const end = value * 1.06;
+// Simple hash function to generate a unique seed from a string
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
+const buildTrend = (
+  value: number,
+  baseline: number,
+  _lastYear: number,
+  seed: number = 0
+): MonthlyTrendPoint[] => {
+  // Calculate performance vs budget to determine trend direction
+  const percentVsBudget = baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
+  const isOutperforming = percentVsBudget >= 0;
+  
+  // Calculate the magnitude of variance (capped for visual consistency)
+  const varianceMagnitude = Math.min(Math.abs(percentVsBudget), 50) / 100;
+  
+  // Calculate the range of values in the trend (10-25% of current value based on variance)
+  const trendRange = Math.abs(value) * (0.1 + varianceMagnitude * 0.15);
+  
+  // Define start and end values based on performance
+  let startValue: number;
+  let endValue: number;
+  
+  if (isOutperforming) {
+    startValue = value - trendRange;
+    endValue = value;
+  } else {
+    startValue = value + trendRange;
+    endValue = value;
+  }
+  
   const steps = TREND_MONTHS.length - 1;
+  
+  // Use seed to select different curve shapes (0-5 different patterns)
+  const curveType = seed % 6;
+  // Use seed for additional variation within each curve type
+  const seedVariation = ((seed >> 3) % 100) / 100; // 0-1 range
+  const seedPhase = ((seed >> 6) % 100) / 50; // 0-2 range
+  
   return TREND_MONTHS.map((month, index) => {
     const ratio = steps === 0 ? 0 : index / steps;
+    
+    // Apply different curve shapes based on curveType
+    let curveRatio: number;
+    
+    switch (curveType) {
+      case 0:
+        // Ease-out: fast start, slow finish
+        curveRatio = 1 - Math.pow(1 - ratio, 2 + seedVariation);
+        break;
+      case 1:
+        // Ease-in: slow start, fast finish
+        curveRatio = Math.pow(ratio, 2 + seedVariation);
+        break;
+      case 2:
+        // S-curve: slow start, fast middle, slow finish
+        curveRatio = ratio < 0.5
+          ? 2 * Math.pow(ratio, 2)
+          : 1 - Math.pow(-2 * ratio + 2, 2) / 2;
+        break;
+      case 3:
+        // Dip then recover (for upward) or bump then fall (for downward)
+        const dipDepth = 0.15 + seedVariation * 0.2;
+        const dipCenter = 0.3 + seedVariation * 0.2;
+        const dipEffect = Math.exp(-Math.pow((ratio - dipCenter) / 0.2, 2)) * dipDepth;
+        curveRatio = ratio - dipEffect * (1 - ratio);
+        break;
+      case 4:
+        // Stepped/plateau in middle
+        const plateauStart = 0.3 + seedVariation * 0.1;
+        const plateauEnd = 0.6 + seedVariation * 0.1;
+        if (ratio < plateauStart) {
+          curveRatio = (ratio / plateauStart) * 0.4;
+        } else if (ratio < plateauEnd) {
+          curveRatio = 0.4 + ((ratio - plateauStart) / (plateauEnd - plateauStart)) * 0.2;
+        } else {
+          curveRatio = 0.6 + ((ratio - plateauEnd) / (1 - plateauEnd)) * 0.4;
+        }
+        break;
+      case 5:
+      default:
+        // Wavy progression
+        const waveAmp = 0.08 + seedVariation * 0.07;
+        const waveFreq = 1.5 + seedPhase;
+        curveRatio = ratio + Math.sin(ratio * Math.PI * waveFreq) * waveAmp * (1 - Math.abs(ratio - 0.5) * 2);
+        curveRatio = Math.max(0, Math.min(1, curveRatio));
+        break;
+    }
+    
+    // Ensure curveRatio stays in valid range
+    curveRatio = Math.max(0, Math.min(1, curveRatio));
+    
+    // Interpolate between start and end using the curved ratio
+    const trendValue = startValue + (endValue - startValue) * curveRatio;
+    
     return {
       month,
-      value: Math.round((start + (end - start) * ratio) * 10) / 10,
+      value: Math.round(trendValue * 10) / 10,
     };
   });
 };
@@ -88,15 +185,21 @@ const buildMetric = (
   budget: number,
   lastYear: number,
   aiInsight: string,
-  percentBasis: 'budget' | 'last-year'
-): BusinessGroupMetricWithTrend => ({
-  value,
-  baseline: budget,
-  stly: lastYear,
-  percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
-  trend: buildTrend(value),
-  aiInsight,
-});
+  percentBasis: 'budget' | 'last-year',
+  groupName: string,
+  metricName: string
+): BusinessGroupMetricWithTrend => {
+  // Generate a unique seed from the combination of group name and metric name
+  const seed = hashString(`${groupName}-${metricName}`);
+  return {
+    value,
+    baseline: budget,
+    stly: lastYear,
+    percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
+    trend: buildTrend(value, budget, lastYear, seed),
+    aiInsight,
+  };
+};
 
 type BusinessGroupSource = BusinessGroup;
 type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
@@ -238,28 +341,36 @@ const buildGroupRow = (
       revenueBudget,
       lastYearRevenue,
       `${insightBase} Revenue trends align with group mix.`,
-      percentBasis
+      percentBasis,
+      name,
+      'Revenue'
     ),
     gp: buildMetric(
       grossProfit,
       grossProfitBudget,
       lastYearGrossProfit,
       `${insightBase} Gross profit reflects mix and cost discipline.`,
-      percentBasis
+      percentBasis,
+      name,
+      'Gross Profit'
     ),
     op: buildMetric(
       operatingProfit,
       operatingProfitBudget,
       lastYearOperatingProfit,
       `${insightBase} Operating profit tracks execution momentum.`,
-      percentBasis
+      percentBasis,
+      name,
+      'Operating Profit'
     ),
     np: buildMetric(
       netProfit,
       netProfitBudget,
       lastYearNetProfit,
       `${insightBase} Net profit reflects margin resilience.`,
-      percentBasis
+      percentBasis,
+      name,
+      'Net Profit'
     ),
   };
 };
@@ -344,28 +455,36 @@ const buildUnitRow = (
       revenueBudget,
       lastYearRevenue,
       `${insightBase} Revenue outlook follows segment demand.`,
-      percentBasis
+      percentBasis,
+      unit.name,
+      'Revenue'
     ),
     gp: buildMetric(
       grossProfit,
       grossProfitBudget,
       lastYearGrossProfit,
       `${insightBase} GP reflects product mix and cost structure.`,
-      percentBasis
+      percentBasis,
+      unit.name,
+      'Gross Profit'
     ),
     op: buildMetric(
       operatingProfit,
       operatingProfitBudget,
       lastYearOperatingProfit,
       `${insightBase} OP tracks execution pace.`,
-      percentBasis
+      percentBasis,
+      unit.name,
+      'Operating Profit'
     ),
     np: buildMetric(
       netProfit,
       netProfitBudget,
       lastYearNetProfit,
       `${insightBase} NP supported by margin discipline.`,
-      percentBasis
+      percentBasis,
+      unit.name,
+      'Net Profit'
     ),
   };
 };

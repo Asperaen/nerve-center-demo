@@ -341,16 +341,24 @@ const getStagePercents = (label: string) => {
 export default function IdeationProgressPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { businessGroups } = useBudgets();
+  const mainBuOptions = getMainBusinessGroupOptions();
   const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
     const stored = getStoredTimeframe();
     return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
   });
-  const [selectedBu, setSelectedBu] = useState<string>('all');
+  const [selectedBu, setSelectedBu] = useState<string>(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bu');
+    if (!bgParam || bgParam === 'all') {
+      return 'all';
+    }
+    const buOptions = getMainBusinessGroupOptions();
+    const validBu = buOptions.find((bu) => bu.id === bgParam);
+    return validBu ? validBu.id : bgParam;
+  });
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
   const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
-  const mainBuOptions = getMainBusinessGroupOptions();
 
   const monthlyImpactPlanRows = useMemo<PlanRow[]>(() => {
     const normalizedSelected = normalizeLabel(selectedBu);
@@ -567,8 +575,29 @@ export default function IdeationProgressPage() {
       );
       return;
     }
+    // Check for bu parameter to pre-select specific units within a group
+    const buParam = searchParams.get('bg') ? searchParams.get('bu') : null;
+    if (buParam) {
+      const requestedUnits = buParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (requestedUnits.length > 0) {
+        const unitIds = requestedUnits
+          .map((unitName) => getUnitId(groupId, unitName))
+          .filter((unitId) =>
+            selectedGroupInfo.group.businessUnits.some(
+              (unit) => getUnitId(groupId, unit.name) === unitId
+            )
+          );
+        if (unitIds.length > 0) {
+          setSelectedGroupIds(new Set(unitIds));
+          return;
+        }
+      }
+    }
     setSelectedGroupIds(new Set([overallId]));
-  }, [selectedGroupInfo]);
+  }, [selectedGroupInfo, searchParams]);
 
   const handleTimeframeChange = (timeframe: TimeframeOption) => {
     setActiveTimeframe(timeframe);

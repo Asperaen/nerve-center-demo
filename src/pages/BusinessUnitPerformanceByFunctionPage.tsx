@@ -55,6 +55,17 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     .map((item) => item.trim())
     .filter(Boolean);
 
+  // BG display (filters out 'all' and 'overall')
+  const displayBgs = useMemo(() => {
+    return selectedBgs.filter((item) => {
+      const normalized = normalizeBu(item);
+      return normalized !== 'overall' && normalized !== 'all';
+    });
+  }, [selectedBgs]);
+
+  // BU display (already filtered in selectedBus definition)
+  const displayBus = selectedBus;
+
   const scaledRows = useMemo(() => {
     const timeframe = getStoredTimeframe();
     const dataTimeframe = timeframe === 'ytm' ? 'ytm' : 'full-year';
@@ -591,12 +602,45 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
   const procurementTotals = useMemo(() => {
     const overall = procurementCategories[0];
-    const selected = procurementCategories.filter((row) =>
-      selectedCategoryIds.includes(row.id)
-    );
-    const activeRows = selected.length > 0 ? selected : [overall];
-    const budgetTotal = activeRows.reduce((sum, row) => sum + row.budget, 0);
-    const actualTotal = activeRows.reduce((sum, row) => sum + row.actual, 0);
+    
+    // If 'overall' is selected (or nothing selected), use the overall row
+    if (selectedCategoryIds.includes('overall') || selectedCategoryIds.length === 0) {
+      return {
+        budgetTotal: overall?.budget ?? 0,
+        actualTotal: overall?.actual ?? 0,
+      };
+    }
+    
+    let budgetTotal = 0;
+    let actualTotal = 0;
+    
+    for (const category of procurementCategories) {
+      // Skip overall when summing individual selections
+      if (category.id === 'overall') continue;
+      
+      // Check if the parent category is fully selected (consolidated)
+      if (selectedCategoryIds.includes(category.id)) {
+        budgetTotal += category.budget;
+        actualTotal += category.actual;
+      } else if (category.children) {
+        // Check if any children of this category are selected
+        for (const child of category.children) {
+          if (selectedCategoryIds.includes(child.id)) {
+            budgetTotal += child.budget;
+            actualTotal += child.actual;
+          }
+        }
+      }
+    }
+    
+    // If nothing was found (shouldn't happen), fall back to overall
+    if (budgetTotal === 0 && actualTotal === 0) {
+      return {
+        budgetTotal: overall?.budget ?? 0,
+        actualTotal: overall?.actual ?? 0,
+      };
+    }
+    
     return { budgetTotal, actualTotal };
   }, [procurementCategories, selectedCategoryIds]);
 
@@ -833,6 +877,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [businessGroups, selectedBus, selectedCategoryIds]);
 
   useEffect(() => {
+    // Only validate site selections when on manufacturing page
+    if (!isManufacturing) return;
+    
     const availableIds = new Set(['overall', 'site-a', 'site-b', 'site-c']);
     const hasValidSelection = selectedCategoryIds.some((id) =>
       availableIds.has(id)
@@ -840,12 +887,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     if (!hasValidSelection) {
       setSelectedCategoryIds(['overall']);
     }
-  }, [manufacturingSites, selectedCategoryIds]);
+  }, [isManufacturing, manufacturingSites, selectedCategoryIds]);
 
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
-    const manufacturingClickableIds = new Set(
-      manufacturingBuckets.map((bucket) => bucket.id)
-    );
+    // Only DL efficiency gap bar should be clickable
+    const manufacturingClickableIds = new Set(['dl-efficiency']);
     const budgetValue = manufacturingMvaTotals.budgetMvaCost;
     const actualValue = manufacturingMvaTotals.actualMvaCost;
     const volMixDelta = manufacturingMvaTotals.volMixChange;
@@ -935,7 +981,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: 'baseline',
       },
     ];
-  }, [manufacturingBuckets, manufacturingMvaTotals]);
+  }, [manufacturingMvaTotals]);
 
   const rndTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
@@ -1146,10 +1192,15 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   : 'Full year'}
               </span>
               <span className='px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold'>
-                {selectedBus.length > 0
-                  ? `BGs: ${selectedBus.join(', ')}`
+                {displayBgs.length > 0
+                  ? displayBgs.join(', ')
                   : 'All BGs'}
               </span>
+              {displayBus.length > 0 && (
+                <span className='px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold'>
+                  {displayBus.join(', ')}
+                </span>
+              )}
               {isProcurement && (
                 <span className='text-sm text-gray-500'>Mn</span>
               )}
@@ -1203,8 +1254,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     {procurementCategories.flatMap((row) => {
                       const delta = row.budget - row.actual;
                       const childIds = row.children?.map(c => c.id) ?? [];
-                      // Parent is only checked when consolidated (all children selected → parent ID stored)
-                      const isSelected = selectedCategoryIds.includes(row.id);
+                      // "Overall all" is only checked when 'overall' is explicitly selected
+                      // Other parents are checked when: consolidated (parent ID) OR ALL children are selected
+                      const isSelected = row.id === 'overall'
+                        ? selectedCategoryIds.includes('overall')
+                        : selectedCategoryIds.includes(row.id) ||
+                          (childIds.length > 0 && childIds.every(id => selectedCategoryIds.includes(id)));
                       const parentRow = (
                         <tr
                           key={row.id}
@@ -1280,11 +1335,24 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                                   checked={isChildSelected}
                                   onChange={() => {
                                     setSelectedCategoryIds((prev) => {
-                                      let next = [...prev];
-                                      if (next.includes(child.id)) {
+                                      // Filter out 'overall' when selecting specific children
+                                      let next = prev.filter(id => id !== 'overall');
+                                      
+                                      // If parent is consolidated, expand it first (remove parent, add all children except the one being toggled)
+                                      if (next.includes(row.id)) {
+                                        next = next.filter(id => id !== row.id);
+                                        siblingIds.forEach(id => {
+                                          if (id !== child.id && !next.includes(id)) {
+                                            next.push(id);
+                                          }
+                                        });
+                                      } else if (next.includes(child.id)) {
+                                        // Deselect this child
                                         next = next.filter((id) => id !== child.id);
                                       } else {
+                                        // Select this child
                                         next = [...next, child.id];
+                                        // Consolidate if all siblings now selected
                                         const allSiblingsSelected = siblingIds.every((id) =>
                                           next.includes(id)
                                         );
@@ -1541,8 +1609,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Key Call Out
                   </h2>
                   <p className='text-sm text-gray-500 mt-1'>
-                    {selectedBus.length > 0
-                      ? `Selected BGs: ${selectedBus.join(', ')}`
+                    {displayBgs.length > 0 || displayBus.length > 0
+                      ? [
+                          displayBgs.length > 0 ? displayBgs.join(', ') : null,
+                          displayBus.length > 0 ? displayBus.join(', ') : null,
+                        ].filter(Boolean).join(' | ')
                       : 'All BGs'}
                   </p>
                 </div>

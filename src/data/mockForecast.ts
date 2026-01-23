@@ -2480,7 +2480,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     id: 'assum-applied-1',
     name: 'AI Data Center Acceleration',
     description: 'Global data center trend accelerating faster than expected',
-    impact: 5.0, // +5M impact (tailwind)
+    impact: 40.0, // +40M impact (tailwind)
     targetStage: 'headwinds-tailwinds',
     impactType: 'positive',
     isApplied: true,

@@ -55,56 +55,113 @@ const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
   return key === 'other' ? 'others' : key;
 };
+
+// Simple hash function to generate a unique seed from a string
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
 const buildTrend = (
   value: number,
   baseline: number,
-  _lastYear: number
+  _lastYear: number,
+  seed: number = 0
 ): MonthlyTrendPoint[] => {
   // Calculate performance vs budget to determine trend direction
-  // The chart should visually align with the % badge:
-  // - Positive % (outperforming) = upward slope
-  // - Negative % (underperforming) = downward slope
   const percentVsBudget = baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
   const isOutperforming = percentVsBudget >= 0;
   
   // Calculate the magnitude of variance (capped for visual consistency)
   const varianceMagnitude = Math.min(Math.abs(percentVsBudget), 50) / 100;
   
-  // For outperforming: start lower, end at current value (upward slope)
-  // For underperforming: start higher, end at current value (downward slope)
-  const trendRange = value * (0.1 + varianceMagnitude * 0.15);
+  // Calculate the range of values in the trend (10-25% of current value based on variance)
+  const trendRange = Math.abs(value) * (0.1 + varianceMagnitude * 0.15);
   
-  const startValue = isOutperforming 
-    ? value - trendRange  // Start lower, trend up
-    : value + trendRange; // Start higher, trend down
-  const endValue = value;
+  // Define start and end values based on performance
+  let startValue: number;
+  let endValue: number;
+  
+  if (isOutperforming) {
+    startValue = value - trendRange;
+    endValue = value;
+  } else {
+    startValue = value + trendRange;
+    endValue = value;
+  }
   
   const steps = TREND_MONTHS.length - 1;
+  
+  // Use seed to select different curve shapes (0-5 different patterns)
+  const curveType = seed % 6;
+  // Use seed for additional variation within each curve type
+  const seedVariation = ((seed >> 3) % 100) / 100; // 0-1 range
+  const seedPhase = ((seed >> 6) % 100) / 50; // 0-2 range
   
   return TREND_MONTHS.map((month, index) => {
     const ratio = steps === 0 ? 0 : index / steps;
     
-    // Base linear interpolation
-    let baseValue = startValue + (endValue - startValue) * ratio;
+    // Apply different curve shapes based on curveType
+    let curveRatio: number;
     
-    // Add curve variation based on performance magnitude
-    if (isOutperforming) {
-      // Outperformers: accelerating growth curve
-      const curve = Math.pow(ratio, 1.3);
-      baseValue = startValue + (endValue - startValue) * curve;
-    } else {
-      // Underperformers: decelerating decline (steep early, flattening)
-      const curve = 1 - Math.pow(1 - ratio, 1.3);
-      baseValue = startValue + (endValue - startValue) * curve;
+    switch (curveType) {
+      case 0:
+        // Ease-out: fast start, slow finish
+        curveRatio = 1 - Math.pow(1 - ratio, 2 + seedVariation);
+        break;
+      case 1:
+        // Ease-in: slow start, fast finish
+        curveRatio = Math.pow(ratio, 2 + seedVariation);
+        break;
+      case 2:
+        // S-curve: slow start, fast middle, slow finish
+        curveRatio = ratio < 0.5
+          ? 2 * Math.pow(ratio, 2)
+          : 1 - Math.pow(-2 * ratio + 2, 2) / 2;
+        break;
+      case 3:
+        // Dip then recover (for upward) or bump then fall (for downward)
+        const dipDepth = 0.15 + seedVariation * 0.2;
+        const dipCenter = 0.3 + seedVariation * 0.2;
+        const dipEffect = Math.exp(-Math.pow((ratio - dipCenter) / 0.2, 2)) * dipDepth;
+        curveRatio = ratio - dipEffect * (1 - ratio);
+        break;
+      case 4:
+        // Stepped/plateau in middle
+        const plateauStart = 0.3 + seedVariation * 0.1;
+        const plateauEnd = 0.6 + seedVariation * 0.1;
+        if (ratio < plateauStart) {
+          curveRatio = (ratio / plateauStart) * 0.4;
+        } else if (ratio < plateauEnd) {
+          curveRatio = 0.4 + ((ratio - plateauStart) / (plateauEnd - plateauStart)) * 0.2;
+        } else {
+          curveRatio = 0.6 + ((ratio - plateauEnd) / (1 - plateauEnd)) * 0.4;
+        }
+        break;
+      case 5:
+      default:
+        // Wavy progression
+        const waveAmp = 0.08 + seedVariation * 0.07;
+        const waveFreq = 1.5 + seedPhase;
+        curveRatio = ratio + Math.sin(ratio * Math.PI * waveFreq) * waveAmp * (1 - Math.abs(ratio - 0.5) * 2);
+        curveRatio = Math.max(0, Math.min(1, curveRatio));
+        break;
     }
     
-    // Add small variation for realism
-    const noise = Math.sin(index * 2.5) * (value * 0.015);
-    baseValue += noise;
+    // Ensure curveRatio stays in valid range
+    curveRatio = Math.max(0, Math.min(1, curveRatio));
+    
+    // Interpolate between start and end using the curved ratio
+    const trendValue = startValue + (endValue - startValue) * curveRatio;
     
     return {
       month,
-      value: Math.round(baseValue * 10) / 10,
+      value: Math.round(trendValue * 10) / 10,
     };
   });
 };
@@ -117,15 +174,21 @@ const buildMetric = (
   budget: number,
   lastYear: number,
   aiInsight: string,
-  percentBasis: 'budget' | 'last-year'
-): BusinessGroupMetricWithTrend => ({
-  value,
-  baseline: budget,
-  stly: lastYear,
-  percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
-  trend: buildTrend(value, budget, lastYear),
-  aiInsight,
-});
+  percentBasis: 'budget' | 'last-year',
+  groupName: string,
+  metricName: string
+): BusinessGroupMetricWithTrend => {
+  // Generate a unique seed from the combination of group name and metric name
+  const seed = hashString(`${groupName}-${metricName}`);
+  return {
+    value,
+    baseline: budget,
+    stly: lastYear,
+    percent: calcPercent(value, percentBasis === 'last-year' ? lastYear : budget),
+    trend: buildTrend(value, budget, lastYear, seed),
+    aiInsight,
+  };
+};
 type BusinessGroupSource = BusinessGroup;
 type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
 const buildGroupRow = (
@@ -249,28 +312,36 @@ const buildGroupRow = (
       revenueBudget,
       lastYearRevenue,
       `${insightBase} Revenue trends align with group mix.`,
-      'budget'
+      'budget',
+      name,
+      'Revenue'
     ),
     gp: buildMetric(
       grossProfit,
       grossProfitBudget,
       lastYearGrossProfit,
       `${insightBase} Gross profit reflects mix and cost discipline.`,
-      'budget'
+      'budget',
+      name,
+      'Gross Profit'
     ),
     op: buildMetric(
       operatingProfit,
       operatingProfitBudget,
       lastYearOperatingProfit,
       `${insightBase} Operating profit tracks execution momentum.`,
-      'budget'
+      'budget',
+      name,
+      'Operating Profit'
     ),
     np: buildMetric(
       netProfit,
       netProfitBudget,
       lastYearNetProfit,
       `${insightBase} Net profit reflects margin resilience.`,
-      'budget'
+      'budget',
+      name,
+      'Net Profit'
     ),
   };
 };
@@ -338,28 +409,36 @@ const buildUnitRow = (
       revenueBudget,
       lastYearRevenue,
       `${insightBase} Revenue outlook follows segment demand.`,
-      'budget'
+      'budget',
+      unit.name,
+      'Revenue'
     ),
     gp: buildMetric(
       grossProfit,
       grossProfitBudget,
       lastYearGrossProfit,
       `${insightBase} GP reflects product mix and cost structure.`,
-      'budget'
+      'budget',
+      unit.name,
+      'Gross Profit'
     ),
     op: buildMetric(
       operatingProfit,
       operatingProfitBudget,
       lastYearOperatingProfit,
       `${insightBase} OP tracks execution pace.`,
-      'budget'
+      'budget',
+      unit.name,
+      'Operating Profit'
     ),
     np: buildMetric(
       netProfit,
       netProfitBudget,
       lastYearNetProfit,
       `${insightBase} NP supported by margin discipline.`,
-      'budget'
+      'budget',
+      unit.name,
+      'Net Profit'
     ),
   };
 };
@@ -634,6 +713,14 @@ export default function BusinessGroupPerformancePage() {
         next.delete(bgId);
       } else {
         next.add(bgId);
+        // When selecting a BU (child), also select the parent BG
+        // BU IDs are formatted as "{groupId}-{unitName}", so check if this is a child of any BG
+        const parentBgId = tableData
+          .filter((row) => !isOverallRowId(row.id))
+          .find((row) => bgId.startsWith(`${row.id}-`))?.id;
+        if (parentBgId) {
+          next.add(parentBgId);
+        }
       }
 
       if (next.size === 0 && overallId) {
@@ -1431,9 +1518,8 @@ export default function BusinessGroupPerformancePage() {
         'Scrap',
       ],
       'l4-to-l5-leakage': [
-        'Baseline operations',
-        'Mix stability',
-        'Seasonality',
+        'FX rate VND vs. USD causing favorable impact',
+        'Labor rate in India increased causing adverse impact',
       ],
       'forecast': ['Pipeline realized', 'Transformation impact', 'Execution risk'],
       'ideation': ['Idea intake', 'Screening impact', 'Pilot outcomes'],
@@ -1449,8 +1535,32 @@ export default function BusinessGroupPerformancePage() {
     const totalImpact = activeDeviationStage.delta ?? 0;
     const buLabel =
       selectedBuNames.length > 0 ? selectedBuNames[0] : 'Overall';
+    
+    // Special handling for "Other factors" (l4-to-l5-leakage) stage
+    // Two rows: FX rate (favorable/positive) and Labor rate (adverse/negative) summing to totalImpact
     const rows =
-      activeDeviationStage.stage === 'market-performance'
+      activeDeviationStage.stage === 'l4-to-l5-leakage'
+        ? (() => {
+            // Calculate impacts that sum to total
+            // FX rate is favorable (positive value), Labor rate is adverse (negative value)
+            // If total is -4: FX = +1.5 (favorable), Labor = -5.5 (adverse), sum = -4
+            const absTotalImpact = Math.abs(totalImpact);
+            const fxImpact = roundToOne(absTotalImpact * 0.4); // Favorable (positive)
+            const laborImpact = roundToOne(totalImpact - fxImpact); // Adverse (negative, makes sum work)
+            return [
+              {
+                bu: buLabel,
+                driver: drivers[0], // FX rate VND vs. USD causing favorable impact
+                impact: fxImpact,
+              },
+              {
+                bu: buLabel,
+                driver: drivers[1], // Labor rate in India increased causing adverse impact
+                impact: laborImpact,
+              },
+            ];
+          })()
+        : activeDeviationStage.stage === 'market-performance'
         ? [
             {
               bu: buLabel,
@@ -1963,32 +2073,64 @@ export default function BusinessGroupPerformancePage() {
       if (!showDrilldown) {
         return;
       }
-      const resolvedBgName = (() => {
-        if (selectedBu === 'all') {
-          return 'all';
-        }
-        const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
-        if (directMatch) {
-          return directMatch.name;
-        }
-        const matchedGroup = businessGroups.find((group) => {
-          const groupId = normalizeGroupId(group.group);
-          return group.businessUnits.some(
-            (unit) => getUnitId(groupId, unit.name) === selectedBu
-          );
-        });
-        return matchedGroup?.group ?? sectionTitle;
-      })();
-      const buParam = resolvedBgName;
-      const bgParam = selectedBu === 'all' ? 'all' : '';
       const params = new URLSearchParams();
-      if (buParam) {
-        params.set('bg', buParam);
+
+      // Check if there are specific table selections (selectedGroupIds)
+      const hasTableSelections = selectedGroupIds.size > 0 &&
+        !Array.from(selectedGroupIds).every((id) => isOverallRowId(id));
+
+      if (hasTableSelections) {
+        // Separate BG-level selections from BU-level (unit) selections
+        const selectedIds = Array.from(selectedGroupIds).filter((id) => !isOverallRowId(id));
+        const bgIds = selectedIds.filter((id) => !unitRowsById.has(id));
+        const buIds = selectedIds.filter((id) => unitRowsById.has(id));
+
+        // Get BG names from tableData
+        const bgNames = bgIds
+          .map((id) => tableData.find((row) => row.id === id)?.name)
+          .filter((name): name is string => Boolean(name));
+
+        // Get BU names from unitRowsById
+        const buNames = buIds
+          .map((id) => unitRowsById.get(id)?.name)
+          .filter((name): name is string => Boolean(name));
+
+        if (bgNames.length > 0) {
+          params.set('bg', bgNames.join(','));
+        } else if (selectedBu !== 'all') {
+          // If no BG selected in table, use dropdown selection
+          const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
+          if (directMatch) {
+            params.set('bg', directMatch.name);
+          }
+        } else {
+          params.set('bg', 'all');
+        }
+
+        if (buNames.length > 0) {
+          params.set('bu', buNames.join(','));
+        }
+      } else if (selectedBu === 'all') {
+        // No table selections and dropdown is "All BGs"
+        params.set('bg', 'all');
+      } else {
+        // Use the BG dropdown selection
+        const resolvedBgName = (() => {
+          const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
+          if (directMatch) {
+            return directMatch.name;
+          }
+          const matchedGroup = businessGroups.find((group) => {
+            const groupId = normalizeGroupId(group.group);
+            return group.businessUnits.some(
+              (unit) => getUnitId(groupId, unit.name) === selectedBu
+            );
+          });
+          return matchedGroup?.group ?? sectionTitle;
+        })();
+        params.set('bg', resolvedBgName);
       }
-      if (bgParam) {
-        params.set('bg', bgParam);
-        params.delete('bu');
-      }
+
       navigate(
         `/business-unit-performance/functional-performance/${row.id}?${params.toString()}`
       );
@@ -2431,7 +2573,7 @@ export default function BusinessGroupPerformancePage() {
                   : selectedBu;
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/actual-initiative-implementation?bg=${encodeURIComponent(
+                  `/initiative-performance?bg=${encodeURIComponent(
                     resolvedBgParam
                   )}&timeframe=full-year${unitParam}`
                 );
