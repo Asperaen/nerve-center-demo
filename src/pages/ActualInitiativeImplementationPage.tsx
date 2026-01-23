@@ -315,7 +315,11 @@ export default function ActualInitiativeImplementationPage() {
 
   useEffect(() => {
     const buParam = searchParams.get('bu');
+    const bgsParam = searchParams.get('bgs');
     if (!buParam) {
+      if (bgsParam) {
+        setSelectedBu('all');
+      }
       return;
     }
     if (buParam === 'all') {
@@ -354,6 +358,17 @@ export default function ActualInitiativeImplementationPage() {
   }, [selectedBu]);
 
   useEffect(() => {
+    const bgsParam = searchParams.get('bgs');
+    if (selectedBu === 'all' && bgsParam) {
+      const bgIds = bgsParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (bgIds.length > 0) {
+        setSelectedGroupIds(new Set(bgIds));
+        return;
+      }
+    }
     if (!selectedGroupInfo) {
       setSelectedGroupIds(new Set());
       return;
@@ -366,12 +381,40 @@ export default function ActualInitiativeImplementationPage() {
       );
       return;
     }
+    const unitsParam = searchParams.get('units');
+    if (unitsParam) {
+      const requestedUnits = unitsParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (requestedUnits.length === 0) {
+        setSelectedGroupIds(new Set([overallId]));
+        return;
+      }
+      const unitIds = requestedUnits
+        .map((unitName) => getUnitId(groupId, unitName))
+        .filter((unitId) =>
+          selectedGroupInfo.group.businessUnits.some(
+            (unit) => getUnitId(groupId, unit.name) === unitId
+          )
+        );
+      if (unitIds.length > 0) {
+        setSelectedGroupIds(new Set(unitIds));
+        return;
+      }
+    }
     setSelectedGroupIds(new Set([overallId]));
-  }, [selectedGroupInfo]);
+  }, [selectedGroupInfo, searchParams]);
 
   const selectedUnits = useMemo(() => {
     if (selectedBu === 'all') {
-      return businessGroups.flatMap((group) =>
+      const filteredGroups =
+        selectedGroupIds.size > 0
+          ? businessGroups.filter((group) =>
+              selectedGroupIds.has(normalizeGroupId(group.group))
+            )
+          : businessGroups;
+      return filteredGroups.flatMap((group) =>
         group.businessUnits.map((unit) => ({
           group: group.group,
           unit: unit.name,

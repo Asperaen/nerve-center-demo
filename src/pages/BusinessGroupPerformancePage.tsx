@@ -154,7 +154,7 @@ const buildGroupRow = (
 
   const name = nameOverride ?? groupName;
   const id = idOverride ?? normalizeGroupId(groupName);
-  const insightBase = `${name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${name} performance`;
   const revenue = toMillions(
     valueMode === 'forecast' ? totals.forecastRevenue : totals.revenue
   );
@@ -287,7 +287,7 @@ const buildUnitRow = (
   const lastYearNetProfit = toMillions(
     lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
   );
-  const insightBase = `${unit.name} performance from BUSINESS_GROUP_DATA.`;
+  const insightBase = `${unit.name} performance.`;
 
   return {
     id: unitId,
@@ -603,6 +603,36 @@ export default function BusinessGroupPerformancePage() {
       }
     }
   }, [selectedGroupIds, tableData]);
+
+  useEffect(() => {
+    if (selectedBu === 'all') {
+      return;
+    }
+    const unitsParam = searchParams.get('units');
+    if (!unitsParam) {
+      return;
+    }
+    const selectedGroup = businessGroups.find(
+      (group) => normalizeGroupId(group.group) === selectedBu
+    );
+    if (!selectedGroup) {
+      return;
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const unitIds = unitsParam
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((unitName) => getUnitId(groupId, unitName));
+    const validUnitIds = unitIds.filter((unitId) =>
+      selectedGroup.businessUnits.some(
+        (unit) => getUnitId(groupId, unit.name) === unitId
+      )
+    );
+    if (validUnitIds.length > 0) {
+      setSelectedGroupIds(new Set(validUnitIds));
+    }
+  }, [businessGroups, searchParams, selectedBu]);
 
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
@@ -1311,8 +1341,8 @@ export default function BusinessGroupPerformancePage() {
 
     const driversByStage: Record<string, string[]> = {
       'market-performance': [
-        'Customer H total shipment increase by 10% vs plan',
-        'Customer D reduce projection volume by 12k units',
+        'Customer H total shipment increase by 2% vs FY shipment forecast budgeted',
+        'Customer D increased shipment of Gaming Series X by 5%, which has 3p.p. higher GP margin',
       ],
       'l3-vs-target': [
         'Initiative ramp',
@@ -1350,12 +1380,12 @@ export default function BusinessGroupPerformancePage() {
             {
               bu: buLabel,
               driver: drivers[0],
-              impact: roundToOne(totalImpact * 0.6),
+              impact: 3.4,
             },
             {
               bu: buLabel,
               driver: drivers[1],
-              impact: roundToOne(totalImpact * 0.4),
+              impact: 2.3,
             },
           ]
         : (selectedBuNames.length > 0 ? selectedBuNames : ['Overall']).map(
@@ -1372,7 +1402,10 @@ export default function BusinessGroupPerformancePage() {
     return {
       type: 'default' as const,
       rows,
-      totalImpact,
+      totalImpact:
+        activeDeviationStage.stage === 'market-performance'
+          ? 5.7
+          : totalImpact,
     };
   }, [
     activeDeviationStage,
@@ -1855,14 +1888,31 @@ export default function BusinessGroupPerformancePage() {
       if (!showDrilldown) {
         return;
       }
-      const selectedRows =
-        selectedGroupIds.size === 0
-          ? tableData.filter((row) => isOverallRowId(row.id))
-          : tableData.filter((row) => selectedGroupIds.has(row.id));
-      const buParam = selectedRows.map((row) => row.name).join(',');
+      const resolvedBgName = (() => {
+        if (selectedBu === 'all') {
+          return '';
+        }
+        const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
+        if (directMatch) {
+          return directMatch.name;
+        }
+        const matchedGroup = businessGroups.find((group) => {
+          const groupId = normalizeGroupId(group.group);
+          return group.businessUnits.some(
+            (unit) => getUnitId(groupId, unit.name) === selectedBu
+          );
+        });
+        return matchedGroup?.group ?? sectionTitle;
+      })();
+      const buParam = resolvedBgName;
+      const bgParam = selectedBu === 'all' ? sectionTitle : '';
       const params = new URLSearchParams();
       if (buParam) {
         params.set('bu', buParam);
+      }
+      if (bgParam) {
+        params.set('bgs', bgParam);
+        params.set('bu', 'allbgs');
       }
       navigate(
         `/business-unit-performance/functional-performance/${row.id}?${params.toString()}`
@@ -2291,15 +2341,29 @@ export default function BusinessGroupPerformancePage() {
             }
             brokenAxis="auto"
             onStageClick={(stage: BudgetForecastStage) => {
+              const selectedUnitNames = Array.from(selectedGroupIds)
+                .map((id) => unitRowsById.get(id)?.name)
+                .filter((name): name is string => Boolean(name));
+              const unitParam = selectedUnitNames.length
+                ? `&units=${encodeURIComponent(selectedUnitNames.join(','))}`
+                : '';
+              const selectedGroupNames = Array.from(selectedGroupIds)
+                .filter(
+                  (id) =>
+                    !isOverallRowId(id) && !unitRowsById.has(id)
+                );
+              const bgsParam = selectedGroupNames.length
+                ? `&bgs=${encodeURIComponent(selectedGroupNames.join(','))}`
+                : '';
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year${unitParam}${bgsParam}`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year`
+                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year${unitParam}${bgsParam}`
                 );
                 return;
               }
