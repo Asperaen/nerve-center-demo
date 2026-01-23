@@ -515,7 +515,7 @@ export default function IdeationProgressPage() {
   }, [activeTimeframe]);
 
   useEffect(() => {
-    const buParam = searchParams.get('bu');
+    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (!buParam) {
       return;
     }
@@ -583,7 +583,7 @@ export default function IdeationProgressPage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       return next;
     });
   };

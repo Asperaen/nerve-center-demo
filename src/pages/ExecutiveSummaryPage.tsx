@@ -776,7 +776,7 @@ export default function ExecutiveSummaryPage({
   }, [searchParams, isBudgetView]);
 
   useEffect(() => {
-    const buParam = searchParams.get('bu');
+    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (!buParam) {
       return;
     }
@@ -794,11 +794,11 @@ export default function ExecutiveSummaryPage({
     setSelectedBu(buId);
     setSearchParams(
       (prev) => {
-        if (prev.get('bu') === buId) {
+        if (prev.get('bg') === buId) {
           return prev;
         }
         const next = new URLSearchParams(prev);
-        next.set('bu', buId);
+        next.set('bg', buId);
         return next;
       },
       { replace: true }
@@ -1223,10 +1223,10 @@ export default function ExecutiveSummaryPage({
         if (isBudgetView) {
           if (selectedBu !== 'all') {
             const unitsParam = isSubGroup
-              ? `&units=${encodeURIComponent(groupName)}`
+              ? `&bu=${encodeURIComponent(groupName)}`
               : '';
             navigate(
-              `/business-group-performance?bu=${selectedBu}${unitsParam}&toggle=ytm`
+              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
             );
             return;
           }
@@ -1234,14 +1234,14 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bu=${groupId}`);
+          navigate(`/budget?bg=${groupId}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bu=${groupId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${groupId}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bu=${groupId}&toggle=${homeToggle}`);
+        navigate(`/business-group-performance?bg=${groupId}&toggle=${homeToggle}`);
       }
     };
     const budgetPercent = calcPercent(metric.value, metric.baseline);
@@ -1443,10 +1443,10 @@ export default function ExecutiveSummaryPage({
         if (isBudgetView) {
           if (selectedBu !== 'all') {
             const unitsParam = isSubGroup
-              ? `&units=${encodeURIComponent(group.name)}`
+              ? `&bu=${encodeURIComponent(group.name)}`
               : '';
             navigate(
-              `/business-group-performance?bu=${selectedBu}${unitsParam}&toggle=ytm`
+              `/business-group-performance?bg=${selectedBu}${unitsParam}&toggle=ytm`
             );
             return;
           }
@@ -1454,14 +1454,14 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (homeToggle === 'budget') {
-          navigate(`/budget?bu=${buId}`);
+          navigate(`/budget?bg=${buId}`);
           return;
         }
         if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bu=${buId}&timeframe=full-year`);
+          navigate(`/market-intelligence?bg=${buId}&timeframe=full-year`);
           return;
         }
-        navigate(`/business-group-performance?bu=${buId}&toggle=${homeToggle}`);
+        navigate(`/business-group-performance?bg=${buId}&toggle=${homeToggle}`);
       }
     };
 
@@ -1687,7 +1687,7 @@ export default function ExecutiveSummaryPage({
                 </button>
               </div>
               <Link
-                to='/business-group-performance?bu=all'
+                to='/business-group-performance?bg=all'
                 className='text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 text-sm'>
                 Business Group Details
                 <ArrowRightIcon className='w-4 h-4' />

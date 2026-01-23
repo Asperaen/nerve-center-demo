@@ -314,12 +314,26 @@ export default function ActualInitiativeImplementationPage() {
   }, [activeTimeframe]);
 
   useEffect(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bgs');
     const buParam = searchParams.get('bu');
-    const bgsParam = searchParams.get('bgs');
-    if (!buParam) {
-      if (bgsParam) {
+    if (bgParam) {
+      const bgList = bgParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (bgList.length !== 1 || bgList[0] === 'all') {
         setSelectedBu('all');
+        return;
       }
+      const validBg = mainBuOptions.find((bu) => bu.id === bgList[0]);
+      if (validBg) {
+        setSelectedBu(validBg.id);
+        return;
+      }
+      setSelectedBu(bgList[0]);
+      return;
+    }
+    if (!buParam) {
       return;
     }
     if (buParam === 'all') {
@@ -358,9 +372,9 @@ export default function ActualInitiativeImplementationPage() {
   }, [selectedBu]);
 
   useEffect(() => {
-    const bgsParam = searchParams.get('bgs');
-    if (selectedBu === 'all' && bgsParam) {
-      const bgIds = bgsParam
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bgs');
+    if (selectedBu === 'all' && bgParam) {
+      const bgIds = bgParam
         .split(',')
         .map((value) => value.trim())
         .filter(Boolean);
@@ -381,7 +395,9 @@ export default function ActualInitiativeImplementationPage() {
       );
       return;
     }
-    const unitsParam = searchParams.get('units');
+    const unitsParam = searchParams.get('bg')
+      ? searchParams.get('bu')
+      : searchParams.get('units');
     if (unitsParam) {
       const requestedUnits = unitsParam
         .split(',')
@@ -505,7 +521,7 @@ export default function ActualInitiativeImplementationPage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       return next;
     });
   };

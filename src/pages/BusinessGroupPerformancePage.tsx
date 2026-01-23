@@ -332,7 +332,8 @@ export default function BusinessGroupPerformancePage() {
   const { businessGroups } = useBudgets();
 
   // Get initial BU from query param
-  const initialBuParam = searchParams.get('bu') || 'all';
+  const initialBuParam =
+    searchParams.get('bg') || searchParams.get('bu') || 'all';
   const initialBu =
     initialBuParam === 'all' ? 'all' : normalizeGroupId(initialBuParam);
 
@@ -430,7 +431,7 @@ export default function BusinessGroupPerformancePage() {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('bu', buId);
+      next.set('bg', buId);
       next.set('toggle', selectedTimeframe);
       return next;
     });
@@ -608,7 +609,8 @@ export default function BusinessGroupPerformancePage() {
     if (selectedBu === 'all') {
       return;
     }
-    const unitsParam = searchParams.get('units');
+    const unitsParam =
+      searchParams.get('bg') ? searchParams.get('bu') : searchParams.get('units');
     if (!unitsParam) {
       return;
     }
@@ -1890,7 +1892,7 @@ export default function BusinessGroupPerformancePage() {
       }
       const resolvedBgName = (() => {
         if (selectedBu === 'all') {
-          return '';
+          return 'all';
         }
         const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
         if (directMatch) {
@@ -1905,14 +1907,14 @@ export default function BusinessGroupPerformancePage() {
         return matchedGroup?.group ?? sectionTitle;
       })();
       const buParam = resolvedBgName;
-      const bgParam = selectedBu === 'all' ? sectionTitle : '';
+      const bgParam = selectedBu === 'all' ? 'all' : '';
       const params = new URLSearchParams();
       if (buParam) {
-        params.set('bu', buParam);
+        params.set('bg', buParam);
       }
       if (bgParam) {
-        params.set('bgs', bgParam);
-        params.set('bu', 'allbgs');
+        params.set('bg', bgParam);
+        params.delete('bu');
       }
       navigate(
         `/business-unit-performance/functional-performance/${row.id}?${params.toString()}`
@@ -2345,25 +2347,28 @@ export default function BusinessGroupPerformancePage() {
                 .map((id) => unitRowsById.get(id)?.name)
                 .filter((name): name is string => Boolean(name));
               const unitParam = selectedUnitNames.length
-                ? `&units=${encodeURIComponent(selectedUnitNames.join(','))}`
+                ? `&bu=${encodeURIComponent(selectedUnitNames.join(','))}`
                 : '';
-              const selectedGroupNames = Array.from(selectedGroupIds)
-                .filter(
-                  (id) =>
-                    !isOverallRowId(id) && !unitRowsById.has(id)
-                );
-              const bgsParam = selectedGroupNames.length
-                ? `&bgs=${encodeURIComponent(selectedGroupNames.join(','))}`
-                : '';
+              const selectedGroupNames = Array.from(selectedGroupIds).filter(
+                (id) => !isOverallRowId(id) && !unitRowsById.has(id)
+              );
+              const resolvedBgParam =
+                selectedBu === 'all' && selectedGroupNames.length > 0
+                  ? selectedGroupNames.join(',')
+                  : selectedBu;
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year${unitParam}${bgsParam}`
+                  `/actual-initiative-implementation?bg=${encodeURIComponent(
+                    resolvedBgParam
+                  )}&timeframe=full-year${unitParam}`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/actual-initiative-implementation?bu=${selectedBu}&timeframe=full-year${unitParam}${bgsParam}`
+                  `/actual-initiative-implementation?bg=${encodeURIComponent(
+                    resolvedBgParam
+                  )}&timeframe=full-year${unitParam}`
                 );
                 return;
               }

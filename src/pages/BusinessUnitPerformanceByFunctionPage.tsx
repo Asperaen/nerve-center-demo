@@ -41,7 +41,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   );
   const [activeBucketId, setActiveBucketId] = useState<string | null>(null);
   const buParam = searchParams.get('bu') ?? '';
-  const bgsParam = searchParams.get('bgs') ?? '';
+  const bgsParam = searchParams.get('bg') ?? searchParams.get('bgs') ?? '';
   const selectedBus = buParam
     .split(',')
     .map((item) => item.trim())
