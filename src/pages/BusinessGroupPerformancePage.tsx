@@ -2564,26 +2564,15 @@ export default function BusinessGroupPerformancePage() {
               const unitParam = selectedUnitNames.length
                 ? `&bu=${encodeURIComponent(selectedUnitNames.join(','))}`
                 : '';
-              const selectedGroupNames = Array.from(selectedGroupIds).filter(
-                (id) => !isOverallRowId(id) && !unitRowsById.has(id)
-              );
-              const resolvedBgParam =
-                selectedBu === 'all' && selectedGroupNames.length > 0
-                  ? selectedGroupNames.join(',')
-                  : selectedBu;
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/initiative-performance?bg=${encodeURIComponent(
-                    resolvedBgParam
-                  )}&timeframe=full-year${unitParam}`
+                  `/initiative-performance?bg=hh&timeframe=ytm${unitParam}`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/actual-initiative-implementation?bg=${encodeURIComponent(
-                    resolvedBgParam
-                  )}&timeframe=full-year${unitParam}`
+                  `/actual-initiative-implementation?bg=hh&timeframe=ytm`
                 );
                 return;
               }

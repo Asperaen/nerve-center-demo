@@ -596,6 +596,25 @@ export default function IdeationProgressPage() {
         }
       }
     }
+    
+    // Default to D group when HH is selected and no BU parameter is provided
+    if (groupId.toLowerCase() === 'hh' && !buParam) {
+      const dGroupUnit = selectedGroupInfo.group.businessUnits.find(
+        (unit) => {
+          const normalized = normalizeLabel(unit.name);
+          return normalized === 'dgroup' || 
+                 normalized === 'd-group' ||
+                 unit.name.toLowerCase().includes('d group') ||
+                 unit.name.toLowerCase() === 'd group';
+        }
+      );
+      if (dGroupUnit) {
+        const dGroupId = getUnitId(groupId, dGroupUnit.name);
+        setSelectedGroupIds(new Set([dGroupId]));
+        return;
+      }
+    }
+    
     setSelectedGroupIds(new Set([overallId]));
   }, [selectedGroupInfo, searchParams]);
 
