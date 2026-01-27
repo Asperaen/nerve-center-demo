@@ -1,17 +1,18 @@
 import { useMemo } from 'react';
 import {
-    Bar,
-    CartesianGrid,
-    Cell,
-    ComposedChart,
-    LabelList,
-    ReferenceLine,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  LabelList,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export interface FunctionalPerformanceStage {
   id: string;
@@ -40,10 +41,12 @@ const YAxisTick = ({
   x,
   y,
   payload,
+  formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
+  formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
   const { value } = payload;
@@ -60,7 +63,7 @@ const YAxisTick = ({
         fontSize={12}
         fontWeight={isZero ? 'bold' : 'normal'}
       >
-        {value.toFixed(0)}
+        {formatValue ? formatValue(value) : value.toFixed(0)}
       </text>
     </g>
   );
@@ -73,12 +76,14 @@ const BrokenAxisTick = ({
   payload,
   brokenAxis,
   index,
+  formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
   brokenAxis: BrokenAxisConfig;
   index?: number;
+  formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
   const { value } = payload;
@@ -93,6 +98,10 @@ const BrokenAxisTick = ({
   const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
   const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
 
+  const displayValue = formatValue
+    ? formatValue(actualValue)
+    : actualValue.toFixed(0);
+
   return (
     <g transform={`translate(${x},${y})`}>
       <text
@@ -104,7 +113,7 @@ const BrokenAxisTick = ({
         fontSize={12}
         fontWeight={isZero ? 'bold' : 'normal'}
       >
-        {actualValue.toFixed(0)}
+        {displayValue}
       </text>
       {shouldShowBreak && (
         <g transform='translate(8, 12)'>
@@ -235,6 +244,14 @@ export default function FunctionalPerformanceWaterfall({
   barSize = 26,
   brokenAxis: brokenAxisProp = 'auto',
 }: FunctionalPerformanceWaterfallProps) {
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
+  const formatAxisValue = (value: number) =>
+    formatAmount(value, { maximumFractionDigits: 0 });
   // Calculate effective broken axis config (auto-detect or use provided)
   const brokenAxis = useMemo(() => {
     if (brokenAxisProp === 'auto') {
@@ -401,12 +418,16 @@ export default function FunctionalPerformanceWaterfall({
             {brokenAxis ? (
               <YAxis
                 tick={(props) => (
-                  <BrokenAxisTick {...props} brokenAxis={brokenAxis} />
+                  <BrokenAxisTick
+                    {...props}
+                    brokenAxis={brokenAxis}
+                    formatValue={formatAxisValue}
+                  />
                 )}
                 domain={yAxisDomain}
                 ticks={yAxisTicks}
                 label={{
-                  value: 'USD Mn',
+                  value: `${currencyLabel} Mn`,
                   angle: -90,
                   position: 'insideLeft',
                   style: { fontSize: '12px' },
@@ -414,9 +435,11 @@ export default function FunctionalPerformanceWaterfall({
               />
             ) : (
               <YAxis
-                tick={(props) => <YAxisTick {...props} />}
+                tick={(props) => (
+                  <YAxisTick {...props} formatValue={formatAxisValue} />
+                )}
                 label={{
-                  value: 'USD Mn',
+                  value: `${currencyLabel} Mn`,
                   angle: -90,
                   position: 'insideLeft',
                   style: { fontSize: '12px' },
@@ -438,10 +461,14 @@ export default function FunctionalPerformanceWaterfall({
                     : Number(Array.isArray(value) ? value[0] : value ?? 0);
                 const cumulative = payload?.cumulativeValue ?? numericValue;
                 const delta = payload?.delta;
-                const lines = [`Value: ${cumulative.toFixed(1)}M`];
+                const lines = [
+                  `Value: ${formatAmountM(cumulative)} ${currencyLabel}`,
+                ];
                 if (delta !== undefined && delta !== cumulative) {
                   lines.push(
-                    `Change: ${delta > 0 ? '+' : ''}${delta.toFixed(1)}M`
+                    `Change: ${delta > 0 ? '+' : ''}${formatAmountM(
+                      delta
+                    )} ${currencyLabel}`
                   );
                 }
                 return lines.join('\n');
@@ -481,7 +508,7 @@ export default function FunctionalPerformanceWaterfall({
                   const stage = stages[index];
                   const isBaseline = stage?.type === 'baseline';
                   const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
-                  const displayValue = numericValue.toFixed(0);
+                  const displayValue = formatAxisValue(numericValue);
                   
                   if (brokenAxis && isBaseline) {
                     // For baseline bars with broken axis: show label directly above the bar

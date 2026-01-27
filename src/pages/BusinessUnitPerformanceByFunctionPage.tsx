@@ -5,6 +5,7 @@ import FunctionalPerformanceWaterfall, {
   type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
 import { useBudgets } from '../contexts/BudgetContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
 import { getStoredTimeframe } from '../utils/timeframeStorage';
@@ -18,15 +19,13 @@ const normalizeBu = (value: string) =>
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const toMillions = (value: number) => value / 1_000;
 
-const formatMn = (value: number) => {
-  const sign = value < 0 ? '-' : '';
-  return `${sign}${Math.abs(value).toFixed(1)}M`;
-};
-
 export default function BusinessUnitPerformanceByFunctionPage() {
   const { functionId } = useParams<{ functionId?: string }>();
   const [searchParams] = useSearchParams();
   const { businessGroups } = useBudgets();
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatMn = (value: number) =>
+    `${formatAmount(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`;
   const functionParam =
     functionId ??
     searchParams.get('function') ??
@@ -1093,13 +1092,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: getCostStageType(boosted[3]),
       },
       {
-        id: 'cost-accounting',
-        label: 'Cost per accounting rule (64) delta',
-        value: nextValue(boosted[4]),
-        delta: boosted[4],
-        type: getCostStageType(boosted[4]),
-      },
-      {
         id: 'rnd-budget-control',
         label: 'R&D budget controlled by R&D',
         value: Number(running.toFixed(1)),
@@ -1229,7 +1221,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   Deviation by category
                 </h2>
                 <p className='text-sm text-gray-500 mt-1'>
-                  Total spend, USD Mn
+                  Total spend, {currencyLabel} Mn
                 </p>
               </div>
               <div className='overflow-hidden rounded-lg border border-gray-200'>
@@ -1403,7 +1395,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
             <FunctionalPerformanceWaterfall
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
-              description='Procurement cost, USD Mn'
+              description={`Procurement cost, ${currencyLabel} Mn`}
               brokenAxis="auto"
               onStageClick={(stage) => {
                 if (
@@ -1437,7 +1429,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   Deviation by site
                 </h2>
                 <p className='text-sm text-gray-500 mt-1'>
-                  Total MVA cost, USD Mn
+                  Total MVA cost, {currencyLabel} Mn
                 </p>
               </div>
               <div className='overflow-hidden rounded-lg border border-gray-200'>
@@ -1562,7 +1554,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={manufacturingWaterfallStages}
               title='Deviation waterfall by key value drivers'
               emphasisStageId='dl-efficiency'
-              description='MVA cost, USD Mn'
+              description={`MVA cost, ${currencyLabel} Mn`}
               barSize={32}
               brokenAxis="auto"
               onStageClick={(stage) => {
@@ -1590,7 +1582,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
             <FunctionalPerformanceWaterfall
               stages={rndWaterfallStages}
               title='Deviation waterfall by key value drivers'
-              description='R&D cost, USD Mn'
+              description={`R&D cost, ${currencyLabel} Mn`}
               barSize={32}
               brokenAxis="auto"
               onStageClick={(stage) => {

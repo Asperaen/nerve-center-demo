@@ -348,13 +348,19 @@ export interface NPDeviationStage {
 // Budget Forecast Actual Waterfall Types
 export type BudgetForecastStageType =
   | 'budget'
+  | 'confirmed-volume-mix'
   | 'market-performance'
+  | 'headwinds-tailwinds'
+  | 'one-off-items'
   | 'l3-vs-target'
   | 'l4-vs-planned'
   | 'one-off-adjustments'
   | 'ideation'
   | 'forecast'
   | 'l4-to-l5-leakage'
+  | 'pre-improvement-op'
+  | 'carry-over-improvements'
+  | 'planned-leakages'
   | 'actuals'
   | 'early-signals'
   | 'forecast-with-early';
@@ -368,6 +374,7 @@ export interface BudgetForecastStage {
   description?: string;
   isClickable?: boolean; // Whether the bar is clickable for navigation
   navigationTarget?: string; // Route to navigate to when clicked
+  forecastSplit?: number; // Portion of delta attributed to forecast (0-1)
 }
 
 // Key Call Out Types

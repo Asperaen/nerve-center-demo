@@ -5,8 +5,10 @@ import {
   CogIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { internalPulseColumns } from '../data/mockInternalPulse';
 import type { FinancialMetric, PulseColumn, PulseMetric } from '../types';
+import { formatNumber } from '../utils/currency';
 import {
   getStoredTimeframe,
   setStoredTimeframe,
@@ -426,40 +428,6 @@ const getComparisonText = (metric: PulseMetric): string => {
   return '';
 };
 
-const formatMetricValue = (metric: PulseMetric): string => {
-  // For Gold price, show market price as the main value
-  if (metric.id === 'gold-material' && metric.subMetrics) {
-    const marketPrice = metric.subMetrics.find((m) =>
-      m.name.includes('Market price')
-    )?.value;
-    if (marketPrice !== undefined) {
-      return `${marketPrice.toLocaleString('en-US')} ${metric.unit || ''}`;
-    }
-  }
-
-  // For Inventory Turnover, use valuePercent as the actual rate value
-  if (metric.id === 'inventory-turnover' && metric.valuePercent !== undefined) {
-    return `${metric.valuePercent.toFixed(1)} times/year`;
-  }
-
-  if (metric.value !== undefined) {
-    if (metric.valuePercent !== undefined) {
-      return `$${metric.value.toFixed(1)}M (${metric.valuePercent}%)`;
-    }
-    // Format with comma for thousands
-    return `${metric.value.toLocaleString('en-US')} ${metric.unit || ''}`;
-  }
-  if (metric.valuePercent !== undefined) {
-    return `${metric.valuePercent}%`;
-  }
-  // For metrics without value, show comparison if available
-  if (metric.comparisons?.vsLastYear) {
-    const percent = metric.comparisons.vsLastYear.percent;
-    return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
-  }
-  return 'N/A';
-};
-
 interface MetricDisplayProps {
   metric: PulseMetric;
   isSelected: boolean;
@@ -471,6 +439,55 @@ function MetricDisplay({
   isSelected,
   onToggleSelection,
 }: MetricDisplayProps) {
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
+  const formatValueWithUnit = (value: number, unit?: string) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    if (unit?.includes('USD')) {
+      const normalizedUnit = unit.replace('USD', currencyLabel);
+      return `${formatAmount(value)} ${normalizedUnit}`.trim();
+    }
+    return `${formatNumber(value)} ${unit || ''}`.trim();
+  };
+  const formatMetricValue = (metric: PulseMetric): string => {
+    // For Gold price, show market price as the main value
+    if (metric.id === 'gold-material' && metric.subMetrics) {
+      const marketPrice = metric.subMetrics.find((m) =>
+        m.name.includes('Market price')
+      )?.value;
+      if (marketPrice !== undefined) {
+        return formatValueWithUnit(marketPrice, metric.unit);
+      }
+    }
+
+    // For Inventory Turnover, use valuePercent as the actual rate value
+    if (
+      metric.id === 'inventory-turnover' &&
+      metric.valuePercent !== undefined
+    ) {
+      return `${metric.valuePercent.toFixed(1)} times/year`;
+    }
+
+    if (metric.value !== undefined) {
+      if (metric.valuePercent !== undefined) {
+        return `${formatAmountM(metric.value)} ${currencyLabel} (${metric.valuePercent}%)`;
+      }
+      return formatValueWithUnit(metric.value, metric.unit);
+    }
+    if (metric.valuePercent !== undefined) {
+      return `${metric.valuePercent}%`;
+    }
+    // For metrics without value, show comparison if available
+    if (metric.comparisons?.vsLastYear) {
+      const percent = metric.comparisons.vsLastYear.percent;
+      return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}% vs last year`;
+    }
+    return 'N/A';
+  };
   const handleDragStart = (e: React.DragEvent) => {
     // Don't start drag if clicking on checkbox
     const target = e.target as HTMLElement;
@@ -563,10 +580,8 @@ function MetricDisplay({
                 <span className='text-gray-900 font-semibold'>
                   {subMetric.value > 0
                     ? subMetric.unit === 'M USD'
-                      ? `$${subMetric.value.toFixed(1)}M`
-                      : `${subMetric.value.toLocaleString('en-US')} ${
-                          subMetric.unit || ''
-                        }`
+                      ? `${formatAmountM(subMetric.value)} ${currencyLabel}`
+                      : formatValueWithUnit(subMetric.value, subMetric.unit)
                     : 'N/A'}
                 </span>
               </div>

@@ -22,7 +22,15 @@ import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import { type TimeframeOption } from '../components/TimeframePicker';
 import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
-import type { FunctionTargetRow, ValueDriverRow } from '../data/mockBgData';
+import { useCurrency } from '../contexts/CurrencyContext';
+import {
+  BUDGET_WATERFALL_DATA,
+  PNL_BREAKDOWN_DATA,
+  type BudgetWaterfallRow,
+  type FunctionTargetRow,
+  type PnlBreakdownRow,
+  type ValueDriverRow,
+} from '../data/mockBgData';
 import {
   type BusinessGroupData,
   type BusinessGroupMetricWithTrend,
@@ -64,6 +72,9 @@ const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
   return key === 'other' ? 'others' : key;
 };
+
+const getUnitId = (groupId: string, unitName: string) =>
+  `${groupId}-${unitName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
 // Simple hash function to generate a unique seed from a string
 const hashString = (str: string): number => {
@@ -513,12 +524,16 @@ export default function ExecutiveSummaryPage({
   const [selectedFinancialKPIs, setSelectedFinancialKPIs] = useState<
     Set<string>
   >(new Set());
+  const [activePnlGroup, setActivePnlGroup] = useState<string | null>(null);
 
   // Modal state
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
+    new Set()
+  );
   const [activeBudgetStage, setActiveBudgetStage] =
     useState<BudgetForecastStage | null>(null);
   const [impactRationaleFilter, setImpactRationaleFilter] =
@@ -540,11 +555,238 @@ export default function ExecutiveSummaryPage({
     return mainBuOptions.find((bu) => bu.id === selectedBu)?.name ?? 'Overall';
   }, [selectedBu, mainBuOptions]);
 
+  const selectedGroup = useMemo(() => {
+    if (selectedBu === 'all') {
+      return null;
+    }
+    return (
+      businessGroups.find(
+        (group) => normalizeGroupId(group.group) === selectedBu
+      ) ?? null
+    );
+  }, [businessGroups, selectedBu]);
+
+  useEffect(() => {
+    if (!isBudgetView) {
+      return;
+    }
+    if (!selectedGroup) {
+      setSelectedGroupIds(new Set());
+      return;
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const overallId = `${groupId}-overall`;
+    setSelectedGroupIds(new Set([overallId]));
+  }, [isBudgetView, selectedGroup]);
+
+  const selectedUnits = useMemo(() => {
+    if (!selectedGroup) {
+      return [];
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const overallId = `${groupId}-overall`;
+    const isAllSelected =
+      selectedGroupIds.size === 0 || selectedGroupIds.has(overallId);
+    return isAllSelected
+      ? selectedGroup.businessUnits
+      : selectedGroup.businessUnits.filter((unit) =>
+          selectedGroupIds.has(getUnitId(groupId, unit.name))
+        );
+  }, [selectedGroup, selectedGroupIds]);
+
+  const showBuSelection = isBudgetView && selectedBu !== 'all' && selectedGroup;
+
+  const toggleBuSelection = (unitId: string | 'all') => {
+    if (!selectedGroup) {
+      return;
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const overallId = `${groupId}-overall`;
+    setSelectedGroupIds((prev) => {
+      const next = new Set(prev);
+      if (unitId === 'all') {
+        next.clear();
+        next.add(overallId);
+        return next;
+      }
+      next.delete(overallId);
+      if (next.has(unitId)) {
+        next.delete(unitId);
+      } else {
+        next.add(unitId);
+      }
+      if (next.size === 0) {
+        next.add(overallId);
+      }
+      return next;
+    });
+  };
+
+  const { formatAmount, currencyLabel } = useCurrency();
+
   const formatMn = (value: number) =>
-    value.toLocaleString('en-US', {
+    formatAmount(value, {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     });
+  const formatMnWhole = (value: number) =>
+    `${formatAmount(value, { maximumFractionDigits: 0 })}M`;
+  const formatPnlValue = (value: number) =>
+    `${formatMn(toMillions(value))}M`;
+
+  const resolvePnlGroupKey = useCallback((groupName: string) => {
+    const normalized = normalizeGroupId(groupName);
+    if (normalized === 'hh') {
+      return 'HH';
+    }
+    if (normalized === 'fit') {
+      return 'FIT';
+    }
+    if (normalized === 'fii') {
+      return 'FII';
+    }
+    if (normalized === 'fih') {
+      return 'FIH';
+    }
+    if (normalized === 'others') {
+      return 'Others';
+    }
+    return null;
+  }, []);
+
+  const activePnlRows = useMemo<PnlBreakdownRow[]>(() => {
+    if (!activePnlGroup) {
+      return [];
+    }
+    return PNL_BREAKDOWN_DATA[activePnlGroup] ?? [];
+  }, [activePnlGroup]);
+
+  const pnlHierarchy = [
+    { label: 'Revenue', children: ['Passthrough', 'Controllable'] },
+    {
+      label: 'COGS',
+      children: [
+        { label: 'BOM', children: ['Buy-Sell', 'AVAP', 'Controllable'] },
+        { label: 'MVA', children: ['DL', 'IDL', 'G&A'] },
+      ],
+    },
+    { label: 'R&D', children: ['FTE', 'Non-FTE'] },
+    {
+      label: 'Operating Profit',
+      children: ['(Line items between OP and net)'],
+    },
+  ] as const;
+
+  const renderPnlRows = useCallback(
+    (rows: PnlBreakdownRow[]) => {
+      const used = new Set<number>();
+
+      const getNextRow = (label: string) => {
+        for (let i = 0; i < rows.length; i += 1) {
+          if (!used.has(i) && rows[i].lineItem === label) {
+            used.add(i);
+            return { row: rows[i], index: i };
+          }
+        }
+        return null;
+      };
+
+      const renderValueRow = (
+        row: PnlBreakdownRow,
+        index: number,
+        level: number,
+        isGroup: boolean
+      ) => (
+        <tr
+          key={`${row.unit}-${row.lineItem}-${index}`}
+          className='border-b border-gray-200 last:border-b-0'>
+          <td className='px-4 py-3 text-gray-600' />
+          <td className='px-4 py-3 text-gray-600'>
+            <span
+              className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
+              style={{ paddingLeft: `${level * 16}px` }}>
+              {row.lineItem}
+            </span>
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.fullYearBudget)}
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.ytmBudget)}
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.lastYearYtm)}
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.ytmActual)}
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.fullYearForecast)}
+          </td>
+          <td className='px-4 py-3 text-right text-gray-700'>
+            {formatPnlValue(row.lastYearFullYear)}
+          </td>
+        </tr>
+      );
+
+      const renderLabelRow = (label: string, level: number) => (
+        <tr key={`label-${label}-${level}`} className='border-b border-gray-200 last:border-b-0'>
+          <td className='px-4 py-3 text-gray-600' />
+          <td className='px-4 py-3 text-gray-600'>
+            <span className='font-semibold text-gray-900' style={{ paddingLeft: `${level * 16}px` }}>
+              {label}
+            </span>
+          </td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+        </tr>
+      );
+
+      const renderNode = (
+        node: { label: string; children?: readonly (string | { label: string; children?: readonly string[] })[] },
+        level: number
+      ): React.ReactNode[] => {
+        const rowMatch = getNextRow(node.label);
+        const items: React.ReactNode[] = [];
+        if (rowMatch) {
+          items.push(renderValueRow(rowMatch.row, rowMatch.index, level, true));
+        } else if (node.children && node.children.length > 0) {
+          items.push(renderLabelRow(node.label, level));
+        }
+        (node.children ?? []).forEach((child) => {
+          if (typeof child === 'string') {
+            const childMatch = getNextRow(child);
+            if (childMatch) {
+              items.push(
+                renderValueRow(childMatch.row, childMatch.index, level + 1, false)
+              );
+            }
+            return;
+          }
+          items.push(...renderNode(child, level + 1));
+        });
+        return items;
+      };
+
+      const output: React.ReactNode[] = [];
+      pnlHierarchy.forEach((node) => {
+        output.push(...renderNode(node, 0));
+      });
+
+      rows.forEach((row, index) => {
+        if (!used.has(index)) {
+          output.push(renderValueRow(row, index, 0, false));
+        }
+      });
+
+      return output;
+    },
+    [formatPnlValue]
+  );
 
   const selectedImpactUnits = useMemo(() => {
     if (selectedBu === 'all') {
@@ -576,7 +818,16 @@ export default function ExecutiveSummaryPage({
         return category.includes('headwind') || category.includes('tailwind');
       })
       .reduce((sum, row) => sum + row.opImpact, 0);
-    return { oneOff, headwinds };
+    const volumeMix = opImpactRows
+      .filter((row) => {
+        const category = row.category.toLowerCase();
+        return category.includes('volume') || category.includes('mix');
+      })
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    const leakages = opImpactRows
+      .filter((row) => row.category.toLowerCase().includes('leak'))
+      .reduce((sum, row) => sum + row.opImpact, 0);
+    return { oneOff, headwinds, volumeMix, leakages };
   }, [opImpactRows]);
 
   const ideationValueRows = useMemo(() => {
@@ -781,7 +1032,7 @@ export default function ExecutiveSummaryPage({
       return (
         <div className='max-w-[560px]'>
           <p className='text-xs font-semibold text-gray-700 mb-2'>
-            Ideation value drivers (Mn USD)
+            Ideation value drivers (Mn {currencyLabel})
           </p>
           <div className='overflow-hidden rounded-md border border-gray-200'>
             <table className='w-full text-xs'>
@@ -853,44 +1104,94 @@ export default function ExecutiveSummaryPage({
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  const [showComparisonDetails, setShowComparisonDetails] =
-    useState<boolean>(true);
-
-  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>(
-    () => (isBudgetView ? 'full-year' : getStoredTimeframe())
-  );
-  const [homeToggle, setHomeToggle] = useState<'budget' | 'ytm' | 'full-year'>(
-    defaultHomeToggle
+  const [financialView, setFinancialView] = useState<'absolute' | 'margin'>(
+    'absolute'
   );
 
-  useEffect(() => {
-    setStoredTimeframe(selectedTimeframe);
-  }, [selectedTimeframe]);
+  const defaultVersion =
+    defaultHomeToggle === 'budget'
+      ? 'budget'
+      : defaultHomeToggle === 'full-year'
+      ? 'forecast'
+      : 'actual';
+  const normalizeTimeframe = (value?: TimeframeOption | null) =>
+    value === 'ytm' || value === 'full-year' ? value : 'ytm';
+  const [selectedVersion, setSelectedVersion] = useState<
+    'budget' | 'actual' | 'forecast'
+  >(isBudgetView ? 'budget' : defaultVersion);
+  const [selectedTimeframeScope, setSelectedTimeframeScope] = useState<
+    TimeframeOption
+  >(() =>
+    isBudgetView
+      ? 'full-year'
+      : normalizeTimeframe(getStoredTimeframe())
+  );
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
+  const [isMonthRangeCustom, setIsMonthRangeCustom] =
+    useState<boolean>(false);
+  const isPercentView = financialView === 'margin';
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
-  useEffect(() => {
-    if (homeToggle === 'ytm') {
-      setSelectedTimeframe('ytm');
-    } else {
-      setSelectedTimeframe('full-year');
+  const handleTimeframeChange = (timeframe: 'full-year' | 'ytm') => {
+    setSelectedTimeframeScope(timeframe);
+    setIsMonthRangeCustom(false);
+    setMonthAnchor(null);
+    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, 2]);
+  };
+
+  const handleMonthClick = (monthIndex: number) => {
+    if (monthAnchor === null || !isMonthRangeCustom) {
+      setMonthAnchor(monthIndex);
+      setMonthRange([monthIndex, monthIndex]);
+      setIsMonthRangeCustom(true);
+      return;
     }
-  }, [homeToggle]);
+    const start = Math.min(monthAnchor, monthIndex);
+    const end = Math.max(monthAnchor, monthIndex);
+    setMonthRange([start, end]);
+    setMonthAnchor(null);
+    setIsMonthRangeCustom(true);
+  };
+
+  useEffect(() => {
+    if (isMonthRangeCustom) {
+      return;
+    }
+    setMonthRange(selectedTimeframeScope === 'ytm' ? [0, 2] : [0, 11]);
+  }, [selectedTimeframeScope, isMonthRangeCustom]);
+
+  useEffect(() => {
+    setStoredTimeframe(selectedTimeframeScope);
+  }, [selectedTimeframeScope]);
 
   useEffect(() => {
     const toggleParam = searchParams.get('toggle');
-    if (
-      toggleParam === 'budget' ||
-      toggleParam === 'ytm' ||
-      toggleParam === 'full-year'
-    ) {
-      if (isBudgetView && toggleParam === 'budget') {
-        setHomeToggle('full-year');
-      } else {
-        setHomeToggle(toggleParam);
-      }
-      return;
+    const versionParam = searchParams.get('version');
+    if (versionParam === 'budget' || versionParam === 'actual' || versionParam === 'forecast') {
+      setSelectedVersion(isBudgetView ? 'budget' : versionParam);
+    } else if (toggleParam === 'budget') {
+      setSelectedVersion('budget');
+    } else if (toggleParam === 'full-year') {
+      setSelectedVersion(isBudgetView ? 'budget' : 'forecast');
+    } else if (toggleParam === 'ytm') {
+      setSelectedVersion(isBudgetView ? 'budget' : 'actual');
     }
-    if (toggleParam) {
-      setHomeToggle(isBudgetView ? 'full-year' : 'ytm');
+    if (toggleParam === 'ytm' || toggleParam === 'full-year') {
+      setSelectedTimeframeScope(toggleParam);
     }
   }, [searchParams, isBudgetView]);
 
@@ -1032,15 +1333,18 @@ export default function ExecutiveSummaryPage({
   };
 
   const tableData = useMemo(() => {
-    const scale = 1;
-    const valueMode =
-      isBudgetView || homeToggle === 'budget'
-        ? 'budget'
-        : homeToggle === 'full-year'
-        ? 'forecast'
-        : 'actual';
-    const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
-    const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
+    const scale = isBudgetView
+      ? 1
+      : (monthRange[1] - monthRange[0] + 1) / 12;
+    const valueMode = isBudgetView || selectedVersion === 'budget'
+      ? 'budget'
+      : selectedVersion === 'forecast'
+      ? 'forecast'
+      : 'actual';
+    const budgetMode =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
     if (selectedBu === 'all') {
       const groupRows = businessGroups.map((group) =>
         buildGroupRow(
@@ -1065,19 +1369,19 @@ export default function ExecutiveSummaryPage({
       return [...groupRows, overallRow];
     }
 
-    const selectedGroup = businessGroups.find(
-      (group) => normalizeGroupId(group.group) === selectedBu
-    );
     if (!selectedGroup) {
       return [];
     }
     const groupId = normalizeGroupId(selectedGroup.group);
-    const unitRows = selectedGroup.businessUnits.map((unit) =>
+    const unitsForTable = isBudgetView
+      ? selectedUnits
+      : selectedGroup.businessUnits;
+    const unitRows = unitsForTable.map((unit) =>
       buildUnitRow(groupId, unit, scale, valueMode, budgetMode, lastYearMode)
     );
     const overallRow = buildGroupRow(
       selectedGroup.group,
-      selectedGroup.businessUnits,
+      unitsForTable,
       scale,
       valueMode,
       budgetMode,
@@ -1086,65 +1390,22 @@ export default function ExecutiveSummaryPage({
       `${selectedGroup.group} overall`
     );
     return [...unitRows, overallRow];
-  }, [businessGroups, selectedBu, selectedTimeframe, homeToggle, isBudgetView]);
+  }, [
+    businessGroups,
+    selectedBu,
+    selectedGroup,
+    selectedUnits,
+    selectedTimeframeScope,
+    monthRange,
+    selectedVersion,
+    isBudgetView,
+  ]);
 
   const budgetWaterfallStages = useMemo(() => {
     if (!isBudgetView) {
       return [];
     }
-    const overallRow =
-      tableData.find(
-        (row) => row.id === 'overall' || row.id.endsWith('-overall')
-      ) ?? tableData[tableData.length - 1];
-    if (!overallRow) {
-      return mockBudgetForecastStages;
-    }
-
-    const lastYearOpValue = overallRow.op.stly;
-    const budgetOpValue = overallRow.op.value;
-
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
-
-    const ideationTotal =
-      selectedBu === 'all'
-        ? businessGroups.reduce(
-            (sum, group) =>
-              sum +
-              group.businessUnits.reduce(
-                (unitSum, unit) => unitSum + unit.ideationTarget,
-                0
-              ),
-            0
-          )
-        : businessGroups.find(
-            (group) => normalizeGroupId(group.group) === selectedBu
-          )?.businessUnits.reduce(
-            (sum, unit) => sum + unit.ideationTarget,
-            0
-          ) ?? 0;
-    const ideationDelta = roundToOne(toMillions(ideationTotal));
-
-    // Work backwards: withPipeline + ideationDelta = budgetOpValue
-    const withPipeline = roundToOne(budgetOpValue - ideationDelta);
-
-    // Remaining change from last year to pipeline value
-    const remainingChange = roundToOne(withPipeline - lastYearOpValue);
-
-    const oneOffDelta = roundToOne(opImpactTotals.oneOff);
-    const headwindsDelta = roundToOne(opImpactTotals.headwinds);
-
-    // L4 and L3 cover the remaining gap after one-off and headwinds
-    const pipelineNeeded = roundToOne(remainingChange - oneOffDelta - headwindsDelta);
-    const l4Delta = roundToOne(pipelineNeeded * 0.4);
-    const l3Delta = roundToOne(pipelineNeeded - l4Delta);
-
-    const afterOneOff = roundToOne(lastYearOpValue + oneOffDelta);
-    const afterHeadwinds = roundToOne(afterOneOff + headwindsDelta);
-    const beforePipeline = afterHeadwinds;
-    const afterL4 = roundToOne(beforePipeline + l4Delta);
-    const afterL3 = roundToOne(afterL4 + l3Delta);
-    const afterIdeation = roundToOne(withPipeline + ideationDelta);
-
     const makeStage = (
       stage: BudgetForecastStage['stage'],
       label: string,
@@ -1159,7 +1420,6 @@ export default function ExecutiveSummaryPage({
       type,
       isClickable: true,
     });
-
     const getBudgetStageType = (
       _stage: BudgetForecastStage['stage'],
       delta: number,
@@ -1168,9 +1428,181 @@ export default function ExecutiveSummaryPage({
       if (fallback === 'baseline') {
         return fallback;
       }
-      // For all non-baseline stages, color based on delta sign
       return delta >= 0 ? 'positive' : 'negative';
     };
+    type BudgetMetricKey = Exclude<keyof BudgetWaterfallRow, 'bg' | 'bu'>;
+    const selectedBudgetRows = (() => {
+      if (BUDGET_WATERFALL_DATA.length === 0) {
+        return [] as BudgetWaterfallRow[];
+      }
+      if (selectedBu === 'all') {
+        return BUDGET_WATERFALL_DATA;
+      }
+      const selectedBgName = selectedGroup?.group
+        ?? mainBuOptions.find((bu) => bu.id === selectedBu)?.name
+        ?? selectedBu;
+      const bgRows = BUDGET_WATERFALL_DATA.filter((row) => row.bg === selectedBgName);
+      if (!selectedGroup) {
+        return bgRows;
+      }
+      const groupId = normalizeGroupId(selectedGroup.group);
+      const overallId = `${groupId}-overall`;
+      const selectedUnitIds = Array.from(selectedGroupIds).filter(
+        (id) => id !== overallId
+      );
+      if (selectedUnitIds.length === 0) {
+        return bgRows;
+      }
+      const selectedUnitNames = selectedGroup.businessUnits
+        .filter((unit) => selectedUnitIds.includes(getUnitId(groupId, unit.name)))
+        .map((unit) => unit.name);
+      if (selectedUnitNames.length === 0) {
+        return bgRows;
+      }
+      return bgRows.filter((row) => selectedUnitNames.includes(row.bu));
+    })();
+    if (selectedBudgetRows.length > 0) {
+      const sum = (key: BudgetMetricKey) =>
+        roundToOne(
+          selectedBudgetRows.reduce((total, row) => total + row[key], 0)
+        );
+      const lastYearOpValue = sum('lastYearOp');
+      const volumeMixDelta = sum('volumeMix');
+      const headwindsDelta = sum('headwinds');
+      const oneOffDelta = sum('oneOff');
+      const carryOverDelta = sum('carryOver');
+      const ideationDelta = sum('ideationTarget');
+      const plannedLeakagesDelta = sum('plannedLeakages');
+      const budgetTarget = sum('budgetTarget');
+      const afterVolumeMix = roundToOne(lastYearOpValue + volumeMixDelta);
+      const afterHeadwinds = roundToOne(afterVolumeMix + headwindsDelta);
+      const afterOneOff = roundToOne(afterHeadwinds + oneOffDelta);
+      const preImprovementOp = roundToOne(afterOneOff);
+      const afterCarryOver = roundToOne(preImprovementOp + carryOverDelta);
+      const afterIdeation = roundToOne(afterCarryOver + ideationDelta);
+
+      return [
+        makeStage(
+          'budget',
+          'Last year OP',
+          roundToOne(lastYearOpValue),
+          roundToOne(lastYearOpValue),
+          'baseline'
+        ),
+        makeStage(
+          'confirmed-volume-mix',
+          'Confirmed volume/mix change',
+          afterVolumeMix,
+          roundToOne(volumeMixDelta),
+          getBudgetStageType('confirmed-volume-mix', volumeMixDelta, 'positive')
+        ),
+        makeStage(
+          'market-performance',
+          'Planned headwind / tailwind',
+          afterHeadwinds,
+          roundToOne(headwindsDelta),
+          getBudgetStageType('market-performance', headwindsDelta, 'positive')
+        ),
+        makeStage(
+          'one-off-adjustments',
+          'Known one-off items',
+          afterOneOff,
+          roundToOne(oneOffDelta),
+          getBudgetStageType('one-off-adjustments', oneOffDelta, 'positive')
+        ),
+        makeStage(
+          'l4-to-l5-leakage',
+          'Pre improvement OP',
+          preImprovementOp,
+          preImprovementOp,
+          'baseline'
+        ),
+        makeStage(
+          'carry-over-improvements',
+          'Carry-over improvements',
+          afterCarryOver,
+          roundToOne(carryOverDelta),
+          getBudgetStageType('carry-over-improvements', carryOverDelta, 'positive')
+        ),
+        makeStage(
+          'ideation',
+          'In-Year improvement target',
+          afterIdeation,
+          roundToOne(ideationDelta),
+          getBudgetStageType('ideation', ideationDelta, 'positive')
+        ),
+        makeStage(
+          'planned-leakages',
+          'Planned leakages',
+          budgetTarget,
+          roundToOne(plannedLeakagesDelta),
+          getBudgetStageType('planned-leakages', plannedLeakagesDelta, 'positive')
+        ),
+        makeStage(
+          'actuals',
+          'Budget target',
+          roundToOne(budgetTarget),
+          roundToOne(budgetTarget),
+          'baseline'
+        ),
+      ];
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return mockBudgetForecastStages;
+    }
+
+    const lastYearOpValue = overallRow.op.stly;
+    const budgetOpValue = overallRow.op.value;
+
+    const budgetGap = budgetOpValue - lastYearOpValue;
+    const epsilon = Math.max(0.05, Math.abs(budgetGap) * 0.01);
+    const ensureNonZero = (value: number, fallbackSign = 1) => {
+      if (value !== 0) return value;
+      return epsilon * (fallbackSign >= 0 ? 1 : -1);
+    };
+    const volumeMixDelta = ensureNonZero(roundToOne(opImpactTotals.volumeMix), 1);
+    const headwindsDelta = ensureNonZero(roundToOne(opImpactTotals.headwinds), -1);
+    const oneOffDelta = ensureNonZero(roundToOne(opImpactTotals.oneOff), 1);
+    let plannedLeakagesDelta = ensureNonZero(
+      roundToOne(opImpactTotals.leakages),
+      -1
+    );
+    const ideationTotal = (selectedUnits.length > 0
+      ? selectedUnits
+      : businessGroups.flatMap((group) => group.businessUnits)
+    ).reduce((sum, unit) => sum + unit.ideationTarget, 0);
+    const ideationDelta = ensureNonZero(roundToOne(toMillions(ideationTotal)), 1);
+
+    const afterVolumeMix = roundToOne(lastYearOpValue + volumeMixDelta);
+    const afterHeadwinds = roundToOne(afterVolumeMix + headwindsDelta);
+    const afterOneOff = roundToOne(afterHeadwinds + oneOffDelta);
+    const preImprovementOp = afterOneOff;
+
+    let carryOverDelta = roundToOne(
+      budgetOpValue - preImprovementOp - plannedLeakagesDelta - ideationDelta
+    );
+    if (carryOverDelta === 0) {
+      const carrySign = budgetOpValue >= preImprovementOp ? 1 : -1;
+      carryOverDelta = ensureNonZero(0, carrySign);
+      plannedLeakagesDelta = roundToOne(
+        plannedLeakagesDelta - carryOverDelta + (carrySign * 0)
+      );
+      if (plannedLeakagesDelta === 0) {
+        plannedLeakagesDelta = ensureNonZero(0, -1);
+        carryOverDelta = roundToOne(
+          budgetOpValue - preImprovementOp - plannedLeakagesDelta - ideationDelta
+        );
+      }
+    }
+    const afterCarryOver = roundToOne(preImprovementOp + carryOverDelta);
+    const afterIdeation = roundToOne(afterCarryOver + ideationDelta);
+    const budgetTarget = roundToOne(
+      preImprovementOp + carryOverDelta + ideationDelta + plannedLeakagesDelta
+    );
 
     return [
       makeStage(
@@ -1181,63 +1613,142 @@ export default function ExecutiveSummaryPage({
         'baseline'
       ),
       makeStage(
-        'one-off-adjustments',
-        'One-off items',
-        afterOneOff,
-        roundToOne(oneOffDelta),
-        getBudgetStageType('one-off-adjustments', oneOffDelta, 'positive')
+        'confirmed-volume-mix',
+        'Confirmed volume/mix change',
+        afterVolumeMix,
+        roundToOne(volumeMixDelta),
+        getBudgetStageType('confirmed-volume-mix', volumeMixDelta, 'positive')
       ),
       makeStage(
         'market-performance',
-        'Headwinds/Tailwinds',
+        'Planned headwind / tailwind',
         afterHeadwinds,
         roundToOne(headwindsDelta),
         getBudgetStageType('market-performance', headwindsDelta, 'positive')
       ),
       makeStage(
+        'one-off-adjustments',
+        'Known one-off items',
+        afterOneOff,
+        roundToOne(oneOffDelta),
+        getBudgetStageType('one-off-adjustments', oneOffDelta, 'positive')
+      ),
+      makeStage(
         'l4-to-l5-leakage',
-        'Current year OP before transformation pipeline',
-        beforePipeline,
-        beforePipeline,
+        'Pre improvement OP',
+        preImprovementOp,
+        preImprovementOp,
         'baseline'
       ),
       makeStage(
-        'l4-vs-planned',
-        'Remaining impact of initiatives implemented in previous year',
-        afterL4,
-        roundToOne(l4Delta),
-        getBudgetStageType('l4-vs-planned', l4Delta, 'positive')
-      ),
-      makeStage(
-        'l3-vs-target',
-        'Impact of initiatives planned in previous year but not yet implemented',
-        afterL3,
-        roundToOne(l3Delta),
-        getBudgetStageType('l3-vs-target', l3Delta, 'positive')
-      ),
-      makeStage(
-        'forecast',
-        'Current year OP with transformation pipeline',
-        roundToOne(withPipeline),
-        roundToOne(withPipeline),
-        'baseline'
+        'carry-over-improvements',
+        'Carry-over improvements',
+        afterCarryOver,
+        roundToOne(carryOverDelta),
+        getBudgetStageType('carry-over-improvements', carryOverDelta, 'positive')
       ),
       makeStage(
         'ideation',
-        'Current year ideation target',
+        'In-Year improvement target',
         afterIdeation,
-        ideationDelta,
+        roundToOne(ideationDelta),
         getBudgetStageType('ideation', ideationDelta, 'positive')
       ),
       makeStage(
+        'planned-leakages',
+        'Planned leakages',
+        budgetTarget,
+        roundToOne(plannedLeakagesDelta),
+        getBudgetStageType('planned-leakages', plannedLeakagesDelta, 'positive')
+      ),
+      makeStage(
         'actuals',
-        'Current year OP target',
-        roundToOne(budgetOpValue),
-        roundToOne(budgetOpValue),
+        'Budget target',
+        roundToOne(budgetTarget),
+        roundToOne(budgetTarget),
         'baseline'
       ),
     ];
   }, [businessGroups, isBudgetView, opImpactTotals, tableData, selectedBu]);
+
+  const keyCallOut = useMemo(() => {
+    if (!isBudgetView) {
+      return null;
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return null;
+    }
+    const lastYearOpValue = overallRow.op.stly;
+    const budgetOpValue = overallRow.op.value;
+    const delta = budgetOpValue - lastYearOpValue;
+    const deltaSign = delta >= 0 ? '+' : '-';
+    const percent =
+      lastYearOpValue === 0 ? 0 : (delta / Math.abs(lastYearOpValue)) * 100;
+    const percentSign = percent >= 0 ? '+' : '-';
+    const magnitude = Math.abs(percent);
+    const intensity =
+      magnitude >= 7.5 ? 'material' : magnitude >= 3 ? 'moderate' : 'slight';
+    const formatSigned = (value: number) =>
+      `${value >= 0 ? '+' : '-'}${formatMn(Math.abs(value))}`;
+    const ideationTotal = selectedImpactUnits.reduce(
+      (sum, unit) => sum + unit.ideationTarget,
+      0
+    );
+    const ideationMn = toMillions(ideationTotal);
+
+    return {
+      bulletPoints: [
+        `Budget OP is ${formatMn(budgetOpValue)} Mn ${currencyLabel} vs last year ${formatMn(
+          lastYearOpValue
+        )} Mn ${currencyLabel} (${percentSign}${magnitude.toFixed(1)}%).`,
+        `Volume/mix ${formatSigned(opImpactTotals.volumeMix)} Mn and headwinds/tailwinds ${formatSigned(
+          opImpactTotals.headwinds
+        )} Mn drive the core movement.`,
+        `One-off items ${formatSigned(opImpactTotals.oneOff)} Mn, planned leakages ${formatSigned(
+          opImpactTotals.leakages
+        )} Mn, and ideation target ${formatSigned(ideationMn)} Mn shape the budget bridge.`,
+      ],
+      rootCauseAnalysis: `Budget OP shows a ${intensity} ${delta >= 0 ? 'increase' : 'decrease'} versus last year (${deltaSign}${formatMn(
+        Math.abs(delta)
+      )} Mn ${currencyLabel}). The budget bridge is led by volume/mix and headwinds, with one-offs, planned leakages, and ideation targets explaining the remainder.`,
+    };
+  }, [
+    isBudgetView,
+    tableData,
+    opImpactTotals,
+    selectedImpactUnits,
+    currencyLabel,
+    formatMn,
+  ]);
+
+  const budgetMarginSummary = useMemo(() => {
+    if (!isBudgetView) {
+      return null;
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return null;
+    }
+    const calcPercent = (numerator: number, denominator: number) =>
+      denominator === 0 ? 0 : (numerator / denominator) * 100;
+    return {
+      lastYear: {
+        gp: calcPercent(overallRow.gp.stly, overallRow.rev.stly),
+        op: calcPercent(overallRow.op.stly, overallRow.rev.stly),
+      },
+      budget: {
+        gp: calcPercent(overallRow.gp.value, overallRow.rev.value),
+        op: calcPercent(overallRow.op.value, overallRow.rev.value),
+      },
+    };
+  }, [isBudgetView, tableData]);
 
   const activeBudgetDetails = useMemo(() => {
     if (!activeBudgetStage) {
@@ -1293,15 +1804,18 @@ export default function ExecutiveSummaryPage({
   ]);
 
   const getExpandedSubGroups = (bgId: string) => {
-    const scale = 1;
-    const valueMode =
-      isBudgetView || homeToggle === 'budget'
-        ? 'budget'
-        : homeToggle === 'full-year'
-        ? 'forecast'
-        : 'actual';
-    const budgetMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
-    const lastYearMode = homeToggle === 'ytm' ? 'ytm' : 'full-year';
+    const scale = isBudgetView
+      ? 1
+      : (monthRange[1] - monthRange[0] + 1) / 12;
+    const valueMode = isBudgetView || selectedVersion === 'budget'
+      ? 'budget'
+      : selectedVersion === 'forecast'
+      ? 'forecast'
+      : 'actual';
+    const budgetMode =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
+    const lastYearMode =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
     const selectedGroup = businessGroups.find(
       (group) => normalizeGroupId(group.group) === bgId
     );
@@ -1334,9 +1848,10 @@ export default function ExecutiveSummaryPage({
     groupId?: string,
     isNavigable?: boolean,
     isSubGroup?: boolean,
-    parentBgId?: string
+    parentBgId?: string,
+    revenueMetric?: BusinessGroupMetricWithTrend
   ) => {
-    const isBudgetMode = isBudgetView || homeToggle === 'budget';
+    const isBudgetMode = isBudgetView || selectedVersion === 'budget';
     const handleCellClick = (e: React.MouseEvent) => {
       if (isNavigable && groupId) {
         e.stopPropagation(); // Prevent row expansion from triggering
@@ -1353,33 +1868,77 @@ export default function ExecutiveSummaryPage({
           handleBuChange(groupId === 'overall' ? 'all' : groupId);
           return;
         }
-        if (homeToggle === 'budget') {
+        if (selectedVersion === 'budget') {
           navigate(`/budget?bg=${encodeURIComponent(groupId)}`);
           return;
         }
-        if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bg=${encodeURIComponent(groupId)}&timeframe=full-year`);
+        if (selectedVersion === 'forecast') {
+          navigate(
+            `/market-intelligence?bg=${encodeURIComponent(
+              groupId
+            )}&timeframe=${selectedTimeframeScope}`
+          );
           return;
         }
         // Navigate to business group performance with the BG and BU selected
         // For sub-rows (expanded BUs under a BG), use the parent BG and select this BU
         if (isSubGroup && parentBgId) {
-          navigate(`/business-group-performance?bg=${encodeURIComponent(parentBgId)}&selected=${encodeURIComponent(groupId)}&toggle=${homeToggle}`);
+          navigate(
+            `/business-group-performance?bg=${encodeURIComponent(
+              parentBgId
+            )}&selected=${encodeURIComponent(
+              groupId
+            )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+          );
           return;
         }
         // When a specific BG is already selected on home page, pass both BG and BU selection
         if (selectedBu !== 'all' && groupId !== 'overall' && !groupId?.endsWith('-overall')) {
           // Clicking on a BU row when a BG is selected - pass both bg and selected params
-          navigate(`/business-group-performance?bg=${encodeURIComponent(selectedBu)}&selected=${encodeURIComponent(groupId)}&toggle=${homeToggle}`);
+          navigate(
+            `/business-group-performance?bg=${encodeURIComponent(
+              selectedBu
+            )}&selected=${encodeURIComponent(
+              groupId
+            )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+          );
           return;
         }
         const bgParam = groupId !== 'overall' ? groupId : 'all';
-        navigate(`/business-group-performance?bg=${encodeURIComponent(bgParam)}&toggle=${homeToggle}`);
+        navigate(
+          `/business-group-performance?bg=${encodeURIComponent(
+            bgParam
+          )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+        );
       }
     };
-    const budgetPercent = calcPercent(metric.value, metric.baseline);
-    const lastYearPercent = calcPercent(metric.value, metric.stly);
+    const displayValue = metric.value;
+    const displayRevenue = revenueMetric?.value ?? 0;
+    const baselineRevenue = revenueMetric?.baseline ?? 0;
+    const lastYearRevenue = revenueMetric?.stly ?? 0;
+    const calcMargin = (value: number, revenue: number) =>
+      revenue === 0 ? 0 : (value / revenue) * 100;
+    const monthScale = isBudgetView
+      ? 1
+      : (monthRange[1] - monthRange[0] + 1) / 12;
+    const displayMargin =
+      calcMargin(displayValue, displayRevenue) * monthScale;
+    const baselineMargin =
+      calcMargin(metric.baseline, baselineRevenue) * monthScale;
+    const lastYearMargin =
+      calcMargin(metric.stly, lastYearRevenue) * monthScale;
+    const budgetPercent = isPercentView
+      ? calcPercent(displayMargin, baselineMargin)
+      : calcPercent(metric.value, metric.baseline);
+    const lastYearPercent = isPercentView
+      ? calcPercent(displayMargin, lastYearMargin)
+      : calcPercent(metric.value, metric.stly);
     const primaryPercent = isBudgetMode ? lastYearPercent : budgetPercent;
+    const formatCellValue = (value: number) =>
+      isPercentView ? `${value.toFixed(1)}%` : formatMnWhole(value);
+    const comparisonValue = isPercentView ? displayMargin : displayValue;
+    const comparisonBaseline = isPercentView ? baselineMargin : metric.baseline;
+    const comparisonLastYear = isPercentView ? lastYearMargin : metric.stly;
     const percentColor =
       primaryPercent > 0
         ? 'bg-green-100 text-green-700'
@@ -1396,16 +1955,22 @@ export default function ExecutiveSummaryPage({
     const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
 
     // Calculate trend line for sparkline
-    const trendValues = metric.trend.map((t) => t.value);
+    const trendValues =
+      isPercentView && revenueMetric
+        ? metric.trend.map((t, index) => {
+            const revenueValue = revenueMetric.trend[index]?.value ?? 0;
+            return calcMargin(t.value, revenueValue) * monthScale;
+          })
+        : metric.trend.map((t) => t.value);
     const minVal = Math.min(...trendValues);
     const maxVal = Math.max(...trendValues);
     const range = maxVal - minVal || 1;
 
     // Generate SVG path for trend line
-    const pathPoints = metric.trend
-      .map((t, i) => {
+    const pathPoints = trendValues
+      .map((value, i) => {
         const x = (i / (metric.trend.length - 1)) * 180;
-        const y = 40 - ((t.value - minVal) / range) * 35;
+        const y = 40 - ((value - minVal) / range) * 35;
         return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
       })
       .join(' ');
@@ -1416,25 +1981,6 @@ export default function ExecutiveSummaryPage({
         : primaryPercent < 0
         ? '#ef4444'
         : '#6b7280';
-
-    if (!showComparisonDetails) {
-      return (
-        <td
-          key={metricName}
-          onClick={handleCellClick}
-          className={`px-4 py-3 border-b border-gray-200 ${
-            !isLast ? 'border-r' : ''
-          } relative group ${
-            isNavigable ? 'cursor-pointer hover:bg-primary-50/50' : ''
-          }`}>
-          <div className='text-left'>
-            <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(0)}M
-            </div>
-          </div>
-        </td>
-      );
-    }
 
     return (
       <td
@@ -1448,18 +1994,18 @@ export default function ExecutiveSummaryPage({
         <div className='flex items-center justify-center gap-4'>
           <div className='text-left'>
             <div className='text-base font-bold text-gray-900'>
-              ${metric.value.toFixed(0)}M
+              {formatCellValue(comparisonValue)}
             </div>
           </div>
           <div className='text-center'>
             {!isBudgetMode && (
             <div className='text-xs text-gray-500 mb-0.5'>
-              vs budget ${metric.baseline.toFixed(0)}M
+                vs budget {formatCellValue(comparisonBaseline)}
             </div>
             )}
-            <div className='text-xs text-gray-500'>
-              vs Last Year ${metric.stly.toFixed(0)}M
-            </div>
+          <div className='text-xs text-gray-500'>
+              vs Last Year {formatCellValue(comparisonLastYear)}
+          </div>
           </div>
           <div className='flex flex-col gap-0.5'>
             <span
@@ -1539,18 +2085,6 @@ export default function ExecutiveSummaryPage({
               </div>
             </div>
 
-            {/* AI Insights */}
-            <div>
-              <div className='flex items-center gap-1.5 mb-2'>
-                <SparklesIcon className='w-4 h-4 text-primary-500' />
-                <span className='text-xs font-semibold text-gray-600'>
-                  AI Insight
-                </span>
-              </div>
-              <p className='text-xs text-gray-600 leading-relaxed'>
-                {metric.aiInsight}
-              </p>
-            </div>
           </div>
           {/* Arrow */}
           <div className='absolute left-1/2 -translate-x-1/2 -top-2 w-4 h-4 bg-white border-l border-t border-gray-200 rotate-45'></div>
@@ -1567,11 +2101,35 @@ export default function ExecutiveSummaryPage({
     parentBgId?: string
   ) => {
     const isExpanded = expandedRows.has(group.id);
-    // All rows are navigable - main rows AND expanded sub-rows (like A Group, B Group under HH)
-    // This allows users to click on any BG row to navigate to the Business Group Performance page
-    const isMetricNavigable = true;
+    const shouldExpandOnClick = isExpandable && !isSubGroup && !isOverallRow;
+    // Disable navigation when the row should expand in-place.
+    const isMetricNavigable = !shouldExpandOnClick;
+    const isRowClickable = shouldExpandOnClick || isMetricNavigable;
+    const isRowSelected = Boolean(showBuSelection) && selectedGroupIds.has(group.id);
+    const canOpenPnl = isExpandable && !isOverallRow && !isSubGroup;
 
     const handleRowClick = () => {
+      if (isBudgetView) {
+        if (isSubGroup && parentBgId) {
+          setSelectedBu(parentBgId);
+          setSelectedGroupIds(
+            new Set([getUnitId(parentBgId, group.name)])
+          );
+          return;
+        }
+        if (showBuSelection) {
+          toggleBuSelection(isOverallRow ? 'all' : group.id);
+          return;
+        }
+        if (shouldExpandOnClick) {
+          toggleRowExpansion(group.id);
+        }
+        return;
+      }
+      if (shouldExpandOnClick) {
+        toggleRowExpansion(group.id);
+        return;
+      }
       if (isMetricNavigable) {
         const buId = isOverallRow ? 'all' : group.id;
         if (isBudgetView) {
@@ -1587,28 +2145,56 @@ export default function ExecutiveSummaryPage({
           handleBuChange(buId);
           return;
         }
-        if (homeToggle === 'budget') {
+        if (selectedVersion === 'budget') {
           navigate(`/budget?bg=${encodeURIComponent(buId)}`);
           return;
         }
-        if (homeToggle === 'full-year') {
-          navigate(`/market-intelligence?bg=${encodeURIComponent(buId)}&timeframe=full-year`);
+        if (selectedVersion === 'forecast') {
+          navigate(
+            `/market-intelligence?bg=${encodeURIComponent(
+              buId
+            )}&timeframe=${selectedTimeframeScope}`
+          );
           return;
         }
         // Navigate to business group performance with the BG and BU selected
         // For sub-rows (expanded BUs under a BG), use the parent BG and select this BU
         if (isSubGroup && parentBgId) {
-          navigate(`/business-group-performance?bg=${encodeURIComponent(parentBgId)}&selected=${encodeURIComponent(group.id)}&toggle=${homeToggle}`);
+          navigate(
+            `/business-group-performance?bg=${encodeURIComponent(
+              parentBgId
+            )}&selected=${encodeURIComponent(
+              group.id
+            )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+          );
           return;
         }
         // When a specific BG is already selected on home page, pass both BG and BU selection
         if (selectedBu !== 'all' && !isOverallRow) {
           // Clicking on a BU row when a BG is selected - pass both bg and selected params
-          navigate(`/business-group-performance?bg=${encodeURIComponent(selectedBu)}&selected=${encodeURIComponent(group.id)}&toggle=${homeToggle}`);
+          navigate(
+            `/business-group-performance?bg=${encodeURIComponent(
+              selectedBu
+            )}&selected=${encodeURIComponent(
+              group.id
+            )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+          );
           return;
         }
         const bgParam = buId !== 'all' ? buId : 'all';
-        navigate(`/business-group-performance?bg=${encodeURIComponent(bgParam)}&toggle=${homeToggle}`);
+        navigate(
+          `/business-group-performance?bg=${encodeURIComponent(
+            bgParam
+          )}&toggle=${selectedTimeframeScope}&version=${selectedVersion}`
+        );
+      }
+    };
+
+    const handlePnlOpen = (event: React.MouseEvent<HTMLTableRowElement>) => {
+      event.stopPropagation();
+      const groupKey = resolvePnlGroupKey(group.name);
+      if (groupKey) {
+        setActivePnlGroup(groupKey);
       }
     };
 
@@ -1621,9 +2207,15 @@ export default function ExecutiveSummaryPage({
             : isSubGroup
             ? 'bg-gray-50'
             : 'hover:bg-gray-50 transition-colors'
-        } ${isMetricNavigable ? 'cursor-pointer' : ''}`}
-        onClick={isMetricNavigable ? handleRowClick : undefined}>
-        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isMetricNavigable ? 'cursor-pointer' : ''}`}>
+        } ${isRowClickable || canOpenPnl ? 'cursor-pointer' : ''} ${
+          isRowSelected ? 'bg-primary-100/60' : ''
+        }`}
+        onClick={isRowClickable ? handleRowClick : undefined}
+        onDoubleClick={canOpenPnl ? handlePnlOpen : undefined}
+        title={
+          canOpenPnl ? 'Double click to view P&L breakdown' : undefined
+        }>
+        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isRowClickable ? 'cursor-pointer' : ''}`}>
           <div className='flex items-center gap-2'>
             {isExpandable && (
               <button
@@ -1649,45 +2241,49 @@ export default function ExecutiveSummaryPage({
             </span>
           </div>
         </td>
-        {renderMetricCell(
-          group.rev,
-          group.name,
-          'Revenue',
-          false,
-          group.id,
-          isMetricNavigable,
-          isSubGroup,
-          parentBgId
-        )}
+        {!isPercentView &&
+          renderMetricCell(
+            group.rev,
+            group.name,
+            'Revenue',
+            false,
+            group.id,
+            isMetricNavigable,
+            isSubGroup,
+            parentBgId
+          )}
         {renderMetricCell(
           group.gp,
           group.name,
-          'Gross Profit',
+          isPercentView ? 'Gross Profit Margin' : 'Gross Profit',
           false,
           group.id,
           isMetricNavigable,
           isSubGroup,
-          parentBgId
+          parentBgId,
+          group.rev
         )}
         {renderMetricCell(
           group.op,
           group.name,
-          'Operating Profit',
+          isPercentView ? 'Operating Profit Margin' : 'Operating Profit',
           false,
           group.id,
           isMetricNavigable,
           isSubGroup,
-          parentBgId
+          parentBgId,
+          group.rev
         )}
         {renderMetricCell(
           group.np,
           group.name,
-          'Net Profit',
+          isPercentView ? 'Net Profit Margin' : 'Net Profit',
           true,
           group.id,
           isMetricNavigable,
           isSubGroup,
-          parentBgId
+          parentBgId,
+          group.rev
         )}
       </tr>
     );
@@ -1753,45 +2349,109 @@ export default function ExecutiveSummaryPage({
         <div className='mb-6'>
           <HeaderFilters
             timeframeContent={
-              <div className='flex items-center gap-4'>
-                <span className='text-sm font-medium text-gray-600 w-32'>
-                  Timeframe
-                </span>
-                <div className='flex bg-gray-100 rounded-lg p-1'>
-                  {(isBudgetView
-                    ? [
-                        { id: 'full-year', label: 'Full year' },
-                      ]
-                    : [
-                        { id: 'budget', label: 'Budget' },
-                        { id: 'ytm', label: 'Year to Month actuals' },
-                        { id: 'full-year', label: 'Full year forecast' },
-                      ]
-                  ).map((option) => (
+              isBudgetView ? (
+                <div className='flex items-center gap-4'>
+                  <span className='text-sm font-medium text-gray-600 w-32'>
+                    Timeframe
+                  </span>
+                  <div className='flex bg-gray-100 rounded-lg p-1'>
                     <button
-                      key={option.id}
-                      onClick={() => {
-                        setHomeToggle(
-                          option.id as 'budget' | 'ytm' | 'full-year'
-                        );
-                        if (option.id === 'budget') {
-                          setSelectedTimeframe('full-year');
-                        } else if (option.id === 'ytm') {
-                          setSelectedTimeframe('ytm');
-                        } else {
-                          setSelectedTimeframe('full-year');
-                        }
-                      }}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        homeToggle === option.id
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}>
-                      {option.label}
+                      onClick={() => handleTimeframeChange('full-year')}
+                      className='px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm'>
+                      Full year
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className='flex flex-col gap-3'>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Version
+                    </span>
+                    <div className='flex bg-gray-100 rounded-lg p-1'>
+                      {(
+                        [
+                          { id: 'budget', label: 'Budget' },
+                          { id: 'actual', label: 'Actuals' },
+                          { id: 'forecast', label: 'Forecast' },
+                        ] as const
+                      ).map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => setSelectedVersion(option.id)}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            selectedVersion === option.id
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Timeframe
+                    </span>
+                    <div
+                      className={`flex bg-gray-100 rounded-lg p-1 ${
+                        isMonthRangeCustom ? 'opacity-50 pointer-events-none' : ''
+                      }`}>
+                      {(
+                        [
+                          { id: 'full-year', label: 'Full year' },
+                          { id: 'ytm', label: 'Year to Month' },
+                        ] as const
+                      ).map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => handleTimeframeChange(option.id)}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            selectedTimeframeScope === option.id
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Month slicer
+                    </span>
+                    <div className='flex flex-wrap gap-1'>
+                      {months.map((month, index) => {
+                        const [start, end] = monthRange;
+                        const isSelected = index >= start && index <= end;
+                        return (
+                          <button
+                            key={month}
+                            onClick={() => handleMonthClick(index)}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                              isSelected
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                            }`}>
+                            {month}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {isMonthRangeCustom && (
+                      <button
+                        onClick={() =>
+                          handleTimeframeChange(
+                            selectedTimeframeScope as 'full-year' | 'ytm'
+                          )
+                        }
+                        className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                        Reset timeframe
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
             }
             buOptions={mainBuOptions}
             selectedBu={selectedBu}
@@ -1799,6 +2459,101 @@ export default function ExecutiveSummaryPage({
             showBu={isBudgetView}
           />
         </div>
+        {isBudgetView && selectedBu !== 'all' && selectedGroup && (
+          <div className='mb-6 flex items-center gap-4'>
+            <span className='text-sm font-medium text-gray-600 w-32'>
+              Select BU
+            </span>
+            <div className='flex flex-wrap bg-gray-100 rounded-lg p-1'>
+              {(() => {
+                const groupId = normalizeGroupId(selectedGroup.group);
+                const overallId = `${groupId}-overall`;
+                const isAllSelected = selectedGroupIds.has(overallId);
+                const toggleUnit = (unitId: string | 'all') => {
+                  setSelectedGroupIds((prev) => {
+                    const next = new Set(prev);
+                    if (unitId === 'all') {
+                      next.clear();
+                      next.add(overallId);
+                      return next;
+                    }
+                    next.delete(overallId);
+                    if (next.has(unitId)) {
+                      next.delete(unitId);
+                    } else {
+                      next.add(unitId);
+                    }
+                    if (next.size === 0) {
+                      next.add(overallId);
+                    }
+                    return next;
+                  });
+                };
+
+                return (
+                  <>
+                    <button
+                      onClick={() => toggleUnit('all')}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                        isAllSelected
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}>
+                      All BUs
+                    </button>
+                    {selectedGroup.businessUnits.map((unit) => {
+                      const unitId = getUnitId(groupId, unit.name);
+                      const isSelected =
+                        !isAllSelected && selectedGroupIds.has(unitId);
+                      return (
+                        <button
+                          key={unitId}
+                          onClick={() => toggleUnit(unitId)}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            isSelected
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {unit.name}
+                        </button>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {isBudgetView && keyCallOut && (
+          <div className='mb-6'>
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
+                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                  <span className='text-sm'>✨</span>
+                  <span>AI</span>
+                </span>
+              </div>
+              <div className='space-y-3'>
+                <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                  {keyCallOut.bulletPoints.map((point, index) => (
+                    <li
+                      key={index}
+                      className='text-sm'>
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+                <div className='mt-4 pt-4 border-t border-gray-200'>
+                  <p className='text-sm text-gray-700 leading-relaxed'>
+                    {keyCallOut.rootCauseAnalysis}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Business Group Performance Section */}  
         <div className='mb-8'>
@@ -1816,26 +2571,42 @@ export default function ExecutiveSummaryPage({
                   ? 'Budget by Business Group'
                   : 'Business Group Performance'}
               </h2>
-                <p className='text-sm text-gray-600 mt-1'>Mn, USD</p>
+                <p className='text-sm text-gray-600 mt-1'>
+                  {isPercentView ? '% of revenue' : `Mn, ${currencyLabel}`}
+                </p>
             </div>
             <div className='flex items-center gap-4'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm text-gray-600'>Show Details</span>
+                <span className='text-sm text-gray-600'>View:</span>
+                <span
+                  className={`text-sm ${
+                    !isPercentView
+                      ? 'font-semibold text-gray-900'
+                      : 'text-gray-500'
+                  }`}>
+                  Absolute
+                </span>
                 <button
                   onClick={() =>
-                    setShowComparisonDetails(!showComparisonDetails)
+                    setFinancialView(isPercentView ? 'absolute' : 'margin')
                   }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                    showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                    isPercentView ? 'bg-primary-600' : 'bg-gray-200'
                   }`}>
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        showComparisonDetails
-                          ? 'translate-x-6'
-                          : 'translate-x-1'
+                      isPercentView ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
                 </button>
+                <span
+                  className={`text-sm ${
+                    isPercentView
+                      ? 'font-semibold text-gray-900'
+                      : 'text-gray-500'
+                  }`}>
+                  % of revenue
+                </span>
               </div>
               <Link
                 to='/business-group-performance?bg=all'
@@ -1854,24 +2625,28 @@ export default function ExecutiveSummaryPage({
                       Business Group
                     </span>
                   </th>
+                  {!isPercentView && (
+                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                      <span className='text-sm font-bold text-gray-900'>
+                        Revenue
+                      </span>
+                    </th>
+                  )}
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Revenue
+                      {isPercentView ? 'Gross Profit Margin' : 'Gross Profit'}
                     </span>
                   </th>
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Gross Profit
-                    </span>
-                  </th>
-                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                    <span className='text-sm font-bold text-gray-900'>
-                      Operating Profit
+                      {isPercentView
+                        ? 'Operating Profit Margin'
+                        : 'Operating Profit'}
                     </span>
                   </th>
                   <th className='text-center px-4 py-3 border-b border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Net Profit
+                      {isPercentView ? 'Net Profit Margin' : 'Net Profit'}
                     </span>
                   </th>
                 </tr>
@@ -1904,22 +2679,52 @@ export default function ExecutiveSummaryPage({
           </div>
             {isBudgetView && budgetWaterfallStages.length > 0 && (
               <div className='mt-6'>
-                <BudgetPerformanceWaterfall
-                  stages={budgetWaterfallStages}
-                  title='Budget deviation waterfall of BU performance by value driver'
-                  subtitle={`Mn USD • ${selectedBuLabel}`}
-                  onStageClick={(stage) => {
-                    if (
-                      stage.stage === 'one-off-adjustments' ||
-                      stage.stage === 'market-performance' ||
-                      stage.stage === 'ideation'
-                    ) {
-                      setActiveBudgetStage(stage);
-                    }
-                  }}
-                  tooltipContent={renderBudgetTooltip}
-                />
-        </div>
+                <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+                  <BudgetPerformanceWaterfall
+                    stages={budgetWaterfallStages}
+                    title='Budget deviation waterfall of BU performance by value driver'
+                    subtitle={`Mn ${currencyLabel} • ${selectedBuLabel}`}
+                    onStageClick={(stage) => {
+                      if (
+                        stage.stage === 'one-off-adjustments' ||
+                        stage.stage === 'market-performance' ||
+                        stage.stage === 'ideation'
+                      ) {
+                        setActiveBudgetStage(stage);
+                      }
+                    }}
+                    tooltipContent={renderBudgetTooltip}
+                  />
+                  {budgetMarginSummary && (
+                    <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
+                      <div className='flex w-full flex-col gap-4 sm:items-center sm:justify-between'>
+                        <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                          <span className='text-3xl  font-semibold'>
+                            {budgetMarginSummary.lastYear.gp.toFixed(1)}%
+                          </span>
+                          <span className='text-2xl font-bold text-gray-900'>GP%</span>
+                          <span className='text-3xl  font-semibold'>
+                            {budgetMarginSummary.budget.gp.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                          <span className='text-3xl  font-semibold'>
+                            {budgetMarginSummary.lastYear.op.toFixed(1)}%
+                          </span>
+                          <span className='text-2xl font-bold text-gray-900'>OP%</span>
+                          <span className='text-3xl font-semibold'>
+                            {budgetMarginSummary.budget.op.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className='mt-3 flex items-center justify-between text-xs text-gray-500'>
+                        <span>Last year</span>
+                        <span>Current year target</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -1960,7 +2765,7 @@ export default function ExecutiveSummaryPage({
                     Total impact
                   </p>
                   <p className='mt-2 text-2xl font-semibold text-gray-900'>
-                    {formatMn(activeBudgetDetails.totalImpact)} Mn USD
+                    {formatMn(activeBudgetDetails.totalImpact)} Mn {currencyLabel}
                   </p>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
@@ -2123,7 +2928,7 @@ export default function ExecutiveSummaryPage({
                           Item
                         </th>
                         <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                          OP impact (Mn USD)
+                          OP impact (Mn {currencyLabel})
                         </th>
                       </tr>
                     </thead>
@@ -2169,6 +2974,101 @@ export default function ExecutiveSummaryPage({
       )}
 
       {/* AI Analysis Sidebar */}
+      {activePnlGroup && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6'
+          onClick={() => setActivePnlGroup(null)}>
+          <div
+            className='w-full max-w-6xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden'
+            onClick={(event) => event.stopPropagation()}>
+            <div className='px-6 py-5 border-b border-gray-200 flex items-center justify-between'>
+              <div>
+                <p className='text-xs uppercase tracking-widest text-gray-400 font-semibold'>
+                  P&amp;L breakdown
+                </p>
+                <h3 className='text-xl font-bold text-gray-900'>
+                  {activePnlGroup}
+                </h3>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Mn {currencyLabel}
+                </p>
+              </div>
+              <button
+                onClick={() => setActivePnlGroup(null)}
+                className='p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700'>
+                <XMarkIcon className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='max-h-[70vh] overflow-auto'>
+              <table className='w-full text-sm'>
+                <thead className='bg-gray-50 border-b border-gray-200'>
+                  <tr>
+                    <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                      BU
+                    </th>
+                    <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                      Line item
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Full year budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      YTM budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Last year (YTM)
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      YTM actual
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Full year FCST
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Last year (full year)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activePnlRows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className='px-4 py-6 text-center text-sm text-gray-500'>
+                        No P&amp;L breakdown available.
+                      </td>
+                    </tr>
+                  ) : (
+                    Array.from(
+                      activePnlRows.reduce(
+                        (acc, row) => {
+                          if (!acc.has(row.unit)) {
+                            acc.set(row.unit, []);
+                          }
+                          acc.get(row.unit)?.push(row);
+                          return acc;
+                        },
+                        new Map<string, PnlBreakdownRow[]>()
+                      )
+                    ).map(([unit, rows]) => (
+                      <React.Fragment key={unit}>
+                        <tr className='bg-gray-50'>
+                          <td
+                            className='px-4 py-2 font-semibold text-gray-900'
+                            colSpan={8}>
+                            {unit}
+                          </td>
+                        </tr>
+                        {renderPnlRows(rows)}
+                      </React.Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       <RootCauseAnalysisSidebar
         isOpen={isAISidebarOpen}
         onToggle={() => setIsAISidebarOpen(!isAISidebarOpen)}

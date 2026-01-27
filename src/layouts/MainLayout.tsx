@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
+import CurrencyToggle from '../components/CurrencyToggle';
 import RightSidebar from '../components/RightSidebar';
 import CalendarSidebar from '../components/CalendarSidebar';
 import { mockCalendarEvents } from '../data/mockCalendar';
@@ -11,6 +12,8 @@ export default function MainLayout() {
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [isCalendarClosing, setIsCalendarClosing] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const isMeetingPage = location.pathname.startsWith('/meeting/');
   const isMyMeetingsPage = location.pathname === '/my-meetings';
   const meetingId = isMeetingPage ? location.pathname.split('/')[2] : undefined;
@@ -78,8 +81,29 @@ export default function MainLayout() {
     }
   }, [isMyMeetingsPage, isCalendarVisible]);
 
+  useEffect(() => {
+    const storageKey = `lastSearch:${location.pathname}`;
+    if (location.search) {
+      sessionStorage.setItem(storageKey, location.search);
+      return;
+    }
+    if (navigationType !== 'POP') {
+      return;
+    }
+    const storedSearch = sessionStorage.getItem(storageKey);
+    if (storedSearch) {
+      navigate(`${location.pathname}${storedSearch}`, { replace: true });
+    }
+  }, [location.pathname, location.search, navigationType, navigate]);
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 relative'>
+      <div
+        className={`fixed top-3 z-50 ${
+          isSidebarCollapsed ? 'right-20' : 'right-72'
+        }`}>
+        <CurrencyToggle />
+      </div>
       {/* Floating Calendar Toggle Button - Only show when calendar is closed and not on My Meetings page */}
       {!isCalendarVisible && !isMyMeetingsPage && (
         <button

@@ -45,13 +45,13 @@ export default function RightSidebar({
     },
     {
       id: 'actual-initiative-implementation',
-      label: 'Actual - Initiative Implementation dashboard',
+      label: 'Actual (Implementation)',
       path: '/actual-initiative-implementation',
       icon: DocumentCheckIcon,
     },
     {
       id: 'business-group-performance',
-      label: 'Actual - Business Group Performance',
+      label: 'Actual (Reconciliation)',
       path: '/business-group-performance',
       icon: BuildingOffice2Icon,
     },

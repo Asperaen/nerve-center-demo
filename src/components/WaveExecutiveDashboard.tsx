@@ -28,9 +28,11 @@ import {
   Cell,
   Legend,
 } from 'recharts';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export default function WaveExecutiveDashboard() {
   const workflowGroups = groupInitiativesByWorkflow(mockExecutiveInitiatives);
+  const { formatAmount, currencyLabel } = useCurrency();
   // Expand all workflows by default
   const [expandedWorkflows, setExpandedWorkflows] = useState<Set<string>>(
     new Set(workflowGroups.map((g) => g.workflow))
@@ -57,7 +59,10 @@ export default function WaveExecutiveDashboard() {
   };
 
   const formatNetBenefit = (value: number): string => {
-    return `Million USD ${value.toFixed(1)}`;
+    return `Million ${currencyLabel} ${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}`;
   };
 
   const getStatusIndicator = (status: string) => {
@@ -100,7 +105,7 @@ export default function WaveExecutiveDashboard() {
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm p-6'>
             <div className='flex items-center gap-2 mb-4'>
               <h3 className='text-sm font-bold text-gray-900'>
-                Value Progress - Net Recurring Revenue (Annualized, Million USD)
+                Value Progress - Net Recurring Revenue (Annualized, Million {currencyLabel})
                 vs. Top-Down Target
               </h3>
               <InformationCircleIcon className='w-4 h-4 text-gray-400' />
@@ -168,7 +173,7 @@ export default function WaveExecutiveDashboard() {
             <div className='flex items-center gap-2 mb-4'>
               <h3 className='text-sm font-bold text-gray-900'>
                 Value Delivery Tracking - Net Recurring Revenue (Annualized,
-                Million USD) vs. Bottom-Up Plan
+                Million {currencyLabel}) vs. Bottom-Up Plan
               </h3>
               <InformationCircleIcon className='w-4 h-4 text-gray-400' />
             </div>
@@ -226,7 +231,7 @@ export default function WaveExecutiveDashboard() {
             <div className='flex items-center gap-2 mb-4'>
               <h3 className='text-sm font-bold text-gray-900'>
                 Variance Analysis - L4+ Actual Net Recurring Revenue
-                (Annualized, Million USD) vs. Bottom-Up Plan
+                (Annualized, Million {currencyLabel}) vs. Bottom-Up Plan
               </h3>
               <InformationCircleIcon className='w-4 h-4 text-gray-400' />
             </div>

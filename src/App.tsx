@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import MeetingDetailView from './components/MeetingDetailView';
 import { ActionsProvider } from './contexts/ActionsContext';
 import { BudgetProvider } from './contexts/BudgetContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import MainLayout from './layouts/MainLayout';
 import ActionTrackerPage from './pages/ActionTrackerPage';
 import ActualInitiativeImplementationPage from './pages/ActualInitiativeImplementationPage';
@@ -22,10 +23,11 @@ import WaveExecutiveDashboardPage from './pages/WaveExecutiveDashboardPage';
 
 function App() {
   return (
-    <BudgetProvider>
-      <ActionsProvider>
-        <BrowserRouter>
-          <Routes>
+    <CurrencyProvider>
+      <BudgetProvider>
+        <ActionsProvider>
+          <BrowserRouter>
+            <Routes>
             <Route
               path='/'
               element={<MainLayout />}>
@@ -98,10 +100,11 @@ function App() {
               element={<IdeationProgressPage />}
             />
           </Route>
-          </Routes>
-        </BrowserRouter>
-      </ActionsProvider>
-    </BudgetProvider>
+            </Routes>
+          </BrowserRouter>
+        </ActionsProvider>
+      </BudgetProvider>
+    </CurrencyProvider>
   );
 }
 

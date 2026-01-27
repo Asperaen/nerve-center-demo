@@ -1,17 +1,17 @@
-import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HeaderFilters from '../components/HeaderFilters';
 import TimeframePicker, {
-    type TimeframeOption,
-    type TimeframeOptionItem,
+  type TimeframeOption,
+  type TimeframeOptionItem,
 } from '../components/TimeframePicker';
 import { useBudgets } from '../contexts/BudgetContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { INITIATIVE_IMPLEMENTATION_DATA } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
-    getStoredTimeframe,
-    setStoredTimeframe,
+  getStoredTimeframe,
+  setStoredTimeframe,
 } from '../utils/timeframeStorage';
 
 const normalizeGroupId = (groupName: string) => {
@@ -276,6 +276,12 @@ const getTimeframeScale = (timeframe: TimeframeOption) => {
 export default function ActualInitiativeImplementationPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { businessGroups } = useBudgets();
+  const { currencyLabel, formatAmount } = useCurrency();
+  const formatMnValue = (value: number, digits: number = 1) =>
+    formatAmount(value, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
   const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
     const stored = getStoredTimeframe();
     return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
@@ -288,7 +294,6 @@ export default function ActualInitiativeImplementationPage() {
     new Set()
   );
   const [lateOnlyRowId, setLateOnlyRowId] = useState<string | null>(null);
-  const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
   const mainBuOptions = getMainBusinessGroupOptions();
 
   const timeframeScale = useMemo(
@@ -549,13 +554,27 @@ export default function ActualInitiativeImplementationPage() {
     { value: 'full-year', label: 'Full year forecast' },
     { value: 'ytm', label: 'YTM actuals' },
   ];
+  const impactVsTargetLegend = [
+    {
+      id: 'below',
+      label: 'Underperforming (< 100%)',
+      swatchClass: 'bg-red-400',
+      cellClass: 'bg-red-50 text-red-700',
+    },
+    {
+      id: 'meets',
+      label: 'Performing (≥ 100%)',
+      swatchClass: 'bg-green-500',
+      cellClass: 'bg-green-100 text-green-700',
+    },
+  ];
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
       <div className='p-8 max-w-[1920px] mx-auto'>
         <div className='mb-6'>
           <h1 className='text-3xl font-bold text-gray-900'>
-            Actual - Initiative Implementation dashboard
+            Actual (Implementation)
           </h1>
           <p className='text-sm text-gray-600 mt-2'>
             Review in-year initiative execution against L4 targets and milestone
@@ -646,9 +665,20 @@ export default function ActualInitiativeImplementationPage() {
 
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
           <div className='space-y-6'>
-            <div className='flex items-center gap-2 text-sm text-gray-600'>
-              <span className='font-semibold text-gray-700'>From</span>
-              <span>{todayLabel}</span>
+            <div className='flex justify-end text-xs text-gray-600'>
+              <div className='flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2'>
+                <span className='text-xs font-semibold text-gray-700'>
+                  Impact vs target
+                </span>
+                {impactVsTargetLegend.map((item) => (
+                  <span key={item.id} className='flex items-center gap-2'>
+                    <span
+                      className={`h-2 w-2 rounded-full ${item.swatchClass}`}
+                    />
+                    <span>{item.label}</span>
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className='overflow-x-auto rounded-lg border border-gray-200'>
@@ -658,7 +688,7 @@ export default function ActualInitiativeImplementationPage() {
                     <th
                       className='bg-gray-50 text-left px-6 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                       colSpan={3}>
-                      Mn USD
+                      Mn {currencyLabel}
                     </th>
                     <th
                       className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
@@ -737,8 +767,8 @@ export default function ActualInitiativeImplementationPage() {
                     const labelClass = row.isSub ? 'pl-8' : '';
                     const pctClass = (value: number) =>
                       value >= 100
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-50 text-red-700';
+                        ? impactVsTargetLegend[1].cellClass
+                        : impactVsTargetLegend[0].cellClass;
                     const isExpanded = expandedRowIds.has(row.id);
                     const lateInitiativeRows = row.isTotal
                       ? selectedInitiatives.filter((initiative) =>
@@ -769,13 +799,13 @@ export default function ActualInitiativeImplementationPage() {
                             {row.sponsor ?? '-'}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.pipeline.toFixed(1)}
+                            {formatMnValue(row.pipeline)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l4Target.toFixed(1)}
+                            {formatMnValue(row.l4Target)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l4Impact.toFixed(1)}
+                            {formatMnValue(row.l4Impact)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.l4Pct === null ? (
@@ -816,7 +846,7 @@ export default function ActualInitiativeImplementationPage() {
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.lateValue === 0
                               ? '-'
-                              : row.lateValue.toFixed(1)}
+                              : formatMnValue(row.lateValue)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.milestonesDue}
@@ -892,7 +922,7 @@ export default function ActualInitiativeImplementationPage() {
                                               {item.name}
                                             </td>
                                             <td className='px-3 py-2 text-right text-gray-700'>
-                                              {item.plannedImpact.toFixed(2)}
+                                              {formatMnValue(item.plannedImpact, 2)}
                                             </td>
                                             <td className='px-3 py-2 text-gray-600'>
                                               {item.targetL4Date}

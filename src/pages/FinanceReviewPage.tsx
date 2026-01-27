@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import CreateActionModal from '../components/CreateActionModal';
 import { ProductAnalysisLayer } from '../components/layers';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   mockLeakageRecoveryProposal,
   mockNPDeviationKeyCallOut,
@@ -38,12 +39,14 @@ const BrokenAxisTick = ({
   payload,
   brokenAxis,
   index,
+  formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
   brokenAxis: BrokenAxisConfig;
   index?: number;
+  formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
   const { value } = payload;
@@ -54,10 +57,14 @@ const BrokenAxisTick = ({
   const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
   const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
 
+  const displayValue = formatValue
+    ? formatValue(actualValue)
+    : actualValue.toFixed(0);
+
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={0} y={0} dy={4} textAnchor='end' fill='#666' fontSize={12}>
-        {actualValue.toFixed(0)}
+        {displayValue}
       </text>
       {shouldShowBreak && (
         <g transform='translate(8, 12)'>
@@ -108,6 +115,14 @@ export default function FinanceReviewPage() {
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
+  const formatAxisValue = (value: number) =>
+    formatAmount(value, { maximumFractionDigits: 0 });
   // Proposals state - Map for leakage recovery proposal
   const [proposals, setProposals] = useState<Map<string, Proposal>>(() => {
     const initialProposals = new Map<string, Proposal>();
@@ -324,13 +339,21 @@ export default function FinanceReviewPage() {
               />
               {brokenAxis ? (
                 <YAxis
-                  tick={(props) => <BrokenAxisTick {...props} brokenAxis={brokenAxis} />}
+                  tick={(props) => (
+                    <BrokenAxisTick
+                      {...props}
+                      brokenAxis={brokenAxis}
+                      formatValue={formatAxisValue}
+                    />
+                  )}
                   domain={[
                     0,
-                    Math.max(...mockNPDeviationStages.map((s) => s.value)) - brokenAxis.skipRangeEnd + 50,
+                    Math.max(...mockNPDeviationStages.map((s) => s.value)) -
+                      brokenAxis.skipRangeEnd +
+                      50,
                   ]}
                   label={{
-                    value: 'Net Profit (Mn USD)',
+                    value: `Net Profit (Mn ${currencyLabel})`,
                     angle: -90,
                     position: 'insideLeft',
                     style: { fontSize: '12px' },
@@ -340,7 +363,7 @@ export default function FinanceReviewPage() {
                 <YAxis
                   style={{ fontSize: '12px' }}
                   label={{
-                    value: 'Net Profit (Mn USD)',
+                    value: `Net Profit (Mn ${currencyLabel})`,
                     angle: -90,
                     position: 'insideLeft',
                     style: { fontSize: '12px' },
@@ -366,12 +389,16 @@ export default function FinanceReviewPage() {
                   const isClickable = payload?.isClickable;
 
                   const tooltipLines: string[] = [
-                    `${payload?.label ?? 'Stage'}: $${cumulative.toFixed(1)}M`,
+                    `${payload?.label ?? 'Stage'}: ${formatAmountM(
+                      cumulative
+                    )} ${currencyLabel}`,
                   ];
 
                   if (delta !== undefined && delta !== cumulative) {
                     tooltipLines.push(
-                      `Change: ${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
+                      `Change: ${delta > 0 ? '+' : ''}${formatAmountM(
+                        delta
+                      )} ${currencyLabel}`
                     );
                   }
 
@@ -415,7 +442,7 @@ export default function FinanceReviewPage() {
                     const stage = mockNPDeviationStages[index];
                     const isBaseline = stage?.type === 'baseline';
                     const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
-                    const displayValue = numericValue.toFixed(0);
+                    const displayValue = formatAxisValue(numericValue);
                     
                     if (brokenAxis && isBaseline) {
                       return (
@@ -609,8 +636,9 @@ export default function FinanceReviewPage() {
                             <div className='mt-2 flex items-center flex-wrap gap-2'>
                               {action.expectedImpact > 0 ? (
                                 <span className='text-xs text-gray-500'>
-                                  Expected Impact: $
-                                  {action.expectedImpact.toFixed(1)}M
+                                  Expected Impact:{' '}
+                                  {formatAmountM(action.expectedImpact)}{' '}
+                                  {currencyLabel}
                                 </span>
                               ) : (
                                 <span className='text-xs text-gray-500'>
@@ -821,6 +849,7 @@ function CreateActionModalForProposal({
   onClose,
   onSave,
 }: CreateActionModalForProposalProps) {
+  const { currencyLabel } = useCurrency();
   const [description, setDescription] = useState('');
   const [expectedImpact, setExpectedImpact] = useState('');
   const [feasibility, setFeasibility] = useState<'high' | 'medium' | 'low'>(
@@ -885,7 +914,7 @@ function CreateActionModalForProposal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Expected Impact (M USD) *
+                Expected Impact (M {currencyLabel}) *
               </label>
               <input
                 type='number'

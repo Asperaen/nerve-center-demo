@@ -3,13 +3,15 @@ import {
   ArrowTrendingUpIcon,
   ChartBarIcon,
   CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   ExclamationTriangleIcon,
   NewspaperIcon,
   PlusIcon,
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
@@ -17,8 +19,14 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
-import { useBudgets } from '../contexts/BudgetContext';
-import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
+import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
+import { useCurrency } from '../contexts/CurrencyContext';
+import {
+  getMainBusinessGroupOptions,
+  type BusinessGroupData,
+  type BusinessGroupMetricWithTrend,
+  type MonthlyTrendPoint,
+} from '../data/mockBusinessGroupPerformance';
 import {
   mockAppliedAssumptions,
   mockOPWaterfallStages,
@@ -39,9 +47,314 @@ import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 const toMillions = (value: number) => value / 1_000;
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
+const TREND_MONTHS = [
+  'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+];
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
   return key === 'other' ? 'others' : key;
+};
+
+// Simple hash function to generate a unique seed from a string
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
+const buildTrend = (
+  value: number,
+  baseline: number,
+  _lastYear: number,
+  seed: number = 0
+): MonthlyTrendPoint[] => {
+  const percentVsBudget =
+    baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
+  const isOutperforming = percentVsBudget >= 0;
+  const varianceMagnitude = Math.min(Math.abs(percentVsBudget), 50) / 100;
+  const trendRange = Math.abs(value) * (0.1 + varianceMagnitude * 0.15);
+  let startValue: number;
+  let endValue: number;
+
+  if (isOutperforming) {
+    startValue = value - trendRange;
+    endValue = value;
+  } else {
+    startValue = value + trendRange;
+    endValue = value;
+  }
+
+  const steps = TREND_MONTHS.length - 1;
+  const curveType = seed % 6;
+  const seedVariation = ((seed >> 3) % 100) / 100;
+  const seedPhase = ((seed >> 6) % 100) / 50;
+
+  return TREND_MONTHS.map((month, index) => {
+    const ratio = steps === 0 ? 0 : index / steps;
+    let curveRatio: number;
+
+    switch (curveType) {
+      case 0:
+        curveRatio = 1 - Math.pow(1 - ratio, 2 + seedVariation);
+        break;
+      case 1:
+        curveRatio = Math.pow(ratio, 2 + seedVariation);
+        break;
+      case 2:
+        curveRatio =
+          ratio < 0.5
+            ? 2 * Math.pow(ratio, 2)
+            : 1 - Math.pow(-2 * ratio + 2, 2) / 2;
+        break;
+      case 3: {
+        const dipDepth = 0.15 + seedVariation * 0.2;
+        const dipCenter = 0.3 + seedVariation * 0.2;
+        const dipEffect =
+          Math.exp(-Math.pow((ratio - dipCenter) / 0.2, 2)) * dipDepth;
+        curveRatio = ratio - dipEffect * (1 - ratio);
+        break;
+      }
+      case 4: {
+        const plateauStart = 0.3 + seedVariation * 0.1;
+        const plateauEnd = 0.6 + seedVariation * 0.1;
+        if (ratio < plateauStart) {
+          curveRatio = (ratio / plateauStart) * 0.4;
+        } else if (ratio < plateauEnd) {
+          curveRatio =
+            0.4 + ((ratio - plateauStart) / (plateauEnd - plateauStart)) * 0.2;
+        } else {
+          curveRatio =
+            0.6 + ((ratio - plateauEnd) / (1 - plateauEnd)) * 0.4;
+        }
+        break;
+      }
+      case 5:
+      default: {
+        const waveAmp = 0.08 + seedVariation * 0.07;
+        const waveFreq = 1.5 + seedPhase;
+        curveRatio =
+          ratio +
+          Math.sin(ratio * Math.PI * waveFreq) *
+            waveAmp *
+            (1 - Math.abs(ratio - 0.5) * 2);
+        curveRatio = Math.max(0, Math.min(1, curveRatio));
+        break;
+      }
+    }
+
+    curveRatio = Math.max(0, Math.min(1, curveRatio));
+    const trendValue = startValue + (endValue - startValue) * curveRatio;
+
+    return {
+      month,
+      value: Math.round(trendValue * 10) / 10,
+    };
+  });
+};
+
+const calcPercent = (value: number, baseline: number) => {
+  if (baseline === 0) return 0;
+  return ((value - baseline) / baseline) * 100;
+};
+
+const buildMetric = (
+  value: number,
+  budget: number,
+  lastYear: number,
+  aiInsight: string,
+  percentBasis: 'budget' | 'last-year',
+  groupName: string,
+  metricName: string
+): BusinessGroupMetricWithTrend => {
+  const seed = hashString(`${groupName}-${metricName}`);
+  return {
+    value,
+    baseline: budget,
+    stly: lastYear,
+    percent: calcPercent(
+      value,
+      percentBasis === 'last-year' ? lastYear : budget
+    ),
+    trend: buildTrend(value, budget, lastYear, seed),
+    aiInsight,
+  };
+};
+
+type BusinessGroupSource = BusinessGroup;
+type BusinessUnitSource = BusinessGroupSource['businessUnits'][number];
+
+const buildGroupRow = (
+  groupName: string,
+  units: BusinessUnitSource[],
+  idOverride?: string,
+  nameOverride?: string
+): BusinessGroupData => {
+  const totals = units.reduce(
+    (acc, unit) => {
+      acc.forecastRevenue += unit.forecastRevenue;
+      acc.forecastGrossProfit += unit.forecastGrossProfit;
+      acc.forecastOperatingProfit += unit.forecastOperatingProfit;
+      acc.forecastNetProfit += unit.forecastNetProfit;
+      acc.revenueBudget += unit.revenueBudget;
+      acc.grossProfitBudget += unit.grossProfitBudget;
+      acc.operatingProfitBudget += unit.operatingProfitBudget;
+      acc.netProfitBudget += unit.netProfitBudget;
+      acc.lastYearRevenue += unit.lastYearRevenue;
+      acc.lastYearGrossProfit += unit.lastYearGrossProfit;
+      acc.lastYearOperatingProfit += unit.lastYearOperatingProfit;
+      acc.lastYearNetProfit += unit.lastYearNetProfit;
+      return acc;
+    },
+    {
+      forecastRevenue: 0,
+      forecastGrossProfit: 0,
+      forecastOperatingProfit: 0,
+      forecastNetProfit: 0,
+      revenueBudget: 0,
+      grossProfitBudget: 0,
+      operatingProfitBudget: 0,
+      netProfitBudget: 0,
+      lastYearRevenue: 0,
+      lastYearGrossProfit: 0,
+      lastYearOperatingProfit: 0,
+      lastYearNetProfit: 0,
+    }
+  );
+
+  const name = nameOverride ?? groupName;
+  const id = idOverride ?? normalizeGroupId(groupName);
+  const insightBase = `${name} performance.`;
+  const revenue = toMillions(totals.forecastRevenue);
+  const grossProfit = toMillions(totals.forecastGrossProfit);
+  const operatingProfit = toMillions(totals.forecastOperatingProfit);
+  const netProfit = toMillions(totals.forecastNetProfit);
+  const revenueBudget = toMillions(totals.revenueBudget);
+  const grossProfitBudget = toMillions(totals.grossProfitBudget);
+  const operatingProfitBudget = toMillions(totals.operatingProfitBudget);
+  const netProfitBudget = toMillions(totals.netProfitBudget);
+  const lastYearRevenue = toMillions(totals.lastYearRevenue);
+  const lastYearGrossProfit = toMillions(totals.lastYearGrossProfit);
+  const lastYearOperatingProfit = toMillions(totals.lastYearOperatingProfit);
+  const lastYearNetProfit = toMillions(totals.lastYearNetProfit);
+
+  return {
+    id,
+    name,
+    rev: buildMetric(
+      revenue,
+      revenueBudget,
+      lastYearRevenue,
+      `${insightBase} Revenue trends align with group mix.`,
+      'budget',
+      name,
+      'Revenue'
+    ),
+    gp: buildMetric(
+      grossProfit,
+      grossProfitBudget,
+      lastYearGrossProfit,
+      `${insightBase} Gross profit reflects mix and cost discipline.`,
+      'budget',
+      name,
+      'Gross Profit'
+    ),
+    op: buildMetric(
+      operatingProfit,
+      operatingProfitBudget,
+      lastYearOperatingProfit,
+      `${insightBase} Operating profit tracks execution momentum.`,
+      'budget',
+      name,
+      'Operating Profit'
+    ),
+    np: buildMetric(
+      netProfit,
+      netProfitBudget,
+      lastYearNetProfit,
+      `${insightBase} Net profit reflects margin resilience.`,
+      'budget',
+      name,
+      'Net Profit'
+    ),
+  };
+};
+
+const buildUnitRow = (
+  groupId: string,
+  unit: BusinessUnitSource
+): BusinessGroupData => {
+  const unitId = `${groupId}-${unit.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}`;
+  const revenue = toMillions(unit.forecastRevenue);
+  const grossProfit = toMillions(unit.forecastGrossProfit);
+  const operatingProfit = toMillions(unit.forecastOperatingProfit);
+  const netProfit = toMillions(unit.forecastNetProfit);
+  const revenueBudget = toMillions(unit.revenueBudget);
+  const grossProfitBudget = toMillions(unit.grossProfitBudget);
+  const operatingProfitBudget = toMillions(unit.operatingProfitBudget);
+  const netProfitBudget = toMillions(unit.netProfitBudget);
+  const lastYearRevenue = toMillions(unit.lastYearRevenue);
+  const lastYearGrossProfit = toMillions(unit.lastYearGrossProfit);
+  const lastYearOperatingProfit = toMillions(unit.lastYearOperatingProfit);
+  const lastYearNetProfit = toMillions(unit.lastYearNetProfit);
+  const insightBase = `${unit.name} performance.`;
+
+  return {
+    id: unitId,
+    name: unit.name,
+    rev: buildMetric(
+      revenue,
+      revenueBudget,
+      lastYearRevenue,
+      `${insightBase} Revenue outlook follows segment demand.`,
+      'budget',
+      unit.name,
+      'Revenue'
+    ),
+    gp: buildMetric(
+      grossProfit,
+      grossProfitBudget,
+      lastYearGrossProfit,
+      `${insightBase} GP reflects product mix and cost structure.`,
+      'budget',
+      unit.name,
+      'Gross Profit'
+    ),
+    op: buildMetric(
+      operatingProfit,
+      operatingProfitBudget,
+      lastYearOperatingProfit,
+      `${insightBase} OP tracks execution pace.`,
+      'budget',
+      unit.name,
+      'Operating Profit'
+    ),
+    np: buildMetric(
+      netProfit,
+      netProfitBudget,
+      lastYearNetProfit,
+      `${insightBase} NP supported by margin discipline.`,
+      'budget',
+      unit.name,
+      'Net Profit'
+    ),
+  };
 };
 
 const getUnitId = (groupId: string, unitName: string) =>
@@ -50,6 +363,14 @@ const getUnitId = (groupId: string, unitName: string) =>
 export default function MarketIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { businessGroups, budgetChanges, updateBudgets } = useBudgets();
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
+  const formatMnWhole = (value: number) =>
+    `${formatAmount(value, { maximumFractionDigits: 0 })}M`;
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>('full-year');
   const [selectedBu, setSelectedBu] = useState<string>(
@@ -58,6 +379,12 @@ export default function MarketIntelligencePage() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
+  const [pendingUnitSelection, setPendingUnitSelection] = useState<string | null>(
+    null
+  );
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [showComparisonDetails, setShowComparisonDetails] =
+    useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
     null
@@ -153,12 +480,266 @@ export default function MarketIntelligencePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     const overallId = `${groupId}-overall`;
+    if (pendingUnitSelection && pendingUnitSelection.startsWith(`${groupId}-`)) {
+      setSelectedGroupIds(new Set([pendingUnitSelection]));
+      setPendingUnitSelection(null);
+      return;
+    }
     setSelectedGroupIds(new Set([overallId]));
   }, [selectedGroup]);
 
   const forecastTimeframeOptions: TimeframeOptionItem[] = [
     { value: 'full-year', label: 'Full year' },
   ];
+
+  const getExpandedSubGroups = (groupId: string) => {
+    const group = businessGroups.find(
+      (item) => normalizeGroupId(item.group) === groupId
+    );
+    if (!group) return [];
+    return group.businessUnits.map((unit) => buildUnitRow(groupId, unit));
+  };
+
+  const toggleRowExpansion = (bgId: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(bgId)) {
+        next.delete(bgId);
+      } else {
+        next.add(bgId);
+      }
+      return next;
+    });
+  };
+
+  const renderMetricCell = (
+    metric: BusinessGroupMetricWithTrend,
+    groupName: string,
+    metricName: string,
+    isLast: boolean = false
+  ) => {
+    const displayValue = metric.value;
+    const budgetPercent = calcPercent(metric.value, metric.baseline);
+    const lastYearPercent = calcPercent(metric.value, metric.stly);
+    const primaryPercent = budgetPercent;
+    const percentColor =
+      primaryPercent > 0
+        ? 'bg-green-100 text-green-700'
+        : primaryPercent < 0
+        ? 'bg-red-100 text-red-700'
+        : 'bg-gray-100 text-gray-600';
+    const percentSign = primaryPercent > 0 ? '+' : '';
+    const lastYearPercentColor =
+      lastYearPercent > 0
+        ? 'bg-green-100 text-green-700'
+        : lastYearPercent < 0
+        ? 'bg-red-100 text-red-700'
+        : 'bg-gray-100 text-gray-600';
+    const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
+
+    // Calculate trend line for sparkline
+    const trendValues = metric.trend.map((t) => t.value);
+    const minVal = Math.min(...trendValues);
+    const maxVal = Math.max(...trendValues);
+    const range = maxVal - minVal || 1;
+
+    // Generate SVG path for trend line
+    const pathPoints = metric.trend
+      .map((t, i) => {
+        const x = (i / (metric.trend.length - 1)) * 180;
+        const y = 40 - ((t.value - minVal) / range) * 35;
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      })
+      .join(' ');
+
+    const trendColor =
+      primaryPercent > 0
+        ? '#22c55e'
+        : primaryPercent < 0
+        ? '#ef4444'
+        : '#6b7280';
+
+    if (!showComparisonDetails) {
+      return (
+        <td
+          key={metricName}
+          className={`px-4 py-3 border-b border-gray-200 ${
+            !isLast ? 'border-r' : ''
+          } relative group`}>
+          <div className='text-left'>
+            <div className='text-base font-bold text-gray-900'>
+              {formatMnWhole(displayValue)}
+            </div>
+          </div>
+        </td>
+      );
+    }
+
+    return (
+      <td
+        key={metricName}
+        className={`px-4 py-3 border-b border-gray-200 ${
+          !isLast ? 'border-r' : ''
+        } relative group`}>
+        <div className='flex items-center justify-center gap-4'>
+          <div className='text-left'>
+            <div className='text-base font-bold text-gray-900'>
+              {formatMnWhole(displayValue)}
+            </div>
+          </div>
+          <div className='text-center'>
+            <div className='text-xs text-gray-500 mb-0.5'>
+              vs budget {formatMnWhole(metric.baseline)}
+            </div>
+            <div className='text-xs text-gray-500'>
+              vs Last Year {formatMnWhole(metric.stly)}
+            </div>
+          </div>
+          <div className='flex flex-col gap-0.5'>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+              {percentSign}
+              {primaryPercent.toFixed(1)}%
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
+              {lastYearPercentSign}
+              {lastYearPercent.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Hover Tooltip */}
+        <div className='absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto'>
+          <div className='bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-72'>
+            {/* Header */}
+            <div className='flex items-center justify-between mb-3 pb-2 border-b border-gray-100'>
+              <span className='text-sm font-bold text-gray-900'>
+                {groupName} - {metricName}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
+                {percentSign}
+                {primaryPercent.toFixed(1)}%
+              </span>
+            </div>
+
+            {/* 12-Month Trend Chart */}
+            <div className='mb-3'>
+              <div className='text-xs font-semibold text-gray-600 mb-2'>
+                12-Month Trend
+              </div>
+              <div className='bg-gray-50 rounded-lg p-2'>
+                <svg viewBox='0 0 180 50' className='w-full h-12'>
+                  {/* Grid lines */}
+                  <line
+                    x1='0'
+                    y1='25'
+                    x2='180'
+                    y2='25'
+                    stroke='#e5e7eb'
+                    strokeWidth='1'
+                    strokeDasharray='4'
+                  />
+                  {/* Trend line */}
+                  <path
+                    d={pathPoints}
+                    fill='none'
+                    stroke={trendColor}
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                  {/* End point */}
+                  <circle
+                    cx='180'
+                    cy={
+                      40 -
+                      ((trendValues[trendValues.length - 1] - minVal) / range) *
+                        35
+                    }
+                    r='3'
+                    fill={trendColor}
+                  />
+                </svg>
+                <div className='flex justify-between text-xs text-gray-400 mt-1'>
+                  <span>{metric.trend[0].month}</span>
+                  <span>{metric.trend[metric.trend.length - 1].month}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    );
+  };
+
+  const renderTableRow = (
+    group: BusinessGroupData,
+    isExpandable: boolean = false,
+    isSubGroup: boolean = false,
+    isOverallRow: boolean = false,
+    parentBgId?: string
+  ) => {
+    const isExpanded = expandedRows.has(group.id);
+    const shouldExpandOnClick = isExpandable && !isSubGroup && !isOverallRow;
+    const isRowClickable = shouldExpandOnClick || isSubGroup;
+
+    const handleRowClick = () => {
+      if (isSubGroup && parentBgId) {
+        setSelectedBu(parentBgId);
+        setPendingUnitSelection(getUnitId(parentBgId, group.name));
+        return;
+      }
+      if (shouldExpandOnClick) {
+        toggleRowExpansion(group.id);
+      }
+    };
+
+    return (
+      <tr
+        key={group.id}
+        className={`${
+          isOverallRow
+            ? 'bg-primary-50/50'
+            : isSubGroup
+            ? 'bg-gray-50'
+            : 'hover:bg-gray-50 transition-colors'
+        } ${isRowClickable ? 'cursor-pointer' : ''}`}
+        onClick={isRowClickable ? handleRowClick : undefined}>
+        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isRowClickable ? 'cursor-pointer' : ''}`}>
+          <div className='flex items-center gap-2'>
+            {isExpandable && (
+              <button
+                type='button'
+                className='text-gray-400'
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleRowExpansion(group.id);
+                }}>
+                {isExpanded ? (
+                  <ChevronDownIcon className='w-4 h-4' />
+                ) : (
+                  <ChevronRightIcon className='w-4 h-4' />
+                )}
+              </button>
+            )}
+            {isSubGroup && <span className='w-4' />}
+            <span
+              className={`text-sm font-semibold ${
+                isOverallRow ? 'text-primary-700' : 'text-gray-900'
+              }`}>
+              {group.name}
+            </span>
+          </div>
+        </td>
+        {renderMetricCell(group.rev, group.name, 'Revenue')}
+        {renderMetricCell(group.gp, group.name, 'Gross Profit')}
+        {renderMetricCell(group.op, group.name, 'Operating Profit')}
+        {renderMetricCell(group.np, group.name, 'Net Profit', true)}
+      </tr>
+    );
+  };
 
   const focusOptions = [
     {
@@ -247,6 +828,37 @@ export default function MarketIntelligencePage() {
           selectedGroupIds.has(getUnitId(groupId, unit.name))
         );
   }, [businessGroups, selectedBu, selectedGroup, selectedGroupIds]);
+
+  const tableData = useMemo(() => {
+    if (selectedBu === 'all') {
+      const overallRow = buildGroupRow(
+        'Overall',
+        businessGroups.flatMap((group) => group.businessUnits),
+        'overall',
+        'Overall'
+      );
+      return [
+        ...businessGroups.map((group) =>
+          buildGroupRow(group.group, group.businessUnits)
+        ),
+        overallRow,
+      ];
+    }
+    if (!selectedGroup || selectedUnits.length === 0) {
+      return [];
+    }
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const unitRows = selectedUnits.map((unit) =>
+      buildUnitRow(groupId, unit)
+    );
+    const overallRow = buildGroupRow(
+      selectedGroup.group,
+      selectedUnits,
+      `${groupId}-overall`,
+      `${selectedGroup.group} overall`
+    );
+    return [...unitRows, overallRow];
+  }, [businessGroups, selectedBu, selectedGroup, selectedUnits]);
 
   const selectedUnitIds = useMemo(() => {
     if (selectedBu === 'all' || !selectedGroup) {
@@ -389,15 +1001,19 @@ export default function MarketIntelligencePage() {
     const baseForecastValue = roundToOne(forecastTargetValue - earlySignalsDelta);
     const totalDelta = roundToOne(baseForecastValue - budgetStageValue);
 
-    const split = [0.5, 0.3, 0.2];
-    const deltas = split.map((ratio) =>
-      roundToOne(totalDelta * ratio)
-    );
-    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
-    deltas[deltas.length - 1] = roundToOne(
-      totalDelta - (roundedDelta - deltas[deltas.length - 1])
-    );
-    const [marketDelta, initiativePerformanceDelta, otherFactorsDelta] = deltas;
+  const split = [0.3, 0.2, 0.1, 0.25, 0.15];
+  const deltas = split.map((ratio) => roundToOne(totalDelta * ratio));
+  const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+  deltas[deltas.length - 1] = roundToOne(
+    totalDelta - (roundedDelta - deltas[deltas.length - 1])
+  );
+  const [
+    marketDelta,
+    headwindTailwindDelta,
+    oneOffItemsDelta,
+    initiativePerformanceDelta,
+    otherFactorsDelta,
+  ] = deltas;
 
     let running = budgetStageValue;
     const stages: BudgetForecastStage[] = [];
@@ -412,13 +1028,14 @@ export default function MarketIntelligencePage() {
       isClickable: false,
     });
 
-    const addStage = (
+  const addStage = (
       stage: BudgetForecastStage['stage'],
       label: string,
       delta: number,
       description: string,
       typeOverride?: BudgetForecastStage['type'],
-      isClickable = true
+    isClickable = true,
+    forecastSplit?: number
     ) => {
       running += delta;
       stages.push({
@@ -430,26 +1047,54 @@ export default function MarketIntelligencePage() {
           typeOverride ?? (delta >= 0 ? 'positive' : 'negative'),
         description,
         isClickable,
+      forecastSplit,
       });
     };
 
     addStage(
       'market-performance',
-      'Volume/mix change due to customer forecast update',
+      'Volume/mix change',
       marketDelta,
-      'Volume/mix change due to customer forecast update'
+      'Volume/mix change due to customer forecast update',
+      undefined,
+      true,
+      0.6
+    );
+    addStage(
+      'headwinds-tailwinds',
+      'Headwind / tailwind change',
+      headwindTailwindDelta,
+      'Headwind/tailwind change',
+      undefined,
+      true,
+      0.5
+    );
+    addStage(
+      'one-off-items',
+      'One-off items change',
+      oneOffItemsDelta,
+      'One-off items change',
+      undefined,
+      true,
+      0.3
     );
     addStage(
       'l3-vs-target',
-      'Initiative deviation vs budget',
+      'Initiative implementation',
       initiativePerformanceDelta,
-      'Initiative deviation vs budget'
+      'Initiative implementation',
+      undefined,
+      true,
+      0.7
     );
     addStage(
       'one-off-adjustments',
-      'Other factors (impact realized in actuals)',
+      'Other factors',
       otherFactorsDelta,
-      'Other factors (impact realized in actuals)'
+      'Other factors',
+      undefined,
+      true,
+      0.4
     );
 
     stages.push({
@@ -464,7 +1109,7 @@ export default function MarketIntelligencePage() {
 
     addStage(
       'early-signals',
-      'Early signals (Unrealized impact, high uncertainty)',
+      'Early signals',
       earlySignalsDelta,
       'Preliminary signals with high uncertainty',
       'preliminary',
@@ -473,11 +1118,11 @@ export default function MarketIntelligencePage() {
 
     stages.push({
       stage: 'forecast-with-early',
-      label: 'Forecast incl. early indicated opportunities/risks',
+      label: 'Forecast w/ early signals',
       value: running,
       delta: running,
       type: 'baseline',
-      description: 'Forecast including early indicated opportunities/risks',
+      description: 'Forecast plus early signals',
       isClickable: false,
     });
 
@@ -745,7 +1390,8 @@ export default function MarketIntelligencePage() {
                 {`Financial Forecast (2026 Full Year) - ${selectedBgName} - ${selectedBuLabel}`}
               </h1>
             </div>
-            <button
+            <div className='py-4'>
+              <button
               onClick={() => setIsReviseBudgetModalOpen(true)}
               disabled={!isSpecificBuSelected}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -756,6 +1402,7 @@ export default function MarketIntelligencePage() {
               <PlusIcon className='w-5 h-5' />
               Revise budget target
             </button>
+            </div>
           </div>
         </div>
 
@@ -840,6 +1487,95 @@ export default function MarketIntelligencePage() {
           </div>
         )}
 
+        {/* Forecast Performance Table */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-4'>
+            <div>
+              <h2 className='text-2xl font-bold text-gray-900'>
+                Forecast Performance by Business Group
+              </h2>
+              <p className='text-sm text-gray-600 mt-1'>
+                Mn, {currencyLabel}
+              </p>
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='text-sm text-gray-600'>Show Details</span>
+              <button
+                onClick={() =>
+                  setShowComparisonDetails(!showComparisonDetails)
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                  showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                }`}>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showComparisonDetails
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+          <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
+            <table className='w-full'>
+              <thead>
+                <tr className='bg-gray-50'>
+                  <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-semibold text-gray-700'>
+                      Business Group
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Revenue
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Gross Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Operating Profit
+                    </span>
+                  </th>
+                  <th className='text-center px-4 py-3 border-b border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Net Profit
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((group) => {
+                  const isOverallRow =
+                    group.id === 'overall' || group.id.endsWith('-overall');
+                  const isExpandable =
+                    selectedBu === 'all' && group.id !== 'overall';
+                  const isExpanded = expandedRows.has(group.id);
+
+                  return (
+                    <Fragment key={group.id}>
+                      {renderTableRow(
+                        group,
+                        isExpandable,
+                        false,
+                        isOverallRow
+                      )}
+                      {isExpanded &&
+                        getExpandedSubGroups(group.id).map((subGroup) =>
+                          renderTableRow(subGroup, false, true, false, group.id)
+                        )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className='space-y-8'>
           {/* Forecast Waterfall Chart */}
           <div className='space-y-4'>
@@ -852,20 +1588,28 @@ export default function MarketIntelligencePage() {
                   {selectedBgName} - {selectedBuLabel}
                 </p>
               </div>
-              <div className='flex flex-wrap items-center gap-4 text-sm text-gray-700'>
-                <div className='flex items-center gap-2'>
-                  <span className='h-3 w-3 rounded-full bg-risk-500' />
-                  <span>Adverse</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <span className='h-3 w-3 rounded-full bg-opportunity-500' />
-                  <span>Favourable</span>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <span className='h-3 w-3 rounded border border-gray-900 border-dashed bg-white' />
-                  <span>Preliminary</span>
-                </div>
+            <div className='flex flex-wrap items-center gap-4 text-sm text-gray-700'>
+              <div className='flex items-center gap-2'>
+                <span className='h-3 w-3 rounded-sm bg-[#bbf7d0]' />
+                <span>Favourable (forecast)</span>
               </div>
+              <div className='flex items-center gap-2'>
+                <span className='h-3 w-3 rounded-sm bg-[#16a34a]' />
+                <span>Favourable (realized)</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='h-3 w-3 rounded-sm bg-[#fecaca]' />
+                <span>Adverse (forecast)</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='h-3 w-3 rounded-sm bg-[#dc2626]' />
+                <span>Adverse (realized)</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='h-3 w-3 rounded border border-gray-900 border-dashed bg-transparent' />
+                <span>Early signals</span>
+              </div>
+            </div>
             </div>
             <BudgetForecastActualWaterfall
               stages={forecastWaterfallStages}
@@ -875,6 +1619,7 @@ export default function MarketIntelligencePage() {
                 activePerformanceSection ?? selectedFocusStage ?? undefined
               }
               hideLegend
+              splitNonPrimaryBars
               onStageClick={(stage) => {
                 setActivePerformanceSection(stage.stage);
                 setSelectedFocusStage(null);
@@ -1132,8 +1877,8 @@ export default function MarketIntelligencePage() {
                                 ? 'text-opportunity-700'
                                 : 'text-risk-700'
                             }`}>
-                            Impact: {assumption.impact > 0 ? '+' : ''}$
-                            {assumption.impact.toFixed(1)}M
+                            Impact: {assumption.impact > 0 ? '+' : ''}
+                            {formatAmountM(assumption.impact)} {currencyLabel}
                           </p>
                         </div>
                       </div>
@@ -1211,8 +1956,9 @@ export default function MarketIntelligencePage() {
                                   </div>
                                   <div className='mt-2 flex items-center flex-wrap gap-2'>
                                     <span className='text-xs text-gray-500'>
-                                      Expected Impact: $
-                                      {action.expectedImpact.toFixed(1)}M
+                                      Expected Impact:{' '}
+                                      {formatAmountM(action.expectedImpact)}{' '}
+                                      {currencyLabel}
                                     </span>
                                     <span className='text-xs text-gray-400'>
                                       •
@@ -1578,6 +2324,12 @@ function ValueDriverModal({
   cumulativeChanges,
   onUpdateAssumption,
 }: ValueDriverModalProps) {
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
   const [editingChanges, setEditingChanges] = useState<
     Map<string, { change: number; unit?: string; changePercent?: number }>
   >(new Map());
@@ -1904,8 +2656,9 @@ function ValueDriverModal({
                                 ? 'bg-opportunity-100 text-opportunity-700'
                                 : 'bg-risk-100 text-risk-700'
                             }`}>
-                            {selectedAssumption.impact > 0 ? '+' : ''}$
-                            {selectedAssumption.impact.toFixed(1)}M
+                            {selectedAssumption.impact > 0 ? '+' : ''}
+                            {formatAmountM(selectedAssumption.impact)}{' '}
+                            {currencyLabel}
                           </span>
                         </div>
                         <p className='text-sm text-gray-600 leading-relaxed'>
@@ -2042,7 +2795,7 @@ function ValueDriverModal({
                             type='text'
                             value={newDriverUnit}
                             onChange={(e) => setNewDriverUnit(e.target.value)}
-                            placeholder='e.g., FTE, USD/hour'
+                            placeholder={`e.g., FTE, ${currencyLabel}/hour`}
                             className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500'
                           />
                         </div>
@@ -2125,7 +2878,7 @@ function ValueDriverModal({
                                         Base Value:
                                       </div>
                                       <div className='text-sm font-semibold text-gray-900'>
-                                        {baseValue.toLocaleString()}
+                                        {formatAmount(baseValue)}
                                         {driver.unit && (
                                           <span className='text-gray-600 ml-1'>
                                             {driver.unit}
@@ -2211,7 +2964,7 @@ function ValueDriverModal({
                                               : 'text-risk-600'
                                           }`}>
                                           {changeValue > 0 ? '+' : ''}
-                                          {changeValue.toLocaleString()}
+                                          {formatAmount(changeValue)}
                                           {change?.unit && (
                                             <span className='ml-1'>
                                               {change.unit}
@@ -2239,7 +2992,7 @@ function ValueDriverModal({
                                           New Value:
                                         </div>
                                         <div className='text-base font-bold text-gray-900'>
-                                          {newValue.toLocaleString()}
+                                          {formatAmount(newValue)}
                                           {change?.unit || driver.unit ? (
                                             <span className='text-gray-600 ml-1 text-sm'>
                                               {change?.unit || driver.unit}
@@ -2256,11 +3009,11 @@ function ValueDriverModal({
                                             New Value:
                                           </div>
                                           <div className='text-base font-bold text-gray-900'>
-                                            {(
+                                            {formatAmount(
                                               baseValue +
-                                              (editingChanges.get(driver.id)
-                                                ?.change || changeValue)
-                                            ).toLocaleString()}
+                                                (editingChanges.get(driver.id)
+                                                  ?.change || changeValue)
+                                            )}
                                             {editingChanges.get(driver.id)
                                               ?.unit ||
                                             change?.unit ||
@@ -2336,7 +3089,7 @@ function ValueDriverModal({
                                 {driver.value !== undefined && (
                                   <div className='text-sm'>
                                     <span className='font-semibold text-gray-900'>
-                                      {driver.value.toLocaleString()}
+                                      {formatAmount(driver.value)}
                                     </span>
                                     {driver.unit && (
                                       <span className='text-gray-600 ml-1'>
@@ -2481,6 +3234,7 @@ function CreateActionModal({
   onClose,
   onSave,
 }: CreateActionModalProps) {
+  const { currencyLabel } = useCurrency();
   const [description, setDescription] = useState('');
   const [expectedImpact, setExpectedImpact] = useState('');
   const [feasibility, setFeasibility] = useState<'high' | 'medium' | 'low'>(
@@ -2545,7 +3299,7 @@ function CreateActionModal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Expected Impact (M USD) *
+                Expected Impact (M {currencyLabel}) *
               </label>
               <input
                 type='number'
@@ -2668,6 +3422,7 @@ function ReviseBudgetModal({
   onSave,
   defaultUnitIds,
 }: ReviseBudgetModalProps) {
+  const { currencyLabel } = useCurrency();
   const [bgId, setBgId] = useState(selectedBgId);
   const [buId, setBuId] = useState(selectedBuId);
   const [revenue, setRevenue] = useState(budgetTotals.revenue.toFixed(1));
@@ -2846,7 +3601,7 @@ function ReviseBudgetModal({
                 <thead className='bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500'>
                   <tr>
                     <th className='px-4 py-3'>Metric</th>
-                    <th className='px-4 py-3'>Budget (M USD)</th>
+                    <th className='px-4 py-3'>Budget (M {currencyLabel})</th>
                   </tr>
                 </thead>
                 <tbody className='divide-y divide-gray-200 bg-white text-gray-700'>

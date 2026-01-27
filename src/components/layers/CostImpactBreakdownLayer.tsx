@@ -1,18 +1,20 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeftIcon,
-  ChevronRightIcon,
   ArrowRightIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import {
-  mockCostImpactData,
   mockCostComponentTotals,
-  mockTotalCostImpact,
+  mockCostImpactData,
   mockCostImpactKeyCallOut,
   mockFactoryInitiatives,
+  mockTotalCostImpact,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem, FactoryInitiative } from '../../types';
+import { formatNumber } from '../../utils/currency';
 
 // Aggregated factory data type
 interface FactoryAggregatedData {
@@ -58,12 +60,16 @@ interface FactoryInitiativeTooltipProps {
   factoryName: string;
   initiatives: FactoryInitiative[];
   onViewWave: () => void;
+  formatImpactM: (value: number) => string;
+  currencyLabel: string;
 }
 
 function FactoryInitiativeTooltip({
   factoryName,
   initiatives,
   onViewWave,
+  formatImpactM,
+  currencyLabel,
 }: FactoryInitiativeTooltipProps) {
   const delayedCount = initiatives.filter((i) => i.isDelayed).length;
   const totalExpected = initiatives.reduce(
@@ -92,10 +98,10 @@ function FactoryInitiativeTooltip({
         </div>
         <div className='flex items-center gap-3 mt-2 text-xs'>
           <span className='text-blue-600'>
-            Expected: ${(totalExpected / 1000).toFixed(2)}M
+            Expected: {formatImpactM(totalExpected / 1000)} {currencyLabel}
           </span>
           <span className='text-green-600'>
-            Actual: ${(totalActual / 1000).toFixed(2)}M
+            Actual: {formatImpactM(totalActual / 1000)} {currencyLabel}
           </span>
         </div>
       </div>
@@ -174,6 +180,16 @@ export default function CostImpactBreakdownLayer({
   onLaborMOHClick,
 }: CostImpactBreakdownLayerProps) {
   const navigate = useNavigate();
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatFixed = (value: number, digits: number) =>
+    formatAmount(value, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+  const formatImpactK = (value: number) => `${formatFixed(value, 2)}K`;
+  const formatImpactM = (value: number) => `${formatFixed(value, 2)}M`;
+  const formatUnitCost = (value: number) => formatFixed(value, 3);
+  const formatUnitGap = (value: number) => formatFixed(value, 4);
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -227,7 +243,7 @@ export default function CostImpactBreakdownLayer({
           </button>
           <div>
             <h1 className='text-3xl font-bold text-gray-900'>
-              Cost Impact Breakdown (USD)
+              Cost Impact Breakdown ({currencyLabel})
             </h1>
             <p className='text-sm text-gray-600 mt-1'>
               Pilot demo with SBU1 YTM Financials
@@ -275,7 +291,7 @@ export default function CostImpactBreakdownLayer({
                   : 'text-red-600'
               }`}>
               {mockCostComponentTotals.material >= 0 ? '+' : ''}
-              {mockCostComponentTotals.material.toLocaleString()}
+              {formatAmount(mockCostComponentTotals.material)}
             </div>
           </div>
           <div
@@ -299,7 +315,7 @@ export default function CostImpactBreakdownLayer({
                   : 'text-red-600'
               }`}>
               {mockCostComponentTotals.labor >= 0 ? '+' : ''}
-              {mockCostComponentTotals.labor.toLocaleString()}
+              {formatAmount(mockCostComponentTotals.labor)}
             </div>
           </div>
           <div
@@ -323,7 +339,7 @@ export default function CostImpactBreakdownLayer({
                   : 'text-red-600'
               }`}>
               {mockCostComponentTotals.moh >= 0 ? '+' : ''}
-              {mockCostComponentTotals.moh.toLocaleString()}
+              {formatAmount(mockCostComponentTotals.moh)}
             </div>
           </div>
           <div className='p-4 bg-gray-50 rounded-lg border border-gray-200'>
@@ -337,7 +353,7 @@ export default function CostImpactBreakdownLayer({
                   : 'text-red-600'
               }`}>
               {mockCostComponentTotals.outsource >= 0 ? '+' : ''}
-              {mockCostComponentTotals.outsource.toLocaleString()}
+              {formatAmount(mockCostComponentTotals.outsource)}
             </div>
           </div>
         </div>
@@ -386,10 +402,10 @@ export default function CostImpactBreakdownLayer({
                   Vol_Actual (KPCS)
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                  U/C_Actual (USD)
+                  U/C_Actual ({currencyLabel})
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
-                  U/C_Budget (USD)
+                  U/C_Budget ({currencyLabel})
                 </th>
                 <th className='text-right py-3 px-4 text-sm font-semibold text-gray-700'>
                   U/C_Delta
@@ -453,7 +469,7 @@ export default function CostImpactBreakdownLayer({
                       }">
                         ${
                           row.costImpact >= 0 ? '+' : ''
-                        }${row.costImpact.toFixed(2)}K
+                        }${formatImpactK(row.costImpact)} ${currencyLabel}
                       </span>
                     </div>
                   `;
@@ -475,7 +491,7 @@ export default function CostImpactBreakdownLayer({
                     'itemDescription',
                     `MVA Cost Impact: ${
                       row.costImpact >= 0 ? '+' : ''
-                    }${row.costImpact.toFixed(2)}K`
+                    }${formatImpactK(row.costImpact)} ${currencyLabel}`
                   );
                   e.dataTransfer.effectAllowed = 'copy';
                 };
@@ -522,6 +538,8 @@ export default function CostImpactBreakdownLayer({
                             onViewWave={() =>
                               navigate('/internal-pulse?tab=wave')
                             }
+                            formatImpactM={formatImpactM}
+                            currencyLabel={currencyLabel}
                           />
                         )}
                     </td>
@@ -530,7 +548,7 @@ export default function CostImpactBreakdownLayer({
                         row.costImpact >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {row.costImpact >= 0 ? '+' : ''}
-                      {row.costImpact.toFixed(2)}
+                      {formatFixed(row.costImpact, 2)}
                     </td>
                     <td className='py-3 px-4 text-sm text-center text-gray-700'>
                       {factoryInitiatives.length > 0 ? (
@@ -550,13 +568,12 @@ export default function CostImpactBreakdownLayer({
                       {factoryInitiatives.length > 0 ? (
                         <>
                           +
-                          {(
+                          {formatImpactM(
                             factoryInitiatives.reduce(
                               (sum, i) => sum + i.expectedImpact,
                               0
                             ) / 1000
-                          ).toFixed(2)}
-                          M
+                          )}
                         </>
                       ) : (
                         '-'
@@ -571,56 +588,55 @@ export default function CostImpactBreakdownLayer({
                       {factoryInitiatives.length > 0 ? (
                         <>
                           +
-                          {(
+                          {formatImpactM(
                             factoryInitiatives.reduce(
                               (sum, i) => sum + i.actualImpact,
                               0
                             ) / 1000
-                          ).toFixed(2)}
-                          M
+                          )}
                         </>
                       ) : (
                         '-'
                       )}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {row.volActual.toLocaleString(undefined, {
+                      {formatNumber(row.volActual, {
                         maximumFractionDigits: 0,
                       })}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {unitCostActual.toFixed(3)}
+                      {formatUnitCost(unitCostActual)}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {unitCostBudget.toFixed(3)}
+                      {formatUnitCost(unitCostBudget)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
                         unitCostGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitCostGap >= 0 ? '+' : ''}
-                      {unitCostGap.toFixed(4)}
+                      {formatUnitGap(unitCostGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right border-l-2 border-gray-300 ${
                         unitMaterialGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitMaterialGap >= 0 ? '+' : ''}
-                      {unitMaterialGap.toFixed(4)}
+                      {formatUnitGap(unitMaterialGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right ${
                         unitLaborGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitLaborGap >= 0 ? '+' : ''}
-                      {unitLaborGap.toFixed(4)}
+                      {formatUnitGap(unitLaborGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right ${
                         unitMOHGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitMOHGap >= 0 ? '+' : ''}
-                      {unitMOHGap.toFixed(4)}
+                      {formatUnitGap(unitMOHGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right ${
@@ -629,7 +645,7 @@ export default function CostImpactBreakdownLayer({
                           : 'text-red-600'
                       }`}>
                       {unitOutsourceGap >= 0 ? '+' : ''}
-                      {unitOutsourceGap.toFixed(4)}
+                      {formatUnitGap(unitOutsourceGap)}
                     </td>
                   </tr>
                 );
@@ -689,7 +705,7 @@ export default function CostImpactBreakdownLayer({
                           : 'text-red-600'
                       }`}>
                       {mockTotalCostImpact >= 0 ? '+' : ''}
-                      {mockTotalCostImpact.toFixed(2)}
+                      {formatFixed(mockTotalCostImpact, 2)}
                     </td>
                     <td className='py-3 px-4 text-sm text-center font-bold text-gray-700'>
                       <span className='inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 bg-gray-200 rounded'>
@@ -697,49 +713,49 @@ export default function CostImpactBreakdownLayer({
                       </span>
                     </td>
                     <td className='py-3 px-4 text-sm text-right font-bold text-blue-600'>
-                      +{(totalExpectedImpact / 1000).toFixed(2)}M
+                      +{formatImpactM(totalExpectedImpact / 1000)}
                     </td>
                     <td className='py-3 px-4 text-sm text-right font-bold text-green-600'>
-                      +{(totalActualImpact / 1000).toFixed(2)}M
+                      +{formatImpactM(totalActualImpact / 1000)}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {totalVol.toLocaleString(undefined, {
+                      {formatNumber(totalVol, {
                         maximumFractionDigits: 0,
                       })}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {avgActual.toFixed(3)}
+                      {formatUnitCost(avgActual)}
                     </td>
                     <td className='py-3 px-4 text-sm text-right text-gray-700'>
-                      {avgBudget.toFixed(3)}
+                      {formatUnitCost(avgBudget)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
                         avgDelta >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {avgDelta >= 0 ? '+' : ''}
-                      {avgDelta.toFixed(4)}
+                      {formatUnitGap(avgDelta)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold border-l-2 border-gray-300 ${
                         unitMaterialGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitMaterialGap >= 0 ? '+' : ''}
-                      {unitMaterialGap.toFixed(4)}
+                      {formatUnitGap(unitMaterialGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
                         unitLaborGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitLaborGap >= 0 ? '+' : ''}
-                      {unitLaborGap.toFixed(4)}
+                      {formatUnitGap(unitLaborGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
                         unitMOHGap >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                       {unitMOHGap >= 0 ? '+' : ''}
-                      {unitMOHGap.toFixed(4)}
+                      {formatUnitGap(unitMOHGap)}
                     </td>
                     <td
                       className={`py-3 px-4 text-sm text-right font-semibold ${
@@ -748,7 +764,7 @@ export default function CostImpactBreakdownLayer({
                           : 'text-red-600'
                       }`}>
                       {unitOutsourceGap >= 0 ? '+' : ''}
-                      {unitOutsourceGap.toFixed(4)}
+                      {formatUnitGap(unitOutsourceGap)}
                     </td>
                   </tr>
                 );

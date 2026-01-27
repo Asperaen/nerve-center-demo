@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { CogIcon } from '@heroicons/react/16/solid';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HeaderFilters from '../components/HeaderFilters';
@@ -6,7 +6,9 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import { WAVE_LINK } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import type { BgMonthlyImpactRow } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -341,6 +343,12 @@ const getStagePercents = (label: string) => {
 export default function IdeationProgressPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { businessGroups } = useBudgets();
+  const { currencyLabel, formatAmount } = useCurrency();
+  const formatMnValue = (value: number, digits: number = 1) =>
+    formatAmount(value, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
   const mainBuOptions = getMainBusinessGroupOptions();
   const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
     const stored = getStoredTimeframe();
@@ -358,7 +366,6 @@ export default function IdeationProgressPage() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
-  const todayLabel = useMemo(() => format(new Date(), 'MMM d'), []);
 
   const monthlyImpactPlanRows = useMemo<PlanRow[]>(() => {
     const normalizedSelected = normalizeLabel(selectedBu);
@@ -648,9 +655,6 @@ export default function IdeationProgressPage() {
           <h1 className='text-3xl font-bold text-gray-900'>
             Initiative Performance
           </h1>
-          <p className='text-sm text-gray-600 mt-2'>
-            Track ideation maturity from robust planning to in-year targets.
-          </p>
         </div>
 
         <div className='mb-6'>
@@ -737,9 +741,12 @@ export default function IdeationProgressPage() {
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
           <div className='space-y-6'>
             <div className='flex flex-wrap items-center justify-between gap-4'>
-              <div className='flex items-center gap-2 text-sm text-gray-600'>
-                <span className='font-semibold text-gray-700'>From</span>
-                <span>{todayLabel}</span>
+              <div className='flex flex-col text-sm text-gray-600'>
+                <h2 className='text-2xl font-bold text-gray-900 flex items-center gap-2'>
+                  <CogIcon className='w-6 h-6 text-primary-600' />
+                  Ideation Progress
+                </h2>
+                <p className='text-sm text-gray-600 mt-1'>Mn, {currencyLabel}</p>
               </div>
               <div className='flex text-xs text-gray-600'>
                 <div className='flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2'>
@@ -801,7 +808,7 @@ export default function IdeationProgressPage() {
                       <th
                         className='bg-gray-50 text-left px-6 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={2}>
-                        Mn USD
+                        Mn {currencyLabel}
                       </th>
                       <th
                         className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
@@ -822,11 +829,6 @@ export default function IdeationProgressPage() {
                         className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
                         colSpan={2}>
                         Run rate
-                      </th>
-                      <th
-                        className='bg-gray-50 text-center px-4 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
-                        colSpan={3}>
-                        Indicat.
                       </th>
                     </tr>
                     <tr className='bg-gray-50'>
@@ -858,19 +860,10 @@ export default function IdeationProgressPage() {
                         L3+
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        Run rate target
+                        Total
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        Run rate impact
-                      </th>
-                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        # of L1+ init
-                      </th>
-                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        # of init. owners
-                      </th>
-                      <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        avg. init per IO
+                        L3+
                       </th>
                     </tr>
                   </thead>
@@ -901,22 +894,31 @@ export default function IdeationProgressPage() {
                           className={`border-b border-gray-200 ${rowClass}`}>
                           <td
                             className={`px-6 py-3 border-r border-gray-200 last:border-r-0 ${labelClass}`}>
-                            {row.label}
+                            <div className='flex flex-col gap-1'>
+                              <span>{row.label}</span>
+                              <a
+                                href={WAVE_LINK}
+                                target='_blank'
+                                rel='noreferrer'
+                                className='text-xs font-medium text-primary-600 hover:text-primary-700'>
+                                View details
+                              </a>
+                            </div>
                           </td>
                           <td className='px-6 py-3 border-r border-gray-200 last:border-r-0'>
                             {row.sponsor ?? '-'}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.total.toFixed(1)}
+                            {formatMnValue(row.total)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l1.toFixed(1)}
+                            {formatMnValue(row.l1)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l2.toFixed(1)}
+                            {formatMnValue(row.l2)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l3.toFixed(1)}
+                            {formatMnValue(row.l3)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
@@ -946,19 +948,14 @@ export default function IdeationProgressPage() {
                             </span>
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.runRateTarget?.toFixed(1) ?? '-'}
+                            {row.runRateTarget !== undefined
+                              ? formatMnValue(row.runRateTarget)
+                              : '-'}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.runRateImpact?.toFixed(1) ?? '-'}
-                          </td>
-                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.countL1}
-                          </td>
-                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.owners}
-                          </td>
-                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.avgPerIo.toFixed(1)}
+                            {row.runRateImpact !== undefined
+                              ? formatMnValue(row.runRateImpact)
+                              : '-'}
                           </td>
                         </tr>
                       );

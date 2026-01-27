@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import {
     mockBudgetForecastStages,
     mockCostImpactData,
@@ -203,6 +204,7 @@ export default function ProductAnalysisLayer({
 }: ProductAnalysisLayerProps) {
   void breadcrumbs;
   const navigate = useNavigate();
+  const { formatAmount, currencyLabel } = useCurrency();
   const [activeTab, setActiveTab] = useState<'sites' | 'products'>(initialTab);
   const [selectedSite, setSelectedSite] = useState<string>('all'); // 'all' or specific site name
   const [hoveredFactory, setHoveredFactory] = useState<string | null>(null);
@@ -1047,7 +1049,7 @@ export default function ProductAnalysisLayer({
           {/* OP Impact Overview Cards */}
           <div>
             <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-              OP Impact Overview (K, USD) Sorted by GP Gap to Budget
+              OP Impact Overview (K, {currencyLabel}) Sorted by GP Gap to Budget
             </h3>
             <div className='grid grid-cols-4 gap-4'>
               {impactCards.map((card, index) => (
@@ -1060,7 +1062,10 @@ export default function ProductAnalysisLayer({
                       card.color === 'green' ? 'text-green-600' : 'text-red-600'
                     }`}>
                     {card.value > 0 ? '+' : ''}
-                    {card.value.toFixed(1)}
+                    {formatAmount(card.value, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}
                   </div>
                 </div>
               ))}

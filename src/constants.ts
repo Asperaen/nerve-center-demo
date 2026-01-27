@@ -1,0 +1,1 @@
+export const WAVE_LINK = "https://demo-ai-coach.mckinseywave.com/"
