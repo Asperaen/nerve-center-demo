@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
   NewspaperIcon,
   PlusIcon,
+  SparklesIcon,
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -434,6 +435,19 @@ export default function MarketIntelligencePage() {
   const [activePerformanceSection, setActivePerformanceSection] = useState<
     BudgetForecastStage['stage'] | null
   >(null);
+
+  const keyCallOut = useMemo(
+    () => ({
+      bulletPoints: [
+        'Volume/mix volatility and customer demand shifts are the largest swing factors versus budget.',
+        'Headwind/tailwind assumptions (FX, commodity, mix) are driving most variance in the mid-year outlook.',
+        'One-off items and timing of initiative implementation are the primary risks to budget delivery.',
+      ],
+      rootCauseAnalysis:
+        'Focus on rephasing project changes, tightening FX/price pass-through, and accelerating FTE + non‑FTE initiatives to stabilize delivery against plan.',
+    }),
+    []
+  );
 
   useEffect(() => {
     setStoredTimeframe(selectedTimeframe);
@@ -1486,6 +1500,31 @@ export default function MarketIntelligencePage() {
             </div>
           </div>
         )}
+        <div className='mb-6'>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
+              <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <SparklesIcon className='h-4 w-4' />
+                <span>AI</span>
+              </span>
+            </div>
+            <div className='space-y-3'>
+              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                {keyCallOut.bulletPoints.map((point, index) => (
+                  <li key={index} className='text-sm'>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <div className='mt-4 pt-4 border-t border-gray-200'>
+                <p className='text-sm text-gray-700 leading-relaxed'>
+                  {keyCallOut.rootCauseAnalysis}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Forecast Performance Table */}
         <div className='mb-8'>

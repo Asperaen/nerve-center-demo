@@ -16,7 +16,7 @@ import {
   MVABreakdownLayer,
   ProductAnalysisLayer,
 } from '../components/layers';
-import TimeframePicker, { type TimeframeOption } from '../components/TimeframePicker';
+import { type TimeframeOption } from '../components/TimeframePicker';
 import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { PNL_BREAKDOWN_DATA, type PnlBreakdownRow } from '../data/mockBgData';
@@ -199,6 +199,7 @@ const buildGroupRow = (
   valueMode: 'actual' | 'forecast',
   budgetMode: 'full-year' | 'ytm',
   lastYearMode: 'full-year' | 'ytm',
+  scale: number = 1,
   idOverride?: string,
   nameOverride?: string
 ): BusinessGroupData => {
@@ -261,49 +262,64 @@ const buildGroupRow = (
   const name = nameOverride ?? groupName;
   const id = idOverride ?? normalizeGroupId(groupName);
   const insightBase = `${name} performance`;
-  const revenue = toMillions(
-    valueMode === 'forecast' ? totals.forecastRevenue : totals.revenue
+  const applyScale = (value: number) => value * scale;
+  const revenue = applyScale(
+    toMillions(valueMode === 'forecast' ? totals.forecastRevenue : totals.revenue)
   );
-  const grossProfit = toMillions(
-    valueMode === 'forecast' ? totals.forecastGrossProfit : totals.grossProfit
+  const grossProfit = applyScale(
+    toMillions(
+      valueMode === 'forecast' ? totals.forecastGrossProfit : totals.grossProfit
+    )
   );
-  const operatingProfit = toMillions(
-    valueMode === 'forecast'
-      ? totals.forecastOperatingProfit
-      : totals.operatingProfit
+  const operatingProfit = applyScale(
+    toMillions(
+      valueMode === 'forecast'
+        ? totals.forecastOperatingProfit
+        : totals.operatingProfit
+    )
   );
-  const netProfit = toMillions(
-    valueMode === 'forecast' ? totals.forecastNetProfit : totals.netProfit
+  const netProfit = applyScale(
+    toMillions(valueMode === 'forecast' ? totals.forecastNetProfit : totals.netProfit)
   );
-  const revenueBudget = toMillions(
-    budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget
+  const revenueBudget = applyScale(
+    toMillions(budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget)
   );
-  const grossProfitBudget = toMillions(
-    budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
+  const grossProfitBudget = applyScale(
+    toMillions(
+      budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
+    )
   );
-  const operatingProfitBudget = toMillions(
-    budgetMode === 'ytm'
-      ? totals.ytmOperatingProfitBudget
-      : totals.operatingProfitBudget
+  const operatingProfitBudget = applyScale(
+    toMillions(
+      budgetMode === 'ytm'
+        ? totals.ytmOperatingProfitBudget
+        : totals.operatingProfitBudget
+    )
   );
-  const netProfitBudget = toMillions(
-    budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget
+  const netProfitBudget = applyScale(
+    toMillions(budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget)
   );
-  const lastYearRevenue = toMillions(
-    lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue
+  const lastYearRevenue = applyScale(
+    toMillions(lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue)
   );
-  const lastYearGrossProfit = toMillions(
-    lastYearMode === 'ytm'
-      ? totals.ytmLastYearGrossProfit
-      : totals.lastYearGrossProfit
+  const lastYearGrossProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm'
+        ? totals.ytmLastYearGrossProfit
+        : totals.lastYearGrossProfit
+    )
   );
-  const lastYearOperatingProfit = toMillions(
-    lastYearMode === 'ytm'
-      ? totals.ytmLastYearOperatingProfit
-      : totals.lastYearOperatingProfit
+  const lastYearOperatingProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm'
+        ? totals.ytmLastYearOperatingProfit
+        : totals.lastYearOperatingProfit
+    )
   );
-  const lastYearNetProfit = toMillions(
-    lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
+  const lastYearNetProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
+    )
   );
 
   return {
@@ -352,54 +368,70 @@ const buildUnitRow = (
   unit: BusinessUnitSource,
   valueMode: 'actual' | 'forecast',
   budgetMode: 'full-year' | 'ytm',
-  lastYearMode: 'full-year' | 'ytm'
+  lastYearMode: 'full-year' | 'ytm',
+  scale: number = 1
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')}`;
-  const revenue = toMillions(
-    valueMode === 'forecast' ? unit.forecastRevenue : unit.revenue
+  const applyScale = (value: number) => value * scale;
+  const revenue = applyScale(
+    toMillions(valueMode === 'forecast' ? unit.forecastRevenue : unit.revenue)
   );
-  const grossProfit = toMillions(
-    valueMode === 'forecast' ? unit.forecastGrossProfit : unit.grossProfit
+  const grossProfit = applyScale(
+    toMillions(
+      valueMode === 'forecast' ? unit.forecastGrossProfit : unit.grossProfit
+    )
   );
-  const operatingProfit = toMillions(
-    valueMode === 'forecast'
-      ? unit.forecastOperatingProfit
-      : unit.operatingProfit
+  const operatingProfit = applyScale(
+    toMillions(
+      valueMode === 'forecast'
+        ? unit.forecastOperatingProfit
+        : unit.operatingProfit
+    )
   );
-  const netProfit = toMillions(
-    valueMode === 'forecast' ? unit.forecastNetProfit : unit.netProfit
+  const netProfit = applyScale(
+    toMillions(valueMode === 'forecast' ? unit.forecastNetProfit : unit.netProfit)
   );
-  const revenueBudget = toMillions(
-    budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget
+  const revenueBudget = applyScale(
+    toMillions(budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget)
   );
-  const grossProfitBudget = toMillions(
-    budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
+  const grossProfitBudget = applyScale(
+    toMillions(
+      budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
+    )
   );
-  const operatingProfitBudget = toMillions(
-    budgetMode === 'ytm'
-      ? unit.ytmOperatingProfitBudget
-      : unit.operatingProfitBudget
+  const operatingProfitBudget = applyScale(
+    toMillions(
+      budgetMode === 'ytm'
+        ? unit.ytmOperatingProfitBudget
+        : unit.operatingProfitBudget
+    )
   );
-  const netProfitBudget = toMillions(
-    budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget
+  const netProfitBudget = applyScale(
+    toMillions(budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget)
   );
-  const lastYearRevenue = toMillions(
-    lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue
+  const lastYearRevenue = applyScale(
+    toMillions(lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue)
   );
-  const lastYearGrossProfit = toMillions(
-    lastYearMode === 'ytm'
-      ? unit.ytmLastYearGrossProfit
-      : unit.lastYearGrossProfit
+  const lastYearGrossProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm'
+        ? unit.ytmLastYearGrossProfit
+        : unit.lastYearGrossProfit
+    )
   );
-  const lastYearOperatingProfit = toMillions(
-    lastYearMode === 'ytm'
-      ? unit.ytmLastYearOperatingProfit
-      : unit.lastYearOperatingProfit
+  const lastYearOperatingProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm'
+        ? unit.ytmLastYearOperatingProfit
+        : unit.lastYearOperatingProfit
+    )
   );
-  const lastYearNetProfit = toMillions(
-    lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
+  const lastYearNetProfit = applyScale(
+    toMillions(
+      lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
+    )
   );
   const insightBase = `${unit.name} performance.`;
 
@@ -462,6 +494,10 @@ export default function BusinessGroupPerformancePage() {
   // Filter states
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>(() => 'ytm');
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
+  const [isMonthRangeCustom, setIsMonthRangeCustom] =
+    useState<boolean>(false);
   const [selectedBu, setSelectedBu] = useState<string>(initialBu);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
@@ -487,6 +523,24 @@ export default function BusinessGroupPerformancePage() {
   const [selectedCOGSTab] = useState<'sites' | 'products'>('sites');
   const isBudgetMode = selectedTimeframe === 'budget';
   const isPercentView = financialView === 'margin';
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  const timeframeScale = useMemo(
+    () => (monthRange[1] - monthRange[0] + 1) / 12,
+    [monthRange]
+  );
 
   // Get main BU options
   const mainBuOptions = useMemo(
@@ -564,6 +618,32 @@ export default function BusinessGroupPerformancePage() {
     setExpandedRows(new Set());
   };
 
+  const handleTimeframeChange = (timeframe: 'full-year' | 'ytm') => {
+    setSelectedTimeframe(timeframe);
+    setIsMonthRangeCustom(false);
+    setMonthAnchor(null);
+    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, 2]);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('toggle', timeframe);
+      return next;
+    });
+  };
+
+  const handleMonthClick = (monthIndex: number) => {
+    if (monthAnchor === null || !isMonthRangeCustom) {
+      setMonthAnchor(monthIndex);
+      setMonthRange([monthIndex, monthIndex]);
+      setIsMonthRangeCustom(true);
+      return;
+    }
+    const start = Math.min(monthAnchor, monthIndex);
+    const end = Math.max(monthAnchor, monthIndex);
+    setMonthRange([start, end]);
+    setMonthAnchor(null);
+    setIsMonthRangeCustom(true);
+  };
+
   // Toggle row expansion
   const toggleRowExpansion = (bgId: string) => {
     setExpandedRows((prev) => {
@@ -582,21 +662,28 @@ export default function BusinessGroupPerformancePage() {
   }, [selectedTimeframe]);
 
   useEffect(() => {
-    if (selectedTimeframe !== 'ytm') {
+    if (selectedTimeframe !== 'ytm' && selectedTimeframe !== 'full-year') {
       setSelectedTimeframe('ytm');
     }
   }, [selectedTimeframe]);
+
+  useEffect(() => {
+    if (isMonthRangeCustom) {
+      return;
+    }
+    setMonthRange(selectedTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+  }, [selectedTimeframe, isMonthRangeCustom]);
 
   useEffect(() => {
     const toggleParam = searchParams.get('toggle');
     if (!toggleParam) {
       return;
     }
-    if (toggleParam === 'ytm') {
-      setSelectedTimeframe('ytm');
+    if (toggleParam === 'ytm' || toggleParam === 'full-year') {
+      setSelectedTimeframe(toggleParam);
       return;
     }
-    // If an invalid timeframe is preselected, default to the first option (YTM).
+    // If an invalid timeframe is preselected, default to YTM.
     setSelectedTimeframe('ytm');
   }, [searchParams]);
 
@@ -637,7 +724,8 @@ export default function BusinessGroupPerformancePage() {
           group.businessUnits,
           valueMode,
           budgetMode,
-          lastYearMode
+          lastYearMode,
+          timeframeScale
         )
       );
       const overallRow = buildGroupRow(
@@ -646,6 +734,7 @@ export default function BusinessGroupPerformancePage() {
         valueMode,
         budgetMode,
         lastYearMode,
+        timeframeScale,
         'overall',
         'Overall'
       );
@@ -659,7 +748,7 @@ export default function BusinessGroupPerformancePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     const unitRows = selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode)
+      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode, timeframeScale)
     );
     const overallRow = buildGroupRow(
       selectedGroup.group,
@@ -667,11 +756,12 @@ export default function BusinessGroupPerformancePage() {
       valueMode,
       budgetMode,
       lastYearMode,
+      timeframeScale,
       `${groupId}-overall`,
       `${selectedGroup.group} overall`
     );
     return [...unitRows, overallRow];
-  }, [businessGroups, selectedBu, selectedTimeframe]);
+  }, [businessGroups, selectedBu, selectedTimeframe, timeframeScale]);
 
   const unitRowsById = useMemo(() => {
     const valueMode = selectedTimeframe === 'full-year' ? 'forecast' : 'actual';
@@ -685,13 +775,14 @@ export default function BusinessGroupPerformancePage() {
           unit,
           valueMode,
           budgetMode,
-          lastYearMode
+          lastYearMode,
+          timeframeScale
         );
         return [row.id, row] as const;
       });
     });
     return new Map(entries);
-  }, [businessGroups, selectedTimeframe]);
+  }, [businessGroups, selectedTimeframe, timeframeScale]);
 
   const toggleGroupSelection = (bgId: string) => {
     setSelectedGroupIds((prev) => {
@@ -814,7 +905,7 @@ export default function BusinessGroupPerformancePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     return selectedGroup.businessUnits.map((unit) =>
-      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode)
+      buildUnitRow(groupId, unit, valueMode, budgetMode, lastYearMode, timeframeScale)
     );
   };
 
@@ -963,28 +1054,42 @@ export default function BusinessGroupPerformancePage() {
     const percent =
       budget === 0 ? 0 : (delta / Math.abs(budget)) * 100;
     const percentSign = percent >= 0 ? '+' : '-';
-    const performance =
-      delta >= 0 ? 'outperformance' : 'underperformance';
     const magnitude = Math.abs(percent);
-    const intensity =
-      magnitude >= 7.5 ? 'material' : magnitude >= 3 ? 'moderate' : 'slight';
     const directionText = delta >= 0 ? 'above' : 'below';
 
+    const drivers =
+      delta >= 0
+        ? [
+            `Volume/mix is running ${directionText} plan, lifting NP conversion.`,
+            `Cost discipline and productivity offsets protected margins.`,
+            `Pricing and portfolio actions sustained GP-to-OP flow-through.`,
+          ]
+        : [
+            `Volume/mix softness is pulling NP ${directionText} plan.`,
+            `Cost headwinds (materials, labor, FX) are compressing margins.`,
+            `Execution slippage delayed L4 delivery and OP capture.`,
+          ];
+    const actions =
+      delta >= 0
+        ? [
+            `Lock in pricing and mix gains with targeted account plans.`,
+            `Accelerate execution on L4 pipeline to sustain momentum.`,
+            `Reinvest selectively in high-return initiatives to protect run-rate.`,
+          ]
+        : [
+            `Prioritize margin recovery levers (pricing, mix, and cost takeout).`,
+            `Fast-track late initiatives with highest OP impact.`,
+            `Tighten spend control and revisit discretionary programs.`,
+          ];
     return {
-      bulletPoints: [
-        `Actual NP is ${formatMn(
-          displayedActual
-        )} Mn ${currencyLabel} versus Budget NP of ${formatMn(
-          budget
-        )} Mn ${currencyLabel}.`,
-        `This is a ${intensity} ${performance}: ${deltaSign}${formatMn(
-          Math.abs(delta)
-        )} Mn ${currencyLabel} (${percentSign}${magnitude.toFixed(1)}%).`,
-        `${sectionTitle} overall performance sits ${directionText} plan, implying execution and mix effects are the primary drivers.`,
-      ],
-      rootCauseAnalysis: `Root cause analysis indicates ${sectionTitle} is tracking ${directionText} plan with a ${intensity} variance. The ${performance} vs budget suggests execution and mix levers are the dominant contributors, with variance of ${deltaSign}${formatMn(
+      summary: `Actual NP is ${formatMn(displayedActual)} Mn ${currencyLabel} vs Budget ${formatMn(
+        budget
+      )} Mn ${currencyLabel} (${deltaSign}${formatMn(
         Math.abs(delta)
-      )} Mn ${currencyLabel} (${percentSign}${magnitude.toFixed(1)}%) between Actual and Budget NP.`,
+      )} Mn, ${percentSign}${magnitude.toFixed(1)}%).`,
+      isGain: delta >= 0,
+      drivers,
+      actions,
     };
   }, [tableData, selectionMetrics, sectionTitle, isBudgetMode]);
 
@@ -1105,12 +1210,12 @@ export default function BusinessGroupPerformancePage() {
         return [];
       }
       const normalized = (value: string) => value.toLowerCase();
-      if (stage.stage === 'one-off-adjustments') {
+      if (stage.stage === 'one-off-items' || stage.stage === 'one-off-adjustments') {
         return opImpactRows.filter((row) =>
           normalized(row.category).includes('one-off')
         );
       }
-      if (stage.stage === 'market-performance') {
+      if (stage.stage === 'headwinds-tailwinds') {
         return opImpactRows.filter((row) => {
           const category = normalized(row.category);
           return category.includes('headwind') || category.includes('tailwind');
@@ -1124,8 +1229,9 @@ export default function BusinessGroupPerformancePage() {
   const renderOpImpactTooltip = useCallback(
     (stage: BudgetForecastStage) => {
       if (
+        stage.stage !== 'one-off-items' &&
         stage.stage !== 'one-off-adjustments' &&
-        stage.stage !== 'market-performance'
+        stage.stage !== 'headwinds-tailwinds'
       ) {
         return null;
       }
@@ -1174,18 +1280,148 @@ export default function BusinessGroupPerformancePage() {
     [formatMn, getOpImpactRowsForStage]
   );
 
+  const reconciliationBaseStages = useMemo(() => {
+    const getStage = (stage: BudgetForecastStage['stage']) =>
+      mockBudgetForecastStages.find((item) => item.stage === stage);
+    const budgetStage = getStage('budget');
+    const actualStage = getStage('actuals');
+    const l3Stage = getStage('l3-vs-target');
+    const l4Stage = getStage('l4-vs-planned');
+    const l5Stage = getStage('l4-to-l5-leakage');
+    const budgetBase = Math.abs(selectionMetrics.selectedOpBaseline);
+    const clampDelta = (value: number, maxAbs: number) => {
+      if (maxAbs <= 0) {
+        return value;
+      }
+      const magnitude = Math.min(Math.abs(value), maxAbs);
+      return Math.sign(value) * magnitude;
+    };
+    const minAdverse = 0.6;
+    const minInitiative = 1.2;
+    const volumeMixDelta = -Math.max(Math.abs(opImpactTotals.volumeMix), minAdverse);
+    const oneOffCap = Math.max(0.6, budgetBase * 0.15);
+    const headwindCap = Math.max(0.4, budgetBase * 0.08);
+    const rawOneOff = clampDelta(opImpactTotals.oneOff, oneOffCap);
+    const rawHeadwind = clampDelta(opImpactTotals.headwinds * 0.4, headwindCap);
+    const minNonZero = 0.2;
+    const oneOffDeltaBase =
+      rawOneOff >= 0 && Math.abs(rawOneOff) < oneOffCap * 0.7
+        ? -Math.abs(rawOneOff)
+        : rawOneOff;
+    const headwindDeltaBase =
+      rawHeadwind <= 0 && Math.abs(rawHeadwind) < headwindCap * 0.7
+        ? Math.abs(rawHeadwind)
+        : rawHeadwind;
+    const oneOffDelta =
+      Math.abs(oneOffDeltaBase) < minNonZero
+        ? -minNonZero
+        : oneOffDeltaBase;
+    const headwindDelta =
+      Math.abs(headwindDeltaBase) < minNonZero
+        ? minNonZero
+        : headwindDeltaBase;
+    const otherFactorsDelta = opImpactTotals.leakages;
+    const initiativeBoost = 1.4;
+    const l3DeltaBase = Math.max(Math.abs(l3Stage?.delta ?? 0), minInitiative);
+    const l4DeltaBase = Math.max(Math.abs(l4Stage?.delta ?? 0), minInitiative);
+    const l5DeltaBase = Math.max(Math.abs(l5Stage?.delta ?? 0), minInitiative);
+    const l3Delta = l3DeltaBase * initiativeBoost;
+    const l4Delta = l4DeltaBase * initiativeBoost;
+    const l5Delta = l5DeltaBase * initiativeBoost;
+
+    return [
+      {
+        ...budgetStage,
+        stage: 'budget',
+        label: 'Budget',
+        type: 'baseline',
+        description: budgetStage?.description ?? 'Budget baseline',
+        isClickable: false,
+      },
+      {
+        stage: 'confirmed-volume-mix',
+        label: 'Volume / mix change',
+        value: 0,
+        delta: volumeMixDelta,
+        type: 'negative',
+        description: 'Volume and mix change impact',
+        isClickable: false,
+      },
+      {
+        stage: 'one-off-items',
+        label: 'One-off items change',
+        value: 0,
+        delta: oneOffDelta,
+        type: oneOffDelta >= 0 ? 'positive' : 'negative',
+        description: 'One-off items change impact',
+        isClickable: false,
+      },
+      {
+        stage: 'headwinds-tailwinds',
+        label: 'Change in headwind / tailwind',
+        value: 0,
+        delta: headwindDelta,
+        type: headwindDelta >= 0 ? 'positive' : 'negative',
+        description: 'Headwind / tailwind change impact',
+        isClickable: true,
+        navigationTarget: '/market-intelligence?focus=headwinds-tailwinds',
+      },
+      {
+        ...l3Stage,
+        stage: 'l3-vs-target',
+        label: 'L3 vs. target',
+        delta: l3Delta,
+        type: 'positive',
+        description: l3Stage?.description ?? 'L3 initiative performance vs target',
+      },
+      {
+        ...l4Stage,
+        stage: 'l4-vs-planned',
+        label: 'L4 vs. target',
+        delta: l4Delta,
+        type: 'positive',
+        description: l4Stage?.description ?? 'L4 initiative performance vs target',
+      },
+      {
+        ...l5Stage,
+        stage: 'l4-to-l5-leakage',
+        label: 'L5 vs. target',
+        delta: l5Delta,
+        type: 'positive',
+        description: l5Stage?.description ?? 'L5 initiative performance vs target',
+      },
+      {
+        stage: 'one-off-adjustments',
+        label: 'Other factors',
+        value: 0,
+        delta: otherFactorsDelta,
+        type: otherFactorsDelta >= 0 ? 'positive' : 'negative',
+        description: 'Other factors impacting actuals',
+        isClickable: false,
+      },
+      {
+        ...actualStage,
+        stage: 'actuals',
+        label: 'Actual',
+        type: 'baseline',
+        description: actualStage?.description ?? 'Actual realized value',
+        isClickable: false,
+      },
+    ] as BudgetForecastStage[];
+  }, [opImpactTotals, selectionMetrics.selectedOpBaseline]);
+
   const buildScaledWaterfallStages = (): BudgetForecastStage[] => {
     const budgetValue = selectionMetrics.selectedOpBaseline;
     const actualValue = selectionMetrics.selectedOpValue;
     const baseBudgetValue =
-      mockBudgetForecastStages.find((stage) => stage.stage === 'budget')
-        ?.value ?? 0;
+      reconciliationBaseStages.find((stage) => stage.stage === 'budget')?.value ??
+      0;
     const scaleFactor =
       baseBudgetValue === 0 ? 1 : budgetValue / baseBudgetValue;
 
     let runningValue = roundToOne(budgetValue);
     const totalChange = roundToOne(actualValue - budgetValue);
-    const baseStages = mockBudgetForecastStages.map((stage) => {
+    const baseStages = reconciliationBaseStages.map((stage) => {
       const isBaselineStage = stage.type === 'baseline';
       const isBudgetStage = stage.stage === 'budget';
       const isActualStage = stage.stage === 'actuals';
@@ -2356,13 +2592,55 @@ export default function BusinessGroupPerformancePage() {
         <div className='max-w-[1920px] mx-auto px-8 py-6'>
           <HeaderFilters
             timeframeContent={
-              <TimeframePicker
-                selectedTimeframe={selectedTimeframe}
-                onTimeframeChange={setSelectedTimeframe}
-                options={[
-                  { value: 'ytm', label: 'Year to Month actuals' },
-                ]}
-              />
+              <div className='flex flex-col gap-3'>
+                <div className='flex items-center gap-4'>
+                  <span className='text-sm font-medium text-gray-600 w-32'>
+                    Timeframe
+                  </span>
+                  <div className='flex bg-gray-100 rounded-lg p-1'>
+                    {(
+                      [
+                        { id: 'full-year', label: 'Full year' },
+                        { id: 'ytm', label: 'Year to Month' },
+                      ] as const
+                    ).map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleTimeframeChange(option.id)}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                          selectedTimeframe === option.id
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <span className='text-sm font-medium text-gray-600 w-32'>
+                    Months
+                  </span>
+                  <div className='flex flex-wrap gap-1'>
+                    {months.map((month, index) => {
+                      const [start, end] = monthRange;
+                      const isSelected = index >= start && index <= end;
+                      return (
+                        <button
+                          key={month}
+                          onClick={() => handleMonthClick(index)}
+                          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                            isSelected
+                              ? 'bg-primary-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {month}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             }
             buOptions={mainBuOptions}
             selectedBu={selectedBu}
@@ -2453,20 +2731,35 @@ export default function BusinessGroupPerformancePage() {
               <span>AI</span>
             </span>
           </div>
-          <div className='space-y-3'>
-            <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-              {keyCallOut.bulletPoints.map((point, index) => (
-                <li
-                  key={index}
-                  className='text-sm'>
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <div className='mt-4 pt-4 border-t border-gray-200'>
-              <p className='text-sm text-gray-700 leading-relaxed'>
-                {keyCallOut.rootCauseAnalysis}
+          <div className='space-y-4'>
+            <p className='text-sm text-gray-700'>{keyCallOut.summary}</p>
+            <div>
+              <p className='text-sm font-semibold text-gray-900 mb-2'>
+                Key drivers for P&amp;L {keyCallOut.isGain ? 'gain' : 'loss'}
               </p>
+              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                {keyCallOut.drivers.map((point, index) => (
+                  <li
+                    key={index}
+                    className='text-sm'>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className='pt-3 border-t border-gray-200'>
+              <p className='text-sm font-semibold text-gray-900 mb-2'>
+                Suggested actions
+              </p>
+              <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                {keyCallOut.actions.map((point, index) => (
+                  <li
+                    key={index}
+                    className='text-sm'>
+                    {point}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -2809,7 +3102,7 @@ export default function BusinessGroupPerformancePage() {
                     ? 'Year to Month actuals'
                     : selectedTimeframe === 'budget'
                     ? 'Budget'
-                    : 'Full year forecast'}
+                    : 'Full year actuals'}
                 </p>
               </div>
               <button

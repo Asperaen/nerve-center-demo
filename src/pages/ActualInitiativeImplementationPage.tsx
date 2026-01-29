@@ -1,13 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import HeaderFilters from '../components/HeaderFilters';
-import TimeframePicker, {
+import {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import { WAVE_LINK } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { INITIATIVE_IMPLEMENTATION_DATA } from '../data/mockBgData';
+import {
+  INITIATIVE_IMPLEMENTATION_DATA,
+  INITIATIVE_IMPLEMENTATION_ROW_DEFS,
+} from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   getStoredTimeframe,
@@ -45,34 +60,21 @@ type ExecutionRow = {
 
 const EXECUTION_ROW_DEFS: Array<
   Pick<ExecutionRow, 'id' | 'label' | 'isGroup' | 'isSub' | 'isTotal'>
-> = [
-  { id: 'topline', label: 'Topline VS', isGroup: true },
-  { id: 'topline-sub-1', label: 'Product category A', isSub: true },
-  { id: 'topline-sub-2', label: 'Product category B', isSub: true },
-  { id: 'topline-sub-3', label: 'Product category C', isSub: true },
-  { id: 'mfg', label: 'MFG total', isGroup: true },
-  { id: 'mfg-sub-1', label: 'Site A', isSub: true },
-  { id: 'mfg-sub-2', label: 'Site B', isSub: true },
-  { id: 'mfg-sub-3', label: 'Site C', isSub: true },
-  { id: 'rd', label: 'R&D VS', isGroup: true },
-  { id: 'rd-sub-1', label: 'BU A', isSub: true },
-  { id: 'rd-sub-2', label: 'BU B', isSub: true },
-  { id: 'rd-sub-3', label: 'BU C', isSub: true },
-  { id: 'rd-sub-4', label: 'BU D', isSub: true },
-  { id: 'procurement', label: 'Procurement / BOM', isGroup: true },
-  { id: 'total', label: 'Total', isTotal: true },
-];
+> = INITIATIVE_IMPLEMENTATION_ROW_DEFS;
 
 const getSponsorForLabel = (label: string) => {
   const lowerLabel = label.toLowerCase();
-  if (lowerLabel.includes('product category')) {
-    return 'Category lead';
+  if (lowerLabel.includes('account')) {
+    return 'Commercial lead';
   }
-  if (lowerLabel.startsWith('site')) {
+  if (lowerLabel.includes('services')) {
+    return 'Customer success';
+  }
+  if (lowerLabel.startsWith('wh') || lowerLabel.startsWith('fsj')) {
     return 'Plant ops';
   }
-  if (lowerLabel.startsWith('bu')) {
-    return 'BU owner';
+  if (lowerLabel.includes('product platform')) {
+    return 'R&D lead';
   }
   if (lowerLabel.includes('topline')) {
     return 'Commercial lead';
@@ -126,10 +128,33 @@ const buildExecutionRows = (
     plannedImpact: number;
     targetL4Date: string;
     actualL4Date: string;
-  }>
+  }>,
+  meetTargetOverride: boolean
 ) => {
   const rowDefs = EXECUTION_ROW_DEFS.filter((row) => !row.isTotal);
-  const rowIds = rowDefs.map((row) => row.id);
+  const childMap = new Map<string, string[]>();
+  for (let i = 0; i < rowDefs.length; i += 1) {
+    const row = rowDefs[i];
+    if (!row.isGroup) {
+      continue;
+    }
+    const children: string[] = [];
+    for (let j = i + 1; j < rowDefs.length; j += 1) {
+      const next = rowDefs[j];
+      if (next.isGroup) {
+        break;
+      }
+      if (next.isSub) {
+        children.push(next.id);
+      }
+    }
+    childMap.set(row.id, children);
+  }
+  const rowIds = rowDefs
+    .filter(
+      (row) => row.isSub || (row.isGroup && (childMap.get(row.id) ?? []).length === 0)
+    )
+    .map((row) => row.id);
   const buckets = new Map(
     rowDefs.map((row) => [
       row.id,
@@ -169,29 +194,44 @@ const buildExecutionRows = (
     }
   });
 
+  const sumBuckets = (ids: string[]) =>
+    ids.reduce(
+      (acc, id) => {
+        const bucket = buckets.get(id);
+        if (!bucket) {
+          return acc;
+        }
+        acc.pipeline += bucket.pipeline;
+        acc.lateValue += bucket.lateValue;
+        acc.lateInitiatives += bucket.lateInitiatives;
+        acc.milestonesDue += bucket.milestonesDue;
+        acc.milestonesComplete += bucket.milestonesComplete;
+        acc.postponed += bucket.postponed;
+        return acc;
+      },
+      {
+        pipeline: 0,
+        lateValue: 0,
+        lateInitiatives: 0,
+        milestonesDue: 0,
+        milestonesComplete: 0,
+        postponed: 0,
+      }
+    );
+
   const buildRow = (row: typeof EXECUTION_ROW_DEFS[number]) => {
     if (row.isTotal) {
-      const total = Array.from(buckets.values()).reduce(
-        (acc, entry) => {
-          acc.pipeline += entry.pipeline;
-          acc.lateValue += entry.lateValue;
-          acc.lateInitiatives += entry.lateInitiatives;
-          acc.milestonesDue += entry.milestonesDue;
-          acc.milestonesComplete += entry.milestonesComplete;
-          acc.postponed += entry.postponed;
-          return acc;
-        },
-        {
-          pipeline: 0,
-          lateValue: 0,
-          lateInitiatives: 0,
-          milestonesDue: 0,
-          milestonesComplete: 0,
-          postponed: 0,
-        }
-      );
+      const totalIds = rowDefs
+        .filter(
+          (definition) =>
+            definition.isSub ||
+            (definition.isGroup &&
+              (childMap.get(definition.id) ?? []).length === 0)
+        )
+        .map((definition) => definition.id);
+      const total = sumBuckets(totalIds);
       const l4Target = total.pipeline * 0.9;
-      const l4Impact = total.pipeline * 0.8;
+      const l4Impact = total.pipeline * (meetTargetOverride ? 0.95 : 0.8);
       const l4Pct =
         l4Target === 0 ? null : Math.round((l4Impact / l4Target) * 100);
       const milestonesCompletePct =
@@ -204,7 +244,7 @@ const buildExecutionRows = (
       return {
         id: row.id,
         label: row.label,
-        sponsor: getSponsorForLabel(row.label),
+        sponsor: undefined,
         pipeline: total.pipeline,
         l4Target,
         l4Impact,
@@ -218,16 +258,19 @@ const buildExecutionRows = (
       } satisfies ExecutionRow;
     }
 
-    const bucket = buckets.get(row.id) ?? {
-      pipeline: 0,
-      lateValue: 0,
-      lateInitiatives: 0,
-      milestonesDue: 0,
-      milestonesComplete: 0,
-      postponed: 0,
-    };
+    const childIds = childMap.get(row.id) ?? [];
+    const bucket = row.isGroup && childIds.length > 0
+      ? sumBuckets(childIds)
+      : buckets.get(row.id) ?? {
+          pipeline: 0,
+          lateValue: 0,
+          lateInitiatives: 0,
+          milestonesDue: 0,
+          milestonesComplete: 0,
+          postponed: 0,
+        };
     const l4Target = bucket.pipeline * 0.9;
-    const l4Impact = bucket.pipeline * 0.8;
+    const l4Impact = bucket.pipeline * (meetTargetOverride ? 0.95 : 0.8);
     const l4Pct =
       l4Target === 0 ? null : Math.round((l4Impact / l4Target) * 100);
     const milestonesCompletePct =
@@ -240,7 +283,7 @@ const buildExecutionRows = (
     return {
       id: row.id,
       label: row.label,
-      sponsor: getSponsorForLabel(row.label),
+      sponsor: row.isGroup ? undefined : getSponsorForLabel(row.label),
       pipeline: bucket.pipeline,
       l4Target,
       l4Impact,
@@ -286,6 +329,10 @@ export default function ActualInitiativeImplementationPage() {
     const stored = getStoredTimeframe();
     return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
   });
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
+  const [isMonthRangeCustom, setIsMonthRangeCustom] =
+    useState<boolean>(false);
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
@@ -296,10 +343,27 @@ export default function ActualInitiativeImplementationPage() {
   const [lateOnlyRowId, setLateOnlyRowId] = useState<string | null>(null);
   const mainBuOptions = getMainBusinessGroupOptions();
 
-  const timeframeScale = useMemo(
-    () => getTimeframeScale(activeTimeframe),
-    [activeTimeframe]
-  );
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  const timeframeScale = useMemo(() => {
+    if (isMonthRangeCustom) {
+      return (monthRange[1] - monthRange[0] + 1) / 12;
+    }
+    return getTimeframeScale(activeTimeframe);
+  }, [activeTimeframe, isMonthRangeCustom, monthRange]);
 
   useEffect(() => {
     const timeframeParam = searchParams.get('timeframe');
@@ -313,6 +377,13 @@ export default function ActualInitiativeImplementationPage() {
       setActiveTimeframe('full-year');
     }
   }, [activeTimeframe]);
+
+  useEffect(() => {
+    if (isMonthRangeCustom) {
+      return;
+    }
+    setMonthRange(activeTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+  }, [activeTimeframe, isMonthRangeCustom]);
 
   useEffect(() => {
     setStoredTimeframe(activeTimeframe);
@@ -382,7 +453,7 @@ export default function ActualInitiativeImplementationPage() {
       const bgIds = bgParam
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean);
+        .filter((value) => value && value !== 'all');
       if (bgIds.length > 0) {
         setSelectedGroupIds(new Set(bgIds));
         return;
@@ -493,7 +564,30 @@ export default function ActualInitiativeImplementationPage() {
 
   const rowInitiatives = useMemo(() => {
     const rowDefs = EXECUTION_ROW_DEFS.filter((row) => !row.isTotal);
-    const rowIds = rowDefs.map((row) => row.id);
+    const childMap = new Map<string, string[]>();
+    for (let i = 0; i < rowDefs.length; i += 1) {
+      const row = rowDefs[i];
+      if (!row.isGroup) {
+        continue;
+      }
+      const children: string[] = [];
+      for (let j = i + 1; j < rowDefs.length; j += 1) {
+        const next = rowDefs[j];
+        if (next.isGroup) {
+          break;
+        }
+        if (next.isSub) {
+          children.push(next.id);
+        }
+      }
+      childMap.set(row.id, children);
+    }
+    const rowIds = rowDefs
+      .filter(
+        (row) =>
+          row.isSub || (row.isGroup && (childMap.get(row.id) ?? []).length === 0)
+      )
+      .map((row) => row.id);
     const allRows = new Map<string, typeof selectedInitiatives>();
     const lateRows = new Map<string, typeof selectedInitiatives>();
     rowIds.forEach((rowId) => {
@@ -523,17 +617,93 @@ export default function ActualInitiativeImplementationPage() {
   const scaledExecutionRows = useMemo(() => {
     const scale = timeframeScale;
     const round = (value: number) => Math.round(value * 10) / 10;
-    return buildExecutionRows(selectedInitiatives).map((row) => ({
+    const meetsTargetOverride =
+      selectedGroupInfo?.group.group === 'HH' &&
+      selectedGroupInfo?.unit?.name?.toLowerCase().includes('d/e');
+    return buildExecutionRows(selectedInitiatives, Boolean(meetsTargetOverride)).map((row) => ({
       ...row,
       pipeline: round(row.pipeline * scale),
       l4Target: round(row.l4Target * scale),
       l4Impact: round(row.l4Impact * scale),
       lateValue: round(row.lateValue * scale),
     }));
-  }, [selectedInitiatives, timeframeScale]);
+  }, [selectedInitiatives, timeframeScale, selectedGroupInfo]);
+
+  const keyCallOut = useMemo(() => {
+    if (scaledExecutionRows.length === 0) {
+      return null;
+    }
+    const totalRow =
+      scaledExecutionRows.find((row) => row.isTotal) ??
+      scaledExecutionRows[0];
+    const totalPipeline = totalRow.pipeline;
+    const l4Target = totalRow.l4Target;
+    const l4Impact = totalRow.l4Impact;
+    const pct = totalRow.l4Pct ?? 0;
+    const late = totalRow.lateValue ?? 0;
+
+    return {
+      bulletPoints: [
+        `Pipeline ${formatMnValue(totalPipeline)} Mn ${currencyLabel} with L4 target ${formatMnValue(l4Target)} Mn.`,
+        `L4 impact tracking at ${formatMnValue(l4Impact)} Mn (${pct}%).`,
+        `Late value exposure ${formatMnValue(late)} Mn.`,
+      ],
+      rootCauseAnalysis:
+        'Execution is concentrated in the highest-impact programs. Focus on clearing late milestones to protect L4 delivery and reduce slippage risk.',
+    };
+  }, [scaledExecutionRows, formatMnValue, currencyLabel]);
+
+  const icebergData = useMemo(() => {
+    const totalRow =
+      scaledExecutionRows.find((row) => row.isTotal) ??
+      scaledExecutionRows[0];
+    const plan = Math.max(0, totalRow?.l4Target ?? 0);
+    const actual = Math.max(0, totalRow?.l4Impact ?? 0);
+    const recurring = Math.max(0, actual * 0.25);
+    const projected = Math.max(0, plan - actual);
+    const headwind = Math.max(0, actual * 0.35);
+    const months = [
+      'Jan-2026',
+      'Feb-2026',
+      'Mar-2026',
+      'Apr-2026',
+      'May-2026',
+      'Jun-2026',
+      'Jul-2026',
+      'Aug-2026',
+      'Sep-2026',
+      'Oct-2026',
+      'Nov-2026',
+      'Dec-2026',
+    ];
+
+    return months.map((month, index) => {
+      if (index === 0) {
+        return {
+          month,
+          realized: actual,
+          recurring,
+          projected: 0,
+          headwind: -headwind,
+          plan,
+        };
+      }
+      return {
+        month,
+        realized: 0,
+        recurring,
+        projected,
+        headwind: 0,
+        plan,
+      };
+    });
+  }, [scaledExecutionRows]);
 
   const handleTimeframeChange = (timeframe: TimeframeOption) => {
     setActiveTimeframe(timeframe);
+    setIsMonthRangeCustom(false);
+    setMonthAnchor(null);
+    setMonthRange(timeframe === 'ytm' ? [0, 2] : [0, 11]);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
@@ -541,11 +711,29 @@ export default function ActualInitiativeImplementationPage() {
     });
   };
 
+  const handleMonthClick = (monthIndex: number) => {
+    if (monthAnchor === null || !isMonthRangeCustom) {
+      setMonthAnchor(monthIndex);
+      setMonthRange([monthIndex, monthIndex]);
+      setIsMonthRangeCustom(true);
+      return;
+    }
+    const start = Math.min(monthAnchor, monthIndex);
+    const end = Math.max(monthAnchor, monthIndex);
+    setMonthRange([start, end]);
+    setMonthAnchor(null);
+    setIsMonthRangeCustom(true);
+  };
+
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
+      if (buId === 'all') {
+        next.delete('bu');
+        setSelectedGroupIds(new Set());
+      }
       return next;
     });
   };
@@ -556,14 +744,14 @@ export default function ActualInitiativeImplementationPage() {
   ];
   const impactVsTargetLegend = [
     {
-      id: 'below',
-      label: 'Underperforming (< 100%)',
+      id: 'behind',
+      label: '< 100%',
       swatchClass: 'bg-red-400',
       cellClass: 'bg-red-50 text-red-700',
     },
     {
-      id: 'meets',
-      label: 'Performing (≥ 100%)',
+      id: 'ahead',
+      label: '≥ 100%',
       swatchClass: 'bg-green-500',
       cellClass: 'bg-green-100 text-green-700',
     },
@@ -572,24 +760,83 @@ export default function ActualInitiativeImplementationPage() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
       <div className='p-8 max-w-[1920px] mx-auto'>
-        <div className='mb-6'>
-          <h1 className='text-3xl font-bold text-gray-900'>
-            Actual (Implementation)
-          </h1>
-          <p className='text-sm text-gray-600 mt-2'>
-            Review in-year initiative execution against L4 targets and milestone
-            completion.
-          </p>
+        <div className='mb-6 flex items-center justify-between'>
+          <div>
+            <h1 className='text-3xl font-bold text-gray-900'>
+              Actual (Implementation)
+            </h1>
+            <p className='text-sm text-gray-600 mt-2'>
+              Review in-year initiative execution against L4 targets and milestone
+              completion.
+            </p>
+          </div>
+          <a
+            href={WAVE_LINK}
+            target='_blank'
+            rel='noreferrer'
+            className='inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-colors'>
+            Go to Wave
+          </a>
         </div>
 
         <div className='mb-6'>
           <HeaderFilters
             timeframeContent={
-              <TimeframePicker
-                selectedTimeframe={activeTimeframe}
-                onTimeframeChange={handleTimeframeChange}
-                options={timeframeOptions}
-              />
+              <div className='flex flex-col gap-3'>
+                <div className='flex items-center gap-4'>
+                  <span className='text-sm font-medium text-gray-600 w-28'>
+                    Timeframe
+                  </span>
+                  <div className='flex bg-gray-100 rounded-lg p-1'>
+                    {timeframeOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleTimeframeChange(option.value)}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                          activeTimeframe === option.value
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <span className='text-sm font-medium text-gray-600 w-28'>
+                    Months
+                  </span>
+                  <div className='flex flex-wrap gap-1'>
+                    {months.map((month, index) => {
+                      const [start, end] = monthRange;
+                      const isSelected = index >= start && index <= end;
+                      return (
+                        <button
+                          key={month}
+                          onClick={() => handleMonthClick(index)}
+                          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                            isSelected
+                              ? 'bg-primary-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {month}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {isMonthRangeCustom && (
+                    <button
+                      onClick={() => {
+                        setIsMonthRangeCustom(false);
+                        setMonthAnchor(null);
+                        setMonthRange(activeTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+                      }}
+                      className='text-xs text-primary-600 hover:text-primary-700 font-semibold'>
+                      Reset range
+                    </button>
+                  )}
+                </div>
+              </div>
             }
             buOptions={mainBuOptions}
             selectedBu={selectedBu}
@@ -659,6 +906,33 @@ export default function ActualInitiativeImplementationPage() {
                   </>
                 );
               })()}
+            </div>
+          </div>
+        )}
+        {keyCallOut && (
+          <div className='mb-6'>
+            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+              <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
+                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                  <span className='text-sm'>✨</span>
+                  <span>AI</span>
+                </span>
+              </div>
+              <div className='space-y-3'>
+                <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
+                  {keyCallOut.bulletPoints.map((point, index) => (
+                    <li key={index} className='text-sm'>
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+                <div className='mt-4 pt-4 border-t border-gray-200'>
+                  <p className='text-sm text-gray-700 leading-relaxed'>
+                    {keyCallOut.rootCauseAnalysis}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -946,6 +1220,62 @@ export default function ActualInitiativeImplementationPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <div className='mt-6 bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
+          <div className='flex items-center justify-between mb-4'>
+            <div>
+              <h2 className='text-xl font-bold text-gray-900'>Iceberg chart</h2>
+              <p className='text-xs text-gray-500'>
+                Past and projected vs bankable plan, recurring annualized impact by month (Mn {currencyLabel})
+              </p>
+            </div>
+          </div>
+          <div className='h-72'>
+            <ResponsiveContainer width='100%' height='100%'>
+              <BarChart data={icebergData} stackOffset='sign'>
+                <CartesianGrid strokeDasharray='3 3' />
+                <XAxis dataKey='month' tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value) =>
+                    `${formatMnValue(Math.abs(Number(value ?? 0)))} ${currencyLabel}`
+                  }
+                />
+                <Legend />
+                <ReferenceLine y={0} stroke='#9ca3af' />
+                <ReferenceLine
+                  y={icebergData[0]?.plan ?? 0}
+                  stroke='#ef4444'
+                  strokeDasharray='3 3'
+                />
+                <Bar
+                  dataKey='realized'
+                  name='Past actual'
+                  stackId='a'
+                  fill='#0ea5e9'
+                />
+                <Bar
+                  dataKey='recurring'
+                  name='Recurring'
+                  stackId='a'
+                  fill='#22c55e'
+                />
+                <Bar
+                  dataKey='projected'
+                  name='Projected'
+                  stackId='a'
+                  fill='#bbf7d0'
+                />
+                <Bar
+                  dataKey='headwind'
+                  name='Headwinds'
+                  stackId='a'
+                  fill='#a855f7'
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>

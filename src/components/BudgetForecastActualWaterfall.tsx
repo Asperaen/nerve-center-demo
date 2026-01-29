@@ -454,7 +454,8 @@ export default function BudgetForecastActualWaterfall({
                   highlightedStage && stage?.stage === highlightedStage;
                 const groupLabel =
                   stage?.stage === 'l3-vs-target' ||
-                  stage?.stage === 'l4-vs-planned'
+                  stage?.stage === 'l4-vs-planned' ||
+                  stage?.stage === 'l4-to-l5-leakage'
                     ? 'Initiative performance'
                     : undefined;
                   const definition =

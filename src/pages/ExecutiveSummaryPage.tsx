@@ -1333,9 +1333,7 @@ export default function ExecutiveSummaryPage({
   };
 
   const tableData = useMemo(() => {
-    const scale = isBudgetView
-      ? 1
-      : (monthRange[1] - monthRange[0] + 1) / 12;
+    const scale = (monthRange[1] - monthRange[0] + 1) / 12;
     const valueMode = isBudgetView || selectedVersion === 'budget'
       ? 'budget'
       : selectedVersion === 'forecast'
@@ -1406,6 +1404,8 @@ export default function ExecutiveSummaryPage({
       return [];
     }
     const roundToOne = (value: number) => Math.round(value * 10) / 10;
+    const monthCount = monthRange[1] - monthRange[0] + 1;
+    const monthFactor = Math.min(12, Math.max(1, monthCount)) / 12;
     const makeStage = (
       stage: BudgetForecastStage['stage'],
       label: string,
@@ -1464,7 +1464,10 @@ export default function ExecutiveSummaryPage({
     if (selectedBudgetRows.length > 0) {
       const sum = (key: BudgetMetricKey) =>
         roundToOne(
-          selectedBudgetRows.reduce((total, row) => total + row[key], 0)
+          selectedBudgetRows.reduce(
+            (total, row) => total + row[key] * monthFactor,
+            0
+          )
         );
       const lastYearOpValue = sum('lastYearOp');
       const volumeMixDelta = sum('volumeMix');
@@ -1669,7 +1672,7 @@ export default function ExecutiveSummaryPage({
         'baseline'
       ),
     ];
-  }, [businessGroups, isBudgetView, opImpactTotals, tableData, selectedBu]);
+  }, [businessGroups, isBudgetView, opImpactTotals, tableData, selectedBu, monthRange]);
 
   const keyCallOut = useMemo(() => {
     if (!isBudgetView) {
@@ -2350,16 +2353,66 @@ export default function ExecutiveSummaryPage({
           <HeaderFilters
             timeframeContent={
               isBudgetView ? (
-                <div className='flex items-center gap-4'>
-                  <span className='text-sm font-medium text-gray-600 w-32'>
-                    Timeframe
-                  </span>
-                  <div className='flex bg-gray-100 rounded-lg p-1'>
-                    <button
-                      onClick={() => handleTimeframeChange('full-year')}
-                      className='px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm'>
-                      Full year
-                    </button>
+                <div className='flex flex-col gap-3'>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Version
+                    </span>
+                    <div className='flex bg-gray-100 rounded-lg p-1'>
+                      <button
+                        onClick={() => setSelectedVersion('budget')}
+                        className='px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm'>
+                        Budget
+                      </button>
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Timeframe
+                    </span>
+                    <div
+                      className={`flex bg-gray-100 rounded-lg p-1`}>
+                      {(
+                        [
+                          { id: 'full-year', label: 'Full year' },
+                          { id: 'ytm', label: 'Year to Month' },
+                        ] as const
+                      ).map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => handleTimeframeChange(option.id)}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            selectedTimeframeScope === option.id
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-4'>
+                    <span className='text-sm font-medium text-gray-600 w-32'>
+                      Months
+                    </span>
+                    <div className='flex flex-wrap gap-1'>
+                      {months.map((month, index) => {
+                        const [start, end] = monthRange;
+                        const isSelected = index >= start && index <= end;
+                        return (
+                          <button
+                            key={month}
+                            onClick={() => handleMonthClick(index)}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                              isSelected
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                            }`}>
+                            {month}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -2394,9 +2447,7 @@ export default function ExecutiveSummaryPage({
                       Timeframe
                     </span>
                     <div
-                      className={`flex bg-gray-100 rounded-lg p-1 ${
-                        isMonthRangeCustom ? 'opacity-50 pointer-events-none' : ''
-                      }`}>
+                      className={`flex bg-gray-100 rounded-lg p-1`}>
                       {(
                         [
                           { id: 'full-year', label: 'Full year' },
@@ -2418,7 +2469,7 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Month slicer
+                      Months
                     </span>
                     <div className='flex flex-wrap gap-1'>
                       {months.map((month, index) => {
@@ -2699,27 +2750,33 @@ export default function ExecutiveSummaryPage({
                     <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
                       <div className='flex w-full flex-col gap-4 sm:items-center sm:justify-between'>
                         <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
-                          <span className='text-3xl  font-semibold'>
-                            {budgetMarginSummary.lastYear.gp.toFixed(1)}%
-                          </span>
-                          <span className='text-2xl font-bold text-gray-900'>GP%</span>
-                          <span className='text-3xl  font-semibold'>
-                            {budgetMarginSummary.budget.gp.toFixed(1)}%
-                          </span>
+                          <div className='flex flex-col'>
+                            <span>last year actual GP</span>
+                            <span className='text-3xl  font-semibold'>
+                              {budgetMarginSummary.lastYear.gp.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className='flex flex-col items-end'>
+                            <span>current year budget GP</span>
+                            <span className='text-3xl  font-semibold'>
+                              {budgetMarginSummary.budget.gp.toFixed(1)}%
+                            </span>
+                          </div>
                         </div>
                         <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
-                          <span className='text-3xl  font-semibold'>
-                            {budgetMarginSummary.lastYear.op.toFixed(1)}%
-                          </span>
-                          <span className='text-2xl font-bold text-gray-900'>OP%</span>
-                          <span className='text-3xl font-semibold'>
-                            {budgetMarginSummary.budget.op.toFixed(1)}%
-                          </span>
+                          <div className='flex flex-col'>
+                            <span>last year actual OP</span>
+                            <span className='text-3xl  font-semibold'>
+                              {budgetMarginSummary.lastYear.op.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className='flex flex-col items-end'>
+                            <span>current year budget OP</span>
+                            <span className='text-3xl font-semibold'>
+                              {budgetMarginSummary.budget.op.toFixed(1)}%
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className='mt-3 flex items-center justify-between text-xs text-gray-500'>
-                        <span>Last year</span>
-                        <span>Current year target</span>
                       </div>
                     </div>
                   )}

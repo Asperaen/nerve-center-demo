@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -21,6 +21,7 @@ export interface FunctionalPerformanceStage {
   delta?: number;
   type: 'baseline' | 'positive' | 'negative';
   isClickable?: boolean;
+  isReference?: boolean;
 }
 
 export type { BrokenAxisConfig };
@@ -34,6 +35,7 @@ interface FunctionalPerformanceWaterfallProps {
   description?: string;
   /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
   brokenAxis?: BrokenAxisConfig | 'auto';
+  footerContent?: ReactNode;
 }
 
 // Custom Y-axis tick component to emphasize zero
@@ -135,19 +137,50 @@ const BrokenBarShape = (props: {
   width?: number;
   height?: number;
   fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  strokeDasharray?: string | number;
   payload?: {
     type?: string;
     originalValue?: number;
     id?: string;
+    isReference?: boolean;
   };
   brokenAxis: BrokenAxisConfig;
 }) => {
-  const { x = 0, y = 0, width = 0, height = 0, fill, payload } = props;
+  const {
+    x = 0,
+    y = 0,
+    width = 0,
+    height = 0,
+    fill,
+    stroke,
+    strokeWidth,
+    strokeDasharray,
+    payload,
+  } = props;
 
   const isBaseline = payload?.type === 'baseline';
+  const isReference = payload?.isReference;
   const breakIndicatorHeight = 10;
   const minHeightForBreakIndicator = 40; // Minimum bar height to show break indicator
 
+  if (isReference) {
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill='transparent'
+        stroke={stroke ?? '#9ca3af'}
+        strokeWidth={strokeWidth ?? 2}
+        strokeDasharray={strokeDasharray ?? '4 4'}
+        rx={2}
+        ry={2}
+      />
+    );
+  }
   if (!isBaseline) {
     // Regular bar without break
     return (
@@ -243,8 +276,15 @@ export default function FunctionalPerformanceWaterfall({
   emphasisStageId,
   barSize = 26,
   brokenAxis: brokenAxisProp = 'auto',
+  footerContent,
 }: FunctionalPerformanceWaterfallProps) {
   const { formatAmount, currencyLabel } = useCurrency();
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [initiativeTooltip, setInitiativeTooltip] = useState<{
+    text: string;
+    left: number;
+    top: number;
+  } | null>(null);
   const formatAmountM = (value: number) =>
     `${formatAmount(value, {
       minimumFractionDigits: 1,
@@ -252,6 +292,55 @@ export default function FunctionalPerformanceWaterfall({
     })}M`;
   const formatAxisValue = (value: number) =>
     formatAmount(value, { maximumFractionDigits: 0 });
+  const initiativeStageIds = useMemo(
+    () =>
+      new Set([
+        'l3-deviation',
+        'l4-deviation',
+        'l5-deviation',
+        'dl-efficiency',
+        'idl-hc-gap',
+        'ga-variable-gap',
+        'ga-fixed-gap',
+        'rnd-fte',
+        'rnd-non-fte',
+      ]),
+    []
+  );
+  const initiativeTotal = useMemo(
+    () =>
+      stages
+        .filter((stage) => initiativeStageIds.has(stage.id))
+        .reduce((sum, stage) => sum + (stage.delta ?? 0), 0),
+    [initiativeStageIds, stages]
+  );
+  const showInitiativeTooltip = (
+    event: React.MouseEvent<SVGGElement>,
+    text: string
+  ) => {
+    const container = chartContainerRef.current;
+    if (!container) {
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const tooltipWidth = 220;
+    const tooltipHeight = 80;
+    const left = Math.min(
+      Math.max(x + 12, 8),
+      Math.max(8, rect.width - tooltipWidth - 8)
+    );
+    const top = Math.min(
+      Math.max(y - 12, 8),
+      Math.max(8, rect.height - tooltipHeight - 8)
+    );
+    setInitiativeTooltip({ text, left, top });
+  };
+
+  const hideInitiativeTooltip = () => {
+    setInitiativeTooltip(null);
+  };
   // Calculate effective broken axis config (auto-detect or use provided)
   const brokenAxis = useMemo(() => {
     if (brokenAxisProp === 'auto') {
@@ -262,9 +351,10 @@ export default function FunctionalPerformanceWaterfall({
   }, [brokenAxisProp, stages]);
 
   const chartData = useMemo(() => {
-    return stages.map((stage, index) => {
+    let lastNonReferenceValue = 0;
+    return stages.map((stage) => {
       const isAbsolute = stage.type === 'baseline';
-      const prevValue = index > 0 ? stages[index - 1].value : 0;
+      const prevValue = lastNonReferenceValue;
       const delta = stage.delta ?? 0;
 
       let baselineValue: number;
@@ -314,13 +404,17 @@ export default function FunctionalPerformanceWaterfall({
         }
       }
 
-      return {
+      const chartPoint = {
         ...stage,
         cumulativeValue: stage.value,
         originalValue: stage.value,
         baselineValue,
         barValue,
       };
+      if (!stage.isReference) {
+        lastNonReferenceValue = stage.value;
+      }
+      return chartPoint;
     });
   }, [stages, brokenAxis]);
 
@@ -400,7 +494,18 @@ export default function FunctionalPerformanceWaterfall({
         </div>
       </div>
       <p className='text-sm text-gray-500 mb-4'>{description}</p>
-      <div className='h-80'>
+      <div className='h-80 relative' ref={chartContainerRef}>
+        {initiativeTooltip && (
+          <div
+            className='absolute z-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg'
+            style={{
+              left: initiativeTooltip.left,
+              top: initiativeTooltip.top,
+              width: 220,
+            }}>
+            {initiativeTooltip.text}
+          </div>
+        )}
         <ResponsiveContainer width='100%' height='100%'>
           <ComposedChart data={chartData} margin={{ top: 25, right: 20, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray='3 3' />
@@ -409,11 +514,55 @@ export default function FunctionalPerformanceWaterfall({
             )}
             <XAxis
               dataKey='label'
-              tick={{ fontSize: 12 }}
               angle={-25}
               textAnchor='end'
               interval={0}
               height={110}
+              tick={(props) => {
+                const { x, y, payload, index } = props as {
+                  x?: number;
+                  y?: number;
+                  payload?: { value?: string };
+                  index?: number;
+                };
+                if (x === undefined || y === undefined || !payload) return null;
+                const stage = index !== undefined ? stages[index] : undefined;
+                const showGroupLabel =
+                  stage && initiativeStageIds.has(stage.id);
+                const groupLabel = showGroupLabel ? 'Initiative performance' : undefined;
+                return (
+                  <g
+                    transform={`rotate(-25, ${x}, ${y})`}
+                    onMouseEnter={(event) => {
+                      if (showGroupLabel && groupLabel) {
+                        showInitiativeTooltip(
+                          event,
+                          `Initiative total: ${formatAmountM(initiativeTotal)} ${currencyLabel}`
+                        );
+                      }
+                    }}
+                    onMouseLeave={hideInitiativeTooltip}
+                    style={{ cursor: showGroupLabel ? 'help' : 'default' }}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor='end'
+                      fill='#374151'
+                      fontSize={12}
+                    >
+                      <tspan x={x} dy={0}>
+                        {payload.value}
+                      </tspan>
+                      {groupLabel && (
+                        <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
+                          {groupLabel}
+                        </tspan>
+                      )}
+                    </text>
+                  </g>
+                );
+              }}
             />
             {brokenAxis ? (
               <YAxis
@@ -543,14 +692,20 @@ export default function FunctionalPerformanceWaterfall({
               />
               {stages.map((stage, index) => {
                 const isEmphasized = emphasisStageId === stage.id;
+                const isReference = stage.isReference;
                 return (
                   <Cell
                     key={`${stage.id}-${index}`}
-                    fill={getFillColor(stage)}
+                    fill={isReference ? 'transparent' : getFillColor(stage)}
                     style={{
                       cursor: stage.isClickable ? 'pointer' : 'default',
-                      stroke: isEmphasized ? '#1d4ed8' : 'none',
-                      strokeWidth: isEmphasized ? 3 : 0,
+                      stroke: isReference
+                        ? '#9ca3af'
+                        : isEmphasized
+                        ? '#1d4ed8'
+                        : 'none',
+                      strokeWidth: isReference ? 2 : isEmphasized ? 3 : 0,
+                      strokeDasharray: isReference ? '4 4' : undefined,
                       filter: isEmphasized
                         ? 'drop-shadow(0 4px 6px rgba(29, 78, 216, 0.35))'
                         : 'none',
@@ -567,6 +722,7 @@ export default function FunctionalPerformanceWaterfall({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      {footerContent && <div className='mt-3'>{footerContent}</div>}
     </div>
   );
 }
