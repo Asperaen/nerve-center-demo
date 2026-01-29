@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useCurrency } from '../contexts/CurrencyContext';
 import type { BudgetForecastStage } from '../types';
 import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
 
@@ -23,9 +24,12 @@ interface BudgetForecastActualWaterfallProps {
   highlightedStageColor?: string; // Custom color for highlighted stage bar
   colorByDelta?: boolean;
   hideLegend?: boolean;
+  showPreliminaryLegend?: boolean;
   tooltipContent?: (stage: BudgetForecastStage) => ReactNode | null;
   /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
   brokenAxis?: BrokenAxisConfig | 'auto';
+  labelDefinitions?: Record<string, string>;
+  splitNonPrimaryBars?: boolean;
 }
 
 // Custom Y-axis tick component with break indicator
@@ -35,12 +39,14 @@ const BrokenAxisTick = ({
   payload,
   brokenAxis,
   index,
+  formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
   brokenAxis: BrokenAxisConfig;
   index?: number;
+  formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
   const { value } = payload;
@@ -51,10 +57,14 @@ const BrokenAxisTick = ({
   const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
   const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
 
+  const displayValue = formatValue
+    ? formatValue(actualValue)
+    : actualValue.toFixed(0);
+
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={0} y={0} dy={4} textAnchor='end' fill='#666' fontSize={12}>
-        {actualValue.toFixed(0)}
+        {displayValue}
       </text>
       {shouldShowBreak && (
         <g transform='translate(8, 12)'>
@@ -156,10 +166,57 @@ export default function BudgetForecastActualWaterfall({
   highlightedStageColor,
   colorByDelta = false,
   hideLegend = false,
+  showPreliminaryLegend = true,
   tooltipContent,
   brokenAxis: brokenAxisProp = 'auto',
+  labelDefinitions,
+  splitNonPrimaryBars = false,
 }: BudgetForecastActualWaterfallProps) {
   const navigate = useNavigate();
+  const { formatAmount, currencyLabel } = useCurrency();
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [definitionTooltip, setDefinitionTooltip] = useState<{
+    text: string;
+    left: number;
+    top: number;
+  } | null>(null);
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
+  const formatAxisValue = (value: number) =>
+    formatAmount(value, { maximumFractionDigits: 0 });
+  const formatLabelValue = (value: number) =>
+    formatAmount(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  const showDefinitionTooltip = (
+    event: React.MouseEvent<SVGGElement>,
+    text: string
+  ) => {
+    const container = chartContainerRef.current;
+    if (!container) {
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const tooltipWidth = 280;
+    const tooltipHeight = 120;
+    const left = Math.min(
+      Math.max(x + 12, 8),
+      Math.max(8, rect.width - tooltipWidth - 8)
+    );
+    const top = Math.min(
+      Math.max(y - 12, 8),
+      Math.max(8, rect.height - tooltipHeight - 8)
+    );
+    setDefinitionTooltip({ text, left, top });
+  };
+
+  const hideDefinitionTooltip = () => {
+    setDefinitionTooltip(null);
+  };
 
   // Calculate effective broken axis config (auto-detect or use provided)
   const brokenAxis = useMemo(() => {
@@ -170,15 +227,21 @@ export default function BudgetForecastActualWaterfall({
     return brokenAxisProp;
   }, [brokenAxisProp, stages]);
 
+  const isPrimaryStage = (stage: BudgetForecastStage) =>
+    stage.stage === 'budget' ||
+    stage.stage === 'forecast' ||
+    stage.stage === 'forecast-with-early';
+
   // Prepare chart data for waterfall visualization
   const chartData = useMemo(() => {
     return stages.map((stage, index) => {
       const isAbsolute = stage.type === 'baseline';
       const prevValue = index > 0 ? stages[index - 1].value : 0;
       const delta = stage.delta ?? 0;
+      const signedBarValue = isAbsolute ? stage.value : delta;
 
       let baselineValue: number;
-      let barValue: number;
+      let barValueTotal: number;
 
       if (brokenAxis) {
         const { skipRangeStart, skipRangeEnd } = brokenAxis;
@@ -188,22 +251,55 @@ export default function BudgetForecastActualWaterfall({
 
         if (isAbsolute) {
           baselineValue = 0;
-          barValue = transformValue(stage.value);
+          barValueTotal = transformValue(stage.value);
         } else {
           const transformedPrev = transformValue(prevValue);
           const transformedCurrent = transformValue(stage.value);
           if (delta < 0) {
             baselineValue = transformedCurrent;
-            barValue = Math.abs(delta);
+            barValueTotal = Math.abs(delta);
           } else {
             baselineValue = transformedPrev;
-            barValue = delta;
+            barValueTotal = delta;
           }
         }
       } else {
         baselineValue = isAbsolute ? 0 : prevValue;
-        barValue = isAbsolute ? stage.value : delta;
+        barValueTotal = signedBarValue;
       }
+
+      const totalMagnitude = Math.abs(barValueTotal);
+      const isEarlySignals = stage.stage === 'early-signals';
+      const shouldSplit =
+        splitNonPrimaryBars &&
+        !isAbsolute &&
+        !isPrimaryStage(stage) &&
+        !isEarlySignals;
+      const forecastRatio =
+        typeof stage.forecastSplit === 'number' ? stage.forecastSplit : 0.5;
+      const splitBase = brokenAxis ? totalMagnitude : barValueTotal;
+      const splitSign = splitBase >= 0 ? 1 : -1;
+      const splitMagnitude = Math.abs(splitBase);
+      const minSegment = Math.min(0.1, splitMagnitude / 2);
+      const baseForecast = splitMagnitude * forecastRatio;
+      let forecastMagnitude = baseForecast;
+      let realizedMagnitude = splitMagnitude - forecastMagnitude;
+      if (shouldSplit && splitMagnitude > 0) {
+        if (forecastMagnitude < minSegment) {
+          forecastMagnitude = minSegment;
+          realizedMagnitude = splitMagnitude - forecastMagnitude;
+        }
+        if (realizedMagnitude < minSegment) {
+          realizedMagnitude = minSegment;
+          forecastMagnitude = splitMagnitude - realizedMagnitude;
+        }
+      }
+      const barValueForecast = shouldSplit
+        ? Math.round(forecastMagnitude * splitSign * 100) / 100
+        : 0;
+      const barValueRealized = shouldSplit
+        ? Math.round(realizedMagnitude * splitSign * 100) / 100
+        : splitBase;
 
       return {
         ...stage,
@@ -211,11 +307,13 @@ export default function BudgetForecastActualWaterfall({
         cumulativeValue: stage.value,
         delta: stage.delta ?? stage.value,
         baselineValue,
-        barValue,
+        barValueTotal: splitBase,
+        barValueForecast,
+        barValueRealized,
         isPositive: (stage.delta ?? stage.value) >= 0,
       };
     });
-  }, [stages, brokenAxis]);
+  }, [stages, brokenAxis, splitNonPrimaryBars]);
 
   const handleBarClick = (stage: BudgetForecastStage) => {
     if (onStageClick) {
@@ -227,23 +325,61 @@ export default function BudgetForecastActualWaterfall({
     }
   };
 
-  // Get fill color based on stage type
-  const getFillColor = (stage: BudgetForecastStage): string => {
+  const getSegmentFillColor = (
+    stage: BudgetForecastStage,
+    segment: 'forecast' | 'realized'
+  ): string => {
+    const isEarlySignals = stage.stage === 'early-signals';
+    const isPrimary = isPrimaryStage(stage);
     // Use custom color for highlighted stage if provided
     if (highlightedStageColor && highlightedStage === stage.stage) {
       return highlightedStageColor;
     }
-    // Always use green/red/gray based on stage type, even for highlighted
-    if (stage.type === 'baseline') {
+    if (isEarlySignals) {
+      return 'transparent';
+    }
+    // Always use gray for primary/baseline bars
+    if (stage.type === 'baseline' || isPrimary) {
       return '#6b7280'; // gray-500 for baseline/absolute bars
     }
-    if (stage.type === 'preliminary') {
-      return '#ffffff'; // white fill for preliminary bars
+    const isFavorable = colorByDelta
+      ? (stage.delta ?? stage.value) >= 0
+      : stage.type === 'positive';
+    if (isFavorable) {
+      return segment === 'forecast' ? '#bbf7d0' : '#16a34a';
     }
-    if (colorByDelta) {
-      return (stage.delta ?? stage.value) >= 0 ? '#10b981' : '#ef4444';
+    return segment === 'forecast' ? '#fecaca' : '#dc2626';
+  };
+
+  const getLegacyFillColor = (stage: BudgetForecastStage): string => {
+    if (highlightedStageColor && highlightedStage === stage.stage) {
+      return highlightedStageColor;
     }
-    return stage.type === 'positive' ? '#10b981' : '#ef4444'; // opportunity green / risk red
+    if (stage.stage === 'early-signals') {
+      return 'transparent';
+    }
+    if (stage.type === 'baseline' || isPrimaryStage(stage)) {
+      return '#6b7280';
+    }
+    const isFavorable = colorByDelta
+      ? (stage.delta ?? stage.value) >= 0
+      : stage.type === 'positive';
+    return isFavorable ? '#10b981' : '#ef4444';
+  };
+
+  const getSegmentStrokeColor = (stage: BudgetForecastStage): string => {
+    const isEarlySignals = stage.stage === 'early-signals';
+    const isPrimary = isPrimaryStage(stage);
+    if (stage.type === 'baseline' || isPrimary) {
+      return '#4b5563';
+    }
+    if (isEarlySignals) {
+      return '#111827';
+    }
+    const isFavorable = colorByDelta
+      ? (stage.delta ?? stage.value) >= 0
+      : stage.type === 'positive';
+    return isFavorable ? '#166534' : '#991b1b';
   };
 
   // Check if a stage is highlighted
@@ -268,21 +404,44 @@ export default function BudgetForecastActualWaterfall({
               <div className='w-3 h-3 rounded-full bg-risk-500'></div>
               <span className='text-sm text-gray-700'>Adverse</span>
             </div>
-            <div className='flex items-center gap-2'>
-              <div className='w-3 h-3 rounded border border-gray-900 bg-white'></div>
-              <span className='text-sm text-gray-700'>Preliminary</span>
-            </div>
+            {showPreliminaryLegend && (
+              <div className='flex items-center gap-2'>
+                <div className='w-3 h-3 rounded border border-gray-900 bg-white'></div>
+                <span className='text-sm text-gray-700'>Preliminary</span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className='h-96'>
+      <div className='h-96 relative' ref={chartContainerRef}>
+        {definitionTooltip && (
+          <div
+            className='absolute z-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg'
+            style={{
+              left: definitionTooltip.left,
+              top: definitionTooltip.top,
+              width: 280,
+            }}>
+            {definitionTooltip.text}
+          </div>
+        )}
         <ResponsiveContainer
           width='100%'
           height='100%'>
           <ComposedChart data={chartData}>
+            <defs>
+              <linearGradient id='favorableGradient' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset='0%' stopColor='#bbf7d0' />
+                <stop offset='100%' stopColor='#16a34a' />
+              </linearGradient>
+              <linearGradient id='adverseGradient' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset='0%' stopColor='#fecaca' />
+                <stop offset='100%' stopColor='#dc2626' />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray='3 3' />
-            <XAxis
+              <XAxis
               dataKey='label'
               angle={-15}
               textAnchor='end'
@@ -295,51 +454,100 @@ export default function BudgetForecastActualWaterfall({
                   highlightedStage && stage?.stage === highlightedStage;
                 const groupLabel =
                   stage?.stage === 'l3-vs-target' ||
-                  stage?.stage === 'l4-vs-planned'
+                  stage?.stage === 'l4-vs-planned' ||
+                  stage?.stage === 'l4-to-l5-leakage'
                     ? 'Initiative performance'
                     : undefined;
+                  const definition =
+                    stage?.stage && labelDefinitions
+                      ? labelDefinitions[stage.stage]
+                      : undefined;
                 return (
-                  <text
-                    x={x}
-                    y={y}
-                    textAnchor='end'
-                    transform={`rotate(-15, ${x}, ${y})`}
-                    style={{
-                      fontSize: isHighlightedLabel ? '13px' : '11px',
-                      fill: isHighlightedLabel
-                        ? '#111827'
-                        : isClickable
-                        ? '#1f2937'
-                        : '#374151',
-                      fontWeight: isHighlightedLabel
-                        ? '800'
-                        : isClickable
-                        ? 'bold'
-                        : 'normal',
-                      cursor: isClickable ? 'pointer' : 'default',
-                    }}>
-                    <tspan x={x} dy={0}>
-                      {payload.value}
-                      {isHighlightedLabel && ' ★'}
-                    </tspan>
-                    {groupLabel && (
-                      <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
-                        {groupLabel}
-                      </tspan>
-                    )}
-                  </text>
+                    <g
+                      transform={`rotate(-15, ${x}, ${y})`}
+                      style={{
+                        pointerEvents: 'all',
+                        cursor: definition ? 'help' : 'default',
+                      }}
+                      onMouseEnter={(event) => {
+                        if (definition) {
+                          showDefinitionTooltip(event, definition);
+                        }
+                      }}
+                      onMouseLeave={hideDefinitionTooltip}>
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor='end'
+                        style={{
+                          fontSize: isHighlightedLabel ? '13px' : '11px',
+                          fill: isHighlightedLabel
+                            ? '#111827'
+                            : isClickable
+                            ? '#1f2937'
+                            : '#374151',
+                          fontWeight: isHighlightedLabel
+                            ? '800'
+                            : isClickable
+                            ? 'bold'
+                            : 'normal',
+                          cursor: isClickable ? 'pointer' : 'default',
+                        }}>
+                        <tspan x={x} dy={0}>
+                          {payload.value}
+                          {isHighlightedLabel && ' ★'}
+                          {definition && <title>{definition}</title>}
+                        </tspan>
+                        {groupLabel && (
+                          <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
+                            {groupLabel}
+                          </tspan>
+                        )}
+                      </text>
+                      {definition && (
+                        <>
+                          <circle
+                            cx={(x ?? 0)}
+                            cy={(y ?? 0) + 14}
+                            r={6}
+                            fill='#e5e7eb'
+                            stroke='#6b7280'
+                            strokeWidth={1}
+                            style={{ cursor: 'help' }}>
+                          </circle>
+                          <text
+                            x={(x ?? 0)}
+                            y={(y ?? 0) + 17}
+                            textAnchor='middle'
+                            fontSize={9}
+                            fontWeight={700}
+                            fill='#374151'
+                            style={{ cursor: 'help' }}>
+                            i
+                          </text>
+                        </>
+                      )}
+                    </g>
                 );
               }}
             />
             {brokenAxis ? (
               <YAxis
-                tick={(props) => <BrokenAxisTick {...props} brokenAxis={brokenAxis} />}
+                tick={(props) => (
+                  <BrokenAxisTick
+                    {...props}
+                    brokenAxis={brokenAxis}
+                    formatValue={formatAxisValue}
+                  />
+                )}
                 domain={[
                   0,
-                  Math.max(...stages.map((s) => s.value)) - brokenAxis.skipRangeEnd + 50,
+                  Math.max(...stages.map((s) => s.value)) -
+                    brokenAxis.skipRangeEnd +
+                    50,
                 ]}
                 label={{
-                  value: 'Value (M USD)',
+                  value: `Value (M ${currencyLabel})`,
                   angle: -90,
                   position: 'insideLeft',
                   style: { fontSize: '12px' },
@@ -347,9 +555,10 @@ export default function BudgetForecastActualWaterfall({
               />
             ) : (
               <YAxis
+                tickFormatter={formatAxisValue}
                 style={{ fontSize: '12px' }}
                 label={{
-                  value: 'Value (M USD)',
+                  value: `Value (M ${currencyLabel})`,
                   angle: -90,
                   position: 'insideLeft',
                   style: { fontSize: '12px' },
@@ -367,6 +576,8 @@ export default function BudgetForecastActualWaterfall({
                   cumulativeValue?: number;
                   delta?: number;
                   isClickable?: boolean;
+                  barValueForecast?: number;
+                  barValueRealized?: number;
                 };
                 if (!payload) {
                   return null;
@@ -376,6 +587,13 @@ export default function BudgetForecastActualWaterfall({
                 const cumulative = payload.cumulativeValue ?? stage.value;
                 const delta = payload.delta ?? stage.delta ?? stage.value;
                 const isClickable = payload.isClickable ?? stage.isClickable;
+                const isPrimary =
+                  stage.stage === 'budget' ||
+                  stage.stage === 'forecast' ||
+                  stage.stage === 'forecast-with-early';
+                const isEarlySignals = stage.stage === 'early-signals';
+                const shouldShowSplit =
+                  splitNonPrimaryBars && !isPrimary && !isEarlySignals && stage.type !== 'baseline';
                 const customContent = tooltipContent?.(stage);
 
                 return (
@@ -385,12 +603,26 @@ export default function BudgetForecastActualWaterfall({
                       <div className='mt-2'>{customContent}</div>
                     ) : (
                       <>
-                        <p className='mt-1'>Value: ${cumulative.toFixed(1)}M</p>
+                        <p className='mt-1'>
+                          Value: {formatAmountM(cumulative)} {currencyLabel}
+                        </p>
                         {delta !== cumulative && (
                           <p>
                             Change: {delta > 0 ? '+' : ''}
-                            ${delta.toFixed(1)}M
+                            {formatAmountM(delta)} {currencyLabel}
                           </p>
+                        )}
+                        {shouldShowSplit && (
+                          <div className='mt-1 text-[11px] text-gray-600'>
+                            <div>
+                              Forecast: {formatAmountM(Math.abs(payload.barValueForecast ?? 0))}{' '}
+                              {currencyLabel}
+                            </div>
+                            <div>
+                              Realized: {formatAmountM(Math.abs(payload.barValueRealized ?? 0))}{' '}
+                              {currencyLabel}
+                            </div>
+                          </div>
                         )}
                       </>
                     )}
@@ -411,25 +643,87 @@ export default function BudgetForecastActualWaterfall({
               fillOpacity={0}
               style={{ pointerEvents: 'none' }}
             />
-            {/* Actual value bars */}
-            <Bar
-              dataKey='barValue'
-              stackId='a'
-              name='Budget Forecast Actual'
-              onClick={(data) => {
-                const payload = (data as { payload?: BudgetForecastStage }).payload;
-                if (payload) {
-                  handleBarClick(payload);
-                }
-              }}
-              shape={
-                brokenAxis
-                  ? (props: unknown) => <BrokenBarShape {...(props as Record<string, unknown>)} brokenAxis={brokenAxis} />
-                  : undefined
-              }
-            >
+            {splitNonPrimaryBars ? (
+              <>
+                {/* Forecast portion of delta */}
+                <Bar
+                  dataKey='barValueForecast'
+                  stackId='a'
+                  name='Forecast portion'
+                  onClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarClick(payload);
+                    }
+                  }}
+                  shape={
+                    brokenAxis
+                      ? (props: unknown) => (
+                          <BrokenBarShape
+                            {...(props as Record<string, unknown>)}
+                            brokenAxis={brokenAxis}
+                          />
+                        )
+                      : undefined
+                  }
+                >
+                  {stages.map((stage, index) => {
+                    const highlighted = isHighlighted(stage);
+                    const strokeColor =
+                      stage.isClickable || onStageClick
+                        ? getSegmentStrokeColor(stage)
+                        : 'none';
+                    const shadowColor =
+                      stage.type === 'positive'
+                        ? 'rgba(22, 163, 74, 0.4)'
+                        : stage.type === 'negative'
+                        ? 'rgba(220, 38, 38, 0.4)'
+                        : 'rgba(107, 114, 128, 0.4)';
+                    return (
+                      <Cell
+                        key={`cell-forecast-${index}`}
+                        fill={getSegmentFillColor(stage, 'forecast')}
+                        stroke={strokeColor}
+                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeDasharray={
+                          stage.stage === 'early-signals' ? '4 2' : undefined
+                        }
+                        style={{
+                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          filter: highlighted
+                            ? `drop-shadow(0 4px 6px ${shadowColor})`
+                            : 'none',
+                        }}
+                        onClick={() => handleBarClick(stage)}
+                      />
+                    );
+                  })}
+                </Bar>
+                {/* Realized portion of delta */}
+                <Bar
+                  dataKey='barValueRealized'
+                  stackId='a'
+                  name='Realized portion'
+                  onClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarClick(payload);
+                    }
+                  }}
+                  shape={
+                    brokenAxis
+                      ? (props: unknown) => (
+                          <BrokenBarShape
+                            {...(props as Record<string, unknown>)}
+                            brokenAxis={brokenAxis}
+                          />
+                        )
+                      : undefined
+                  }
+                >
               <LabelList
-                dataKey='delta'
+                dataKey='barValueTotal'
                 position='middle'
                 content={(props) => {
                   const { x, y, width, height, value, index } = props as {
@@ -440,28 +734,196 @@ export default function BudgetForecastActualWaterfall({
                     value?: number;
                     index?: number;
                   };
-                  if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
-                  
-                  const stage = stages[index];
-                  const isBaseline = stage?.type === 'baseline';
-                  const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
-                  const displayValue = numericValue.toFixed(0);
-                  const barHeight = height ?? 0;
-                  const barY = y ?? 0;
-                  
-                  // Minimum bar height to fit text inside (in pixels)
-                  const minHeightForInside = 12;
-                  const canFitInside = barHeight >= minHeightForInside;
-                  
-                  // Baseline bars: show label inside if it fits, otherwise above
-                  if (isBaseline) {
-                    if (canFitInside) {
+                      if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
+                      
+                      const stage = stages[index];
+                      const isBaseline = stage?.type === 'baseline';
+                  const numericValue =
+                    typeof value === 'number' ? value : Number(value ?? 0);
+                      const displayValue = formatLabelValue(numericValue);
+                      const barHeight = height ?? 0;
+                      const barY = y ?? 0;
+                      
+                      const minHeightForInside = 12;
+                      const canFitInside = barHeight >= minHeightForInside;
+                      
+                      if (isBaseline) {
+                        if (canFitInside) {
+                          return (
+                            <text
+                              x={x + (width ?? 0) / 2}
+                              y={barY + barHeight / 2 + 4}
+                              textAnchor='middle'
+                              fill='white'
+                              fontSize={11}
+                              fontWeight='bold'
+                            >
+                              {displayValue}
+                            </text>
+                          );
+                        }
+                        const baselineOffset = 14 + Math.max(0, 10 - barHeight);
+                        return (
+                          <text
+                            x={x + (width ?? 0) / 2}
+                            y={barY - baselineOffset}
+                            textAnchor='middle'
+                            fill='#4b5563'
+                            fontSize={11}
+                            fontWeight='bold'
+                          >
+                            {displayValue}
+                          </text>
+                        );
+                      }
+                      
+                      const insideLabelY = barY + barHeight / 2 + 4;
+                      const baseOffset = 14;
+                      const extraClearance = Math.max(0, 10 - barHeight);
+                      const outsideLabelY = barY - baseOffset - extraClearance;
+                      
+                      if (canFitInside) {
+                        const insideColor =
+                          stage?.stage === 'early-signals' ? '#111827' : 'white';
+                        return (
+                          <text
+                            x={x + (width ?? 0) / 2}
+                            y={insideLabelY}
+                            textAnchor='middle'
+                            fill={insideColor}
+                            fontSize={11}
+                            fontWeight='bold'
+                          >
+                            {displayValue}
+                          </text>
+                        );
+                      }
+                      
+                      const outsideColor =
+                        stage?.stage === 'early-signals'
+                          ? '#6b7280'
+                          : stage?.type === 'positive'
+                          ? '#166534'
+                          : stage?.type === 'negative'
+                          ? '#991b1b'
+                          : '#4b5563';
                       return (
                         <text
                           x={x + (width ?? 0) / 2}
-                          y={barY + barHeight / 2 + 4}
+                          y={outsideLabelY}
                           textAnchor='middle'
-                          fill='white'
+                          fill={outsideColor}
+                          fontSize={11}
+                          fontWeight='bold'
+                        >
+                          {displayValue}
+                        </text>
+                      );
+                    }}
+                  />
+                  {stages.map((stage, index) => {
+                    const highlighted = isHighlighted(stage);
+                    const strokeColor =
+                      stage.isClickable || onStageClick
+                        ? getSegmentStrokeColor(stage)
+                        : 'none';
+                    const shadowColor =
+                      stage.type === 'positive'
+                        ? 'rgba(22, 163, 74, 0.5)'
+                        : stage.type === 'negative'
+                        ? 'rgba(220, 38, 38, 0.5)'
+                        : 'rgba(107, 114, 128, 0.5)';
+                    return (
+                      <Cell
+                        key={`cell-realized-${index}`}
+                        fill={getSegmentFillColor(stage, 'realized')}
+                        stroke={strokeColor}
+                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeDasharray={
+                          stage.stage === 'early-signals' ? '4 2' : undefined
+                        }
+                        style={{
+                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          filter: highlighted
+                            ? `drop-shadow(0 4px 6px ${shadowColor})`
+                            : 'none',
+                        }}
+                        onClick={() => handleBarClick(stage)}
+                      />
+                    );
+                  })}
+                </Bar>
+              </>
+            ) : (
+              <Bar
+                dataKey='barValueTotal'
+                stackId='a'
+                name='Budget Forecast Actual'
+                onClick={(data) => {
+                  const payload = (data as { payload?: BudgetForecastStage }).payload;
+                  if (payload) {
+                    handleBarClick(payload);
+                  }
+                }}
+                shape={
+                  brokenAxis
+                    ? (props: unknown) => (
+                        <BrokenBarShape
+                          {...(props as Record<string, unknown>)}
+                          brokenAxis={brokenAxis}
+                        />
+                      )
+                    : undefined
+                }
+              >
+                <LabelList
+                  dataKey='barValueTotal'
+                  position='middle'
+                  content={(props) => {
+                    const { x, y, width, height, value, index } = props as {
+                      x?: number;
+                      y?: number;
+                      width?: number;
+                      height?: number;
+                      value?: number;
+                      index?: number;
+                    };
+                    if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
+                    
+                    const stage = stages[index];
+                    const isBaseline = stage?.type === 'baseline';
+                    const numericValue =
+                      typeof value === 'number' ? value : Number(value ?? 0);
+                    const displayValue = formatLabelValue(numericValue);
+                    const barHeight = height ?? 0;
+                    const barY = y ?? 0;
+                    
+                    const minHeightForInside = 12;
+                    const canFitInside = barHeight >= minHeightForInside;
+                    
+                    if (isBaseline) {
+                      if (canFitInside) {
+                        return (
+                          <text
+                            x={x + (width ?? 0) / 2}
+                            y={barY + barHeight / 2 + 4}
+                            textAnchor='middle'
+                            fill='white'
+                            fontSize={11}
+                            fontWeight='bold'
+                          >
+                            {displayValue}
+                          </text>
+                        );
+                      }
+                      const baselineOffset = 14 + Math.max(0, 10 - barHeight);
+                      return (
+                        <text
+                          x={x + (width ?? 0) / 2}
+                          y={barY - baselineOffset}
+                          textAnchor='middle'
+                          fill='#4b5563'
                           fontSize={11}
                           fontWeight='bold'
                         >
@@ -469,133 +931,113 @@ export default function BudgetForecastActualWaterfall({
                         </text>
                       );
                     }
-                    // Dynamic offset for baseline labels above bar
-                    const baselineOffset = 14 + Math.max(0, 10 - barHeight);
-                    return (
-                      <text
-                        x={x + (width ?? 0) / 2}
-                        y={barY - baselineOffset}
-                        textAnchor='middle'
-                        fill='#4b5563'
-                        fontSize={11}
-                        fontWeight='bold'
-                      >
-                        {displayValue}
-                      </text>
-                    );
-                  }
-                  
-                  // Calculate label position - always center it in the bar
-                  const insideLabelY = barY + barHeight / 2 + 4;
-                  
-                  // Calculate outside position (above bar for all delta bars)
-                  // Dynamic offset: base offset (14px for text) + extra clearance for short bars
-                  const baseOffset = 14;
-                  const extraClearance = Math.max(0, 10 - barHeight); // Add more offset for very short bars
-                  const outsideLabelY = barY - baseOffset - extraClearance;
-                  
-                  // Determine if label should be inside or outside
-                  // If bar is tall enough, put label inside with white text
-                  // Otherwise, put label outside with colored text
-                  if (canFitInside) {
-                    const insideColor =
-                      stage?.type === 'preliminary' ? '#111827' : 'white';
-                    // Label inside bar - default to white text for contrast
-                    return (
-                      <text
-                        x={x + (width ?? 0) / 2}
-                        y={insideLabelY}
-                        textAnchor='middle'
-                        fill={insideColor}
-                        fontSize={11}
-                        fontWeight='bold'
-                      >
-                        {displayValue}
-                      </text>
-                    );
-                  }
-                  
-                  // Label outside bar - use colored text matching bar type
-                  const labelColor =
-                    stage?.type === 'preliminary'
-                      ? '#111827'
-                      : stage?.type === 'positive'
-                      ? '#059669'
-                      : '#dc2626';
-                  return (
-                    <text
-                      x={x + (width ?? 0) / 2}
-                      y={outsideLabelY}
-                      textAnchor='middle'
-                      fill={labelColor}
-                      fontSize={11}
-                      fontWeight='bold'
-                    >
-                      {displayValue}
-                    </text>
-                  );
-                }}
-              />
-              {stages.map((stage, index) => {
-                const fillColor = getFillColor(stage);
-                const highlighted = isHighlighted(stage);
-                // Use a darker shade of the fill color for stroke instead of blue
-                const getDarkerColor = () => {
-                  if (stage.type === 'baseline') return '#4b5563'; // darker gray
-                  if (stage.type === 'preliminary') return '#111827'; // gray-900
-                  return stage.type === 'positive' ? '#059669' : '#dc2626'; // darker green or red
-                };
-                const strokeColor =
-                  stage.type === 'preliminary'
-                    ? '#111827'
-                    : stage.isClickable || onStageClick
-                    ? getDarkerColor()
-                    : 'none';
-                // Shadow color matches the bar type
-                const shadowColor = stage.type === 'positive' 
-                  ? 'rgba(16, 185, 129, 0.5)' // green shadow
-                  : stage.type === 'negative'
-                    ? 'rgba(239, 68, 68, 0.5)' // red shadow
-                    : 'rgba(107, 114, 128, 0.5)'; // gray shadow
-
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={fillColor}
-                    stroke={strokeColor}
-                    strokeWidth={
-                      highlighted
-                        ? 4
-                        : stage.type === 'preliminary'
-                        ? 2
-                        : stage.isClickable
-                        ? 2
-                        : 0
+                    
+                    const insideLabelY = barY + barHeight / 2 + 4;
+                    const baseOffset = 14;
+                    const extraClearance = Math.max(0, 10 - barHeight);
+                    const outsideLabelY = barY - baseOffset - extraClearance;
+                    
+                    if (canFitInside) {
+                      const insideColor =
+                        stage?.stage === 'early-signals' ? '#111827' : 'white';
+                      return (
+                        <text
+                          x={x + (width ?? 0) / 2}
+                          y={insideLabelY}
+                          textAnchor='middle'
+                          fill={insideColor}
+                          fontSize={11}
+                          fontWeight='bold'
+                        >
+                          {displayValue}
+                        </text>
+                      );
                     }
-                    strokeDasharray={stage.type === 'preliminary' ? '4 2' : undefined}
-                    style={{
-                      cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
-                      opacity:
-                        highlighted || stage.isClickable || onStageClick ? 1 : 0.9,
-                      filter: highlighted
-                        ? `drop-shadow(0 4px 6px ${shadowColor})`
-                        : 'none',
-                    }}
-                    onClick={() => handleBarClick(stage)}
-                    onMouseEnter={(e) => {
-                      if (stage.isClickable && !highlighted) {
-                        (e.currentTarget as SVGElement).style.opacity = '0.8';
+                    
+                    const outsideColor =
+                      stage?.stage === 'early-signals'
+                        ? '#6b7280'
+                        : stage?.type === 'positive'
+                        ? '#059669'
+                        : stage?.type === 'negative'
+                        ? '#dc2626'
+                        : '#4b5563';
+                    return (
+                      <text
+                        x={x + (width ?? 0) / 2}
+                        y={outsideLabelY}
+                        textAnchor='middle'
+                        fill={outsideColor}
+                        fontSize={11}
+                        fontWeight='bold'
+                      >
+                        {displayValue}
+                      </text>
+                    );
+                  }}
+                />
+                {stages.map((stage, index) => {
+                  const fillColor = getLegacyFillColor(stage);
+                  const highlighted = isHighlighted(stage);
+                  const getDarkerColor = () => {
+                    if (stage.type === 'baseline') return '#4b5563';
+                    if (stage.stage === 'early-signals') return '#111827';
+                    return stage.type === 'positive' ? '#059669' : '#dc2626';
+                  };
+                  const strokeColor =
+                    stage.stage === 'early-signals'
+                      ? '#111827'
+                      : stage.isClickable || onStageClick
+                      ? getDarkerColor()
+                      : 'none';
+                  const shadowColor =
+                    stage.type === 'positive'
+                      ? 'rgba(16, 185, 129, 0.5)'
+                      : stage.type === 'negative'
+                      ? 'rgba(239, 68, 68, 0.5)'
+                      : 'rgba(107, 114, 128, 0.5)';
+
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={fillColor}
+                      stroke={strokeColor}
+                      strokeWidth={
+                        highlighted
+                          ? 4
+                          : stage.stage === 'early-signals'
+                          ? 2
+                          : stage.isClickable
+                          ? 2
+                          : 0
                       }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (stage.isClickable && !highlighted) {
-                        (e.currentTarget as SVGElement).style.opacity = '1';
+                      strokeDasharray={
+                        stage.stage === 'early-signals' ? '4 2' : undefined
                       }
-                    }}
-                  />
-                );
-              })}
-            </Bar>
+                      style={{
+                        cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                        opacity:
+                          highlighted || stage.isClickable || onStageClick ? 1 : 0.9,
+                        filter: highlighted
+                          ? `drop-shadow(0 4px 6px ${shadowColor})`
+                          : 'none',
+                      }}
+                      onClick={() => handleBarClick(stage)}
+                      onMouseEnter={(e) => {
+                        if (stage.isClickable && !highlighted) {
+                          (e.currentTarget as SVGElement).style.opacity = '0.8';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (stage.isClickable && !highlighted) {
+                          (e.currentTarget as SVGElement).style.opacity = '1';
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </Bar>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>

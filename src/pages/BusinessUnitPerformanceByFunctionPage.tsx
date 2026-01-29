@@ -5,6 +5,7 @@ import FunctionalPerformanceWaterfall, {
   type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
 import { useBudgets } from '../contexts/BudgetContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
 import { getStoredTimeframe } from '../utils/timeframeStorage';
@@ -18,15 +19,246 @@ const normalizeBu = (value: string) =>
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const toMillions = (value: number) => value / 1_000;
 
-const formatMn = (value: number) => {
-  const sign = value < 0 ? '-' : '';
-  return `${sign}${Math.abs(value).toFixed(1)}M`;
+type DeviationDataset = {
+  baselineSpend: number;
+  targetSpend: number;
+  volumeChange: number;
+  fxImpact: number;
+  l3GapVsTarget: number;
+  l4GapVsTarget: number;
+  l5GapVsTarget: number;
+  actualSpend: number;
+  category: string;
+}
+
+const hashString = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
+
+const mulberry32 = (seed: number) => {
+  let state = seed;
+  return () => {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+export const generateDeviationDataset = (
+  budgetLineValueForSelectedBUs: number,
+  actualLineValueForSelectedBUs: number,
+  seedKey: string
+): DeviationDataset[] => {
+  const normalizedSeed = seedKey.toLowerCase();
+  const isHhDeGroup =
+    normalizedSeed.includes('hh') &&
+    (normalizedSeed.includes('d/e') ||
+      normalizedSeed.includes('d-e') ||
+      normalizedSeed.includes('de'));
+  const rng = mulberry32(hashString(seedKey));
+  const randomBetween = (min: number, max: number) =>
+    min + rng() * (max - min);
+  const distributeTotal = (total: number, count: number) => {
+    const weights = Array.from({ length: count }, () => randomBetween(0.7, 1.3));
+    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+    const values = weights.map((weight) => (weight / weightSum) * total);
+    const rounded = values.map((value) => roundToOne(value));
+    const roundedSum = rounded.slice(0, -1).reduce((sum, value) => sum + value, 0);
+    rounded[rounded.length - 1] = roundToOne(total - roundedSum);
+    return rounded;
+  };
+  const distributeDelta = (delta: number) => {
+    const positiveCount = 3;
+    const negativeCount = 2;
+    const positives = Array.from({ length: positiveCount }, () =>
+      randomBetween(0.3, 1.4)
+    );
+    const negatives = Array.from({ length: negativeCount }, () =>
+      randomBetween(0.3, 1.4)
+    );
+    let posSum = positives.reduce((sum, value) => sum + value, 0);
+    let negSum = negatives.reduce((sum, value) => sum + value, 0);
+    if (delta >= 0 && posSum <= negSum) {
+      posSum = negSum + randomBetween(0.5, 1.2);
+    }
+    if (delta < 0 && negSum <= posSum) {
+      negSum = posSum + randomBetween(0.5, 1.2);
+    }
+    const signedSum = posSum - negSum;
+    const scale = signedSum === 0 ? 0 : delta / signedSum;
+    const raw = [
+      positives[0] * scale,
+      positives[1] * scale,
+      positives[2] * scale,
+      -negatives[0] * scale,
+      -negatives[1] * scale,
+    ];
+    const rounded = raw.map((value) => roundToOne(value));
+    const roundedSum = rounded.slice(0, -1).reduce((sum, value) => sum + value, 0);
+    rounded[rounded.length - 1] = roundToOne(delta - roundedSum);
+    return rounded;
+  };
+
+  const clampAndRebalance = (
+    values: number[],
+    delta: number,
+    maxAbs: number,
+    preferredIndex: number
+  ) => {
+    if (maxAbs <= 0) {
+      return values;
+    }
+    const clamped = values.map((value) =>
+      Math.max(-maxAbs, Math.min(maxAbs, value))
+    );
+    let currentSum = clamped.reduce((sum, value) => sum + value, 0);
+    let remaining = roundToOne(delta - currentSum);
+    if (Math.abs(remaining) < 0.01) {
+      return clamped;
+    }
+    const applyToIndex = (index: number) => {
+      if (remaining === 0) {
+        return;
+      }
+      const current = clamped[index];
+      const capacity = remaining > 0 ? maxAbs - current : -maxAbs - current;
+      if (capacity === 0) {
+        return;
+      }
+      const deltaToApply =
+        remaining > 0
+          ? Math.min(remaining, capacity)
+          : Math.max(remaining, capacity);
+      clamped[index] = roundToOne(current + deltaToApply);
+      remaining = roundToOne(remaining - deltaToApply);
+    };
+    applyToIndex(preferredIndex);
+    for (let i = 0; i < clamped.length && remaining !== 0; i += 1) {
+      if (i === preferredIndex) {
+        continue;
+      }
+      applyToIndex(i);
+    }
+    return clamped;
+  };
+
+  const distributeDeltaForHhDe = (delta: number, minBar: number, maxAbs: number) => {
+    const baseNegatives = Array.from({ length: 4 }, () =>
+      randomBetween(0.4, 1.6)
+    );
+    const minValue = Math.max(0.2, minBar);
+    const baseNegSum = baseNegatives.reduce((sum, value) => sum + value, 0);
+    let negSumTarget = Math.max(minValue * 4, baseNegSum);
+    if (negSumTarget + delta < minValue) {
+      negSumTarget = minValue - delta;
+    }
+    const scale = baseNegSum === 0 ? 0 : negSumTarget / baseNegSum;
+    let negatives = baseNegatives.map((value) => -value * scale);
+    negatives = negatives.map((value) => -Math.max(minValue, Math.abs(value)));
+    let negSum = -negatives.reduce((sum, value) => sum + value, 0);
+    if (negSum + delta < minValue) {
+      const needed = minValue - delta - negSum;
+      negatives[negatives.length - 1] -= needed;
+      negSum += needed;
+    }
+    let fx = delta + negSum;
+    if (fx < minValue) {
+      const bump = minValue - fx;
+      negatives[negatives.length - 1] -= bump;
+      negSum += bump;
+      fx = delta + negSum;
+    }
+    const raw = [negatives[0], fx, negatives[1], negatives[2], negatives[3]];
+    const rounded = raw.map((value) => roundToOne(value));
+    const roundedSum = rounded.reduce((sum, value) => sum + value, 0);
+    const diff = roundToOne(delta - roundedSum);
+    rounded[1] = roundToOne(Math.max(minValue, rounded[1] + diff));
+    const signed = [
+      -Math.abs(rounded[0]),
+      Math.abs(rounded[1]),
+      -Math.abs(rounded[2]),
+      -Math.abs(rounded[3]),
+      -Math.abs(rounded[4]),
+    ];
+    return clampAndRebalance(signed, delta, maxAbs, 1);
+  };
+
+  const categories = Array.from({ length: 5 }, (_, index) => {
+    const letter = String.fromCharCode(65 + index);
+    return {
+      category: `Category ${letter}`,
+    };
+  });
+
+  const baselineScale = isHhDeGroup ? 1.2 : 0.7;
+  const actualSpendValues = distributeTotal(
+    actualLineValueForSelectedBUs,
+    categories.length
+  );
+  const baselineSpendValues = distributeTotal(
+    (isHhDeGroup ? actualLineValueForSelectedBUs : budgetLineValueForSelectedBUs) *
+      baselineScale,
+    categories.length
+  );
+
+  return categories.map((item, index) => {
+    const actualSpend = actualSpendValues[index];
+    const rawBaselineSpend = baselineSpendValues[index];
+    const clampToActual = (value: number) =>
+      Math.min(Math.max(value, actualSpend * 0.7), actualSpend * 1.3);
+    const baselineSpend = isHhDeGroup
+      ? rawBaselineSpend
+      : roundToOne(clampToActual(rawBaselineSpend));
+    const targetSpend = isHhDeGroup
+      ? roundToOne(Math.max(actualSpend * 1.05, baselineSpend * randomBetween(0.9, 1.0)))
+      : roundToOne(
+          clampToActual(baselineSpend * randomBetween(0.8, 1.1))
+        );
+    const delta = roundToOne(actualSpend - targetSpend);
+    const minBar = Math.abs(actualSpend) * 0.05;
+    const maxAbs = Math.abs(actualSpend) * 0.3;
+    const [volumeChange, fxImpact, l3GapVsTarget, l4GapVsTarget, l5GapVsTarget] =
+      isHhDeGroup
+        ? distributeDeltaForHhDe(delta, minBar, maxAbs)
+        : clampAndRebalance(distributeDelta(delta), delta, maxAbs, 1);
+    const reconciledActual = roundToOne(
+      targetSpend +
+        volumeChange +
+        fxImpact +
+        l3GapVsTarget +
+        l4GapVsTarget +
+        l5GapVsTarget
+    );
+
+    return {
+      category: item.category,
+      baselineSpend,
+      targetSpend,
+      volumeChange,
+      fxImpact,
+      l3GapVsTarget,
+      l4GapVsTarget,
+      l5GapVsTarget,
+      actualSpend: reconciledActual,
+    };
+  });
 };
 
 export default function BusinessUnitPerformanceByFunctionPage() {
   const { functionId } = useParams<{ functionId?: string }>();
   const [searchParams] = useSearchParams();
   const { businessGroups } = useBudgets();
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatMn = (value: number) =>
+    `${formatAmount(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`;
+  const formatPercent = (value: number) => `${roundToOne(value)}%`;
   const functionParam =
     functionId ??
     searchParams.get('function') ??
@@ -323,116 +555,52 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
   }, [selectedFunctionalUnits]);
 
-  const baseProcurementCategories = [
-    {
-      id: 'overall',
-      label: 'Overall all',
-      budget: 120,
-      actual: 110,
-      children: [
-        {
-          id: 'overall-direct',
-          label: 'Direct materials',
-          budget: 70,
-          actual: 62,
-        },
-        {
-          id: 'overall-indirect',
-          label: 'Indirect materials',
-          budget: 50,
-          actual: 48,
-        },
-      ],
-    },
-    {
-      id: 'category-a',
-      label: 'Category A',
-      budget: 42,
-      actual: 47,
-      children: [
-        {
-          id: 'category-a-raw',
-          label: 'Raw materials',
-          budget: 26,
-          actual: 30,
-        },
-        {
-          id: 'category-a-components',
-          label: 'Components',
-          budget: 16,
-          actual: 17,
-        },
-      ],
-    },
-    {
-      id: 'category-b',
-      label: 'Category B',
-      budget: 35,
-      actual: 28,
-      children: [
-        {
-          id: 'category-b-logistics',
-          label: 'Logistics',
-          budget: 18,
-          actual: 14,
-        },
-        {
-          id: 'category-b-suppliers',
-          label: 'Supplier services',
-          budget: 17,
-          actual: 14,
-        },
-      ],
-    },
-    {
-      id: 'category-c',
-      label: 'Category C',
-      budget: 43,
-      actual: 35,
-      children: [
-        {
-          id: 'category-c-energy',
-          label: 'Energy',
-          budget: 22,
-          actual: 26,
-        },
-        {
-          id: 'category-c-consumables',
-          label: 'Consumables',
-          budget: 21,
-          actual: 9,
-        },
-      ],
-    },
-  ];
-
-  const procurementCategories = useMemo(() => {
-    const baseOverall = baseProcurementCategories[0];
-    if (!baseOverall) {
-      return baseProcurementCategories;
-    }
-    const budgetScale = Math.abs(
-      baseOverall.budget === 0
-        ? 1
-        : procurementOverallTotals.budget / baseOverall.budget
+  const procurementDeviationData = useMemo(() => {
+    const selectionKey = [
+      ...selectedBgs.map(normalizeBu),
+      ...selectedBus.map(normalizeBu),
+    ]
+      .filter(Boolean)
+      .sort()
+      .join('|') || 'overall';
+    return generateDeviationDataset(
+      Math.abs(procurementOverallTotals.budget),
+      Math.abs(procurementOverallTotals.actual),
+      selectionKey
     );
-    const actualScale = Math.abs(
-      baseOverall.actual === 0
-        ? 1
-        : procurementOverallTotals.actual / baseOverall.actual
-    );
+  }, [procurementOverallTotals, selectedBgs, selectedBus]);
 
-    return baseProcurementCategories.map((category) => ({
-      ...category,
-      budget: roundToOne(category.budget * budgetScale),
-      actual: roundToOne(category.actual * actualScale),
-      children: category.children?.map((child) => ({
-        ...child,
-        budget: roundToOne(child.budget * budgetScale),
-        actual: roundToOne(child.actual * actualScale),
-      })),
-    }));
-  }, [baseProcurementCategories, procurementOverallTotals]);
+  const procurementDeviationTotals = useMemo(() => {
+    const totals = procurementDeviationData.reduce(
+      (acc, row) => {
+        acc.baselineSpend += row.baselineSpend;
+        acc.targetSpend += row.targetSpend;
+        acc.volumeChange += row.volumeChange;
+        acc.fxImpact += row.fxImpact;
+        acc.l3GapVsTarget += row.l3GapVsTarget;
+        acc.l4GapVsTarget += row.l4GapVsTarget;
+        acc.l5GapVsTarget += row.l5GapVsTarget;
+        acc.actualSpend += row.actualSpend;
+        return acc;
+      },
+      {
+        baselineSpend: 0,
+        targetSpend: 0,
+        volumeChange: 0,
+        fxImpact: 0,
+        l3GapVsTarget: 0,
+        l4GapVsTarget: 0,
+        l5GapVsTarget: 0,
+        actualSpend: 0,
+      }
+    );
+    return {
+      category: 'Total',
+      ...Object.fromEntries(
+        Object.entries(totals).map(([key, value]) => [key, roundToOne(value)])
+      ),
+    } as DeviationDataset;
+  }, [procurementDeviationData]);
 
   const procurementBuckets = [
     {
@@ -600,135 +768,84 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     },
   ];
 
-  const procurementTotals = useMemo(() => {
-    const overall = procurementCategories[0];
-    
-    // If 'overall' is selected (or nothing selected), use the overall row
-    if (selectedCategoryIds.includes('overall') || selectedCategoryIds.length === 0) {
-      return {
-        budgetTotal: overall?.budget ?? 0,
-        actualTotal: overall?.actual ?? 0,
-      };
-    }
-    
-    let budgetTotal = 0;
-    let actualTotal = 0;
-    
-    for (const category of procurementCategories) {
-      // Skip overall when summing individual selections
-      if (category.id === 'overall') continue;
-      
-      // Check if the parent category is fully selected (consolidated)
-      if (selectedCategoryIds.includes(category.id)) {
-        budgetTotal += category.budget;
-        actualTotal += category.actual;
-      } else if (category.children) {
-        // Check if any children of this category are selected
-        for (const child of category.children) {
-          if (selectedCategoryIds.includes(child.id)) {
-            budgetTotal += child.budget;
-            actualTotal += child.actual;
-          }
-        }
-      }
-    }
-    
-    // If nothing was found (shouldn't happen), fall back to overall
-    if (budgetTotal === 0 && actualTotal === 0) {
-      return {
-        budgetTotal: overall?.budget ?? 0,
-        actualTotal: overall?.actual ?? 0,
-      };
-    }
-    
-    return { budgetTotal, actualTotal };
-  }, [procurementCategories, selectedCategoryIds]);
-
   const procurementWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
-    const rawBudgetValue = procurementTotals.budgetTotal;
-    const rawActualValue = procurementTotals.actualTotal;
-    const budgetValue = Math.abs(rawBudgetValue);
-    const actualValue = Math.abs(rawActualValue);
-    
-    // Total change from budget to actual (negative = costs decreased, positive = costs increased)
-    const totalChange = actualValue - budgetValue;
-    
-    const split = [0.24, 0.26, 0.22, 0.18, 0.1];
-    // Distribute the total change proportionally
-    const deltas = split.map((ratio) =>
-      Number((totalChange * ratio).toFixed(1))
-    );
-    // Adjust last delta to ensure exact sum
-    const currentSum = deltas.reduce((sum, value) => sum + value, 0);
-    deltas[deltas.length - 1] = Number(
-      (deltas[deltas.length - 1] + (totalChange - currentSum)).toFixed(1)
-    );
+    const totals = procurementDeviationTotals;
+    const baselineSpend = Math.abs(totals.baselineSpend);
+    const targetSpend = Math.abs(totals.targetSpend);
+    const actualSpend = Math.abs(totals.actualSpend);
 
-    const [volumeDelta, l3Delta, l4Delta, partPriceDelta, fxDelta] = deltas;
-    let running = budgetValue;
+    let running = roundToOne(targetSpend);
     const nextValue = (delta: number) => {
-      running = Number((running + delta).toFixed(1));
+      running = roundToOne(running + delta);
       return running;
     };
-    // Negative delta (cost decrease) is favorable/green, positive is adverse/red
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
 
     return [
       {
-        id: 'budget-spend',
-        label: 'Budget spend',
-        value: Number(budgetValue.toFixed(1)),
-        delta: Number(budgetValue.toFixed(1)),
+        id: 'baseline-spend',
+        label: 'Baseline spend',
+        value: roundToOne(baselineSpend),
+        delta: roundToOne(baselineSpend),
+        type: 'baseline',
+        isReference: true,
+      },
+      {
+        id: 'target-spend',
+        label: 'Target spend',
+        value: roundToOne(targetSpend),
+        delta: roundToOne(targetSpend),
         type: 'baseline',
       },
       {
         id: 'volume-change',
-        label: 'Volume change variance',
-        value: nextValue(volumeDelta),
-        delta: volumeDelta,
-        type: getCostStageType(volumeDelta),
+        label: 'Volume change',
+        value: nextValue(totals.volumeChange),
+        delta: roundToOne(totals.volumeChange),
+        type: getCostStageType(totals.volumeChange),
         isClickable: true,
-      },
-      {
-        id: 'l3-deviation',
-        label: 'L3 deviation vs target',
-        value: nextValue(l3Delta),
-        delta: l3Delta,
-        type: getCostStageType(l3Delta),
-        isClickable: true,
-      },
-      {
-        id: 'l4-deviation',
-        label: 'L4 deviation vs L3 plan',
-        value: nextValue(l4Delta),
-        delta: l4Delta,
-        type: getCostStageType(l4Delta),
-        isClickable: true,
-      },
-      {
-        id: 'part-price',
-        label: 'Part price variance',
-        value: nextValue(partPriceDelta),
-        delta: partPriceDelta,
-        type: getCostStageType(partPriceDelta),
       },
       {
         id: 'fx-impact',
         label: 'FX impact',
-        value: nextValue(fxDelta),
-        delta: fxDelta,
-        type: getCostStageType(fxDelta),
+        value: nextValue(totals.fxImpact),
+        delta: roundToOne(totals.fxImpact),
+        type: getCostStageType(totals.fxImpact),
+      },
+      {
+        id: 'l3-deviation',
+        label: 'L3 gap vs target',
+        value: nextValue(totals.l3GapVsTarget),
+        delta: roundToOne(totals.l3GapVsTarget),
+        type: getCostStageType(totals.l3GapVsTarget),
+        isClickable: true,
+      },
+      {
+        id: 'l4-deviation',
+        label: 'L4 gap vs target',
+        value: nextValue(totals.l4GapVsTarget),
+        delta: roundToOne(totals.l4GapVsTarget),
+        type: getCostStageType(totals.l4GapVsTarget),
+        isClickable: true,
+      },
+      {
+        id: 'l5-deviation',
+        label: 'L5 gap vs target',
+        value: nextValue(totals.l5GapVsTarget),
+        delta: roundToOne(totals.l5GapVsTarget),
+        type: getCostStageType(totals.l5GapVsTarget),
       },
       {
         id: 'actual-spend',
         label: 'Actual spend',
-        value: Number(actualValue.toFixed(1)),
-        delta: Number(actualValue.toFixed(1)),
+        value: roundToOne(actualSpend),
+        delta: roundToOne(actualSpend),
         type: 'baseline',
       },
     ];
-  }, [procurementTotals]);
+  }, [procurementDeviationTotals]);
+
 
   const manufacturingSites = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
@@ -892,16 +1009,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
     // Only DL efficiency gap bar should be clickable
     const manufacturingClickableIds = new Set(['dl-efficiency']);
-    const budgetValue = manufacturingMvaTotals.budgetMvaCost;
+    const targetValue = manufacturingMvaTotals.budgetMvaCost;
     const actualValue = manufacturingMvaTotals.actualMvaCost;
     const volMixDelta = manufacturingMvaTotals.volMixChange;
+    const fxDelta = manufacturingMvaTotals.fxImpact;
     const laborRateDelta = manufacturingMvaTotals.laborRateImpact;
     const dlEfficiencyDelta = manufacturingMvaTotals.dlEfficiencyGap;
     const idlHcDelta = manufacturingMvaTotals.idlHcGap;
     const gaVariableDelta = manufacturingMvaTotals.gaVariableEfficiency;
     const gaFixedDelta = manufacturingMvaTotals.gaFixedCostGap;
-    const fxDelta = manufacturingMvaTotals.fxImpact;
-    let running = budgetValue;
+    let running = targetValue;
     const nextValue = (delta: number) => {
       running = Number((running + delta).toFixed(1));
       return running;
@@ -911,23 +1028,31 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
     return [
       {
-        id: 'budget-mva',
-        label: 'Budget MVA cost',
-        value: Number(budgetValue.toFixed(1)),
-        delta: Number(budgetValue.toFixed(1)),
+        id: 'target-mva',
+        label: 'Target MVA',
+        value: Number(targetValue.toFixed(1)),
+        delta: Number(targetValue.toFixed(1)),
         type: 'baseline',
       },
       {
         id: 'vol-mix-change',
-        label: 'Vol mix change',
+        label: 'Volume / mix change',
         value: nextValue(volMixDelta),
         delta: volMixDelta,
         type: getCostStageType(volMixDelta),
         isClickable: manufacturingClickableIds.has('vol-mix-change'),
       },
       {
+        id: 'fx-impact',
+        label: 'FX impact',
+        value: nextValue(fxDelta),
+        delta: fxDelta,
+        type: getCostStageType(fxDelta),
+        isClickable: manufacturingClickableIds.has('fx-impact'),
+      },
+      {
         id: 'labor-rate-impact',
-        label: 'Labour rate impact',
+        label: 'Labor rate change',
         value: nextValue(laborRateDelta),
         delta: laborRateDelta,
         type: getCostStageType(laborRateDelta),
@@ -935,7 +1060,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'dl-efficiency',
-        label: 'DL efficiency gap',
+        label: 'DL',
         value: nextValue(dlEfficiencyDelta),
         delta: dlEfficiencyDelta,
         type: getCostStageType(dlEfficiencyDelta),
@@ -943,7 +1068,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'idl-hc-gap',
-        label: 'IDL HC gap',
+        label: 'IDL',
         value: nextValue(idlHcDelta),
         delta: idlHcDelta,
         type: getCostStageType(idlHcDelta),
@@ -951,7 +1076,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'ga-variable-gap',
-        label: 'GA variable efficiency',
+        label: 'G&A Var',
         value: nextValue(gaVariableDelta),
         delta: gaVariableDelta,
         type: getCostStageType(gaVariableDelta),
@@ -959,28 +1084,32 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'ga-fixed-gap',
-        label: 'GA fixed cost gap',
+        label: 'G&A Fixed',
         value: nextValue(gaFixedDelta),
         delta: gaFixedDelta,
         type: getCostStageType(gaFixedDelta),
         isClickable: manufacturingClickableIds.has('ga-fixed-gap'),
       },
       {
-        id: 'fx-impact',
-        label: 'Fx impact',
-        value: nextValue(fxDelta),
-        delta: fxDelta,
-        type: getCostStageType(fxDelta),
-        isClickable: manufacturingClickableIds.has('fx-impact'),
-      },
-      {
         id: 'actual-mva',
-        label: 'Actual MVA cost',
+        label: 'Actual MVA',
         value: Number(actualValue.toFixed(1)),
         delta: Number(actualValue.toFixed(1)),
         type: 'baseline',
       },
     ];
+  }, [manufacturingMvaTotals]);
+
+  const manufacturingBrokenAxis = useMemo(() => {
+    const maxBaseline = Math.max(
+      Math.abs(manufacturingMvaTotals.budgetMvaCost),
+      Math.abs(manufacturingMvaTotals.actualMvaCost)
+    );
+    if (maxBaseline <= 0) {
+      return undefined;
+    }
+    const skipEnd = Math.floor((maxBaseline * 0.6) / 10) * 10;
+    return { skipRangeStart: 0, skipRangeEnd: Math.max(0, skipEnd) };
   }, [manufacturingMvaTotals]);
 
   const rndTotals = useMemo(() => {
@@ -1006,47 +1135,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const budgetValue = rndTotals.budgetValue;
     const actualValue = rndTotals.actualValue;
     const totalDelta = actualValue - budgetValue;
-    const split = [
-      0.12,
-      -0.06,
-      0.05,
-      0.04,
-      0.03,
-      0.16,
-      0.1,
-      0.08,
-      0.07,
-      0.05,
-      0.08,
-      0.08,
-    ];
-    const deltas = split.map((ratio) => Number((totalDelta * ratio).toFixed(1)));
-    const weights = [
-      1.1,
-      1.25,
-      1.05,
-      0.95,
-      1.1,
-      1.45,
-      1.2,
-      1.7,
-      1.3,
-      1.45,
-      1.2,
-      1.55,
-    ];
-    const weighted = deltas.map((value, index) =>
-      Number((value * (weights[index] ?? 1)).toFixed(1))
+    const split = [0.2, 0.1, 0.15, 0.3, 0.25];
+    const deltas = split.map((ratio) =>
+      Number((totalDelta * ratio).toFixed(1))
     );
-    const minDelta = Math.max(1.2, Math.abs(totalDelta) * 0.14);
-    const boosted = weighted.map((value) => {
-      if (value === 0) return 0;
-      const base = Math.max(Math.abs(value), minDelta);
-      return Math.sign(value) * Number(base.toFixed(1));
-    });
-    const roundedDelta = boosted.reduce((sum, value) => sum + value, 0);
-    boosted[boosted.length - 1] = Number(
-      (totalDelta - (roundedDelta - boosted[boosted.length - 1])).toFixed(1)
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = Number(
+      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
     );
     let running = budgetValue;
     const nextValue = (delta: number) => {
@@ -1059,106 +1154,49 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     return [
       {
         id: 'rnd-expense-target',
-        label: 'R&D expense target',
+        label: 'Target R&D expense',
         value: Number(budgetValue.toFixed(1)),
         delta: Number(budgetValue.toFixed(1)),
         type: 'baseline',
       },
       {
-        id: 'project-new',
-        label: 'Project newly added',
-        value: nextValue(-Math.abs(boosted[0])),
-        delta: -Math.abs(boosted[0]),
-        type: 'negative',
-      },
-      {
-        id: 'project-cancelled',
-        label: 'Project cancelled',
-        value: nextValue(Math.abs(boosted[1])),
-        delta: Math.abs(boosted[1]),
-        type: 'positive',
-      },
-      {
-        id: 'customer-request',
-        label: 'Customer request item',
-        value: nextValue(boosted[2]),
-        delta: boosted[2],
-        type: getCostStageType(boosted[2]),
-      },
-      {
-        id: 'timeline-change',
-        label: 'Timeline change',
-        value: nextValue(boosted[3]),
-        delta: boosted[3],
-        type: getCostStageType(boosted[3]),
-      },
-      {
-        id: 'cost-accounting',
-        label: 'Cost per accounting rule (64) delta',
-        value: nextValue(boosted[4]),
-        delta: boosted[4],
-        type: getCostStageType(boosted[4]),
-      },
-      {
-        id: 'rnd-budget-control',
-        label: 'R&D budget controlled by R&D',
-        value: Number(running.toFixed(1)),
-        delta: Number(running.toFixed(1)),
-        type: 'baseline',
-      },
-      {
-        id: 'personnel-delta',
-        label: 'Personnel (61) delta',
-        value: nextValue(boosted[5]),
-        delta: boosted[5],
-        type: getCostStageType(boosted[5]),
-        isClickable: true,
-      },
-      {
-        id: 'rental-dep',
-        label: 'Rental & Dep. (62) delta',
-        value: nextValue(boosted[6]),
-        delta: boosted[6],
-        type: getCostStageType(boosted[6]),
-      },
-      {
-        id: 'travel',
-        label: 'Travel (63) delta',
-        value: nextValue(boosted[7]),
-        delta: boosted[7],
-        type: getCostStageType(boosted[7]),
-      },
-      {
-        id: 'prototype',
-        label: 'Prototype & testing (64) delta',
-        value: nextValue(boosted[8]),
-        delta: boosted[8],
-        type: getCostStageType(boosted[8]),
-      },
-      {
-        id: 'logistics',
-        label: 'Logistics (65) delta',
-        value: nextValue(boosted[9]),
-        delta: boosted[9],
-        type: getCostStageType(boosted[9]),
-      },
-      {
-        id: 'central-support',
-        label: 'Central & cross BU support',
-        value: nextValue(boosted[10]),
-        delta: boosted[10],
-        type: getCostStageType(boosted[10]),
+        id: 'project-change',
+        label: 'Project change',
+        value: nextValue(deltas[0]),
+        delta: deltas[0],
+        type: getCostStageType(deltas[0]),
       },
       {
         id: 'fx-impact',
-        label: 'FX Impact',
-        value: nextValue(boosted[11]),
-        delta: boosted[11],
-        type: getCostStageType(boosted[11]),
+        label: 'FX impact',
+        value: nextValue(deltas[1]),
+        delta: deltas[1],
+        type: getCostStageType(deltas[1]),
+      },
+      {
+        id: 'labor-rate-change',
+        label: 'Labor rate change',
+        value: nextValue(deltas[2]),
+        delta: deltas[2],
+        type: getCostStageType(deltas[2]),
+      },
+      {
+        id: 'rnd-fte',
+        label: 'FTE (Personnel)',
+        value: nextValue(deltas[3]),
+        delta: deltas[3],
+        type: getCostStageType(deltas[3]),
+      },
+      {
+        id: 'rnd-non-fte',
+        label: 'Non-FTE',
+        value: nextValue(deltas[4]),
+        delta: deltas[4],
+        type: getCostStageType(deltas[4]),
       },
       {
         id: 'rnd-expense-actual',
-        label: 'R&D expense actual',
+        label: 'Actual R&D Expense',
         value: Number(actualValue.toFixed(1)),
         delta: Number(actualValue.toFixed(1)),
         type: 'baseline',
@@ -1229,7 +1267,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   Deviation by category
                 </h2>
                 <p className='text-sm text-gray-500 mt-1'>
-                  Total spend, USD Mn
+                  Total spend, {currencyLabel} Mn
                 </p>
               </div>
               <div className='overflow-hidden rounded-lg border border-gray-200'>
@@ -1240,161 +1278,90 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                         Category
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                        Budget
+                        Baseline spend
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                        Actual
+                        Target spend
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                        Delta vs budget
+                        Target % reduction
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Volume change
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        FX impact
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        L3 gap vs. target
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        L4 gap vs. target
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        L5 gap vs. target
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Actual spend
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Actual % reduction
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {procurementCategories.flatMap((row) => {
-                      const delta = row.budget - row.actual;
-                      const childIds = row.children?.map(c => c.id) ?? [];
-                      // "Overall all" is only checked when 'overall' is explicitly selected
-                      // Other parents are checked when: consolidated (parent ID) OR ALL children are selected
-                      const isSelected = row.id === 'overall'
-                        ? selectedCategoryIds.includes('overall')
-                        : selectedCategoryIds.includes(row.id) ||
-                          (childIds.length > 0 && childIds.every(id => selectedCategoryIds.includes(id)));
-                      const parentRow = (
-                        <tr
-                          key={row.id}
-                          className='border-b border-gray-200 last:border-b-0'>
-                          <td className='px-4 py-3'>
-                            <label className='flex items-center gap-3 text-gray-700'>
-                              <input
-                                type='checkbox'
-                                checked={isSelected}
-                                onChange={() => {
-                                  setSelectedCategoryIds((prev) => {
-                                    if (row.id === 'overall') {
-                                      return ['overall'];
-                                    }
-                                    let next = prev.filter(id => id !== 'overall');
-                                    
-                                    // Check if parent is consolidated (parent ID in selection)
-                                    const isConsolidated = next.includes(row.id);
-                                    // Check if any children are selected
-                                    const hasChildrenSelected = childIds.some(id => next.includes(id));
-                                    
-                                    if (isConsolidated || hasChildrenSelected) {
-                                      // Deselect: remove parent and all children
-                                      next = next.filter(id => id !== row.id && !childIds.includes(id));
-                                    } else {
-                                      // Select: add all children (no consolidation - parent stays unchecked)
-                                      childIds.forEach(id => {
-                                        if (!next.includes(id)) next.push(id);
-                                      });
-                                    }
-                                    
-                                    return next.length === 0 ? ['overall'] : next;
-                                  });
-                                }}
-                              />
-                              <span className='font-semibold text-gray-900'>
-                                {row.label}
-                              </span>
-                            </label>
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatMn(row.budget)}
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatMn(row.actual)}
-                          </td>
-                          <td className='px-4 py-3 text-right font-semibold'>
-                            <span
-                              className={
-                                delta >= 0
-                                  ? 'text-emerald-600'
-                                  : 'text-rose-600'
-                              }>
-                              {formatMn(delta)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-
-                      const children = row.children?.map((child) => {
-                        const childDelta = child.budget - child.actual;
-                        const isChildSelected = selectedCategoryIds.includes(child.id);
-                        const siblingIds = row.children?.map(c => c.id) ?? [];
-                        
+                    {[procurementDeviationTotals, ...procurementDeviationData].map(
+                      (row, index) => {
+                        const baseline = row.baselineSpend;
+                        const targetReduction =
+                          baseline === 0
+                            ? 0
+                            : (row.targetSpend / row.baselineSpend - 1) * 100
+                        const actualReduction =
+                          baseline === 0
+                            ? 0
+                            : (row.actualSpend / row.baselineSpend - 1) * 100;
                         return (
                           <tr
-                            key={child.id}
-                            className='border-b border-gray-100 last:border-b-0 bg-slate-50'>
-                            <td className='px-4 py-2'>
-                              <label className='flex items-center gap-3 text-gray-600'>
-                                <input
-                                  type='checkbox'
-                                  checked={isChildSelected}
-                                  onChange={() => {
-                                    setSelectedCategoryIds((prev) => {
-                                      // Filter out 'overall' when selecting specific children
-                                      let next = prev.filter(id => id !== 'overall');
-                                      
-                                      // If parent is consolidated, expand it first (remove parent, add all children except the one being toggled)
-                                      if (next.includes(row.id)) {
-                                        next = next.filter(id => id !== row.id);
-                                        siblingIds.forEach(id => {
-                                          if (id !== child.id && !next.includes(id)) {
-                                            next.push(id);
-                                          }
-                                        });
-                                      } else if (next.includes(child.id)) {
-                                        // Deselect this child
-                                        next = next.filter((id) => id !== child.id);
-                                      } else {
-                                        // Select this child
-                                        next = [...next, child.id];
-                                        // Consolidate if all siblings now selected
-                                        const allSiblingsSelected = siblingIds.every((id) =>
-                                          next.includes(id)
-                                        );
-                                        if (allSiblingsSelected) {
-                                          next = next.filter(
-                                            (id) => !siblingIds.includes(id)
-                                          );
-                                          next.push(row.id);
-                                        }
-                                      }
-
-                                      return next.length === 0 ? ['overall'] : next;
-                                    });
-                                  }}
-                                />
-                                <span className='pl-6 text-sm'>
-                                  {child.label}
-                                </span>
-                              </label>
+                            key={`${row.category}-${index}`}
+                            className='border-b border-gray-200 last:border-b-0'>
+                            <td className='px-4 py-3 font-semibold text-gray-900'>
+                              {row.category}
                             </td>
-                            <td className='px-4 py-2 text-right text-gray-600'>
-                              {formatMn(child.budget)}
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.baselineSpend)}
                             </td>
-                            <td className='px-4 py-2 text-right text-gray-600'>
-                              {formatMn(child.actual)}
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.targetSpend)}
                             </td>
-                            <td className='px-4 py-2 text-right font-semibold'>
-                              <span
-                                className={
-                                  childDelta >= 0
-                                    ? 'text-emerald-600'
-                                    : 'text-rose-600'
-                                }>
-                                {formatMn(childDelta)}
-                              </span>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatPercent(targetReduction)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.volumeChange)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.fxImpact)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.l3GapVsTarget)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.l4GapVsTarget)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatMn(row.l5GapVsTarget)}
+                            </td>
+                            <td className='px-4 py-3 text-right font-semibold text-gray-900'>
+                              {formatMn(row.actualSpend)}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {formatPercent(actualReduction)}
                             </td>
                           </tr>
                         );
-                      });
-
-                      return [parentRow, ...(children ?? [])];
-                    })}
+                      }
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1403,7 +1370,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
             <FunctionalPerformanceWaterfall
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
-              description='Procurement cost, USD Mn'
+              description={`Procurement cost, ${currencyLabel} Mn`}
               brokenAxis="auto"
               onStageClick={(stage) => {
                 if (
@@ -1414,6 +1381,36 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   setActiveBucketId(stage.id);
                 }
               }}
+              footerContent={
+                <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
+                  <span>
+                    Target % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(
+                        procurementDeviationTotals.baselineSpend === 0
+                          ? 0
+                          : ((procurementDeviationTotals.baselineSpend -
+                              procurementDeviationTotals.targetSpend) /
+                              procurementDeviationTotals.baselineSpend) *
+                              100
+                      )}
+                    </span>
+                  </span>
+                  <span>
+                    Actual % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(
+                        procurementDeviationTotals.baselineSpend === 0
+                          ? 0
+                          : ((procurementDeviationTotals.baselineSpend -
+                              procurementDeviationTotals.actualSpend) /
+                              procurementDeviationTotals.baselineSpend) *
+                              100
+                      )}
+                    </span>
+                  </span>
+                </div>
+              }
             />
           </>
         ) : isManufacturing ? (
@@ -1437,7 +1434,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   Deviation by site
                 </h2>
                 <p className='text-sm text-gray-500 mt-1'>
-                  Total MVA cost, USD Mn
+                  Total MVA cost, {currencyLabel} Mn
                 </p>
               </div>
               <div className='overflow-hidden rounded-lg border border-gray-200'>
@@ -1562,14 +1559,37 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={manufacturingWaterfallStages}
               title='Deviation waterfall by key value drivers'
               emphasisStageId='dl-efficiency'
-              description='MVA cost, USD Mn'
+              description={`MVA cost, ${currencyLabel} Mn`}
               barSize={32}
-              brokenAxis="auto"
+              brokenAxis={manufacturingBrokenAxis ?? 'auto'}
               onStageClick={(stage) => {
                 if (stage.isClickable) {
                   setActiveBucketId(stage.id);
                 }
               }}
+              footerContent={
+                <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
+                  <span>
+                    Target % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(0)}
+                    </span>
+                  </span>
+                  <span>
+                    Actual % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(
+                        manufacturingMvaTotals.budgetMvaCost === 0
+                          ? 0
+                          : ((manufacturingMvaTotals.budgetMvaCost -
+                              manufacturingMvaTotals.actualMvaCost) /
+                              manufacturingMvaTotals.budgetMvaCost) *
+                              100
+                      )}
+                    </span>
+                  </span>
+                </div>
+              }
             />
           </>
         ) : isRnD ? (
@@ -1590,14 +1610,36 @@ export default function BusinessUnitPerformanceByFunctionPage() {
             <FunctionalPerformanceWaterfall
               stages={rndWaterfallStages}
               title='Deviation waterfall by key value drivers'
-              description='R&D cost, USD Mn'
+              description={`R&D cost, ${currencyLabel} Mn`}
               barSize={32}
               brokenAxis="auto"
               onStageClick={(stage) => {
-                if (stage.id === 'personnel-delta') {
+                if (stage.id === 'rnd-fte') {
                   setActiveBucketId(stage.id);
                 }
               }}
+              footerContent={
+                <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
+                  <span>
+                    Target % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(0)}
+                    </span>
+                  </span>
+                  <span>
+                    Actual % reduction:{' '}
+                    <span className='font-semibold text-gray-900'>
+                      {formatPercent(
+                        rndTotals.budgetValue === 0
+                          ? 0
+                          : ((rndTotals.budgetValue - rndTotals.actualValue) /
+                              rndTotals.budgetValue) *
+                              100
+                      )}
+                    </span>
+                  </span>
+                </div>
+              }
             />
           </>
         ) : (

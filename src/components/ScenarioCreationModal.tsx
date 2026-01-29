@@ -15,6 +15,7 @@ import {
   updateScenarioValues,
   isScenarioNameUnique,
 } from '../utils/scenarioUtils';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface ScenarioCreationModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function ScenarioCreationModal({
   editingScenario,
 }: ScenarioCreationModalProps) {
   const [scenarioName, setScenarioName] = useState('');
+  const { formatAmount } = useCurrency();
   const [valueDriverValues, setValueDriverValues] = useState<
     Map<string, number>
   >(new Map());
@@ -244,7 +246,7 @@ export default function ScenarioCreationModal({
                                       </label>
                                       <div className='flex items-center gap-2'>
                                         <span className='text-xs text-gray-500'>
-                                          Base: {baseValue.toLocaleString()}{' '}
+                                          Base: {formatAmount(baseValue)}{' '}
                                           {driver.unit}
                                         </span>
                                         {Math.abs(changePercent) > 0.01 && (

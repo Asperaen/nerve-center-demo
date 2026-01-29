@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import CreateActionModalGlobal from '../components/CreateActionModal';
 import ScenarioCreationModal from '../components/ScenarioCreationModal';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   mockAppliedAssumptions,
   mockOPWaterfallStages,
@@ -75,6 +76,12 @@ export default function FinancePage() {
     isSuggested: boolean;
     assumptionName: string;
   } | null>(null);
+  const { formatAmount, currencyLabel } = useCurrency();
+  const formatAmountM = (value: number) =>
+    `${formatAmount(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
   const [draggedAssumptionId, setDraggedAssumptionId] = useState<string | null>(
     null
   );
@@ -769,7 +776,7 @@ export default function FinancePage() {
                                 </div>
                                 {finalValue !== null && (
                                   <div className='text-xs text-gray-500'>
-                                    Final OP: ${finalValue.toFixed(1)}M
+                                    Final OP: {formatAmountM(finalValue)}
                                     {impact !== 0 && (
                                       <span
                                         className={`ml-2 ${
@@ -778,7 +785,7 @@ export default function FinancePage() {
                                             : 'text-risk-600'
                                         }`}>
                                         ({impact > 0 ? '+' : ''}
-                                        {impact.toFixed(1)}M)
+                                        {formatAmountM(impact)})
                                       </span>
                                     )}
                                   </div>
@@ -823,7 +830,7 @@ export default function FinancePage() {
                   <YAxis
                     style={{ fontSize: '12px' }}
                     label={{
-                      value: 'Operating Profit (M USD)',
+                      value: `Operating Profit (M ${currencyLabel})`,
                       angle: -90,
                       position: 'insideLeft',
                       style: { fontSize: '12px' },
@@ -850,14 +857,16 @@ export default function FinancePage() {
                       const delta = payload?.delta;
 
                       const tooltipLines: string[] = [
-                        `${payload?.label ?? 'Stage'}: $${cumulative.toFixed(
-                          1
-                        )}M`,
+                        `${payload?.label ?? 'Stage'}: ${formatAmountM(
+                          cumulative
+                        )} ${currencyLabel}`,
                       ];
 
                       if (delta !== undefined && delta !== cumulative) {
                         tooltipLines.push(
-                          `Change: ${delta > 0 ? '+' : ''}$${delta.toFixed(1)}M`
+                          `Change: ${delta > 0 ? '+' : ''}${formatAmountM(
+                            delta
+                          )} ${currencyLabel}`
                         );
                       }
 
@@ -871,11 +880,13 @@ export default function FinancePage() {
                             `scenario_${scenario.id}_delta`
                           ] as number | undefined;
                           tooltipLines.push(
-                            `${scenario.name}: $${scenarioValue.toFixed(1)}M` +
+                            `${scenario.name}: ${formatAmountM(
+                              scenarioValue
+                            )} ${currencyLabel}` +
                               (scenarioDelta !== undefined
                                 ? ` (${
                                     scenarioDelta > 0 ? '+' : ''
-                                  }$${scenarioDelta.toFixed(1)}M)`
+                                  }${formatAmountM(scenarioDelta)} ${currencyLabel})`
                                 : '')
                           );
                         }
@@ -1273,8 +1284,8 @@ export default function FinancePage() {
                                 ? 'text-opportunity-700'
                                 : 'text-risk-700'
                             }`}>
-                            Impact: {assumption.impact > 0 ? '+' : ''}$
-                            {assumption.impact.toFixed(1)}M
+                            Impact: {assumption.impact > 0 ? '+' : ''}
+                            {formatAmountM(assumption.impact)} {currencyLabel}
                           </p>
                         </div>
                       </div>
@@ -1352,8 +1363,9 @@ export default function FinancePage() {
                                   </div>
                                   <div className='mt-2 flex items-center flex-wrap gap-2'>
                                     <span className='text-xs text-gray-500'>
-                                      Expected Impact: $
-                                      {action.expectedImpact.toFixed(1)}M
+                                      Expected Impact:{' '}
+                                      {formatAmountM(action.expectedImpact)}{' '}
+                                      {currencyLabel}
                                     </span>
                                     <span className='text-xs text-gray-400'>
                                       •
@@ -1700,6 +1712,7 @@ function ValueDriverModal({
   cumulativeChanges,
   onUpdateAssumption,
 }: ValueDriverModalProps) {
+  const { formatAmount, currencyLabel } = useCurrency();
   const [editingChanges, setEditingChanges] = useState<
     Map<string, { change: number; unit?: string; changePercent?: number }>
   >(new Map());
@@ -2003,7 +2016,7 @@ function ValueDriverModal({
                             type='text'
                             value={newDriverUnit}
                             onChange={(e) => setNewDriverUnit(e.target.value)}
-                            placeholder='e.g., FTE, USD/hour'
+                            placeholder={`e.g., FTE, ${currencyLabel}/hour`}
                             className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500'
                           />
                         </div>
@@ -2086,7 +2099,7 @@ function ValueDriverModal({
                                         Base Value:
                                       </div>
                                       <div className='text-sm font-semibold text-gray-900'>
-                                        {baseValue.toLocaleString()}
+                                        {formatAmount(baseValue)}
                                         {driver.unit && (
                                           <span className='text-gray-600 ml-1'>
                                             {driver.unit}
@@ -2172,7 +2185,7 @@ function ValueDriverModal({
                                               : 'text-risk-600'
                                           }`}>
                                           {changeValue > 0 ? '+' : ''}
-                                          {changeValue.toLocaleString()}
+                                          {formatAmount(changeValue)}
                                           {change?.unit && (
                                             <span className='ml-1'>
                                               {change.unit}
@@ -2200,7 +2213,7 @@ function ValueDriverModal({
                                           New Value:
                                         </div>
                                         <div className='text-base font-bold text-gray-900'>
-                                          {newValue.toLocaleString()}
+                                          {formatAmount(newValue)}
                                           {change?.unit || driver.unit ? (
                                             <span className='text-gray-600 ml-1 text-sm'>
                                               {change?.unit || driver.unit}
@@ -2217,11 +2230,11 @@ function ValueDriverModal({
                                             New Value:
                                           </div>
                                           <div className='text-base font-bold text-gray-900'>
-                                            {(
+                                            {formatAmount(
                                               baseValue +
-                                              (editingChanges.get(driver.id)
-                                                ?.change || changeValue)
-                                            ).toLocaleString()}
+                                                (editingChanges.get(driver.id)
+                                                  ?.change || changeValue)
+                                            )}
                                             {editingChanges.get(driver.id)
                                               ?.unit ||
                                             change?.unit ||
@@ -2297,7 +2310,7 @@ function ValueDriverModal({
                                 {driver.value !== undefined && (
                                   <div className='text-sm'>
                                     <span className='font-semibold text-gray-900'>
-                                      {driver.value.toLocaleString()}
+                                      {formatAmount(driver.value)}
                                     </span>
                                     {driver.unit && (
                                       <span className='text-gray-600 ml-1'>
@@ -2442,6 +2455,7 @@ function CreateActionModal({
   onClose,
   onSave,
 }: CreateActionModalProps) {
+  const { currencyLabel } = useCurrency();
   const [description, setDescription] = useState('');
   const [expectedImpact, setExpectedImpact] = useState('');
   const [feasibility, setFeasibility] = useState<'high' | 'medium' | 'low'>(
@@ -2506,7 +2520,7 @@ function CreateActionModal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Expected Impact (M USD) *
+                Expected Impact (M {currencyLabel}) *
               </label>
               <input
                 type='number'

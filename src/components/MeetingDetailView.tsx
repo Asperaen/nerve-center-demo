@@ -1,34 +1,36 @@
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
+import { useMemo } from 'react';
 import {
-  useParams,
+  Link,
   useNavigate,
   useOutletContext,
-  Link,
+  useParams,
 } from 'react-router-dom';
-import { format } from 'date-fns';
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import { useMemo } from 'react';
-import { mockCalendarEvents } from '../data/mockCalendar';
-import { mockNews } from '../data/mockNews';
-import { internalPulseColumns } from '../data/mockInternalPulse';
-import { mockOPWaterfallStages } from '../data/mockForecast';
 import {
   Bar,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
   ComposedChart,
   Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import type { NewsItem, PulseMetric, MeetingMaterial } from '../types';
+import { useCurrency } from '../contexts/CurrencyContext';
+import { mockCalendarEvents } from '../data/mockCalendar';
+import { mockOPWaterfallStages } from '../data/mockForecast';
+import { internalPulseColumns } from '../data/mockInternalPulse';
+import { mockNews } from '../data/mockNews';
+import type { MeetingMaterial, NewsItem, PulseMetric } from '../types';
 
 interface MeetingDetailViewContext {
   meetingMaterials: Record<string, MeetingMaterial[]>;
 }
 
 function WaterfallPreview() {
+  const { currencyLabel } = useCurrency();
   // Prepare chart data for baseline waterfall only
   const chartData = useMemo(() => {
     const baselineData = mockOPWaterfallStages.map((stage, index) => {
@@ -105,7 +107,7 @@ function WaterfallPreview() {
               <YAxis
                 style={{ fontSize: '12px' }}
                 label={{
-                  value: 'Operating Profit (M USD)',
+                  value: `Operating Profit (M ${currencyLabel})`,
                   angle: -90,
                   position: 'insideLeft',
                   style: { fontSize: '12px' },
