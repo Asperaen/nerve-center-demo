@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
@@ -325,6 +325,97 @@ export default function BudgetForecastActualWaterfall({
     }
   };
 
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+  const [axisLabelBottom, setAxisLabelBottom] = useState(0);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) {
+      return;
+    }
+    const updateSize = () => {
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+      setChartSize({ width: rect.width, height: rect.height });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(chartContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) {
+      return;
+    }
+    let frameId = 0;
+    const updateAxisBottom = () => {
+      const container = chartContainerRef.current;
+      if (!container) {
+        return;
+      }
+      const containerRect = container.getBoundingClientRect();
+      const ticks = container.querySelectorAll(
+        '.recharts-cartesian-axis .recharts-cartesian-axis-tick text, text.recharts-cartesian-axis-tick-value'
+      );
+      let maxBottom = 0;
+      ticks.forEach((tick) => {
+        const rect = tick.getBoundingClientRect();
+        const bottom = rect.bottom - containerRect.top;
+        if (bottom > maxBottom) {
+          maxBottom = bottom;
+        }
+      });
+      if (maxBottom > 0) {
+        setAxisLabelBottom(maxBottom);
+        return;
+      }
+      if (chartSize.height > 0) {
+        setAxisLabelBottom(Math.max(0, chartSize.height - 140));
+      }
+    };
+    frameId = window.requestAnimationFrame(updateAxisBottom);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [chartData.length, chartSize.height, chartSize.width]);
+
+  const initiativeGrouping = useMemo(() => {
+    if (
+      !chartData.length ||
+      chartSize.width === 0 ||
+      chartSize.height === 0 ||
+      axisLabelBottom === 0
+    ) {
+      return null;
+    }
+    const indexMap = new Map<string, number>();
+    chartData.forEach((item, index) => {
+      indexMap.set(item.stage, index);
+    });
+    const indices = [
+      indexMap.get('l3-vs-target'),
+      indexMap.get('l4-vs-planned'),
+      indexMap.get('l4-to-l5-leakage'),
+    ];
+    if (indices.some((value) => value === undefined)) {
+      return null;
+    }
+    const resolvedIndices = indices as number[];
+    const minIndex = Math.min(...resolvedIndices);
+    const maxIndex = Math.max(...resolvedIndices);
+    const margin = { left: 16, right: 16, bottom: 24 };
+    const availableWidth = Math.max(1, chartSize.width - margin.left - margin.right);
+    const step = availableWidth / chartData.length;
+    const left = margin.left + (minIndex + 0.5) * step;
+    const right = margin.left + (maxIndex + 0.5) * step;
+    const groupY = Math.min(
+      chartSize.height - 20,
+      Math.max(8, axisLabelBottom + 40)
+    );
+    const labelY = Math.min(chartSize.height - 6, groupY + 14);
+    return { left, right, groupY, labelY };
+  }, [axisLabelBottom, chartData, chartSize.height, chartSize.width]);
+
   const getSegmentFillColor = (
     stage: BudgetForecastStage,
     segment: 'forecast' | 'realized'
@@ -398,11 +489,11 @@ export default function BudgetForecastActualWaterfall({
           <div className='flex items-center gap-4'>
             <div className='flex items-center gap-2'>
               <div className='w-3 h-3 rounded-full bg-opportunity-500'></div>
-              <span className='text-sm text-gray-700'>Favourable</span>
+              <span className='text-sm text-gray-700'>Positive Impact</span>
             </div>
             <div className='flex items-center gap-2'>
               <div className='w-3 h-3 rounded-full bg-risk-500'></div>
-              <span className='text-sm text-gray-700'>Adverse</span>
+              <span className='text-sm text-gray-700'>Negative Impact</span>
             </div>
             {showPreliminaryLegend && (
               <div className='flex items-center gap-2'>
@@ -429,7 +520,9 @@ export default function BudgetForecastActualWaterfall({
         <ResponsiveContainer
           width='100%'
           height='100%'>
-          <ComposedChart data={chartData}>
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 32, right: 16, left: 16, bottom: 24 }}>
             <defs>
               <linearGradient id='favorableGradient' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='0%' stopColor='#bbf7d0' />
@@ -452,12 +545,6 @@ export default function BudgetForecastActualWaterfall({
                 const isClickable = stage?.isClickable ?? false;
                 const isHighlightedLabel =
                   highlightedStage && stage?.stage === highlightedStage;
-                const groupLabel =
-                  stage?.stage === 'l3-vs-target' ||
-                  stage?.stage === 'l4-vs-planned' ||
-                  stage?.stage === 'l4-to-l5-leakage'
-                    ? 'Initiative performance'
-                    : undefined;
                   const definition =
                     stage?.stage && labelDefinitions
                       ? labelDefinitions[stage.stage]
@@ -498,11 +585,6 @@ export default function BudgetForecastActualWaterfall({
                           {isHighlightedLabel && ' ★'}
                           {definition && <title>{definition}</title>}
                         </tspan>
-                        {groupLabel && (
-                          <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
-                            {groupLabel}
-                          </tspan>
-                        )}
                       </text>
                       {definition && (
                         <>
@@ -584,8 +666,9 @@ export default function BudgetForecastActualWaterfall({
                 }
                 const stage =
                   stages.find((item) => item.stage === payload.stage) ?? payload;
-                const cumulative = payload.cumulativeValue ?? stage.value;
                 const delta = payload.delta ?? stage.delta ?? stage.value;
+                const bucketValue =
+                  stage.type === 'baseline' ? stage.value : delta;
                 const isClickable = payload.isClickable ?? stage.isClickable;
                 const isPrimary =
                   stage.stage === 'budget' ||
@@ -604,14 +687,9 @@ export default function BudgetForecastActualWaterfall({
                     ) : (
                       <>
                         <p className='mt-1'>
-                          Value: {formatAmountM(cumulative)} {currencyLabel}
+                          Value: {bucketValue > 0 ? '+' : ''}
+                          {formatAmountM(bucketValue)} {currencyLabel}
                         </p>
-                        {delta !== cumulative && (
-                          <p>
-                            Change: {delta > 0 ? '+' : ''}
-                            {formatAmountM(delta)} {currencyLabel}
-                          </p>
-                        )}
                         {shouldShowSplit && (
                           <div className='mt-1 text-[11px] text-gray-600'>
                             <div>
@@ -726,21 +804,21 @@ export default function BudgetForecastActualWaterfall({
                 dataKey='barValueTotal'
                 position='middle'
                 content={(props) => {
-                  const { x, y, width, height, value, index } = props as {
+                  const { x, y, width, height, index } = props as {
                     x?: number;
                     y?: number;
                     width?: number;
                     height?: number;
-                    value?: number;
                     index?: number;
                   };
                       if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
                       
-                      const stage = stages[index];
-                      const isBaseline = stage?.type === 'baseline';
-                  const numericValue =
-                    typeof value === 'number' ? value : Number(value ?? 0);
-                      const displayValue = formatLabelValue(numericValue);
+                    const stage = stages[index];
+                    const isBaseline = stage?.type === 'baseline';
+                    const rawValue = isBaseline
+                      ? stage?.value ?? 0
+                      : stage?.delta ?? stage?.value ?? 0;
+                    const displayValue = formatLabelValue(rawValue);
                       const barHeight = height ?? 0;
                       const barY = y ?? 0;
                       
@@ -881,21 +959,21 @@ export default function BudgetForecastActualWaterfall({
                   dataKey='barValueTotal'
                   position='middle'
                   content={(props) => {
-                    const { x, y, width, height, value, index } = props as {
+                    const { x, y, width, height, index } = props as {
                       x?: number;
                       y?: number;
                       width?: number;
                       height?: number;
-                      value?: number;
                       index?: number;
                     };
                     if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
                     
                     const stage = stages[index];
                     const isBaseline = stage?.type === 'baseline';
-                    const numericValue =
-                      typeof value === 'number' ? value : Number(value ?? 0);
-                    const displayValue = formatLabelValue(numericValue);
+                    const rawValue = isBaseline
+                      ? stage?.value ?? 0
+                      : stage?.delta ?? stage?.value ?? 0;
+                    const displayValue = formatLabelValue(rawValue);
                     const barHeight = height ?? 0;
                     const barY = y ?? 0;
                     
@@ -1040,6 +1118,46 @@ export default function BudgetForecastActualWaterfall({
             )}
           </ComposedChart>
         </ResponsiveContainer>
+        {initiativeGrouping && (
+          <svg
+            className='absolute inset-0 pointer-events-none'
+            viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+            preserveAspectRatio='none'>
+            <line
+              x1={initiativeGrouping.left}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.right}
+              y2={initiativeGrouping.groupY}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <line
+              x1={initiativeGrouping.left}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.left}
+              y2={initiativeGrouping.groupY + 8}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <line
+              x1={initiativeGrouping.right}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.right}
+              y2={initiativeGrouping.groupY + 8}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <text
+              x={(initiativeGrouping.left + initiativeGrouping.right) / 2}
+              y={initiativeGrouping.labelY}
+              textAnchor='middle'
+              fontSize={12}
+              fontWeight={700}
+              fill='#374151'>
+              Initiative performance
+            </text>
+          </svg>
+        )}
       </div>
     </div>
   );

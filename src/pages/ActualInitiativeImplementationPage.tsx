@@ -22,6 +22,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import {
   INITIATIVE_IMPLEMENTATION_DATA,
   INITIATIVE_IMPLEMENTATION_ROW_DEFS,
+  KEY_CALLOUTS_BY_BG,
 } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -366,9 +367,29 @@ export default function ActualInitiativeImplementationPage() {
   }, [activeTimeframe, isMonthRangeCustom, monthRange]);
 
   useEffect(() => {
-    const timeframeParam = searchParams.get('timeframe');
+    const timeframeParam =
+      searchParams.get('timeframe') ?? searchParams.get('toggle');
     if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
       setActiveTimeframe(timeframeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const monthsParam = searchParams.get('months');
+    if (!monthsParam) {
+      return;
+    }
+    const [startRaw, endRaw] = monthsParam.split('-').map(Number);
+    if (
+      Number.isFinite(startRaw) &&
+      Number.isFinite(endRaw) &&
+      startRaw >= 0 &&
+      endRaw >= startRaw &&
+      endRaw < 12
+    ) {
+      setMonthRange([startRaw, endRaw]);
+      setIsMonthRangeCustom(true);
+      setMonthAnchor(null);
     }
   }, [searchParams]);
 
@@ -629,7 +650,28 @@ export default function ActualInitiativeImplementationPage() {
     }));
   }, [selectedInitiatives, timeframeScale, selectedGroupInfo]);
 
+  const isDeGroupSelected = useMemo(() => {
+    if (selectedBu === 'all' || !selectedGroupInfo) {
+      return false;
+    }
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    if (groupId !== 'hh') {
+      return false;
+    }
+    const deGroupId = getUnitId(groupId, 'D/E Group');
+    return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
+  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
   const keyCallOut = useMemo(() => {
+    if (isDeGroupSelected) {
+      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      if (callouts?.actualImplementation?.length) {
+        return {
+          bulletPoints: callouts.actualImplementation,
+          rootCauseAnalysis: '',
+        };
+      }
+    }
     if (scaledExecutionRows.length === 0) {
       return null;
     }
@@ -651,7 +693,7 @@ export default function ActualInitiativeImplementationPage() {
       rootCauseAnalysis:
         'Execution is concentrated in the highest-impact programs. Focus on clearing late milestones to protect L4 delivery and reduce slippage risk.',
     };
-  }, [scaledExecutionRows, formatMnValue, currencyLabel]);
+  }, [scaledExecutionRows, formatMnValue, currencyLabel, isDeGroupSelected]);
 
   const icebergData = useMemo(() => {
     const totalRow =
@@ -707,6 +749,11 @@ export default function ActualInitiativeImplementationPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
+      next.set('toggle', timeframe);
+      next.set(
+        'months',
+        timeframe === 'ytm' ? '0-2' : '0-11'
+      );
       return next;
     });
   };
@@ -716,6 +763,11 @@ export default function ActualInitiativeImplementationPage() {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
       setIsMonthRangeCustom(true);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('months', `${monthIndex}-${monthIndex}`);
+        return next;
+      });
       return;
     }
     const start = Math.min(monthAnchor, monthIndex);
@@ -723,6 +775,11 @@ export default function ActualInitiativeImplementationPage() {
     setMonthRange([start, end]);
     setMonthAnchor(null);
     setIsMonthRangeCustom(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('months', `${start}-${end}`);
+      return next;
+    });
   };
 
   const handleBuChange = (buId: string) => {
@@ -730,6 +787,8 @@ export default function ActualInitiativeImplementationPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
+      next.delete('bu');
+      next.delete('units');
       if (buId === 'all') {
         next.delete('bu');
         setSelectedGroupIds(new Set());
@@ -860,6 +919,12 @@ export default function ActualInitiativeImplementationPage() {
                     if (unitId === 'all') {
                       next.clear();
                       next.add(overallId);
+                      setSearchParams((prevParams) => {
+                        const params = new URLSearchParams(prevParams);
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      });
                       return next;
                     }
                     next.delete(overallId);
@@ -871,6 +936,37 @@ export default function ActualInitiativeImplementationPage() {
                     if (next.size === 0) {
                       next.add(overallId);
                     }
+                    setSearchParams((prevParams) => {
+                      const params = new URLSearchParams(prevParams);
+                      const selectedUnitIds = Array.from(next).filter(
+                        (id) => id !== overallId
+                      );
+                      if (selectedUnitIds.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      const unitNames = selectedGroupInfo.group.businessUnits
+                        .filter((unit) =>
+                          selectedUnitIds.includes(
+                            getUnitId(groupId, unit.name)
+                          )
+                        )
+                        .map((unit) => unit.name);
+                      if (unitNames.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      if (params.get('bg')) {
+                        params.set('bu', unitNames.join(','));
+                        params.delete('units');
+                      } else {
+                        params.set('units', unitNames.join(','));
+                        params.delete('bu');
+                      }
+                      return params;
+                    });
                     return next;
                   });
                 };
@@ -927,11 +1023,13 @@ export default function ActualInitiativeImplementationPage() {
                     </li>
                   ))}
                 </ul>
-                <div className='mt-4 pt-4 border-t border-gray-200'>
-                  <p className='text-sm text-gray-700 leading-relaxed'>
-                    {keyCallOut.rootCauseAnalysis}
-                  </p>
-                </div>
+                {keyCallOut.rootCauseAnalysis && (
+                  <div className='mt-4 pt-4 border-t border-gray-200'>
+                    <p className='text-sm text-gray-700 leading-relaxed'>
+                      {keyCallOut.rootCauseAnalysis}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

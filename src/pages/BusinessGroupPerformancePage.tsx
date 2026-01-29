@@ -494,10 +494,30 @@ export default function BusinessGroupPerformancePage() {
   // Filter states
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>(() => 'ytm');
-  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const initialMonths = (() => {
+    const monthsParam = searchParams.get('months');
+    if (!monthsParam) {
+      return null;
+    }
+    const [startRaw, endRaw] = monthsParam.split('-').map(Number);
+    if (
+      Number.isFinite(startRaw) &&
+      Number.isFinite(endRaw) &&
+      startRaw >= 0 &&
+      endRaw >= startRaw &&
+      endRaw < 12
+    ) {
+      return [startRaw, endRaw] as [number, number];
+    }
+    return null;
+  })();
+  const [monthRange, setMonthRange] = useState<[number, number]>(
+    initialMonths ?? [0, 2]
+  );
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
-  const [isMonthRangeCustom, setIsMonthRangeCustom] =
-    useState<boolean>(false);
+  const [isMonthRangeCustom, setIsMonthRangeCustom] = useState<boolean>(
+    Boolean(initialMonths)
+  );
   const [selectedBu, setSelectedBu] = useState<string>(initialBu);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
@@ -612,6 +632,10 @@ export default function BusinessGroupPerformancePage() {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
       next.set('toggle', selectedTimeframe);
+      next.set('months', `${monthRange[0]}-${monthRange[1]}`);
+      next.set('view', financialView);
+      next.delete('bu');
+      next.delete('units');
       return next;
     });
     // Reset expanded rows when changing filter
@@ -622,10 +646,14 @@ export default function BusinessGroupPerformancePage() {
     setSelectedTimeframe(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, 2]);
+    const nextRange: [number, number] =
+      timeframe === 'full-year' ? [0, 11] : [0, 2];
+    setMonthRange(nextRange);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('toggle', timeframe);
+      next.set('months', `${nextRange[0]}-${nextRange[1]}`);
+      next.set('view', financialView);
       return next;
     });
   };
@@ -635,6 +663,12 @@ export default function BusinessGroupPerformancePage() {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
       setIsMonthRangeCustom(true);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('months', `${monthIndex}-${monthIndex}`);
+        next.set('view', financialView);
+        return next;
+      });
       return;
     }
     const start = Math.min(monthAnchor, monthIndex);
@@ -642,6 +676,12 @@ export default function BusinessGroupPerformancePage() {
     setMonthRange([start, end]);
     setMonthAnchor(null);
     setIsMonthRangeCustom(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('months', `${start}-${end}`);
+      next.set('view', financialView);
+      return next;
+    });
   };
 
   // Toggle row expansion
@@ -685,6 +725,29 @@ export default function BusinessGroupPerformancePage() {
     }
     // If an invalid timeframe is preselected, default to YTM.
     setSelectedTimeframe('ytm');
+  }, [searchParams]);
+
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam === 'absolute' || viewParam === 'margin') {
+      setFinancialView(viewParam);
+    }
+    const monthsParam = searchParams.get('months');
+    if (!monthsParam) {
+      return;
+    }
+    const [startRaw, endRaw] = monthsParam.split('-').map(Number);
+    if (
+      Number.isFinite(startRaw) &&
+      Number.isFinite(endRaw) &&
+      startRaw >= 0 &&
+      endRaw >= startRaw &&
+      endRaw < 12
+    ) {
+      setMonthRange([startRaw, endRaw]);
+      setIsMonthRangeCustom(true);
+      setMonthAnchor(null);
+    }
   }, [searchParams]);
 
   // Sync selectedBu with URL bg parameter when navigating to this page
@@ -1210,6 +1273,12 @@ export default function BusinessGroupPerformancePage() {
         return [];
       }
       const normalized = (value: string) => value.toLowerCase();
+      if (stage.stage === 'confirmed-volume-mix') {
+        return opImpactRows.filter((row) => {
+          const category = normalized(row.category);
+          return category.includes('volume') || category.includes('mix');
+        });
+      }
       if (stage.stage === 'one-off-items' || stage.stage === 'one-off-adjustments') {
         return opImpactRows.filter((row) =>
           normalized(row.category).includes('one-off')
@@ -1369,26 +1438,27 @@ export default function BusinessGroupPerformancePage() {
       {
         ...l3Stage,
         stage: 'l3-vs-target',
-        label: 'L3 vs. target',
+        label: 'L3 vs. budget',
         delta: l3Delta,
         type: 'positive',
-        description: l3Stage?.description ?? 'L3 initiative performance vs target',
+        description: l3Stage?.description ?? 'L3 initiative performance vs budget',
       },
       {
         ...l4Stage,
         stage: 'l4-vs-planned',
-        label: 'L4 vs. target',
+        label: 'L4 vs. L3',
         delta: l4Delta,
         type: 'positive',
-        description: l4Stage?.description ?? 'L4 initiative performance vs target',
+        description: l4Stage?.description ?? 'L4 initiative performance vs L3',
       },
       {
         ...l5Stage,
         stage: 'l4-to-l5-leakage',
-        label: 'L5 vs. target',
+        label: 'L5 vs. L4 implemented',
         delta: l5Delta,
         type: 'positive',
-        description: l5Stage?.description ?? 'L5 initiative performance vs target',
+        description:
+          l5Stage?.description ?? 'L5 initiative performance vs L4 implemented',
       },
       {
         stage: 'one-off-adjustments',
@@ -1727,13 +1797,15 @@ export default function BusinessGroupPerformancePage() {
       };
     }
 
-    if (selectedTimeframe === 'budget') {
-      if (
-        activeDeviationStage.stage !== 'one-off-adjustments' &&
-        activeDeviationStage.stage !== 'market-performance'
-      ) {
-        return null;
-      }
+    const isOpImpactStage = [
+      'one-off-adjustments',
+      'one-off-items',
+      'headwinds-tailwinds',
+      'confirmed-volume-mix',
+      'market-performance',
+    ].includes(activeDeviationStage.stage);
+
+    if (isOpImpactStage) {
       const rows = getOpImpactRowsForStage(activeDeviationStage);
       const normalizedSearch = impactSearch.trim().toLowerCase();
       const filteredRows = rows.filter((row) => {
@@ -2120,9 +2192,11 @@ export default function BusinessGroupPerformancePage() {
     groupName: string,
     metricName: string,
     isLast: boolean = false,
-    revenueMetric?: BusinessGroupMetricWithTrend
+    revenueMetric?: BusinessGroupMetricWithTrend,
+    forceAbsoluteView: boolean = false
   ) => {
     const isPercentView = financialView === 'margin';
+    const usePercentView = isPercentView && !forceAbsoluteView;
     const displayValue = isBudgetMode ? metric.baseline : metric.value;
     const displayRevenue = revenueMetric
       ? isBudgetMode
@@ -2136,18 +2210,18 @@ export default function BusinessGroupPerformancePage() {
     const displayMargin = calcMargin(displayValue, displayRevenue);
     const baselineMargin = calcMargin(metric.baseline, baselineRevenue);
     const lastYearMargin = calcMargin(metric.stly, lastYearRevenue);
-    const budgetPercent = isPercentView
+    const budgetPercent = usePercentView
       ? calcPercent(displayMargin, baselineMargin)
       : calcPercent(metric.value, metric.baseline);
-    const lastYearPercent = isPercentView
+    const lastYearPercent = usePercentView
       ? calcPercent(displayMargin, lastYearMargin)
       : calcPercent(metric.value, metric.stly);
     const primaryPercent = isBudgetMode ? lastYearPercent : budgetPercent;
     const formatCellValue = (value: number) =>
-      isPercentView ? `${value.toFixed(1)}%` : formatMnValue(value);
-    const comparisonValue = isPercentView ? displayMargin : displayValue;
-    const comparisonBaseline = isPercentView ? baselineMargin : metric.baseline;
-    const comparisonLastYear = isPercentView ? lastYearMargin : metric.stly;
+      usePercentView ? `${value.toFixed(1)}%` : formatMnValue(value);
+    const comparisonValue = usePercentView ? displayMargin : displayValue;
+    const comparisonBaseline = usePercentView ? baselineMargin : metric.baseline;
+    const comparisonLastYear = usePercentView ? lastYearMargin : metric.stly;
     const percentColor =
       primaryPercent > 0
         ? 'bg-green-100 text-green-700'
@@ -2165,7 +2239,7 @@ export default function BusinessGroupPerformancePage() {
 
     // Calculate trend line for sparkline
     const trendValues =
-      isPercentView && revenueMetric
+      usePercentView && revenueMetric
         ? metric.trend.map((t, index) => {
             const revenueValue = revenueMetric.trend[index]?.value ?? 0;
             return calcMargin(t.value, revenueValue);
@@ -2547,7 +2621,7 @@ export default function BusinessGroupPerformancePage() {
             </span>
           </div>
         </td>
-        {!isPercentView && renderMetricCell(group.rev, group.name, 'Revenue')}
+        {renderMetricCell(group.rev, group.name, 'Revenue', false, undefined, true)}
         {renderMetricCell(
           group.gp,
           group.name,
@@ -2669,6 +2743,12 @@ export default function BusinessGroupPerformancePage() {
                       if (unitId === 'all') {
                         next.clear();
                         next.add(overallId);
+                        setSearchParams((prevParams) => {
+                          const params = new URLSearchParams(prevParams);
+                          params.delete('bu');
+                          params.delete('units');
+                          return params;
+                        });
                         return next;
                       }
                       next.delete(overallId);
@@ -2680,6 +2760,37 @@ export default function BusinessGroupPerformancePage() {
                       if (next.size === 0) {
                         next.add(overallId);
                       }
+                      setSearchParams((prevParams) => {
+                        const params = new URLSearchParams(prevParams);
+                        const selectedUnitIds = Array.from(next).filter(
+                          (id) => id !== overallId
+                        );
+                        if (selectedUnitIds.length === 0) {
+                          params.delete('bu');
+                          params.delete('units');
+                          return params;
+                        }
+                        const unitNames = selectedGroup.businessUnits
+                          .filter((unit) =>
+                            selectedUnitIds.includes(
+                              getUnitId(groupId, unit.name)
+                            )
+                          )
+                          .map((unit) => unit.name);
+                        if (unitNames.length === 0) {
+                          params.delete('bu');
+                          params.delete('units');
+                          return params;
+                        }
+                        if (params.get('bg')) {
+                          params.set('bu', unitNames.join(','));
+                          params.delete('units');
+                        } else {
+                          params.set('units', unitNames.join(','));
+                          params.delete('bu');
+                        }
+                        return params;
+                      });
                       return next;
                     });
                   };
@@ -2790,9 +2901,15 @@ export default function BusinessGroupPerformancePage() {
                       Absolute
                     </span>
                     <button
-                      onClick={() =>
-                        setFinancialView(isPercentView ? 'absolute' : 'margin')
-                      }
+                      onClick={() => {
+                        const nextView = isPercentView ? 'absolute' : 'margin';
+                        setFinancialView(nextView);
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.set('view', nextView);
+                          return next;
+                        });
+                      }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                         isPercentView ? 'bg-primary-600' : 'bg-gray-200'
                       }`}>
@@ -2826,13 +2943,11 @@ export default function BusinessGroupPerformancePage() {
                       Business Group
                     </span>
                   </th>
-                  {!isPercentView && (
-                    <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
-                      <span className='text-sm font-bold text-gray-900'>
-                        Revenue
-                      </span>
-                    </th>
-                  )}
+                  <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
+                    <span className='text-sm font-bold text-gray-900'>
+                      Revenue
+                    </span>
+                  </th>
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
                       {isPercentView ? 'Gross Profit Margin' : 'Gross Profit'}

@@ -22,6 +22,9 @@ export default function RightSidebar({
   onToggleCollapse,
 }: RightSidebarProps) {
   const location = useLocation();
+  const linkSearch = location.search;
+  const buildLink = (path: string) =>
+    linkSearch ? `${path}${linkSearch}` : path;
 
   // Real time pulse section
   const realTimePulseTabs = [
@@ -124,7 +127,7 @@ export default function RightSidebar({
               return (
                 <Link
                   key={tab.id}
-                  to={tab.path}
+                  to={buildLink(tab.path)}
                   className={`flex items-center px-4 py-3 mx-2 rounded-lg transition-colors ${
                     active
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -167,7 +170,7 @@ export default function RightSidebar({
               return (
                 <Link
                   key={tab.id}
-                  to={tab.path}
+                  to={buildLink(tab.path)}
                   className={`flex items-center px-4 py-3 mx-2 rounded-lg transition-colors ${
                     active
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -193,7 +196,7 @@ export default function RightSidebar({
       {/* Profile Button */}
       <div className='px-4 pb-4 pt-2 border-t border-gray-200 flex-shrink-0'>
         <Link
-          to='/profile'
+          to={buildLink('/profile')}
           className={`flex items-center px-4 py-3 mx-2 rounded-lg transition-colors ${
             location.pathname === '/profile'
               ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-600'

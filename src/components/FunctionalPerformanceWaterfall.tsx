@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -280,6 +280,8 @@ export default function FunctionalPerformanceWaterfall({
 }: FunctionalPerformanceWaterfallProps) {
   const { formatAmount, currencyLabel } = useCurrency();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+  const [axisLabelBottom, setAxisLabelBottom] = useState(0);
   const [initiativeTooltip, setInitiativeTooltip] = useState<{
     text: string;
     left: number;
@@ -341,6 +343,57 @@ export default function FunctionalPerformanceWaterfall({
   const hideInitiativeTooltip = () => {
     setInitiativeTooltip(null);
   };
+
+  useEffect(() => {
+    if (!chartContainerRef.current) {
+      return;
+    }
+    const updateSize = () => {
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+      setChartSize({ width: rect.width, height: rect.height });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(chartContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!chartContainerRef.current) {
+      return;
+    }
+    let frameId = 0;
+    const updateAxisBottom = () => {
+      const container = chartContainerRef.current;
+      if (!container) {
+        return;
+      }
+      const containerRect = container.getBoundingClientRect();
+      const ticks = container.querySelectorAll(
+        '.recharts-cartesian-axis .recharts-cartesian-axis-tick text, text.recharts-cartesian-axis-tick-value'
+      );
+      let maxBottom = 0;
+      ticks.forEach((tick) => {
+        const rect = tick.getBoundingClientRect();
+        const bottom = rect.bottom - containerRect.top;
+        if (bottom > maxBottom) {
+          maxBottom = bottom;
+        }
+      });
+      if (maxBottom > 0) {
+        setAxisLabelBottom(maxBottom);
+        return;
+      }
+      if (chartSize.height > 0) {
+        setAxisLabelBottom(Math.max(0, chartSize.height - 140));
+      }
+    };
+    frameId = window.requestAnimationFrame(updateAxisBottom);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [chartSize.height, chartSize.width]);
   // Calculate effective broken axis config (auto-detect or use provided)
   const brokenAxis = useMemo(() => {
     if (brokenAxisProp === 'auto') {
@@ -418,6 +471,36 @@ export default function FunctionalPerformanceWaterfall({
     });
   }, [stages, brokenAxis]);
 
+  const initiativeGrouping = useMemo(() => {
+    if (
+      !chartData.length ||
+      chartSize.width === 0 ||
+      chartSize.height === 0 ||
+      axisLabelBottom === 0
+    ) {
+      return null;
+    }
+    const initiativeIndices = chartData
+      .map((stage, index) => (initiativeStageIds.has(stage.id) ? index : null))
+      .filter((value): value is number => value !== null);
+    if (initiativeIndices.length === 0) {
+      return null;
+    }
+    const minIndex = Math.min(...initiativeIndices);
+    const maxIndex = Math.max(...initiativeIndices);
+    const margin = { left: 16, right: 16, bottom: 24 };
+    const availableWidth = Math.max(1, chartSize.width - margin.left - margin.right);
+    const step = availableWidth / chartData.length;
+    const left = margin.left + (minIndex + 0.5) * step;
+    const right = margin.left + (maxIndex + 0.5) * step;
+    const groupY = Math.min(
+      chartSize.height - 20,
+      Math.max(8, axisLabelBottom + 40)
+    );
+    const labelY = Math.min(chartSize.height - 6, groupY + 14);
+    return { left, right, groupY, labelY };
+  }, [axisLabelBottom, chartData, chartSize.height, chartSize.width, initiativeStageIds]);
+
   const getFillColor = (stage: FunctionalPerformanceStage) => {
     if (stage.type === 'baseline') return '#9ca3af';
     return stage.type === 'positive' ? '#22c55e' : '#ef4444';
@@ -485,11 +568,11 @@ export default function FunctionalPerformanceWaterfall({
         <div className='flex items-center gap-4'>
           <div className='flex items-center gap-1.5'>
             <span className='w-3 h-3 rounded-full bg-[#22c55e]' />
-            <span className='text-sm text-gray-600'>Favourable</span>
+            <span className='text-sm text-gray-600'>Positive Impact</span>
           </div>
           <div className='flex items-center gap-1.5'>
             <span className='w-3 h-3 rounded-full bg-[#ef4444]' />
-            <span className='text-sm text-gray-600'>Adverse</span>
+            <span className='text-sm text-gray-600'>Negative Impact</span>
           </div>
         </div>
       </div>
@@ -531,12 +614,11 @@ export default function FunctionalPerformanceWaterfall({
                 const stage = index !== undefined ? stages[index] : undefined;
                 const showGroupLabel =
                   stage && initiativeStageIds.has(stage.id);
-                const groupLabel = showGroupLabel ? 'Initiative performance' : undefined;
                 return (
                   <g
                     transform={`rotate(-25, ${x}, ${y})`}
                     onMouseEnter={(event) => {
-                      if (showGroupLabel && groupLabel) {
+                      if (showGroupLabel) {
                         showInitiativeTooltip(
                           event,
                           `Initiative total: ${formatAmountM(initiativeTotal)} ${currencyLabel}`
@@ -556,11 +638,6 @@ export default function FunctionalPerformanceWaterfall({
                       <tspan x={x} dy={0}>
                         {payload.value}
                       </tspan>
-                      {groupLabel && (
-                        <tspan x={x} dy={12} fontSize={10} fill='#6b7280'>
-                          {groupLabel}
-                        </tspan>
-                      )}
                     </text>
                   </g>
                 );
@@ -723,6 +800,46 @@ export default function FunctionalPerformanceWaterfall({
             </Bar>
           </ComposedChart>
         </ResponsiveContainer>
+        {initiativeGrouping && (
+          <svg
+            className='absolute inset-0 pointer-events-none'
+            viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+            preserveAspectRatio='none'>
+            <line
+              x1={initiativeGrouping.left}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.right}
+              y2={initiativeGrouping.groupY}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <line
+              x1={initiativeGrouping.left}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.left}
+              y2={initiativeGrouping.groupY + 8}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <line
+              x1={initiativeGrouping.right}
+              y1={initiativeGrouping.groupY}
+              x2={initiativeGrouping.right}
+              y2={initiativeGrouping.groupY + 8}
+              stroke='#4b5563'
+              strokeWidth={2}
+            />
+            <text
+              x={(initiativeGrouping.left + initiativeGrouping.right) / 2}
+              y={initiativeGrouping.labelY}
+              textAnchor='middle'
+              fontSize={12}
+              fontWeight={700}
+              fill='#374151'>
+              Initiative performance
+            </text>
+          </svg>
+        )}
       </div>
       {footerContent && <div className='mt-3'>{footerContent}</div>}
     </div>

@@ -86,6 +86,48 @@ export type FunctionTargetRow = {
     coreImprovementTarget: string;
 }
 
+export type KeyCalloutSet = {
+    budget: string[];
+    initiative: string[];
+    actualImplementation: string[];
+    actualReconciliation: string[];
+}
+
+export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> = {
+    HH: {
+        'D/E Group': {
+            budget: [
+                'The current-year OP budget is set at USD 1,935M, implying a 30.7% YoY growth ambition, broadly in line with peer BUs within HH BG.',
+                'Budget delivery is highly dependent on in-year improvement initiatives, which account for 34.2% of total OP, indicating a heavy reliance on execution rather than secured run-rate.',
+                'Execution risk is elevated, with market pressure and pipeline leakage representing the most critical threats, driven by:',
+                '3.1.Significant historical exposure to volume/mix changes, as evidenced by a –USD 368.5M OP impact in D/E group last year.',
+                '3.2.Potential underestimation of leakage risk, with only USD 6.5M leakage assumed against a USD 662M pipeline (~1%), suggesting limited buffer for execution slippage.',
+            ],
+            initiative: [
+                'Procurement and Topline together drive the majority of pipeline impact, with Procurement representing the largest share and Categories A and C contributing a disproportionate portion of the value.',
+                'Execution risk is concentrated in a limited number of focus areas, particularly Account B within Topline, where historical leakage indicates a tendency toward over-optimistic assumptions.',
+                'Targeted governance and closer implementation monitoring are therefore required to mitigate downside risk and protect delivery.',
+            ],
+            actualImplementation: [
+                'Account A L5/L6 and Account B L5/L6 are driving the majority of pipeline delivery within Topline VS, with Services providing a smaller, steady contribution.',
+                'The largest leakage is concentrated in WH L6 (MFG VS) and Account B L10 (Topline VS), driven by milestone slippage and late change requests—warrants a focused deep-dive.',
+                'If the same leakage repeats, Topline VS delivery would be the primary shortfall, forcing reliance on WH L10 and Product platform B catch-up to meet run-rate targets.',
+                'Immediate actions: tighten weekly governance on Account B L5/L6 and WH L6, enforce change-control for L10 items, and add early-warning checkpoints for Product platform C.',
+            ],
+            actualReconciliation: [
+                'Actual NP reached USD 88.7M, trailing budget by USD 10.2M (–10.3%), indicating a material gap versus plan.',
+                'The primary negative driver is volume/mix softness, mainly driven by volume decline in Account B, which more than offset other positives.',
+                'Cost headwinds from materials, labor, and FX are further compressing profitability, resulting in an estimated ~2 p.p. gross margin impact.',
+                'Pipeline over-delivery has secured approximately USD 100M OP, providing a meaningful upside lever if execution risks are effectively managed.',
+                'Immediate actions are required to protect delivery and close the gap, including:',
+                '5.1. Prioritizing margin recovery levers (pricing actions, mix optimization, and cost take-out).',
+                '5.2. Fast-tracking late-stage initiatives with the highest OP impact to minimize leakage in the primary positive impact source.',
+                '5.3. Tightening spend controls and reassessing discretionary programs to recover identified leakage potential.',
+            ],
+        },
+    },
+};
+
 export type InitiativeImplementationRowDef = {
     id: string;
     label: string;
@@ -4153,7 +4195,7 @@ const BG_MONTHLY_IMPACT: Record<string, BgMonthlyImpactRow[]> = {
     ],
 };
 
-const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
+export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
     'HH|A Group': [
         {
             category: 'One-off',
@@ -4750,7 +4792,57 @@ const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
     'FII|CNSBG': [],
     'FII|IPBG': [],
     'FII|Others': [],
-    'HH|D/E Group': [],
+    'HH|D/E Group': [
+        {
+            category: 'One-off',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Self-decision',
+            item: 'One-time automation retrofit across legacy D/E lines',
+            opImpact: 52.4,
+        },
+        {
+            category: 'One-off',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Market-driven',
+            item: 'Customer tooling write-off following program mix change',
+            opImpact: 38.7,
+        },
+        {
+            category: 'One-off',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Self-decision',
+            item: 'Facility consolidation and relocation expenses',
+            opImpact: 27.2,
+        },
+        {
+            category: 'One-off',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Market-driven',
+            item: 'Inventory obsolescence provision for discontinued SKUs',
+            opImpact: 18.17,
+        },
+        {
+            category: 'Headwind/tailwind',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Market-driven',
+            item: 'Short-term utilization shortfall from delayed ramp',
+            opImpact: -18.25,
+        },
+        {
+            category: 'Headwind/tailwind',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Self-decision',
+            item: 'Temporary yield loss during line re-qualification',
+            opImpact: -13.4,
+        },
+        {
+            category: 'Headwind/tailwind',
+            lineItem: 'COGS - Manufacturing expense',
+            costRationale: 'Market-driven',
+            item: 'Price compression on mature D/E programs',
+            opImpact: -9.3,
+        },
+    ],
     'HH|Others': []
 };
 

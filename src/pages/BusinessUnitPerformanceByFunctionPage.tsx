@@ -299,7 +299,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const displayBus = selectedBus;
 
   const scaledRows = useMemo(() => {
-    const timeframe = getStoredTimeframe();
+    const timeframeParam =
+      searchParams.get('toggle') ?? searchParams.get('timeframe');
+    const timeframe =
+      timeframeParam === 'ytm' || timeframeParam === 'full-year'
+        ? timeframeParam
+        : getStoredTimeframe();
     const dataTimeframe = timeframe === 'ytm' ? 'ytm' : 'full-year';
     const tableData = getAllBusinessGroupData(dataTimeframe);
     const overallRow = tableData.find((row) => row.id === 'overall');

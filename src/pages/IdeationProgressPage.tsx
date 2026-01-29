@@ -7,7 +7,7 @@ import { WAVE_LINK } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { BgInitiativePerformanceRow } from '../data/mockBgData';
-import { BG_INITIATIVE_PERFORMANCE } from '../data/mockBgData';
+import { BG_INITIATIVE_PERFORMANCE, KEY_CALLOUTS_BY_BG } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   getStoredTimeframe,
@@ -622,9 +622,29 @@ export default function IdeationProgressPage() {
   }, [businessGroups, selectedBu, selectedGroupIds, selectedGroupInfo]);
 
   useEffect(() => {
-    const timeframeParam = searchParams.get('timeframe');
+    const timeframeParam =
+      searchParams.get('timeframe') ?? searchParams.get('toggle');
     if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
       setActiveTimeframe(timeframeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const monthsParam = searchParams.get('months');
+    if (!monthsParam) {
+      return;
+    }
+    const [startRaw, endRaw] = monthsParam.split('-').map(Number);
+    if (
+      Number.isFinite(startRaw) &&
+      Number.isFinite(endRaw) &&
+      startRaw >= 0 &&
+      endRaw >= startRaw &&
+      endRaw < 12
+    ) {
+      setMonthRange([startRaw, endRaw]);
+      setIsMonthRangeCustom(true);
+      setMonthAnchor(null);
     }
   }, [searchParams]);
 
@@ -671,6 +691,11 @@ export default function IdeationProgressPage() {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
       setIsMonthRangeCustom(true);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('months', `${monthIndex}-${monthIndex}`);
+        return next;
+      });
       return;
     }
     const start = Math.min(monthAnchor, monthIndex);
@@ -678,6 +703,11 @@ export default function IdeationProgressPage() {
     setMonthRange([start, end]);
     setMonthAnchor(null);
     setIsMonthRangeCustom(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('months', `${start}-${end}`);
+      return next;
+    });
   };
 
   const scaledPlanRows = useMemo(() => {
@@ -706,7 +736,28 @@ export default function IdeationProgressPage() {
     });
   }, [monthlyImpactPlanRows, timeframeScale]);
 
+  const isDeGroupSelected = useMemo(() => {
+    if (selectedBu === 'all' || !selectedGroupInfo) {
+      return false;
+    }
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    if (groupId !== 'hh') {
+      return false;
+    }
+    const deGroupId = getUnitId(groupId, 'D/E Group');
+    return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
+  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
   const keyCallOut = useMemo(() => {
+    if (isDeGroupSelected) {
+      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      if (callouts?.initiative?.length) {
+        return {
+          bulletPoints: callouts.initiative,
+          rootCauseAnalysis: '',
+        };
+      }
+    }
     if (scaledPlanRows.length === 0) {
       return null;
     }
@@ -729,7 +780,7 @@ export default function IdeationProgressPage() {
       rootCauseAnalysis:
         'Momentum is driven by early-stage ideation. Focus areas include accelerating L1-to-L2 progression and tightening milestone ownership on the largest value buckets.',
     };
-  }, [scaledPlanRows, formatMnValue, currencyLabel]);
+  }, [scaledPlanRows, formatMnValue, currencyLabel, isDeGroupSelected]);
 
   useEffect(() => {
     setStoredTimeframe(activeTimeframe);
@@ -816,6 +867,11 @@ export default function IdeationProgressPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
+      next.set('toggle', timeframe);
+      next.set(
+        'months',
+        timeframe === 'ytm' ? '0-2' : '0-11'
+      );
       return next;
     });
   };
@@ -825,6 +881,8 @@ export default function IdeationProgressPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
+      next.delete('bu');
+      next.delete('units');
       return next;
     });
   };
@@ -928,6 +986,12 @@ export default function IdeationProgressPage() {
                     if (unitId === 'all') {
                       next.clear();
                       next.add(overallId);
+                      setSearchParams((prevParams) => {
+                        const params = new URLSearchParams(prevParams);
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      });
                       return next;
                     }
                     next.delete(overallId);
@@ -939,6 +1003,37 @@ export default function IdeationProgressPage() {
                     if (next.size === 0) {
                       next.add(overallId);
                     }
+                    setSearchParams((prevParams) => {
+                      const params = new URLSearchParams(prevParams);
+                      const selectedUnitIds = Array.from(next).filter(
+                        (id) => id !== overallId
+                      );
+                      if (selectedUnitIds.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      const unitNames = selectedGroupInfo.group.businessUnits
+                        .filter((unit) =>
+                          selectedUnitIds.includes(
+                            getUnitId(groupId, unit.name)
+                          )
+                        )
+                        .map((unit) => unit.name);
+                      if (unitNames.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      if (params.get('bg')) {
+                        params.set('bu', unitNames.join(','));
+                        params.delete('units');
+                      } else {
+                        params.set('units', unitNames.join(','));
+                        params.delete('bu');
+                      }
+                      return params;
+                    });
                     return next;
                   });
                 };
@@ -995,11 +1090,13 @@ export default function IdeationProgressPage() {
                     </li>
                   ))}
                 </ul>
-                <div className='mt-4 pt-4 border-t border-gray-200'>
-                  <p className='text-sm text-gray-700 leading-relaxed'>
-                    {keyCallOut.rootCauseAnalysis}
-                  </p>
-                </div>
+                {keyCallOut.rootCauseAnalysis && (
+                  <div className='mt-4 pt-4 border-t border-gray-200'>
+                    <p className='text-sm text-gray-700 leading-relaxed'>
+                      {keyCallOut.rootCauseAnalysis}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
