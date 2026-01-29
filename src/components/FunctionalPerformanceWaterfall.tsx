@@ -11,8 +11,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
 
 export interface FunctionalPerformanceStage {
   id: string;
@@ -525,7 +525,9 @@ export default function FunctionalPerformanceWaterfall({
                   payload?: { value?: string };
                   index?: number;
                 };
-                if (x === undefined || y === undefined || !payload) return null;
+                if (x === undefined || y === undefined || !payload) {
+                  return <text />;
+                }
                 const stage = index !== undefined ? stages[index] : undefined;
                 const showGroupLabel =
                   stage && initiativeStageIds.has(stage.id);
