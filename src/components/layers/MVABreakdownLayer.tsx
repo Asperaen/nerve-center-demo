@@ -196,11 +196,11 @@ export default function MVABreakdownLayer({
         <div className='flex items-center gap-4'>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded-full bg-green-500'></div>
-            <span className='text-sm text-gray-700'>Favourable</span>
+            <span className='text-sm text-gray-700'>Positive Impact</span>
           </div>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded-full bg-red-500'></div>
-            <span className='text-sm text-gray-700'>Adverse</span>
+            <span className='text-sm text-gray-700'>Negative Impact</span>
           </div>
         </div>
       </div>

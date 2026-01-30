@@ -4,7 +4,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -22,6 +21,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import {
   INITIATIVE_IMPLEMENTATION_DATA,
   INITIATIVE_IMPLEMENTATION_ROW_DEFS,
+  KEY_CALLOUTS_BY_BG,
 } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -366,9 +366,29 @@ export default function ActualInitiativeImplementationPage() {
   }, [activeTimeframe, isMonthRangeCustom, monthRange]);
 
   useEffect(() => {
-    const timeframeParam = searchParams.get('timeframe');
+    const timeframeParam =
+      searchParams.get('timeframe') ?? searchParams.get('toggle');
     if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
       setActiveTimeframe(timeframeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const monthsParam = searchParams.get('months');
+    if (!monthsParam) {
+      return;
+    }
+    const [startRaw, endRaw] = monthsParam.split('-').map(Number);
+    if (
+      Number.isFinite(startRaw) &&
+      Number.isFinite(endRaw) &&
+      startRaw >= 0 &&
+      endRaw >= startRaw &&
+      endRaw < 12
+    ) {
+      setMonthRange([startRaw, endRaw]);
+      setIsMonthRangeCustom(true);
+      setMonthAnchor(null);
     }
   }, [searchParams]);
 
@@ -629,7 +649,28 @@ export default function ActualInitiativeImplementationPage() {
     }));
   }, [selectedInitiatives, timeframeScale, selectedGroupInfo]);
 
+  const isDeGroupSelected = useMemo(() => {
+    if (selectedBu === 'all' || !selectedGroupInfo) {
+      return false;
+    }
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    if (groupId !== 'hh') {
+      return false;
+    }
+    const deGroupId = getUnitId(groupId, 'D/E Group');
+    return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
+  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
   const keyCallOut = useMemo(() => {
+    if (isDeGroupSelected) {
+      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      if (callouts?.actualImplementation?.length) {
+        return {
+          bulletPoints: callouts.actualImplementation,
+          rootCauseAnalysis: '',
+        };
+      }
+    }
     if (scaledExecutionRows.length === 0) {
       return null;
     }
@@ -651,17 +692,19 @@ export default function ActualInitiativeImplementationPage() {
       rootCauseAnalysis:
         'Execution is concentrated in the highest-impact programs. Focus on clearing late milestones to protect L4 delivery and reduce slippage risk.',
     };
-  }, [scaledExecutionRows, formatMnValue, currencyLabel]);
+  }, [scaledExecutionRows, formatMnValue, currencyLabel, isDeGroupSelected]);
 
   const icebergData = useMemo(() => {
     const totalRow =
       scaledExecutionRows.find((row) => row.isTotal) ??
       scaledExecutionRows[0];
-    const plan = Math.max(0, totalRow?.l4Target ?? 0);
-    const actual = Math.max(0, totalRow?.l4Impact ?? 0);
-    const recurring = Math.max(0, actual * 0.25);
-    const projected = Math.max(0, plan - actual);
-    const headwind = Math.max(0, actual * 0.35);
+    const pipeline = Math.max(0, totalRow?.pipeline ?? 0);
+    const l4Executed = Math.max(0, totalRow?.l4Impact ?? 0);
+    const l4Projected = Math.max(0, (totalRow?.l4Target ?? 0) - l4Executed);
+    const l1 = pipeline * 0.3;
+    const l2 = pipeline * 0.35;
+    const l3 = pipeline * 0.35;
+    const round = (value: number) => Math.round(value * 10) / 10;
     const months = [
       'Jan-2026',
       'Feb-2026',
@@ -676,27 +719,19 @@ export default function ActualInitiativeImplementationPage() {
       'Nov-2026',
       'Dec-2026',
     ];
+    const l4ExecutedPerMonth =
+      months.length === 0 ? 0 : l4Executed / months.length;
+    const l4ProjectedPerMonth =
+      months.length === 0 ? 0 : l4Projected / months.length;
 
-    return months.map((month, index) => {
-      if (index === 0) {
-        return {
-          month,
-          realized: actual,
-          recurring,
-          projected: 0,
-          headwind: -headwind,
-          plan,
-        };
-      }
-      return {
-        month,
-        realized: 0,
-        recurring,
-        projected,
-        headwind: 0,
-        plan,
-      };
-    });
+    return months.map((month, index) => ({
+      label: month,
+      l1: index === 0 ? -round(l1) : 0,
+      l2: index === 0 ? -round(l2) : 0,
+      l3: index === 0 ? -round(l3) : 0,
+      l4Executed: round(l4ExecutedPerMonth),
+      l4Projected: round(l4ProjectedPerMonth),
+    }));
   }, [scaledExecutionRows]);
 
   const handleTimeframeChange = (timeframe: TimeframeOption) => {
@@ -707,6 +742,11 @@ export default function ActualInitiativeImplementationPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
+      next.set('toggle', timeframe);
+      next.set(
+        'months',
+        timeframe === 'ytm' ? '0-2' : '0-11'
+      );
       return next;
     });
   };
@@ -716,6 +756,11 @@ export default function ActualInitiativeImplementationPage() {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
       setIsMonthRangeCustom(true);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('months', `${monthIndex}-${monthIndex}`);
+        return next;
+      });
       return;
     }
     const start = Math.min(monthAnchor, monthIndex);
@@ -723,6 +768,11 @@ export default function ActualInitiativeImplementationPage() {
     setMonthRange([start, end]);
     setMonthAnchor(null);
     setIsMonthRangeCustom(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('months', `${start}-${end}`);
+      return next;
+    });
   };
 
   const handleBuChange = (buId: string) => {
@@ -730,6 +780,8 @@ export default function ActualInitiativeImplementationPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
+      next.delete('bu');
+      next.delete('units');
       if (buId === 'all') {
         next.delete('bu');
         setSelectedGroupIds(new Set());
@@ -860,6 +912,12 @@ export default function ActualInitiativeImplementationPage() {
                     if (unitId === 'all') {
                       next.clear();
                       next.add(overallId);
+                      setSearchParams((prevParams) => {
+                        const params = new URLSearchParams(prevParams);
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      });
                       return next;
                     }
                     next.delete(overallId);
@@ -871,6 +929,37 @@ export default function ActualInitiativeImplementationPage() {
                     if (next.size === 0) {
                       next.add(overallId);
                     }
+                    setSearchParams((prevParams) => {
+                      const params = new URLSearchParams(prevParams);
+                      const selectedUnitIds = Array.from(next).filter(
+                        (id) => id !== overallId
+                      );
+                      if (selectedUnitIds.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      const unitNames = selectedGroupInfo.group.businessUnits
+                        .filter((unit) =>
+                          selectedUnitIds.includes(
+                            getUnitId(groupId, unit.name)
+                          )
+                        )
+                        .map((unit) => unit.name);
+                      if (unitNames.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      if (params.get('bg')) {
+                        params.set('bu', unitNames.join(','));
+                        params.delete('units');
+                      } else {
+                        params.set('units', unitNames.join(','));
+                        params.delete('bu');
+                      }
+                      return params;
+                    });
                     return next;
                   });
                 };
@@ -927,11 +1016,13 @@ export default function ActualInitiativeImplementationPage() {
                     </li>
                   ))}
                 </ul>
-                <div className='mt-4 pt-4 border-t border-gray-200'>
-                  <p className='text-sm text-gray-700 leading-relaxed'>
-                    {keyCallOut.rootCauseAnalysis}
-                  </p>
-                </div>
+                {keyCallOut.rootCauseAnalysis && (
+                  <div className='mt-4 pt-4 border-t border-gray-200'>
+                    <p className='text-sm text-gray-700 leading-relaxed'>
+                      {keyCallOut.rootCauseAnalysis}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1232,47 +1323,71 @@ export default function ActualInitiativeImplementationPage() {
               </p>
             </div>
           </div>
+          <div className='mb-4 flex flex-wrap items-center justify-end gap-3 px-4 py-2 text-xs text-gray-600'>
+            <div className='flex flex-wrap items-center gap-3'>
+              <span className='flex items-center gap-2'>
+                <span className='h-2.5 w-2.5 rounded-sm bg-orange-400' />
+                <span>L1</span>
+              </span>
+              <span className='flex items-center gap-2'>
+                <span className='h-2.5 w-2.5 rounded-sm bg-amber-400' />
+                <span>L2</span>
+              </span>
+              <span className='flex items-center gap-2'>
+                <span className='h-2.5 w-2.5 rounded-sm bg-yellow-500' />
+                <span>L3</span>
+              </span>
+              <span className='flex items-center gap-2'>
+                <span className='h-2.5 w-2.5 rounded-sm bg-emerald-500' />
+                <span>L4+ (Executed)</span>
+              </span>
+              <span className='flex items-center gap-2'>
+                <span className='h-2.5 w-2.5 rounded-sm bg-emerald-200' />
+                <span>L4+ (Projected)</span>
+              </span>
+            </div>
+          </div>
           <div className='h-72'>
             <ResponsiveContainer width='100%' height='100%'>
               <BarChart data={icebergData} stackOffset='sign'>
                 <CartesianGrid strokeDasharray='3 3' />
-                <XAxis dataKey='month' tick={{ fontSize: 11 }} />
+                <XAxis dataKey='label' tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(value) =>
                     `${formatMnValue(Math.abs(Number(value ?? 0)))} ${currencyLabel}`
                   }
                 />
-                <Legend />
                 <ReferenceLine y={0} stroke='#9ca3af' />
-                <ReferenceLine
-                  y={icebergData[0]?.plan ?? 0}
-                  stroke='#ef4444'
-                  strokeDasharray='3 3'
+                <Bar
+                  dataKey='l1'
+                  name='L1'
+                  stackId='a'
+                  fill='#fb923c'
                 />
                 <Bar
-                  dataKey='realized'
-                  name='Past actual'
+                  dataKey='l2'
+                  name='L2'
                   stackId='a'
-                  fill='#0ea5e9'
+                  fill='#fbbf24'
                 />
                 <Bar
-                  dataKey='recurring'
-                  name='Recurring'
+                  dataKey='l3'
+                  name='L3'
                   stackId='a'
-                  fill='#22c55e'
+                  fill='#eab308'
                 />
                 <Bar
-                  dataKey='projected'
-                  name='Projected'
+                  dataKey='l4Executed'
+                  name='L4+ (Executed)'
                   stackId='a'
-                  fill='#bbf7d0'
+                  fill='#10b981'
                 />
                 <Bar
-                  dataKey='headwind'
-                  name='Headwinds'
+                  dataKey='l4Projected'
+                  name='L4+ (Projected)'
                   stackId='a'
-                  fill='#a855f7'
+                  fill='#a7f3d0'
                 />
               </BarChart>
             </ResponsiveContainer>

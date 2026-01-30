@@ -4,32 +4,28 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Bar,
   CartesianGrid,
   Cell,
   ComposedChart,
-  Legend,
   LabelList,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 import CreateActionModal from '../components/CreateActionModal';
-import { ProductAnalysisLayer } from '../components/layers';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { KEY_CALLOUTS_BY_BG, OP_IMPACT_DATA } from '../data/mockBgData';
 import {
   mockLeakageRecoveryProposal,
   mockNPDeviationKeyCallOut,
   mockNPDeviationStages,
 } from '../data/mockForecast';
-import type {
-  ActionProposal,
-  BreadcrumbItem,
-  NPDeviationStageType,
-  Proposal,
-} from '../types';
+import type { ActionProposal, NPDeviationStageType, Proposal } from '../types';
 import { calculateBrokenAxis, type BrokenAxisConfig } from '../utils/brokenAxisUtils';
 
 // Custom Y-axis tick component with break indicator
@@ -109,12 +105,12 @@ const BrokenBarShape = (props: {
   );
 };
 
-type NavigationLayer = 1 | 2;
+const normalizeLabel = (value: string) =>
+  value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 export default function FinanceReviewPage() {
-  const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isCreateActionModalOpen, setIsCreateActionModalOpen] = useState(false);
+  const [searchParams] = useSearchParams();
   const { formatAmount, currencyLabel } = useCurrency();
   const formatAmountM = (value: number) =>
     `${formatAmount(value, {
@@ -123,6 +119,137 @@ export default function FinanceReviewPage() {
     })}M`;
   const formatAxisValue = (value: number) =>
     formatAmount(value, { maximumFractionDigits: 0 });
+
+  const isDeGroupSelected = useMemo(() => {
+    const buParam = searchParams.get('bu') ?? searchParams.get('bg');
+    if (!buParam || buParam === 'all') {
+      return false;
+    }
+    const normalized = normalizeLabel(buParam);
+    return normalized === 'degroup' || buParam.toLowerCase().includes('d/e');
+  }, [searchParams]);
+
+  const keyCallOut = useMemo(() => {
+    if (isDeGroupSelected) {
+      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      if (callouts?.actualReconciliation?.length) {
+        return {
+          bulletPoints: callouts.actualReconciliation,
+          rootCauseAnalysis: '',
+        };
+      }
+    }
+    return mockNPDeviationKeyCallOut;
+  }, [isDeGroupSelected]);
+
+  const selectedImpactItems = useMemo(() => {
+    const entries = Object.entries(OP_IMPACT_DATA) as [
+      string,
+      typeof OP_IMPACT_DATA[string]
+    ][];
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bu') ?? 'all';
+    const buParam = searchParams.get('bu');
+    if (bgParam === 'all') {
+      return entries.flatMap(([key, items]) => {
+        const [bg, bu] = key.split('|');
+        return items.map((item) => ({ ...item, bg, bu }));
+      });
+    }
+    const normalizedBg = normalizeLabel(bgParam);
+    const buSet = new Set(
+      (buParam ?? '')
+        .split(',')
+        .map((value) => normalizeLabel(value))
+        .filter(Boolean)
+    );
+    return entries.flatMap(([key, items]) => {
+      const [bg, bu] = key.split('|');
+      if (normalizeLabel(bg) !== normalizedBg) {
+        return [];
+      }
+      if (buSet.size > 0 && !buSet.has(normalizeLabel(bu))) {
+        return [];
+      }
+      return items.map((item) => ({ ...item, bg, bu }));
+    });
+  }, [searchParams]);
+
+  const isOneOffItem = useMemo(
+    () => (item: (typeof selectedImpactItems)[number]) =>
+      item.category.toLowerCase().includes('one-off'),
+    []
+  );
+  const isHeadwindItem = useMemo(
+    () => (item: (typeof selectedImpactItems)[number]) => {
+      const category = item.category.toLowerCase();
+      return category.includes('headwind') || category.includes('tailwind');
+    },
+    []
+  );
+
+  const opImpactBuckets = useMemo(() => {
+    const oneOffItems = selectedImpactItems.filter(isOneOffItem);
+    const headwindItems = selectedImpactItems.filter(isHeadwindItem);
+    const sum = (items: typeof selectedImpactItems) =>
+      items.reduce((total, item) => total + item.opImpact, 0);
+    return {
+      oneOffItems,
+      headwindItems,
+      oneOffTotal: sum(oneOffItems),
+      headwindTotal: sum(headwindItems),
+    };
+  }, [selectedImpactItems, isOneOffItem, isHeadwindItem]);
+
+  const npDeviationStages = useMemo(() => {
+    const budgetStage = mockNPDeviationStages.find(
+      (stage) => stage.stage === 'budget-np'
+    );
+    const budgetValue = budgetStage?.value ?? 0;
+    const headwindDelta = opImpactBuckets.headwindTotal;
+    const oneOffDelta = opImpactBuckets.oneOffTotal;
+    const afterHeadwind = budgetValue + headwindDelta;
+    const afterOneOff = afterHeadwind + oneOffDelta;
+
+    return [
+      {
+        stage: 'budget-np' as const,
+        label: 'Budget NP',
+        value: budgetValue,
+        delta: budgetValue,
+        type: 'baseline' as const,
+        description: 'Budget Net Profit baseline',
+        isClickable: false,
+      },
+      {
+        stage: 'vol-impact' as const,
+        label: 'Headwind / tailwind',
+        value: afterHeadwind,
+        delta: headwindDelta,
+        type: headwindDelta >= 0 ? ('positive' as const) : ('negative' as const),
+        description: 'Headwind/tailwind impact',
+        isClickable: true,
+      },
+      {
+        stage: 'price-impact' as const,
+        label: 'One-off items',
+        value: afterOneOff,
+        delta: oneOffDelta,
+        type: oneOffDelta >= 0 ? ('positive' as const) : ('negative' as const),
+        description: 'One-off impact',
+        isClickable: true,
+      },
+      {
+        stage: 'actual-np' as const,
+        label: 'Actual NP',
+        value: afterOneOff,
+        delta: afterOneOff,
+        type: 'baseline' as const,
+        description: 'Actual Net Profit',
+        isClickable: false,
+      },
+    ];
+  }, [opImpactBuckets, mockNPDeviationStages]);
+
   // Proposals state - Map for leakage recovery proposal
   const [proposals, setProposals] = useState<Map<string, Proposal>>(() => {
     const initialProposals = new Map<string, Proposal>();
@@ -136,66 +263,21 @@ export default function FinanceReviewPage() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeImpactStage, setActiveImpactStage] =
+    useState<NPDeviationStageType | null>(null);
 
-  // Navigation handlers
-  const navigateToLayer = (
-    layer: NavigationLayer,
-    breadcrumbLabel?: string
-  ) => {
-    if (breadcrumbLabel) {
-      setBreadcrumbs((prev) => [
-        ...prev,
-        {
-          label: breadcrumbLabel,
-          layer,
-          onClick: () => navigateToBreadcrumb(layer),
-        },
-      ]);
+  const activeImpactItems = useMemo(() => {
+    if (!activeImpactStage) {
+      return [];
     }
-    setCurrentLayer(layer);
-  };
-
-  // Navigate to a specific breadcrumb (used when clicking breadcrumb links)
-  const navigateToBreadcrumb = (targetLayer: NavigationLayer) => {
-    // Use functional update to access current breadcrumbs state
-    setBreadcrumbs((prevBreadcrumbs) => {
-      // Find the breadcrumb index for this layer
-      const breadcrumbIndex = prevBreadcrumbs.findIndex(
-        (crumb) => crumb.layer === targetLayer
-      );
-
-      if (breadcrumbIndex !== -1) {
-        // Trim breadcrumbs to only include up to this point
-        return prevBreadcrumbs.slice(0, breadcrumbIndex + 1);
-      }
-      return prevBreadcrumbs;
-    });
-    setCurrentLayer(targetLayer);
-  };
-
-  const navigateBack = () => {
-    setBreadcrumbs((prevBreadcrumbs) => {
-      if (prevBreadcrumbs.length > 0) {
-        const newBreadcrumbs = [...prevBreadcrumbs];
-        newBreadcrumbs.pop();
-        setCurrentLayer(1);
-        return newBreadcrumbs;
-      } else {
-        setCurrentLayer(1);
-        return [];
-      }
-    });
-  };
-
-  const handleStageClick = (stageType: NPDeviationStageType) => {
-    const stageLabels: Partial<Record<NPDeviationStageType, string>> = {
-      'budget-np': 'COGS Analysis',
-      'vol-impact': 'COGS Analysis',
-      'price-impact': 'COGS Analysis',
-      'cost-impact': 'COGS Analysis',
-    };
-    navigateToLayer(2, stageLabels[stageType] || 'COGS Analysis');
-  };
+    if (activeImpactStage === 'vol-impact') {
+      return selectedImpactItems.filter(isHeadwindItem);
+    }
+    if (activeImpactStage === 'price-impact') {
+      return selectedImpactItems.filter(isOneOffItem);
+    }
+    return [];
+  }, [activeImpactStage, selectedImpactItems, isHeadwindItem, isOneOffItem]);
 
   // Handler functions for Initiative Proposals
   const handleCreateAction = (proposal: Proposal) => {
@@ -223,14 +305,14 @@ export default function FinanceReviewPage() {
 
   // Auto-calculate broken axis for NP Deviation chart
   const brokenAxis = useMemo(() => {
-    const result = calculateBrokenAxis(mockNPDeviationStages);
+    const result = calculateBrokenAxis(npDeviationStages);
     return result.brokenAxis;
-  }, []);
+  }, [npDeviationStages]);
 
   // Prepare chart data for Layer 1 (NP Deviation)
   const npDeviationChartData = useMemo(() => {
-    return mockNPDeviationStages.map((stage, index) => {
-      const prevValue = index > 0 ? mockNPDeviationStages[index - 1].value : 0;
+    return npDeviationStages.map((stage, index) => {
+      const prevValue = index > 0 ? npDeviationStages[index - 1].value : 0;
       const currentValue = stage.value;
       const delta =
         stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
@@ -277,7 +359,7 @@ export default function FinanceReviewPage() {
         originalValue: currentValue,
       };
     });
-  }, [brokenAxis]);
+  }, [brokenAxis, npDeviationStages]);
 
   // Render Layer 1: NP Deviation Breakdown
   const renderLayer1 = () => (
@@ -315,11 +397,11 @@ export default function FinanceReviewPage() {
           <div className='flex items-center gap-4'>
             <div className='flex items-center gap-2'>
               <div className='w-3 h-3 rounded-full bg-green-500'></div>
-              <span className='text-sm text-gray-700'>Favourable</span>
+              <span className='text-sm text-gray-700'>Positive Impact</span>
             </div>
             <div className='flex items-center gap-2'>
               <div className='w-3 h-3 rounded-full bg-red-500'></div>
-              <span className='text-sm text-gray-700'>Adverse</span>
+              <span className='text-sm text-gray-700'>Negative Impact</span>
             </div>
           </div>
         </div>
@@ -348,7 +430,7 @@ export default function FinanceReviewPage() {
                   )}
                   domain={[
                     0,
-                    Math.max(...mockNPDeviationStages.map((s) => s.value)) -
+                    Math.max(...npDeviationStages.map((s) => s.value)) -
                       brokenAxis.skipRangeEnd +
                       50,
                   ]}
@@ -378,29 +460,26 @@ export default function FinanceReviewPage() {
                         delta?: number;
                         label?: string;
                         isClickable?: boolean;
+                        stage?: NPDeviationStageType;
                       }
                     | undefined;
                   const numericValue =
                     typeof value === 'number'
                       ? value
                       : Number(Array.isArray(value) ? value[0] : value ?? 0);
-                  const cumulative = payload?.cumulativeValue ?? numericValue;
-                  const delta = payload?.delta;
+                  const stage = payload?.stage
+                    ? npDeviationStages.find((item) => item.stage === payload.stage)
+                    : undefined;
+                  const delta = payload?.delta ?? stage?.delta;
+                  const bucketValue =
+                    delta !== undefined ? delta : numericValue;
                   const isClickable = payload?.isClickable;
 
                   const tooltipLines: string[] = [
-                    `${payload?.label ?? 'Stage'}: ${formatAmountM(
-                      cumulative
-                    )} ${currencyLabel}`,
+                    `${stage?.label ?? payload?.label ?? 'Stage'}: ${
+                      bucketValue > 0 ? '+' : ''
+                    }${formatAmountM(bucketValue)} ${currencyLabel}`,
                   ];
-
-                  if (delta !== undefined && delta !== cumulative) {
-                    tooltipLines.push(
-                      `Change: ${delta > 0 ? '+' : ''}${formatAmountM(
-                        delta
-                      )} ${currencyLabel}`
-                    );
-                  }
 
                   if (isClickable) {
                     tooltipLines.push('Deep dive →');
@@ -439,7 +518,7 @@ export default function FinanceReviewPage() {
                     };
                     if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
                     
-                    const stage = mockNPDeviationStages[index];
+                    const stage = npDeviationStages[index];
                     const isBaseline = stage?.type === 'baseline';
                     const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
                     const displayValue = formatAxisValue(numericValue);
@@ -473,7 +552,7 @@ export default function FinanceReviewPage() {
                     );
                   }}
                 />
-                {mockNPDeviationStages.map((stage, index) => {
+                {npDeviationStages.map((stage, index) => {
                   const isBaseline = stage.type === 'baseline';
                   const isPositive = stage.type === 'positive';
 
@@ -494,7 +573,7 @@ export default function FinanceReviewPage() {
                       }}
                       onClick={() => {
                         if (stage.isClickable) {
-                          handleStageClick(stage.stage);
+                          setActiveImpactStage(stage.stage);
                         }
                       }}
                       onMouseEnter={(e) => {
@@ -529,7 +608,7 @@ export default function FinanceReviewPage() {
         </div>
         <div className='space-y-3'>
           <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-            {mockNPDeviationKeyCallOut.bulletPoints.map((point, index) => (
+            {keyCallOut.bulletPoints.map((point, index) => (
               <li
                 key={index}
                 className='text-sm'>
@@ -537,11 +616,13 @@ export default function FinanceReviewPage() {
               </li>
             ))}
           </ul>
-          <div className='mt-4 pt-4 border-t border-gray-200'>
-            <p className='text-sm text-gray-700 leading-relaxed'>
-              {mockNPDeviationKeyCallOut.rootCauseAnalysis}
-            </p>
-          </div>
+          {keyCallOut.rootCauseAnalysis && (
+            <div className='mt-4 pt-4 border-t border-gray-200'>
+              <p className='text-sm text-gray-700 leading-relaxed'>
+                {keyCallOut.rootCauseAnalysis}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -707,15 +788,99 @@ export default function FinanceReviewPage() {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 relative'>
-      <div className='p-8 max-w-[1920px] mx-auto'>
-        {currentLayer === 1 && renderLayer1()}
-        {currentLayer === 2 && (
-          <ProductAnalysisLayer
-            breadcrumbs={breadcrumbs}
-            onBack={navigateBack}
-          />
-        )}
-      </div>
+      <div className='p-8 max-w-[1920px] mx-auto'>{renderLayer1()}</div>
+
+      {activeImpactStage && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6'
+          onClick={() => setActiveImpactStage(null)}>
+          <div
+            className='flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 max-h-[80vh]'
+            onClick={(event: React.MouseEvent<HTMLDivElement>) =>
+              event.stopPropagation()
+            }>
+            <div className='flex items-start justify-between gap-4 border-b border-gray-200 p-6'>
+              <div>
+                <p className='text-xs uppercase tracking-wide text-gray-500'>
+                  Bucket details
+                </p>
+                <h3 className='text-xl font-bold text-gray-900'>
+                  {activeImpactStage === 'vol-impact'
+                    ? 'Headwind / tailwind'
+                    : 'One-off items'}
+                </h3>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Mn {currencyLabel}
+                </p>
+              </div>
+              <button
+                type='button'
+                className='rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-gray-700 hover:border-gray-300'
+                onClick={() => setActiveImpactStage(null)}>
+                <XMarkIcon className='h-4 w-4' />
+              </button>
+            </div>
+            <div className='flex-1 overflow-y-auto p-6 space-y-5'>
+              <div className='overflow-hidden rounded-lg border border-gray-200'>
+                <table className='w-full text-sm'>
+                  <thead className='bg-gray-50 border-b border-gray-200'>
+                    <tr>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        BU
+                      </th>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        Line item
+                      </th>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        Cost rationale
+                      </th>
+                      <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                        Item
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        OP impact (Mn {currencyLabel})
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeImpactItems.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className='px-4 py-6 text-center text-sm text-gray-500'>
+                          No op-impact items available.
+                        </td>
+                      </tr>
+                    ) : (
+                      activeImpactItems.map((row, index) => (
+                        <tr
+                          key={`${row.bu}-${row.item}-${index}`}
+                          className='border-b border-gray-200 last:border-b-0'>
+                          <td className='px-4 py-3 font-semibold text-gray-900'>
+                            {row.bu}
+                          </td>
+                          <td className='px-4 py-3 text-gray-600'>
+                            {row.lineItem}
+                          </td>
+                          <td className='px-4 py-3 text-gray-600'>
+                            {row.costRationale}
+                          </td>
+                          <td className='px-4 py-3 text-gray-600'>
+                            {row.item}
+                          </td>
+                          <td className='px-4 py-3 text-right font-semibold text-gray-900'>
+                            {formatAmountM(row.opImpact)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Action Modal (Global) */}
       <CreateActionModal

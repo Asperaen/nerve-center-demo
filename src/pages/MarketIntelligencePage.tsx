@@ -483,6 +483,8 @@ export default function MarketIntelligencePage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
+      next.delete('bu');
+      next.delete('units');
       return next;
     });
   };
@@ -499,8 +501,30 @@ export default function MarketIntelligencePage() {
       setPendingUnitSelection(null);
       return;
     }
+    const unitsParam = searchParams.get('bg')
+      ? searchParams.get('bu')
+      : searchParams.get('units');
+    if (unitsParam) {
+      const requestedUnits = unitsParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (requestedUnits.length > 0) {
+        const unitIds = requestedUnits
+          .map((unitName) => getUnitId(groupId, unitName))
+          .filter((unitId) =>
+            selectedGroup.businessUnits.some(
+              (unit) => getUnitId(groupId, unit.name) === unitId
+            )
+          );
+        if (unitIds.length > 0) {
+          setSelectedGroupIds(new Set(unitIds));
+          return;
+        }
+      }
+    }
     setSelectedGroupIds(new Set([overallId]));
-  }, [selectedGroup]);
+  }, [pendingUnitSelection, searchParams, selectedGroup]);
 
   const forecastTimeframeOptions: TimeframeOptionItem[] = [
     { value: 'full-year', label: 'Full year' },
@@ -1451,6 +1475,12 @@ export default function MarketIntelligencePage() {
                     if (unitId === 'all') {
                       next.clear();
                       next.add(overallId);
+                      setSearchParams((prevParams) => {
+                        const params = new URLSearchParams(prevParams);
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      });
                       return next;
                     }
                     next.delete(overallId);
@@ -1462,6 +1492,37 @@ export default function MarketIntelligencePage() {
                     if (next.size === 0) {
                       next.add(overallId);
                     }
+                    setSearchParams((prevParams) => {
+                      const params = new URLSearchParams(prevParams);
+                      const selectedUnitIds = Array.from(next).filter(
+                        (id) => id !== overallId
+                      );
+                      if (selectedUnitIds.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      const unitNames = selectedGroup.businessUnits
+                        .filter((unit) =>
+                          selectedUnitIds.includes(
+                            getUnitId(groupId, unit.name)
+                          )
+                        )
+                        .map((unit) => unit.name);
+                      if (unitNames.length === 0) {
+                        params.delete('bu');
+                        params.delete('units');
+                        return params;
+                      }
+                      if (params.get('bg')) {
+                        params.set('bu', unitNames.join(','));
+                        params.delete('units');
+                      } else {
+                        params.set('units', unitNames.join(','));
+                        params.delete('bu');
+                      }
+                      return params;
+                    });
                     return next;
                   });
                 };
@@ -1630,19 +1691,19 @@ export default function MarketIntelligencePage() {
             <div className='flex flex-wrap items-center gap-4 text-sm text-gray-700'>
               <div className='flex items-center gap-2'>
                 <span className='h-3 w-3 rounded-sm bg-[#bbf7d0]' />
-                <span>Favourable (forecast)</span>
+                <span>Positive Impact (forecast)</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='h-3 w-3 rounded-sm bg-[#16a34a]' />
-                <span>Favourable (realized)</span>
+                <span>Positive Impact (realized)</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='h-3 w-3 rounded-sm bg-[#fecaca]' />
-                <span>Adverse (forecast)</span>
+                <span>Negative Impact (forecast)</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='h-3 w-3 rounded-sm bg-[#dc2626]' />
-                <span>Adverse (realized)</span>
+                <span>Negative Impact (realized)</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='h-3 w-3 rounded border border-gray-900 border-dashed bg-transparent' />

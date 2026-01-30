@@ -2,6 +2,7 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import FunctionalPerformanceWaterfall, {
+  type FunctionalPerformanceGrouping,
   type FunctionalPerformanceStage,
 } from '../components/FunctionalPerformanceWaterfall';
 import { useBudgets } from '../contexts/BudgetContext';
@@ -299,7 +300,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const displayBus = selectedBus;
 
   const scaledRows = useMemo(() => {
-    const timeframe = getStoredTimeframe();
+    const timeframeParam =
+      searchParams.get('toggle') ?? searchParams.get('timeframe');
+    const timeframe =
+      timeframeParam === 'ytm' || timeframeParam === 'full-year'
+        ? timeframeParam
+        : getStoredTimeframe();
     const dataTimeframe = timeframe === 'ytm' ? 'ytm' : 'full-year';
     const tableData = getAllBusinessGroupData(dataTimeframe);
     const overallRow = tableData.find((row) => row.id === 'overall');
@@ -781,22 +787,21 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
+    const remainingToActual = roundToOne(actualSpend - running);
+    const inventoryDelayRaw = roundToOne(remainingToActual * 0.6);
+    const inventoryDelayDelta = Math.min(0, inventoryDelayRaw);
+    const otherFactorsDelta = roundToOne(
+      actualSpend - (running + inventoryDelayDelta)
+    );
 
     return [
-      {
-        id: 'baseline-spend',
-        label: 'Baseline spend',
-        value: roundToOne(baselineSpend),
-        delta: roundToOne(baselineSpend),
-        type: 'baseline',
-        isReference: true,
-      },
       {
         id: 'target-spend',
         label: 'Target spend',
         value: roundToOne(targetSpend),
         delta: roundToOne(targetSpend),
         type: 'baseline',
+        referenceValue: roundToOne(baselineSpend),
       },
       {
         id: 'volume-change',
@@ -815,7 +820,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'l3-deviation',
-        label: 'L3 gap vs target',
+        label: 'L3 vs budget',
         value: nextValue(totals.l3GapVsTarget),
         delta: roundToOne(totals.l3GapVsTarget),
         type: getCostStageType(totals.l3GapVsTarget),
@@ -823,7 +828,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'l4-deviation',
-        label: 'L4 gap vs target',
+        label: 'L4 vs L3 planned',
         value: nextValue(totals.l4GapVsTarget),
         delta: roundToOne(totals.l4GapVsTarget),
         type: getCostStageType(totals.l4GapVsTarget),
@@ -831,16 +836,30 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
       {
         id: 'l5-deviation',
-        label: 'L5 gap vs target',
+        label: 'L5 vs L4 implemented',
         value: nextValue(totals.l5GapVsTarget),
         delta: roundToOne(totals.l5GapVsTarget),
         type: getCostStageType(totals.l5GapVsTarget),
       },
       {
+        id: 'inventory-delay',
+        label: 'Inventory delay',
+        value: nextValue(inventoryDelayDelta),
+        delta: inventoryDelayDelta,
+        type: getCostStageType(inventoryDelayDelta),
+      },
+      {
+        id: 'other-factors',
+        label: 'Other factors',
+        value: nextValue(otherFactorsDelta),
+        delta: otherFactorsDelta,
+        type: getCostStageType(otherFactorsDelta),
+      },
+      {
         id: 'actual-spend',
         label: 'Actual spend',
-        value: roundToOne(actualSpend),
-        delta: roundToOne(actualSpend),
+        value: roundToOne(running),
+        delta: roundToOne(running),
         type: 'baseline',
       },
     ];
@@ -1112,6 +1131,21 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     return { skipRangeStart: 0, skipRangeEnd: Math.max(0, skipEnd) };
   }, [manufacturingMvaTotals]);
 
+  const manufacturingGroupings = useMemo<FunctionalPerformanceGrouping[]>(
+    () => [
+      {
+        label: 'Initiative improvement',
+        stageIds: [
+          'dl-efficiency',
+          'idl-hc-gap',
+          'ga-variable-gap',
+          'ga-fixed-gap',
+        ],
+      },
+    ],
+    []
+  );
+
   const rndTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
       (acc, unit) => {
@@ -1135,15 +1169,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const budgetValue = rndTotals.budgetValue;
     const actualValue = rndTotals.actualValue;
     const totalDelta = actualValue - budgetValue;
-    const split = [0.2, 0.1, 0.15, 0.3, 0.25];
-    const deltas = split.map((ratio) =>
-      Number((totalDelta * ratio).toFixed(1))
+    const weights = [12, 8, 6, 6, 18, 10, 8, 7, 7, 12, 6];
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0) || 1;
+    const deltas = weights.map((weight) =>
+      Number(((totalDelta * weight) / weightTotal).toFixed(1))
     );
     const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
     deltas[deltas.length - 1] = Number(
       (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
     );
-    let running = budgetValue;
+    let running = Number(budgetValue.toFixed(1));
     const nextValue = (delta: number) => {
       running = Number((running + delta).toFixed(1));
       return running;
@@ -1151,58 +1186,141 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
 
+    const [
+      stageProjectNew,
+      stageProjectCancelled,
+      stageCustomerRequest,
+      stageTimelineChange,
+      stagePersonnel,
+      stageRentalDep,
+      stageTravel,
+      stagePrototype,
+      stageLogistics,
+      stageCentralSupport,
+      stageFx,
+    ] = deltas;
+
     return [
       {
         id: 'rnd-expense-target',
-        label: 'Target R&D expense',
+        label: 'R&D Expense Target',
         value: Number(budgetValue.toFixed(1)),
         delta: Number(budgetValue.toFixed(1)),
         type: 'baseline',
       },
       {
-        id: 'project-change',
-        label: 'Project change',
-        value: nextValue(deltas[0]),
-        delta: deltas[0],
-        type: getCostStageType(deltas[0]),
+        id: 'project-newly-added',
+        label: 'Project newly added',
+        value: nextValue(stageProjectNew),
+        delta: stageProjectNew,
+        type: getCostStageType(stageProjectNew),
+      },
+      {
+        id: 'project-cancelled',
+        label: 'Project cancelled',
+        value: nextValue(stageProjectCancelled),
+        delta: stageProjectCancelled,
+        type: getCostStageType(stageProjectCancelled),
+      },
+      {
+        id: 'customer-request-item',
+        label: 'Customer request item',
+        value: nextValue(stageCustomerRequest),
+        delta: stageCustomerRequest,
+        type: getCostStageType(stageCustomerRequest),
+      },
+      {
+        id: 'timeline-change',
+        label: 'Timeline change',
+        value: nextValue(stageTimelineChange),
+        delta: stageTimelineChange,
+        type: getCostStageType(stageTimelineChange),
+      },
+      {
+        id: 'rnd-budget-controlled',
+        label: 'R&D budget controlled by R&D',
+        value: Number(running.toFixed(1)),
+        delta: Number(running.toFixed(1)),
+        type: 'baseline',
+      },
+      {
+        id: 'rnd-personnel',
+        label: 'Personnel (61) delta',
+        value: nextValue(stagePersonnel),
+        delta: stagePersonnel,
+        type: getCostStageType(stagePersonnel),
+      },
+      {
+        id: 'rnd-rental-dep',
+        label: 'Rental & Dep. (62) delta',
+        value: nextValue(stageRentalDep),
+        delta: stageRentalDep,
+        type: getCostStageType(stageRentalDep),
+      },
+      {
+        id: 'rnd-travel',
+        label: 'Travel (63) delta',
+        value: nextValue(stageTravel),
+        delta: stageTravel,
+        type: getCostStageType(stageTravel),
+      },
+      {
+        id: 'rnd-prototype-testing',
+        label: 'Prototype & Testing (64) delta',
+        value: nextValue(stagePrototype),
+        delta: stagePrototype,
+        type: getCostStageType(stagePrototype),
+      },
+      {
+        id: 'rnd-logistics',
+        label: 'Logistics (65) delta',
+        value: nextValue(stageLogistics),
+        delta: stageLogistics,
+        type: getCostStageType(stageLogistics),
+      },
+      {
+        id: 'rnd-central-support',
+        label: 'Central and cross BU support',
+        value: nextValue(stageCentralSupport),
+        delta: stageCentralSupport,
+        type: getCostStageType(stageCentralSupport),
       },
       {
         id: 'fx-impact',
-        label: 'FX impact',
-        value: nextValue(deltas[1]),
-        delta: deltas[1],
-        type: getCostStageType(deltas[1]),
-      },
-      {
-        id: 'labor-rate-change',
-        label: 'Labor rate change',
-        value: nextValue(deltas[2]),
-        delta: deltas[2],
-        type: getCostStageType(deltas[2]),
-      },
-      {
-        id: 'rnd-fte',
-        label: 'FTE (Personnel)',
-        value: nextValue(deltas[3]),
-        delta: deltas[3],
-        type: getCostStageType(deltas[3]),
-      },
-      {
-        id: 'rnd-non-fte',
-        label: 'Non-FTE',
-        value: nextValue(deltas[4]),
-        delta: deltas[4],
-        type: getCostStageType(deltas[4]),
+        label: 'FX Impact',
+        value: nextValue(stageFx),
+        delta: stageFx,
+        type: getCostStageType(stageFx),
       },
       {
         id: 'rnd-expense-actual',
-        label: 'Actual R&D Expense',
+        label: 'R&D expense actual',
         value: Number(actualValue.toFixed(1)),
         delta: Number(actualValue.toFixed(1)),
         type: 'baseline',
       },
     ];
   }, [rndTotals]);
+
+  const rndGroupings = useMemo<FunctionalPerformanceGrouping[]>(
+    () => [
+      {
+        label: 'FTE',
+        stageIds: ['rnd-personnel'],
+      },
+      {
+        label: 'Non FTE',
+        stageIds: [
+          'rnd-rental-dep',
+          'rnd-travel',
+          'rnd-prototype-testing',
+          'rnd-logistics',
+          'rnd-central-support',
+        ],
+      },
+    ],
+    []
+  );
 
   const activeBucket = [...procurementBuckets, ...manufacturingBuckets].find(
     (bucket) => bucket.id === activeBucketId
@@ -1562,6 +1680,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               description={`MVA cost, ${currencyLabel} Mn`}
               barSize={32}
               brokenAxis={manufacturingBrokenAxis ?? 'auto'}
+              groupings={manufacturingGroupings}
               onStageClick={(stage) => {
                 if (stage.isClickable) {
                   setActiveBucketId(stage.id);
@@ -1613,8 +1732,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               description={`R&D cost, ${currencyLabel} Mn`}
               barSize={32}
               brokenAxis="auto"
+              groupings={rndGroupings}
               onStageClick={(stage) => {
-                if (stage.id === 'rnd-fte') {
+                if (stage.id === 'rnd-personnel') {
                   setActiveBucketId(stage.id);
                 }
               }}
