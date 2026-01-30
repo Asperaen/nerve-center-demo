@@ -300,6 +300,10 @@ export default function BudgetForecastActualWaterfall({
       const barValueRealized = shouldSplit
         ? Math.round(realizedMagnitude * splitSign * 100) / 100
         : splitBase;
+      const barValueForecastPos = barValueForecast >= 0 ? barValueForecast : 0;
+      const barValueForecastNeg = barValueForecast < 0 ? barValueForecast : 0;
+      const barValueRealizedPos = barValueRealized >= 0 ? barValueRealized : 0;
+      const barValueRealizedNeg = barValueRealized < 0 ? barValueRealized : 0;
 
       return {
         ...stage,
@@ -310,6 +314,10 @@ export default function BudgetForecastActualWaterfall({
         barValueTotal: splitBase,
         barValueForecast,
         barValueRealized,
+        barValueForecastPos,
+        barValueForecastNeg,
+        barValueRealizedPos,
+        barValueRealizedNeg,
         isPositive: (stage.delta ?? stage.value) >= 0,
       };
     });
@@ -723,7 +731,7 @@ export default function BudgetForecastActualWaterfall({
             />
             {splitNonPrimaryBars ? (
               <>
-                {/* Forecast portion of delta */}
+                {/* Forecast portion of delta (top) */}
                 <Bar
                   dataKey='barValueForecast'
                   stackId='a'
@@ -778,7 +786,7 @@ export default function BudgetForecastActualWaterfall({
                     );
                   })}
                 </Bar>
-                {/* Realized portion of delta */}
+                {/* Realized portion of delta (bottom) */}
                 <Bar
                   dataKey='barValueRealized'
                   stackId='a'
@@ -800,25 +808,25 @@ export default function BudgetForecastActualWaterfall({
                       : undefined
                   }
                 >
-              <LabelList
-                dataKey='barValueTotal'
-                position='middle'
-                content={(props) => {
-                  const { x, y, width, height, index } = props as {
-                    x?: number;
-                    y?: number;
-                    width?: number;
-                    height?: number;
-                    index?: number;
-                  };
+                  <LabelList
+                    dataKey='barValueTotal'
+                    position='middle'
+                    content={(props) => {
+                      const { x, y, width, height, index } = props as {
+                        x?: number;
+                        y?: number;
+                        width?: number;
+                        height?: number;
+                        index?: number;
+                      };
                       if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
                       
-                    const stage = stages[index];
-                    const isBaseline = stage?.type === 'baseline';
-                    const rawValue = isBaseline
-                      ? stage?.value ?? 0
-                      : stage?.delta ?? stage?.value ?? 0;
-                    const displayValue = formatLabelValue(rawValue);
+                      const stage = stages[index];
+                      const isBaseline = stage?.type === 'baseline';
+                      const rawValue = isBaseline
+                        ? stage?.value ?? 0
+                        : stage?.delta ?? stage?.value ?? 0;
+                      const displayValue = formatLabelValue(rawValue);
                       const barHeight = height ?? 0;
                       const barY = y ?? 0;
                       

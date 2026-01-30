@@ -22,7 +22,13 @@ export interface FunctionalPerformanceStage {
   type: 'baseline' | 'positive' | 'negative';
   isClickable?: boolean;
   isReference?: boolean;
+  referenceValue?: number;
 }
+
+export type FunctionalPerformanceGrouping = {
+  label: string;
+  stageIds: string[];
+};
 
 export type { BrokenAxisConfig };
 
@@ -36,6 +42,7 @@ interface FunctionalPerformanceWaterfallProps {
   /** Explicit broken axis config, or 'auto' to calculate dynamically, or undefined to disable */
   brokenAxis?: BrokenAxisConfig | 'auto';
   footerContent?: ReactNode;
+  groupings?: FunctionalPerformanceGrouping[];
 }
 
 // Custom Y-axis tick component to emphasize zero
@@ -145,8 +152,10 @@ const BrokenBarShape = (props: {
     originalValue?: number;
     id?: string;
     isReference?: boolean;
+    barValue?: number;
+    referenceBarValue?: number;
   };
-  brokenAxis: BrokenAxisConfig;
+  brokenAxis?: BrokenAxisConfig;
 }) => {
   const {
     x = 0,
@@ -164,6 +173,19 @@ const BrokenBarShape = (props: {
   const isReference = payload?.isReference;
   const breakIndicatorHeight = 10;
   const minHeightForBreakIndicator = 40; // Minimum bar height to show break indicator
+  const referenceBarValue = payload?.referenceBarValue;
+  const barValue = payload?.barValue;
+  const shouldDrawReference =
+    typeof referenceBarValue === 'number' &&
+    typeof barValue === 'number' &&
+    Math.abs(barValue) > 0;
+  const referenceRatio = shouldDrawReference
+    ? Math.abs(referenceBarValue) / Math.abs(barValue)
+    : 1;
+  const referenceHeight = shouldDrawReference ? height * referenceRatio : 0;
+  const referenceY = shouldDrawReference
+    ? y + (height - referenceHeight)
+    : y;
 
   if (isReference) {
     return (
@@ -184,30 +206,62 @@ const BrokenBarShape = (props: {
   if (!isBaseline) {
     // Regular bar without break
     return (
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={fill}
-        rx={2}
-        ry={2}
-      />
+      <g>
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          fill={fill}
+          rx={2}
+          ry={2}
+        />
+        {shouldDrawReference && (
+          <rect
+            x={x}
+            y={referenceY}
+            width={width}
+            height={referenceHeight}
+            fill='transparent'
+            stroke='#111827'
+            strokeWidth={2}
+            strokeDasharray='4 4'
+            rx={2}
+            ry={2}
+          />
+        )}
+      </g>
     );
   }
 
   // If bar is too short, render simple bar without break indicator
   if (height < minHeightForBreakIndicator) {
     return (
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={fill}
-        rx={2}
-        ry={2}
-      />
+      <g>
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          fill={fill}
+          rx={2}
+          ry={2}
+        />
+        {shouldDrawReference && (
+          <rect
+            x={x}
+            y={referenceY}
+            width={width}
+            height={referenceHeight}
+            fill='transparent'
+            stroke='#111827'
+            strokeWidth={2}
+            strokeDasharray='4 4'
+            rx={2}
+            ry={2}
+          />
+        )}
+      </g>
     );
   }
 
@@ -263,6 +317,20 @@ const BrokenBarShape = (props: {
         rx={2}
         ry={2}
       />
+      {shouldDrawReference && (
+        <rect
+          x={x}
+          y={referenceY}
+          width={width}
+          height={referenceHeight}
+          fill='transparent'
+          stroke='#111827'
+          strokeWidth={2}
+          strokeDasharray='4 4'
+          rx={2}
+          ry={2}
+        />
+      )}
     </g>
   );
 };
@@ -277,6 +345,7 @@ export default function FunctionalPerformanceWaterfall({
   barSize = 26,
   brokenAxis: brokenAxisProp = 'auto',
   footerContent,
+  groupings,
 }: FunctionalPerformanceWaterfallProps) {
   const { formatAmount, currencyLabel } = useCurrency();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -405,6 +474,7 @@ export default function FunctionalPerformanceWaterfall({
 
   const chartData = useMemo(() => {
     let lastNonReferenceValue = 0;
+    const referenceSpend = stages.find((stage) => stage.id === 'baseline-spend');
     return stages.map((stage) => {
       const isAbsolute = stage.type === 'baseline';
       const prevValue = lastNonReferenceValue;
@@ -412,6 +482,10 @@ export default function FunctionalPerformanceWaterfall({
 
       let baselineValue: number;
       let barValue: number;
+      let referenceBarValue: number | undefined;
+      const referenceValue =
+        stage.referenceValue ??
+        (stage.id === 'target-spend' ? referenceSpend?.value : undefined);
 
       if (brokenAxis) {
         const { skipRangeStart, skipRangeEnd } = brokenAxis;
@@ -440,6 +514,9 @@ export default function FunctionalPerformanceWaterfall({
             barValue = delta;
           }
         }
+        if (typeof referenceValue === 'number') {
+          referenceBarValue = transformValue(referenceValue);
+        }
       } else {
         if (isAbsolute) {
           baselineValue = 0;
@@ -455,6 +532,9 @@ export default function FunctionalPerformanceWaterfall({
             barValue = delta;
           }
         }
+        if (typeof referenceValue === 'number') {
+          referenceBarValue = referenceValue;
+        }
       }
 
       const chartPoint = {
@@ -463,6 +543,7 @@ export default function FunctionalPerformanceWaterfall({
         originalValue: stage.value,
         baselineValue,
         barValue,
+        referenceBarValue,
       };
       if (!stage.isReference) {
         lastNonReferenceValue = stage.value;
@@ -480,6 +561,9 @@ export default function FunctionalPerformanceWaterfall({
     ) {
       return null;
     }
+    if (groupings && groupings.length > 0) {
+      return null;
+    }
     const initiativeIndices = chartData
       .map((stage, index) => (initiativeStageIds.has(stage.id) ? index : null))
       .filter((value): value is number => value !== null);
@@ -493,13 +577,60 @@ export default function FunctionalPerformanceWaterfall({
     const step = availableWidth / chartData.length;
     const left = margin.left + (minIndex + 0.5) * step;
     const right = margin.left + (maxIndex + 0.5) * step;
+    const verticalOffset = 55;
     const groupY = Math.min(
       chartSize.height - 20,
-      Math.max(8, axisLabelBottom + 40)
+      Math.max(8, axisLabelBottom + 40 + verticalOffset)
     );
     const labelY = Math.min(chartSize.height - 6, groupY + 14);
     return { left, right, groupY, labelY };
-  }, [axisLabelBottom, chartData, chartSize.height, chartSize.width, initiativeStageIds]);
+  }, [
+    axisLabelBottom,
+    chartData,
+    chartSize.height,
+    chartSize.width,
+    groupings,
+    initiativeStageIds,
+  ]);
+
+  const customGroupings = useMemo(() => {
+    if (
+      !groupings ||
+      groupings.length === 0 ||
+      !chartData.length ||
+      chartSize.width === 0 ||
+      chartSize.height === 0 ||
+      axisLabelBottom === 0
+    ) {
+      return [];
+    }
+    const margin = { left: 16, right: 16, bottom: 24 };
+    const availableWidth = Math.max(1, chartSize.width - margin.left - margin.right);
+    const step = availableWidth / chartData.length;
+    const baseGroupY = Math.min(
+      chartSize.height - 20,
+      Math.max(8, axisLabelBottom + 110)
+    );
+
+    return groupings
+      .map((group) => {
+        const stageIds = new Set(group.stageIds);
+        const indices = chartData
+          .map((stage, stageIndex) => (stageIds.has(stage.id) ? stageIndex : null))
+          .filter((value): value is number => value !== null);
+        if (indices.length === 0) {
+          return null;
+        }
+        const minIndex = Math.min(...indices);
+        const maxIndex = Math.max(...indices);
+        const left = margin.left + (minIndex + 0.5) * step;
+        const right = margin.left + (maxIndex + 0.5) * step;
+        const groupY = baseGroupY;
+        const labelY = Math.min(chartSize.height - 6, groupY + 14);
+        return { left, right, groupY, labelY, label: group.label };
+      })
+      .filter((group): group is NonNullable<typeof group> => Boolean(group));
+  }, [axisLabelBottom, chartData, chartSize.height, chartSize.width, groupings]);
 
   const getFillColor = (stage: FunctionalPerformanceStage) => {
     if (stage.type === 'baseline') return '#9ca3af';
@@ -681,6 +812,7 @@ export default function FunctionalPerformanceWaterfall({
                   | {
                       cumulativeValue?: number;
                       delta?: number;
+                      referenceValue?: number;
                     }
                   | undefined;
                 const numericValue =
@@ -688,14 +820,13 @@ export default function FunctionalPerformanceWaterfall({
                     ? value
                     : Number(Array.isArray(value) ? value[0] : value ?? 0);
                 const cumulative = payload?.cumulativeValue ?? numericValue;
-                const delta = payload?.delta;
                 const lines = [
                   `Value: ${formatAmountM(cumulative)} ${currencyLabel}`,
                 ];
-                if (delta !== undefined && delta !== cumulative) {
+                if (typeof payload?.referenceValue === 'number') {
                   lines.push(
-                    `Change: ${delta > 0 ? '+' : ''}${formatAmountM(
-                      delta
+                    `Baseline spend: ${formatAmountM(
+                      payload.referenceValue
                     )} ${currencyLabel}`
                   );
                 }
@@ -713,11 +844,12 @@ export default function FunctionalPerformanceWaterfall({
                   onStageClick(stage);
                 }
               }}
-              shape={
-                brokenAxis
-                  ? (props: unknown) => <BrokenBarShape {...(props as Record<string, unknown>)} brokenAxis={brokenAxis} />
-                  : undefined
-              }
+              shape={(props: unknown) => (
+                <BrokenBarShape
+                  {...(props as Record<string, unknown>)}
+                  brokenAxis={brokenAxis ?? undefined}
+                />
+              )}
             >
               <LabelList
                 dataKey='delta'
@@ -800,7 +932,51 @@ export default function FunctionalPerformanceWaterfall({
             </Bar>
           </ComposedChart>
         </ResponsiveContainer>
-        {initiativeGrouping && (
+        {customGroupings.length > 0 && (
+          <svg
+            className='absolute inset-0 pointer-events-none'
+            viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+            preserveAspectRatio='none'>
+            {customGroupings.map((group) => (
+              <g key={group.label}>
+                <line
+                  x1={group.left}
+                  y1={group.groupY}
+                  x2={group.right}
+                  y2={group.groupY}
+                  stroke='#4b5563'
+                  strokeWidth={2}
+                />
+                <line
+                  x1={group.left}
+                  y1={group.groupY}
+                  x2={group.left}
+                  y2={group.groupY + 8}
+                  stroke='#4b5563'
+                  strokeWidth={2}
+                />
+                <line
+                  x1={group.right}
+                  y1={group.groupY}
+                  x2={group.right}
+                  y2={group.groupY + 8}
+                  stroke='#4b5563'
+                  strokeWidth={2}
+                />
+                <text
+                  x={(group.left + group.right) / 2}
+                  y={group.labelY}
+                  textAnchor='middle'
+                  fontSize={12}
+                  fontWeight={700}
+                  fill='#374151'>
+                  {group.label}
+                </text>
+              </g>
+            ))}
+          </svg>
+        )}
+        {customGroupings.length === 0 && initiativeGrouping && (
           <svg
             className='absolute inset-0 pointer-events-none'
             viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}

@@ -6,7 +6,15 @@ import {
   SparklesIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import BusinessGroupPerformanceWaterfall from '../components/BusinessGroupPerformanceWaterfall';
@@ -25,11 +33,7 @@ import {
   type BusinessGroupMetricWithTrend,
   type MonthlyTrendPoint,
 } from '../data/mockBusinessGroupPerformance';
-import {
-  mockBudgetForecastStages,
-  mockFunctionDeviationRows,
-  type FunctionDeviationRow,
-} from '../data/mockForecast';
+import { mockBudgetForecastStages } from '../data/mockForecast';
 import type {
   BreadcrumbItem,
   BudgetForecastStage,
@@ -1106,6 +1110,83 @@ export default function BusinessGroupPerformancePage() {
     return PNL_BREAKDOWN_DATA[activePnlGroup] ?? [];
   }, [activePnlGroup]);
 
+  const unitGroupKeyById = useMemo(() => {
+    const entries: Array<[string, string]> = [];
+    businessGroups.forEach((group) => {
+      const groupKey = resolvePnlGroupKey(group.group);
+      if (!groupKey) {
+        return;
+      }
+      const groupId = normalizeGroupId(group.group);
+      group.businessUnits.forEach((unit) => {
+        entries.push([getUnitId(groupId, unit.name), groupKey]);
+      });
+    });
+    return new Map(entries);
+  }, [businessGroups, resolvePnlGroupKey]);
+
+  const selectedPnlUnitIds = useMemo(
+    () => Array.from(selectedGroupIds).filter((id) => unitRowsById.has(id)),
+    [selectedGroupIds, unitRowsById]
+  );
+
+  const selectedPnlUnitNames = useMemo(
+    () =>
+      selectedPnlUnitIds
+        .map((id) => unitRowsById.get(id)?.name)
+        .filter((name): name is string => Boolean(name)),
+    [selectedPnlUnitIds, unitRowsById]
+  );
+
+  const selectedPnlGroupKey = useMemo(() => {
+    if (selectedPnlUnitIds.length === 0) {
+      return null;
+    }
+    const groupKeys = new Set(
+      selectedPnlUnitIds
+        .map((id) => unitGroupKeyById.get(id))
+        .filter((key): key is string => Boolean(key))
+    );
+    if (groupKeys.size !== 1) {
+      return null;
+    }
+    return Array.from(groupKeys)[0];
+  }, [selectedPnlUnitIds, unitGroupKeyById]);
+
+  const selectedPnlRows = useMemo<PnlBreakdownRow[]>(() => {
+    if (!selectedPnlGroupKey || selectedPnlUnitNames.length === 0) {
+      return [];
+    }
+    const rows = PNL_BREAKDOWN_DATA[selectedPnlGroupKey] ?? [];
+    return rows.filter((row) => selectedPnlUnitNames.includes(row.unit));
+  }, [selectedPnlGroupKey, selectedPnlUnitNames]);
+
+  const pnlTitle = useMemo(() => {
+    if (selectedPnlUnitNames.length === 0) {
+      return 'All BUs';
+    }
+    if (selectedPnlUnitNames.length === 1) {
+      return selectedPnlUnitNames[0];
+    }
+    if (selectedPnlUnitNames.length <= 3) {
+      return selectedPnlUnitNames.join(', ');
+    }
+    return `${selectedPnlUnitNames.length} BUs selected`;
+  }, [selectedPnlUnitNames]);
+
+  const groupedPnlRows = useMemo(() => {
+    const grouped = new Map<string, PnlBreakdownRow[]>();
+    selectedPnlRows.forEach((row) => {
+      if (!grouped.has(row.unit)) {
+        grouped.set(row.unit, []);
+      }
+      grouped.get(row.unit)?.push(row);
+    });
+    return grouped;
+  }, [selectedPnlRows]);
+
+  const showPnlUnitColumn = groupedPnlRows.size > 1;
+
   const keyCallOut = useMemo(() => {
     const overallRow =
       tableData.find((row) => isOverallRowId(row.id)) ?? tableData[0];
@@ -1933,259 +2014,6 @@ export default function BusinessGroupPerformancePage() {
     selectedTimeframe,
   ]);
 
-  const selectedGroupLabel = useMemo(() => {
-    if (selectedGroupIds.size === 0) {
-      return `${sectionTitle} OP`;
-    }
-    const selectedRows = tableData.filter((row) =>
-      selectedGroupIds.has(row.id)
-    );
-    if (selectedRows.length === 0) {
-      return `${sectionTitle} OP`;
-    }
-    if (selectedRows.some((row) => isOverallRowId(row.id))) {
-      return `${sectionTitle} OP`;
-    }
-    return `${selectedRows.map((row) => row.name).join(', ')} OP`;
-  }, [selectedGroupIds, tableData, sectionTitle]);
-
-  const scaledFunctionDeviationRows = useMemo(() => {
-    const roundToOne = (value: number) => Math.round(value * 10) / 10;
-    const unitIdFor = (groupId: string, unitName: string) =>
-      `${groupId}-${unitName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-
-    const allUnits = businessGroups.flatMap((group) =>
-      group.businessUnits.map((unit) => ({
-        groupId: normalizeGroupId(group.group),
-        unit,
-      }))
-    );
-    const selectedGroup =
-      selectedBu === 'all'
-        ? null
-        : businessGroups.find(
-            (group) => normalizeGroupId(group.group) === selectedBu
-          );
-    const selectedGroupUnits = selectedGroup
-      ? selectedGroup.businessUnits.map((unit) => ({
-          groupId: normalizeGroupId(selectedGroup.group),
-          unit,
-        }))
-      : [];
-    const overallRow = tableData.find((row) => isOverallRowId(row.id));
-    const overallId = overallRow?.id;
-    const hasOverallSelected =
-      selectedGroupIds.size === 0 ||
-      (overallId ? selectedGroupIds.has(overallId) : false);
-
-    const selectedUnits = hasOverallSelected
-      ? selectedBu === 'all'
-        ? allUnits
-        : selectedGroupUnits
-      : allUnits.filter(({ groupId, unit }) => {
-          if (selectedGroupIds.has(groupId)) {
-            return true;
-          }
-          return selectedGroupIds.has(unitIdFor(groupId, unit.name));
-        });
-
-    const unitsToUse = selectedUnits.length > 0 ? selectedUnits : allUnits;
-
-    const mvaTotals = unitsToUse
-      .flatMap(({ unit }) => unit.mvaSites ?? [])
-      .filter((entry) => entry.site === 'Overall')
-      .reduce(
-        (acc, entry) => {
-          acc.budgetMvaCost += entry.budgetMvaCost;
-          acc.actualMvaCost += entry.actualMvaCost;
-          return acc;
-        },
-        { budgetMvaCost: 0, actualMvaCost: 0 }
-      );
-
-    const totals = unitsToUse.reduce(
-      (acc, { unit }) => {
-        const opBudgetScale =
-          unit.operatingProfitBudget === 0
-            ? 1
-            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
-        acc.topLineBudget += unit.ytmRevenueBudget;
-        acc.topLineActual += unit.functionalPerformance.topLine.actual;
-        acc.procurementBudget +=
-          unit.functionalPerformance.procurement.budget * opBudgetScale;
-        acc.procurementActual += unit.functionalPerformance.procurement.actual;
-        acc.manufacturingBudget +=
-          unit.functionalPerformance.manufacturing.budget * opBudgetScale;
-        acc.manufacturingActual +=
-          unit.functionalPerformance.manufacturing.actual;
-        acc.rndBudget += unit.functionalPerformance.rnd.budget * opBudgetScale;
-        acc.rndActual += unit.functionalPerformance.rnd.actual;
-        acc.opexBudget += unit.functionalPerformance.opex.budget * opBudgetScale;
-        acc.opexActual += unit.functionalPerformance.opex.actual;
-        acc.sharedExpensesBudget +=
-          unit.functionalPerformance.sharedExpenses.budget * opBudgetScale;
-        acc.sharedExpensesActual +=
-          unit.functionalPerformance.sharedExpenses.actual;
-        acc.opBudget += unit.ytmOperatingProfitBudget;
-        acc.opActual += unit.operatingProfit;
-        return acc;
-      },
-      {
-        topLineBudget: 0,
-        topLineActual: 0,
-        procurementBudget: 0,
-        procurementActual: 0,
-        manufacturingBudget: 0,
-        manufacturingActual: 0,
-        rndBudget: 0,
-        rndActual: 0,
-        opexBudget: 0,
-        opexActual: 0,
-        sharedExpensesBudget: 0,
-        sharedExpensesActual: 0,
-        opBudget: 0,
-        opActual: 0,
-      }
-    );
-
-    const topLineBudget = roundToOne(toMillions(totals.topLineBudget));
-    const topLineActual = roundToOne(toMillions(totals.topLineActual));
-    const opBudgetDisplay = roundToOne(toMillions(totals.opBudget));
-    const opActualDisplay = roundToOne(toMillions(totals.opActual));
-    const procurementBudget = roundToOne(toMillions(totals.procurementBudget));
-    const procurementActual = roundToOne(toMillions(totals.procurementActual));
-    const manufacturingBudget = roundToOne(
-      toMillions(totals.manufacturingBudget)
-    );
-    const manufacturingActual = roundToOne(
-      toMillions(totals.manufacturingActual)
-    );
-    const rndBudget = roundToOne(toMillions(totals.rndBudget));
-    const rndActual = roundToOne(toMillions(totals.rndActual));
-    const opexBudget = roundToOne(toMillions(totals.opexBudget));
-    const opexActual = roundToOne(toMillions(totals.opexActual));
-    const sharedExpensesBudget = roundToOne(
-      toMillions(totals.sharedExpensesBudget)
-    );
-    const sharedExpensesActual = roundToOne(
-      toMillions(totals.sharedExpensesActual)
-    );
-    const mvaBudget = roundToOne(mvaTotals.budgetMvaCost);
-    const mvaActual = roundToOne(mvaTotals.actualMvaCost);
-    const budgetSubtotal =
-      topLineBudget +
-      procurementBudget +
-      manufacturingBudget +
-      rndBudget +
-      opexBudget +
-      sharedExpensesBudget;
-    const actualSubtotal =
-      topLineActual +
-      procurementActual +
-      manufacturingActual +
-      rndActual +
-      opexActual +
-      sharedExpensesActual;
-    const adjustedSharedBudget = roundToOne(
-      sharedExpensesBudget + (opBudgetDisplay - budgetSubtotal)
-    );
-    const adjustedSharedActual = roundToOne(
-      sharedExpensesActual + (opActualDisplay - actualSubtotal)
-    );
-
-    const costBudget = roundToOne(
-      procurementBudget +
-        manufacturingBudget +
-        rndBudget +
-        opexBudget +
-        adjustedSharedBudget
-    );
-    const costActual = roundToOne(
-      procurementActual +
-        manufacturingActual +
-        rndActual +
-        opexActual +
-        adjustedSharedActual
-    );
-    const connOpBudget = opBudgetDisplay;
-    const connOpActual = opActualDisplay;
-
-    const valuesById = new Map<string, { budget: number; actual: number }>([
-      ['conn-op', { budget: connOpBudget, actual: connOpActual }],
-      ['revenue', { budget: topLineBudget, actual: topLineActual }],
-      ['topline', { budget: topLineBudget, actual: topLineActual }],
-      ['cost', { budget: costBudget, actual: costActual }],
-      ['procurement', { budget: procurementBudget, actual: procurementActual }],
-      ['mva', { budget: mvaBudget, actual: mvaActual }],
-      ['rd', { budget: rndBudget, actual: rndActual }],
-      ['opex', { budget: opexBudget, actual: opexActual }],
-      [
-        'shared-expenses',
-        { budget: adjustedSharedBudget, actual: adjustedSharedActual },
-      ],
-    ]);
-
-    const scaledRows = mockFunctionDeviationRows.map((row) => {
-      const resolved = valuesById.get(row.id);
-      if (!resolved) {
-        return row;
-      }
-      if (row.id === 'conn-op') {
-        return {
-          ...row,
-          label: selectedGroupLabel,
-          ytmBudget: resolved.budget,
-          ytmActuals: resolved.actual,
-        };
-      }
-      return {
-        ...row,
-        ytmBudget: resolved.budget,
-        ytmActuals: resolved.actual,
-      };
-    });
-
-    if (isBudgetMode) {
-      return scaledRows.map((row) => ({
-        ...row,
-        ytmActuals: row.ytmBudget,
-      }));
-    }
-    return scaledRows;
-  }, [
-    businessGroups,
-    selectedBu,
-    selectedGroupIds,
-    tableData,
-    selectedGroupLabel,
-    isBudgetMode,
-  ]);
-
-  const getFunctionInsight = (row: FunctionDeviationRow) => {
-    if (row.ytmBudget === 0) {
-      return {
-        text: row.aiInsight,
-        severity: 'low' as const,
-        needsAttention: false,
-      };
-    }
-    const variance = row.ytmActuals - row.ytmBudget;
-    const percent = (variance / Math.abs(row.ytmBudget)) * 100;
-    const percentValue = Math.abs(percent).toFixed(1);
-    const percentSign = percent >= 0 ? '+' : '-';
-    const varianceSign = variance >= 0 ? '+' : '-';
-    const varianceLabel = `${varianceSign}${formatMn(
-      Math.abs(variance)
-    )} Mn ${currencyLabel}`;
-    const status = variance < 0 ? 'adverse' : 'favourable';
-    const severity = Math.abs(percent) >= 7.5 ? 'high' : 'low';
-    const needsAttention = variance < 0 && Math.abs(percent) >= 5;
-    return {
-      text: `${row.label} deviates ${percentSign}${percentValue}% vs budget (${varianceLabel}, ${status}).`,
-      severity,
-      needsAttention,
-    };
-  };
 
   const renderMetricCell = (
     metric: BusinessGroupMetricWithTrend,
@@ -2385,59 +2213,25 @@ export default function BusinessGroupPerformancePage() {
     );
   };
 
-  const renderFunctionRow = (row: FunctionDeviationRow) => {
-    const labelClasses = row.isEmphasis
-      ? 'text-gray-900 font-semibold'
-      : 'text-gray-700';
-    const insight = getFunctionInsight(row);
-    const delta = row.ytmActuals - row.ytmBudget;
-    const showDrilldown =
-      row.id === 'procurement' ||
-      row.id === 'mva' ||
-      row.id === 'rd';
-    const valueColor = 'text-gray-900';
-    const costRowIds = new Set([
-      'cost',
-      'procurement',
-      'mva',
-      'rd',
-      'opex',
-      'shared-expenses',
-    ]);
-    const isCostRow = costRowIds.has(row.id);
-    const isCostValueNegative = row.ytmBudget < 0 || row.ytmActuals < 0;
-    const isFavorable = isCostRow
-      ? isCostValueNegative
-        ? row.ytmActuals >= row.ytmBudget
-        : row.ytmActuals <= row.ytmBudget
-      : row.ytmActuals >= row.ytmBudget;
-    const deltaColor = delta === 0
-      ? 'text-gray-600'
-      : isFavorable
-      ? 'text-opportunity-700'
-      : 'text-risk-700';
-    const handleRowDrillDown = () => {
-      if (!showDrilldown) {
-        return;
-      }
+  const navigateToFunctionPerformance = useCallback(
+    (functionId: string) => {
       const params = new URLSearchParams();
 
-      // Check if there are specific table selections (selectedGroupIds)
-      const hasTableSelections = selectedGroupIds.size > 0 &&
+      const hasTableSelections =
+        selectedGroupIds.size > 0 &&
         !Array.from(selectedGroupIds).every((id) => isOverallRowId(id));
 
       if (hasTableSelections) {
-        // Separate BG-level selections from BU-level (unit) selections
-        const selectedIds = Array.from(selectedGroupIds).filter((id) => !isOverallRowId(id));
+        const selectedIds = Array.from(selectedGroupIds).filter(
+          (id) => !isOverallRowId(id)
+        );
         const bgIds = selectedIds.filter((id) => !unitRowsById.has(id));
         const buIds = selectedIds.filter((id) => unitRowsById.has(id));
 
-        // Get BG names from tableData
         const bgNames = bgIds
           .map((id) => tableData.find((row) => row.id === id)?.name)
           .filter((name): name is string => Boolean(name));
 
-        // Get BU names from unitRowsById
         const buNames = buIds
           .map((id) => unitRowsById.get(id)?.name)
           .filter((name): name is string => Boolean(name));
@@ -2445,7 +2239,6 @@ export default function BusinessGroupPerformancePage() {
         if (bgNames.length > 0) {
           params.set('bg', bgNames.join(','));
         } else if (selectedBu !== 'all') {
-          // If no BG selected in table, use dropdown selection
           const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
           if (directMatch) {
             params.set('bg', directMatch.name);
@@ -2458,10 +2251,8 @@ export default function BusinessGroupPerformancePage() {
           params.set('bu', buNames.join(','));
         }
       } else if (selectedBu === 'all') {
-        // No table selections and dropdown is "All BGs"
         params.set('bg', 'all');
       } else {
-        // Use the BG dropdown selection
         const resolvedBgName = (() => {
           const directMatch = mainBuOptions.find((option) => option.id === selectedBu);
           if (directMatch) {
@@ -2479,60 +2270,206 @@ export default function BusinessGroupPerformancePage() {
       }
 
       navigate(
-        `/business-unit-performance/functional-performance/${row.id}?${params.toString()}`
+        `/business-unit-performance/functional-performance/${functionId}?${params.toString()}`
       );
-    };
-    return (
-      <tr
-        key={row.id}
-        className='border-b border-gray-200 last:border-b-0 hover:bg-indigo-50/60 transition-colors'
-        onDoubleClick={handleRowDrillDown}
-        title={showDrilldown ? 'Double click to drill down' : undefined}>
-        <td className='px-6 py-3'>
-          <div
-            className={`${labelClasses}`}
-            style={{ paddingLeft: row.indentLevel ? row.indentLevel * 20 : 0 }}>
-            {row.label}
-          </div>
-        </td>
-        <td className={`px-6 py-3 text-right ${valueColor}`}>
-          {formatMn(row.ytmBudget)}
-        </td>
-        <td className={`px-6 py-3 text-right ${valueColor}`}>
-          {formatMn(row.ytmActuals)}
-        </td>
-        <td className='px-6 py-3 text-right'>
-          <span className={`text-sm font-semibold ${deltaColor}`}>
-            {formatMn(delta)}
-          </span>
-        </td>
-        <td className='px-6 py-3'>
-          <div className='flex flex-wrap items-center gap-2 text-sm'>
-            <span className='text-gray-600'>{insight.text}</span>
-            {insight.needsAttention && (
-              <span className='inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 text-[11px] font-semibold'>
-                Needs attention
-              </span>
-            )}
-          </div>
-        </td>
-        <td className='px-4 py-3 text-right'>
-          {showDrilldown ? (
-            <button
-              onClick={(event) => {
-                event.stopPropagation();
-                handleRowDrillDown();
-              }}
-              className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
-              View details
-            </button>
-          ) : (
-            <span className='text-xs text-transparent'>View details</span>
-          )}
-        </td>
-      </tr>
-    );
+    },
+    [
+      businessGroups,
+      mainBuOptions,
+      navigate,
+      sectionTitle,
+      selectedBu,
+      selectedGroupIds,
+      tableData,
+      unitRowsById,
+    ]
+  );
+
+  const normalizePnlLineItem = (lineItem: string) =>
+    lineItem.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+  const pnlFunctionByLineItem: Record<string, string> = {
+    bom: 'procurement',
+    'buy-sell': 'procurement',
+    avap: 'procurement',
+    mva: 'mva',
+    dl: 'mva',
+    idl: 'mva',
+    'g-a': 'mva',
+    'r-d': 'rd',
+    fte: 'rd',
+    'non-fte': 'rd',
   };
+
+  const pnlHierarchy = [
+    { label: 'Revenue', children: ['Passthrough', 'Controllable'] },
+    {
+      label: 'COGS',
+      children: [
+        { label: 'BOM', children: ['Buy-Sell', 'AVAP', 'Controllable'] },
+        { label: 'MVA', children: ['DL', 'IDL', 'G&A'] },
+      ],
+    },
+    { label: 'R&D', children: ['FTE', 'Non-FTE'] },
+    {
+      label: 'Operating Profit',
+      children: ['(Line items between OP and net)'],
+    },
+  ] as const;
+
+  const renderPnlRows = useCallback(
+    (rows: PnlBreakdownRow[], showUnit: boolean = true) => {
+      const used = new Set<number>();
+
+      const getNextRow = (label: string) => {
+        for (let i = 0; i < rows.length; i += 1) {
+          if (!used.has(i) && rows[i].lineItem === label) {
+            used.add(i);
+            return { row: rows[i], index: i };
+          }
+        }
+        return null;
+      };
+
+      const renderValueRow = (
+        row: PnlBreakdownRow,
+        index: number,
+        level: number,
+        isGroup: boolean
+      ) => {
+        const functionId =
+          pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
+        const showDrilldown = Boolean(functionId);
+        return (
+          <tr
+            key={`${row.unit}-${row.lineItem}-${index}`}
+            className={`border-b border-gray-200 last:border-b-0 ${
+              showDrilldown ? 'hover:bg-indigo-50/60 transition-colors cursor-pointer' : ''
+            }`}
+            onDoubleClick={
+              showDrilldown && functionId
+                ? () => navigateToFunctionPerformance(functionId)
+                : undefined
+            }
+            title={
+              showDrilldown ? 'Double click to drill down' : undefined
+            }>
+            <td className='px-4 py-3 text-gray-600'>
+              {showUnit ? row.unit : ''}
+            </td>
+            <td className='px-4 py-3 text-gray-600'>
+              <span
+                className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
+                style={{ paddingLeft: `${level * 16}px` }}>
+                {row.lineItem}
+              </span>
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.fullYearBudget)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.ytmBudget)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.lastYearYtm)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.ytmActual)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.fullYearForecast)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.lastYearFullYear)}
+            </td>
+          <td className='px-4 py-3 text-right'>
+            {showDrilldown && functionId ? (
+              <button
+                type='button'
+                onClick={(event) => {
+                  event.stopPropagation();
+                  navigateToFunctionPerformance(functionId);
+                }}
+                className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
+                View details
+              </button>
+            ) : (
+              <span className='text-xs text-transparent'>View details</span>
+            )}
+          </td>
+          </tr>
+        );
+      };
+
+      const renderLabelRow = (label: string, level: number) => (
+        <tr
+          key={`label-${label}-${level}`}
+          className='border-b border-gray-200 last:border-b-0'>
+          <td className='px-4 py-3 text-gray-600' />
+          <td className='px-4 py-3 text-gray-600'>
+            <span
+              className='font-semibold text-gray-900'
+              style={{ paddingLeft: `${level * 16}px` }}>
+              {label}
+            </span>
+          </td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
+        </tr>
+      );
+
+      const renderNode = (
+        node: {
+          label: string;
+          children?: readonly (
+            | string
+            | { label: string; children?: readonly string[] }
+          )[];
+        },
+        level: number
+      ): React.ReactNode[] => {
+        const rowMatch = getNextRow(node.label);
+        const items: React.ReactNode[] = [];
+        if (rowMatch) {
+          items.push(renderValueRow(rowMatch.row, rowMatch.index, level, true));
+        } else if (node.children && node.children.length > 0) {
+          items.push(renderLabelRow(node.label, level));
+        }
+        (node.children ?? []).forEach((child) => {
+          if (typeof child === 'string') {
+            const childMatch = getNextRow(child);
+            if (childMatch) {
+              items.push(
+                renderValueRow(childMatch.row, childMatch.index, level + 1, false)
+              );
+            }
+            return;
+          }
+          items.push(...renderNode(child, level + 1));
+        });
+        return items;
+      };
+
+      const output: React.ReactNode[] = [];
+      pnlHierarchy.forEach((node) => {
+        output.push(...renderNode(node, 0));
+      });
+
+      rows.forEach((row, index) => {
+        if (!used.has(index)) {
+          output.push(renderValueRow(row, index, 0, false));
+        }
+      });
+
+      return output;
+    },
+    [formatPnlValue, navigateToFunctionPerformance]
+  );
 
   const renderTableRow = (
     group: BusinessGroupData,
@@ -3096,74 +3033,84 @@ export default function BusinessGroupPerformancePage() {
         )}
       </div>
 
-      {/* Deviation by Functions Section */}
-      <div className='max-w-[1920px] mx-auto px-8 pb-12'>
-        <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
-          <div className='mb-4'>
-            <h2 className='text-2xl font-bold text-gray-900'>
-              Deviation of BU performance by functions
-            </h2>
-            <p className='text-sm text-gray-500 mt-1'>
-              <span className='inline-flex items-center gap-1.5'>
-                <span>Mn, {currencyLabel} • {selectedBuLabel}</span>
-                {selectedBuNames.length > 1 && (
-                  <span className='relative group inline-flex items-center'>
-                    <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
-                    <span className='absolute left-1/2 top-full z-10 mt-2 w-56 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
-                      <span className='block text-xs font-semibold text-gray-700 mb-2'>
-                        Selected BUs
-                      </span>
-                      <ul className='space-y-1'>
-                        {selectedBuNames.map((name) => (
-                          <li
-                            key={name}
-                            className='flex items-center gap-2'>
-                            <span className='h-1.5 w-1.5 rounded-full bg-primary-500' />
-                            <span>{name}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </span>
-                  </span>
-                )}
-              </span>
-            </p>
-          </div>
-          <div className='overflow-hidden rounded-lg border border-gray-200'>
-            <table className='w-full text-sm'>
-              <thead className='bg-gray-50 border-b border-gray-200'>
-                <tr>
-                  <th className='px-6 py-3 text-left font-semibold text-gray-700'>
-                    Functions
-                  </th>
-                  <th className='px-6 py-3 text-right font-semibold text-gray-700'>
-                    YTM budget
-                  </th>
-                  <th className='px-6 py-3 text-right font-semibold text-gray-700'>
-                    YTM actuals
-                  </th>
-                  <th className='px-6 py-3 text-right font-semibold text-gray-700'>
-                    Delta vs budget
-                  </th>
-                  <th className='px-6 py-3 text-left font-semibold text-gray-700'>
-                    <div className='flex items-center gap-2'>
-                      <span>Insights</span>
-                      <span className='px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border border-purple-300 shadow-sm flex items-center gap-1'>
-                        <span className='text-xs'>✨</span>
-                        <span>AI</span>
-                      </span>
-                    </div>
-                  </th>
-                  <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                    <span className='sr-only'>Details</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>{scaledFunctionDeviationRows.map(renderFunctionRow)}</tbody>
-            </table>
+      {selectedPnlUnitNames.length > 0 && (
+        <div className='max-w-[1920px] mx-auto px-8 pb-12'>
+          <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 overflow-hidden'>
+            <div className='px-6 py-5 border-b border-gray-200'>
+              <div>
+                <p className='text-xs uppercase tracking-widest text-gray-400 font-semibold'>
+                  BU P&amp;L breakdown
+                </p>
+                <h3 className='text-xl font-bold text-gray-900'>{pnlTitle}</h3>
+                <p className='text-sm text-gray-500 mt-1'>
+                  Mn {currencyLabel}
+                </p>
+              </div>
+            </div>
+            <div className='max-h-[70vh] overflow-auto'>
+              <table className='w-full text-sm'>
+                <thead className='bg-gray-50 border-b border-gray-200'>
+                  <tr>
+                    <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                      {showPnlUnitColumn ? 'BU' : ''}
+                    </th>
+                    <th className='px-4 py-3 text-left font-semibold text-gray-700'>
+                      Line item
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Full year budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      YTM budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Last year (YTM)
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      YTM actual
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Full year FCST
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Last year (full year)
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      <span className='sr-only'>Details</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedPnlRows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className='px-4 py-6 text-center text-sm text-gray-500'>
+                        No P&amp;L breakdown available.
+                      </td>
+                    </tr>
+                  ) : groupedPnlRows.size <= 1 ? (
+                    renderPnlRows(selectedPnlRows, showPnlUnitColumn)
+                  ) : (
+                    Array.from(groupedPnlRows.entries()).map(([unit, rows]) => (
+                      <Fragment key={unit}>
+                        <tr className='bg-gray-50'>
+                          <td
+                            className='px-4 py-2 font-semibold text-gray-900'
+                            colSpan={9}>
+                            {unit}
+                          </td>
+                        </tr>
+                        {renderPnlRows(rows, false)}
+                      </Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 
@@ -3473,48 +3420,73 @@ export default function BusinessGroupPerformancePage() {
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                       Last year (full year)
                     </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      <span className='sr-only'>Details</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {activePnlRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className='px-4 py-6 text-center text-sm text-gray-500'>
                         No P&amp;L breakdown available.
                       </td>
                     </tr>
                   ) : (
-                    activePnlRows.map((row, index) => (
-                      <tr
-                        key={`${row.unit}-${row.lineItem}-${index}`}
-                        className='border-b border-gray-200 last:border-b-0'>
-                        <td className='px-4 py-3 font-semibold text-gray-900'>
-                          {row.unit}
-                        </td>
-                        <td className='px-4 py-3 text-gray-600'>
-                          {row.lineItem}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.fullYearBudget)}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.ytmBudget)}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.lastYearYtm)}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.ytmActual)}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.fullYearForecast)}
-                        </td>
-                        <td className='px-4 py-3 text-right text-gray-700'>
-                          {formatPnlValue(row.lastYearFullYear)}
-                        </td>
-                      </tr>
-                    ))
+                    activePnlRows.map((row, index) => {
+                      const functionId =
+                        pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
+                      const showDrilldown = Boolean(functionId);
+                      return (
+                        <tr
+                          key={`${row.unit}-${row.lineItem}-${index}`}
+                          className='border-b border-gray-200 last:border-b-0'>
+                          <td className='px-4 py-3 font-semibold text-gray-900'>
+                            {row.unit}
+                          </td>
+                          <td className='px-4 py-3 text-gray-600'>
+                            {row.lineItem}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.fullYearBudget)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.ytmBudget)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.lastYearYtm)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.ytmActual)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.fullYearForecast)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue(row.lastYearFullYear)}
+                          </td>
+                          <td className='px-4 py-3 text-right'>
+                            {showDrilldown && functionId ? (
+                              <button
+                                type='button'
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  navigateToFunctionPerformance(functionId);
+                                }}
+                                className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
+                                View details
+                              </button>
+                            ) : (
+                              <span className='text-xs text-transparent'>
+                                View details
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

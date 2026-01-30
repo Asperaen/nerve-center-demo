@@ -2210,11 +2210,14 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (selectedVersion === 'forecast') {
-          navigate(
-            `/market-intelligence?bg=${encodeURIComponent(
-              groupId
-            )}&timeframe=${selectedTimeframeScope}`
-          );
+          const params = new URLSearchParams();
+          const bgParam = isSubGroup && parentBgId ? parentBgId : groupId;
+          params.set('bg', bgParam);
+          params.set('timeframe', selectedTimeframeScope);
+          if (isSubGroup && parentBgId) {
+            params.set('bu', groupName);
+          }
+          navigate(`/market-intelligence?${params.toString()}`);
           return;
         }
         // Navigate to business group performance with the BG and BU selected
@@ -2488,11 +2491,14 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (selectedVersion === 'forecast') {
-          navigate(
-            `/market-intelligence?bg=${encodeURIComponent(
-              buId
-            )}&timeframe=${selectedTimeframeScope}`
-          );
+          const params = new URLSearchParams();
+          const bgParam = isSubGroup && parentBgId ? parentBgId : buId;
+          params.set('bg', bgParam);
+          params.set('timeframe', selectedTimeframeScope);
+          if (isSubGroup && parentBgId) {
+            params.set('bu', group.name);
+          }
+          navigate(`/market-intelligence?${params.toString()}`);
           return;
         }
         // Navigate to business group performance with the BG and BU selected
