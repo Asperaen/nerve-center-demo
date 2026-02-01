@@ -300,11 +300,6 @@ export default function BudgetForecastActualWaterfall({
       const barValueRealized = shouldSplit
         ? Math.round(realizedMagnitude * splitSign * 100) / 100
         : splitBase;
-      const barValueForecastPos = barValueForecast >= 0 ? barValueForecast : 0;
-      const barValueForecastNeg = barValueForecast < 0 ? barValueForecast : 0;
-      const barValueRealizedPos = barValueRealized >= 0 ? barValueRealized : 0;
-      const barValueRealizedNeg = barValueRealized < 0 ? barValueRealized : 0;
-
       return {
         ...stage,
         name: stage.label,
@@ -314,10 +309,6 @@ export default function BudgetForecastActualWaterfall({
         barValueTotal: splitBase,
         barValueForecast,
         barValueRealized,
-        barValueForecastPos,
-        barValueForecastNeg,
-        barValueRealizedPos,
-        barValueRealizedNeg,
         isPositive: (stage.delta ?? stage.value) >= 0,
       };
     });
@@ -731,61 +722,6 @@ export default function BudgetForecastActualWaterfall({
             />
             {splitNonPrimaryBars ? (
               <>
-                {/* Forecast portion of delta (top) */}
-                <Bar
-                  dataKey='barValueForecast'
-                  stackId='a'
-                  name='Forecast portion'
-                  onClick={(data) => {
-                    const payload = (data as { payload?: BudgetForecastStage }).payload;
-                    if (payload) {
-                      handleBarClick(payload);
-                    }
-                  }}
-                  shape={
-                    brokenAxis
-                      ? (props: unknown) => (
-                          <BrokenBarShape
-                            {...(props as Record<string, unknown>)}
-                            brokenAxis={brokenAxis}
-                          />
-                        )
-                      : undefined
-                  }
-                >
-                  {stages.map((stage, index) => {
-                    const highlighted = isHighlighted(stage);
-                    const strokeColor =
-                      stage.isClickable || onStageClick
-                        ? getSegmentStrokeColor(stage)
-                        : 'none';
-                    const shadowColor =
-                      stage.type === 'positive'
-                        ? 'rgba(22, 163, 74, 0.4)'
-                        : stage.type === 'negative'
-                        ? 'rgba(220, 38, 38, 0.4)'
-                        : 'rgba(107, 114, 128, 0.4)';
-                    return (
-                      <Cell
-                        key={`cell-forecast-${index}`}
-                        fill={getSegmentFillColor(stage, 'forecast')}
-                        stroke={strokeColor}
-                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
-                        strokeDasharray={
-                          stage.stage === 'early-signals' ? '4 2' : undefined
-                        }
-                        style={{
-                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
-                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
-                          filter: highlighted
-                            ? `drop-shadow(0 4px 6px ${shadowColor})`
-                            : 'none',
-                        }}
-                        onClick={() => handleBarClick(stage)}
-                      />
-                    );
-                  })}
-                </Bar>
                 {/* Realized portion of delta (bottom) */}
                 <Bar
                   dataKey='barValueRealized'
@@ -909,6 +845,10 @@ export default function BudgetForecastActualWaterfall({
                   />
                   {stages.map((stage, index) => {
                     const highlighted = isHighlighted(stage);
+                    const useSegment =
+                      (stage as { swapSplitSegments?: boolean }).swapSplitSegments
+                        ? 'forecast'
+                        : 'realized';
                     const strokeColor =
                       stage.isClickable || onStageClick
                         ? getSegmentStrokeColor(stage)
@@ -922,7 +862,62 @@ export default function BudgetForecastActualWaterfall({
                     return (
                       <Cell
                         key={`cell-realized-${index}`}
-                        fill={getSegmentFillColor(stage, 'realized')}
+                        fill={getSegmentFillColor(stage, useSegment)}
+                        stroke={strokeColor}
+                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeDasharray={
+                          stage.stage === 'early-signals' ? '4 2' : undefined
+                        }
+                        style={{
+                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          filter: highlighted
+                            ? `drop-shadow(0 4px 6px ${shadowColor})`
+                            : 'none',
+                        }}
+                        onClick={() => handleBarClick(stage)}
+                      />
+                    );
+                  })}
+                </Bar>
+                {/* Forecast portion of delta (top) */}
+                <Bar
+                  dataKey='barValueForecast'
+                  stackId='a'
+                  name='Forecast portion'
+                  onClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarClick(payload);
+                    }
+                  }}
+                  shape={
+                    brokenAxis
+                      ? (props: unknown) => (
+                          <BrokenBarShape
+                            {...(props as Record<string, unknown>)}
+                            brokenAxis={brokenAxis}
+                          />
+                        )
+                      : undefined
+                  }
+                >
+                  {stages.map((stage, index) => {
+                    const highlighted = isHighlighted(stage);
+                    const strokeColor =
+                      stage.isClickable || onStageClick
+                        ? getSegmentStrokeColor(stage)
+                        : 'none';
+                    const shadowColor =
+                      stage.type === 'positive'
+                        ? 'rgba(22, 163, 74, 0.4)'
+                        : stage.type === 'negative'
+                        ? 'rgba(220, 38, 38, 0.4)'
+                        : 'rgba(107, 114, 128, 0.4)';
+                    return (
+                      <Cell
+                        key={`cell-forecast-${index}`}
+                        fill={getSegmentFillColor(stage, 'forecast')}
                         stroke={strokeColor}
                         strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
                         strokeDasharray={
