@@ -38,14 +38,12 @@ const BrokenAxisTick = ({
   y,
   payload,
   brokenAxis,
-  index,
   formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
   brokenAxis: BrokenAxisConfig;
-  index?: number;
   formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
@@ -54,8 +52,7 @@ const BrokenAxisTick = ({
   const skipAmount = skipRangeEnd - skipRangeStart;
 
   const actualValue = value > skipRangeStart ? value + skipAmount : value;
-  const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
-  const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
+  const shouldShowBreak = value === skipRangeStart;
 
   const displayValue = formatValue
     ? formatValue(actualValue)
@@ -67,7 +64,7 @@ const BrokenAxisTick = ({
         {displayValue}
       </text>
       {shouldShowBreak && (
-        <g transform='translate(8, 12)'>
+        <g transform='translate(8, -30)'>
           <rect x={-10} y={-2} width={18} height={14} fill='white' />
           <line x1={-8} y1={0} x2={6} y2={0} stroke='#4b5563' strokeWidth={3} />
           <line x1={-8} y1={8} x2={6} y2={8} stroke='#4b5563' strokeWidth={3} />
@@ -139,7 +136,6 @@ const BrokenBarShape = (props: {
         ry={2}
       />
       <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
-      <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
       <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
       <rect
         x={x}
