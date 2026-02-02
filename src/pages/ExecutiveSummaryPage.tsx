@@ -1491,6 +1491,11 @@ export default function ExecutiveSummaryPage({
   }, [searchParams, isBudgetView]);
 
   useEffect(() => {
+    if (!isBudgetView) {
+      setSelectedBu('all');
+      setSelectedGroupIds(new Set());
+      return;
+    }
     const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (!buParam) {
       return;
@@ -1503,7 +1508,7 @@ export default function ExecutiveSummaryPage({
     if (validBu) {
       setSelectedBu(validBu.id);
     }
-  }, [searchParams, mainBuOptions]);
+  }, [isBudgetView, searchParams, mainBuOptions]);
 
   useEffect(() => {
     if (hasParsedMonthParamsRef.current) {
