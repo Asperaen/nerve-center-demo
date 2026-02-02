@@ -2989,13 +2989,19 @@ export default function ExecutiveSummaryPage({
               </div>
               <div className='space-y-3'>
                 <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
-                  {keyCallOut.bulletPoints.map((point, index) => (
-                    <li
-                      key={index}
-                      className='text-sm'>
-                      {point}
-                    </li>
-                  ))}
+                  {keyCallOut.bulletPoints.map((point, index) => {
+                    const trimmed = point.trim();
+                    const isSubBullet = trimmed.startsWith('• ');
+                    return (
+                      <li
+                        key={index}
+                        className={`text-sm ${
+                          isSubBullet ? 'ml-5 list-circle' : ''
+                        }`}>
+                        {isSubBullet ? trimmed.slice(2) : point}
+                      </li>
+                    );
+                  })}
                 </ul>
                 {keyCallOut.rootCauseAnalysis && (
                   <div className='mt-4 pt-4 border-t border-gray-200'>

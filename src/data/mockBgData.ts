@@ -100,8 +100,8 @@ export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> =
                 'The current-year OP budget is set at USD 1,935M, implying a 30.7% YoY growth ambition, broadly in line with peer BUs within HH BG.',
                 'Budget delivery is highly dependent on in-year improvement initiatives, which account for 34.2% of total OP, indicating a heavy reliance on execution rather than secured run-rate.',
                 'Execution risk is elevated, with market pressure and pipeline leakage representing the most critical threats, driven by:',
-                '3.1.Significant historical exposure to volume/mix changes, as evidenced by a –USD 368.5M OP impact in D/E group last year.',
-                '3.2.Potential underestimation of leakage risk, with only USD 6.5M leakage assumed against a USD 662M pipeline (~1%), suggesting limited buffer for execution slippage.',
+                '• Significant historical exposure to volume/mix changes, as evidenced by a –USD 368.5M OP impact in D/E group last year.',
+                '• Potential underestimation of leakage risk, with only USD 6.5M leakage assumed against a USD 662M pipeline (~1%), suggesting limited buffer for execution slippage.',
             ],
             initiative: [
                 'Procurement and Topline together drive the majority of pipeline impact, with Procurement representing the largest share and Categories A and C contributing a disproportionate portion of the value.',

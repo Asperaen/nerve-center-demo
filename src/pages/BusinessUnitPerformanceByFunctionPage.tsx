@@ -198,7 +198,8 @@ export const generateDeviationDataset = (
     };
   });
 
-  const baselineScale = isHhDeGroup ? 1.2 : 0.7;
+  const baselineScale = isHhDeGroup ? 1.1 : 0.7;
+  const targetScale = isHhDeGroup ? 0.6 : 1;
   const actualSpendValues = distributeTotal(
     actualLineValueForSelectedBUs,
     categories.length
@@ -218,7 +219,12 @@ export const generateDeviationDataset = (
       ? rawBaselineSpend
       : roundToOne(clampToActual(rawBaselineSpend));
     const targetSpend = isHhDeGroup
-      ? roundToOne(Math.max(actualSpend * 1.05, baselineSpend * randomBetween(0.9, 1.0)))
+      ? roundToOne(
+          Math.max(
+            actualSpend * 1.05,
+            baselineSpend * targetScale * randomBetween(0.9, 1.0)
+          )
+        )
       : roundToOne(
           clampToActual(baselineSpend * randomBetween(0.8, 1.1))
         );
