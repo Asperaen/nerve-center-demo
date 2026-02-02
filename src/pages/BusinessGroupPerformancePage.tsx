@@ -213,6 +213,10 @@ const buildGroupRow = (
       acc.grossProfit += unit.grossProfit;
       acc.operatingProfit += unit.operatingProfit;
       acc.netProfit += unit.netProfit;
+        acc.ytmRevenueActual += unit.ytmRevenueActual ?? 0;
+        acc.ytmGrossProfitActual += unit.ytmGrossProfitActual ?? 0;
+        acc.ytmOperatingProfitActual += unit.ytmOperatingProfitActual ?? 0;
+        acc.ytmNetProfitActual += unit.ytmNetProfitActual ?? 0;
       acc.revenueBudget += unit.revenueBudget;
       acc.grossProfitBudget += unit.grossProfitBudget;
       acc.operatingProfitBudget += unit.operatingProfitBudget;
@@ -240,6 +244,10 @@ const buildGroupRow = (
       grossProfit: 0,
       operatingProfit: 0,
       netProfit: 0,
+      ytmRevenueActual: 0,
+      ytmGrossProfitActual: 0,
+      ytmOperatingProfitActual: 0,
+      ytmNetProfitActual: 0,
       revenueBudget: 0,
       grossProfitBudget: 0,
       operatingProfitBudget: 0,
@@ -266,64 +274,51 @@ const buildGroupRow = (
   const name = nameOverride ?? groupName;
   const id = idOverride ?? normalizeGroupId(groupName);
   const insightBase = `${name} performance`;
-  const applyScale = (value: number) => value * scale;
-  const revenue = applyScale(
-    toMillions(valueMode === 'forecast' ? totals.forecastRevenue : totals.revenue)
+  const actualScale = valueMode === 'actual' && budgetMode === 'ytm' ? 1 : scale;
+  const budgetScale = budgetMode === 'ytm' ? 1 : scale;
+  const lastYearScale = lastYearMode === 'ytm' ? 1 : scale;
+  const forecastScale = scale;
+  const revenue =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(totals.forecastRevenue)
+      : actualScale * toMillions(totals.ytmRevenueActual ?? totals.revenue);
+  const grossProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(totals.forecastGrossProfit)
+      : actualScale * toMillions(totals.ytmGrossProfitActual ?? totals.grossProfit);
+  const operatingProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(totals.forecastOperatingProfit)
+      : actualScale * toMillions(totals.ytmOperatingProfitActual ?? totals.operatingProfit);
+  const netProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(totals.forecastNetProfit)
+      : actualScale * toMillions(totals.ytmNetProfitActual ?? totals.netProfit);
+  const revenueBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget
   );
-  const grossProfit = applyScale(
-    toMillions(
-      valueMode === 'forecast' ? totals.forecastGrossProfit : totals.grossProfit
-    )
+  const grossProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
   );
-  const operatingProfit = applyScale(
-    toMillions(
-      valueMode === 'forecast'
-        ? totals.forecastOperatingProfit
-        : totals.operatingProfit
-    )
+  const operatingProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? totals.ytmOperatingProfitBudget : totals.operatingProfitBudget
   );
-  const netProfit = applyScale(
-    toMillions(valueMode === 'forecast' ? totals.forecastNetProfit : totals.netProfit)
+  const netProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget
   );
-  const revenueBudget = applyScale(
-    toMillions(budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget)
+  const lastYearRevenue = lastYearScale * toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue
   );
-  const grossProfitBudget = applyScale(
-    toMillions(
-      budgetMode === 'ytm' ? totals.ytmGrossProfitBudget : totals.grossProfitBudget
-    )
+  const lastYearGrossProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearGrossProfit : totals.lastYearGrossProfit
   );
-  const operatingProfitBudget = applyScale(
-    toMillions(
-      budgetMode === 'ytm'
-        ? totals.ytmOperatingProfitBudget
-        : totals.operatingProfitBudget
-    )
+  const lastYearOperatingProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm'
+      ? totals.ytmLastYearOperatingProfit
+      : totals.lastYearOperatingProfit
   );
-  const netProfitBudget = applyScale(
-    toMillions(budgetMode === 'ytm' ? totals.ytmNetProfitBudget : totals.netProfitBudget)
-  );
-  const lastYearRevenue = applyScale(
-    toMillions(lastYearMode === 'ytm' ? totals.ytmLastYearRevenue : totals.lastYearRevenue)
-  );
-  const lastYearGrossProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm'
-        ? totals.ytmLastYearGrossProfit
-        : totals.lastYearGrossProfit
-    )
-  );
-  const lastYearOperatingProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm'
-        ? totals.ytmLastYearOperatingProfit
-        : totals.lastYearOperatingProfit
-    )
-  );
-  const lastYearNetProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
-    )
+  const lastYearNetProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm' ? totals.ytmLastYearNetProfit : totals.lastYearNetProfit
   );
 
   return {
@@ -378,64 +373,55 @@ const buildUnitRow = (
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')}`;
-  const applyScale = (value: number) => value * scale;
-  const revenue = applyScale(
-    toMillions(valueMode === 'forecast' ? unit.forecastRevenue : unit.revenue)
+  const actualScale = valueMode === 'actual' && budgetMode === 'ytm' ? 1 : scale;
+  const budgetScale = budgetMode === 'ytm' ? 1 : scale;
+  const lastYearScale = lastYearMode === 'ytm' ? 1 : scale;
+  const forecastScale = scale;
+  const revenue =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(unit.forecastRevenue)
+      : actualScale * toMillions(unit.ytmRevenueActual ?? unit.revenue);
+  const grossProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(unit.forecastGrossProfit)
+      : actualScale * toMillions(unit.ytmGrossProfitActual ?? unit.grossProfit);
+  const operatingProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(unit.forecastOperatingProfit)
+      : actualScale * toMillions(unit.ytmOperatingProfitActual ?? unit.operatingProfit);
+  const netProfit =
+    valueMode === 'forecast'
+      ? forecastScale * toMillions(unit.forecastNetProfit)
+      : actualScale * toMillions(unit.ytmNetProfitActual ?? unit.netProfit);
+  const revenueBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget
   );
-  const grossProfit = applyScale(
-    toMillions(
-      valueMode === 'forecast' ? unit.forecastGrossProfit : unit.grossProfit
-    )
+  const grossProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
   );
-  const operatingProfit = applyScale(
-    toMillions(
-      valueMode === 'forecast'
-        ? unit.forecastOperatingProfit
-        : unit.operatingProfit
-    )
+  const operatingProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm'
+      ? unit.ytmOperatingProfitBudget
+      : unit.operatingProfitBudget
   );
-  const netProfit = applyScale(
-    toMillions(valueMode === 'forecast' ? unit.forecastNetProfit : unit.netProfit)
+  const netProfitBudget = budgetScale * toMillions(
+    budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget
   );
-  const revenueBudget = applyScale(
-    toMillions(budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget)
+  const lastYearRevenue = lastYearScale * toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue
   );
-  const grossProfitBudget = applyScale(
-    toMillions(
-      budgetMode === 'ytm' ? unit.ytmGrossProfitBudget : unit.grossProfitBudget
-    )
+  const lastYearGrossProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearGrossProfit
+      : unit.lastYearGrossProfit
   );
-  const operatingProfitBudget = applyScale(
-    toMillions(
-      budgetMode === 'ytm'
-        ? unit.ytmOperatingProfitBudget
-        : unit.operatingProfitBudget
-    )
+  const lastYearOperatingProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm'
+      ? unit.ytmLastYearOperatingProfit
+      : unit.lastYearOperatingProfit
   );
-  const netProfitBudget = applyScale(
-    toMillions(budgetMode === 'ytm' ? unit.ytmNetProfitBudget : unit.netProfitBudget)
-  );
-  const lastYearRevenue = applyScale(
-    toMillions(lastYearMode === 'ytm' ? unit.ytmLastYearRevenue : unit.lastYearRevenue)
-  );
-  const lastYearGrossProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm'
-        ? unit.ytmLastYearGrossProfit
-        : unit.lastYearGrossProfit
-    )
-  );
-  const lastYearOperatingProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm'
-        ? unit.ytmLastYearOperatingProfit
-        : unit.lastYearOperatingProfit
-    )
-  );
-  const lastYearNetProfit = applyScale(
-    toMillions(
-      lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
-    )
+  const lastYearNetProfit = lastYearScale * toMillions(
+    lastYearMode === 'ytm' ? unit.ytmLastYearNetProfit : unit.lastYearNetProfit
   );
   const insightBase = `${unit.name} performance.`;
 
@@ -516,7 +502,7 @@ export default function BusinessGroupPerformancePage() {
     return null;
   })();
   const [monthRange, setMonthRange] = useState<[number, number]>(
-    initialMonths ?? [0, 2]
+    initialMonths ?? [0, 1]
   );
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] = useState<boolean>(
@@ -635,7 +621,8 @@ export default function BusinessGroupPerformancePage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
-      next.set('toggle', selectedTimeframe);
+      next.set('timeframe', selectedTimeframe);
+      next.delete('toggle');
       next.set('months', `${monthRange[0]}-${monthRange[1]}`);
       next.set('view', financialView);
       next.delete('bu');
@@ -651,11 +638,12 @@ export default function BusinessGroupPerformancePage() {
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
     const nextRange: [number, number] =
-      timeframe === 'full-year' ? [0, 11] : [0, 2];
+      timeframe === 'full-year' ? [0, 11] : [0, 1];
     setMonthRange(nextRange);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('toggle', timeframe);
+      next.set('timeframe', timeframe);
+      next.delete('toggle');
       next.set('months', `${nextRange[0]}-${nextRange[1]}`);
       next.set('view', financialView);
       return next;
@@ -663,6 +651,9 @@ export default function BusinessGroupPerformancePage() {
   };
 
   const handleMonthClick = (monthIndex: number) => {
+    if (selectedTimeframe === 'ytm') {
+      return;
+    }
     if (monthAnchor === null || !isMonthRangeCustom) {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
@@ -715,16 +706,16 @@ export default function BusinessGroupPerformancePage() {
     if (isMonthRangeCustom) {
       return;
     }
-    setMonthRange(selectedTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+    setMonthRange(selectedTimeframe === 'ytm' ? [0, 1] : [0, 11]);
   }, [selectedTimeframe, isMonthRangeCustom]);
 
   useEffect(() => {
-    const toggleParam = searchParams.get('toggle');
-    if (!toggleParam) {
+    const timeframeParam = searchParams.get('timeframe');
+    if (!timeframeParam) {
       return;
     }
-    if (toggleParam === 'ytm' || toggleParam === 'full-year') {
-      setSelectedTimeframe(toggleParam);
+    if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
+      setSelectedTimeframe(timeframeParam);
       return;
     }
     // If an invalid timeframe is preselected, default to YTM.
@@ -740,6 +731,9 @@ export default function BusinessGroupPerformancePage() {
     if (!monthsParam) {
       return;
     }
+    if (monthAnchor !== null) {
+      return;
+    }
     const [startRaw, endRaw] = monthsParam.split('-').map(Number);
     if (
       Number.isFinite(startRaw) &&
@@ -752,7 +746,7 @@ export default function BusinessGroupPerformancePage() {
       setIsMonthRangeCustom(true);
       setMonthAnchor(null);
     }
-  }, [searchParams]);
+  }, [searchParams, monthAnchor]);
 
   // Sync selectedBu with URL bg parameter when navigating to this page
   useEffect(() => {
@@ -767,6 +761,9 @@ export default function BusinessGroupPerformancePage() {
 
   // Sync selectedGroupIds with URL selected parameter when navigating to this page
   useEffect(() => {
+    if (selectedBu !== 'all') {
+      return;
+    }
     const selectedParam = searchParams.get('selected');
     if (!selectedParam) {
       return;
@@ -774,7 +771,7 @@ export default function BusinessGroupPerformancePage() {
     const normalizedSelected = normalizeGroupId(selectedParam);
     // Set the selected group IDs based on the URL parameter
     setSelectedGroupIds(new Set([normalizedSelected]));
-  }, [searchParams]);
+  }, [searchParams, selectedBu]);
 
   const isOverallRowId = (id: string) =>
     id === 'overall' || id.endsWith('-overall');
@@ -906,13 +903,16 @@ export default function BusinessGroupPerformancePage() {
     if (selectedParam) {
       return;
     }
+    if (selectedGroupIds.size > 0) {
+      return;
+    }
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
     if (overallRow) {
       setSelectedGroupIds(new Set([overallRow.id]));
     } else if (tableData.length === 0) {
       setSelectedGroupIds(new Set());
     }
-  }, [tableData, searchParams]);
+  }, [selectedGroupIds, tableData, searchParams]);
 
   useEffect(() => {
     // Don't override if a specific BU is selected via URL parameter
@@ -1439,6 +1439,7 @@ export default function BusinessGroupPerformancePage() {
     const l4Stage = getStage('l4-vs-planned');
     const l5Stage = getStage('l4-to-l5-leakage');
     const budgetBase = Math.abs(selectionMetrics.selectedOpBaseline);
+    const actualBase = Math.abs(selectionMetrics.selectedOpValue);
     const clampDelta = (value: number, maxAbs: number) => {
       if (maxAbs <= 0) {
         return value;
@@ -1449,7 +1450,8 @@ export default function BusinessGroupPerformancePage() {
     const minAdverse = 0.6;
     const minInitiative = 1.2;
     const volumeMixDelta = -Math.max(Math.abs(opImpactTotals.volumeMix), minAdverse);
-    const oneOffCap = Math.max(0.6, budgetBase * 0.15);
+    const maxIntermediateCap = Math.max(0.6, actualBase * 0.1);
+    const oneOffCap = maxIntermediateCap;
     const headwindCap = Math.max(0.4, budgetBase * 0.08);
     const rawOneOff = clampDelta(opImpactTotals.oneOff, oneOffCap);
     const rawHeadwind = clampDelta(opImpactTotals.headwinds * 0.4, headwindCap);
@@ -1470,7 +1472,7 @@ export default function BusinessGroupPerformancePage() {
       Math.abs(headwindDeltaBase) < minNonZero
         ? minNonZero
         : headwindDeltaBase;
-    const otherFactorsDelta = opImpactTotals.leakages;
+    const otherFactorsDelta = clampDelta(opImpactTotals.leakages, maxIntermediateCap);
     const initiativeBoost = 1.4;
     const l3DeltaBase = Math.max(Math.abs(l3Stage?.delta ?? 0), minInitiative);
     const l4DeltaBase = Math.max(Math.abs(l4Stage?.delta ?? 0), minInitiative);
@@ -1630,12 +1632,20 @@ export default function BusinessGroupPerformancePage() {
     }
 
     const minDelta = Math.max(0.6, Math.abs(totalChange) * 0.08);
+    const maxIntermediate = Math.max(0.6, Math.abs(actualValue) * 0.1);
     let adjustedSum = 0;
     const adjustedMap = new Map<string, number>();
     adjustableStages.forEach((stage, index) => {
       const raw = stage.delta ?? 0;
-      const boosted =
+      let boosted =
         raw === 0 ? 0 : Math.sign(raw) * Math.max(Math.abs(raw), minDelta);
+      if (
+        stage.stage === 'one-off-items' ||
+        stage.stage === 'one-off-adjustments'
+      ) {
+        const magnitude = Math.min(Math.abs(boosted), maxIntermediate);
+        boosted = Math.sign(boosted || 1) * magnitude;
+      }
       adjustedMap.set(stage.stage, boosted);
       if (index < adjustableStages.length - 1) {
         adjustedSum += boosted;
@@ -1644,6 +1654,27 @@ export default function BusinessGroupPerformancePage() {
     const lastStage = adjustableStages[adjustableStages.length - 1];
     const balancedDelta = roundToOne(totalChange - adjustedSum);
     adjustedMap.set(lastStage.stage, balancedDelta);
+    if (
+      lastStage.stage === 'one-off-items' ||
+      lastStage.stage === 'one-off-adjustments'
+    ) {
+      const cappedMagnitude = Math.min(Math.abs(balancedDelta), maxIntermediate);
+      const cappedDelta = Math.sign(balancedDelta || 1) * cappedMagnitude;
+      const remainder = roundToOne(balancedDelta - cappedDelta);
+      adjustedMap.set(lastStage.stage, cappedDelta);
+      if (remainder !== 0) {
+        const fallbackStage = adjustableStages.find(
+          (stage) =>
+            stage.stage !== lastStage.stage &&
+            stage.stage !== 'one-off-items' &&
+            stage.stage !== 'one-off-adjustments'
+        );
+        if (fallbackStage) {
+          const current = adjustedMap.get(fallbackStage.stage) ?? 0;
+          adjustedMap.set(fallbackStage.stage, roundToOne(current + remainder));
+        }
+      }
+    }
 
     runningValue = roundToOne(budgetValue);
     return baseStages.map((stage) => {
@@ -2289,16 +2320,9 @@ export default function BusinessGroupPerformancePage() {
     lineItem.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   const pnlFunctionByLineItem: Record<string, string> = {
-    bom: 'procurement',
-    'buy-sell': 'procurement',
-    avap: 'procurement',
+    controllable: 'procurement',
     mva: 'mva',
-    dl: 'mva',
-    idl: 'mva',
-    'g-a': 'mva',
     'r-d': 'rd',
-    fte: 'rd',
-    'non-fte': 'rd',
   };
 
   const pnlHierarchy = [
@@ -2311,11 +2335,18 @@ export default function BusinessGroupPerformancePage() {
       ],
     },
     { label: 'R&D', children: ['FTE', 'Non-FTE'] },
-    {
-      label: 'Operating Profit',
-      children: ['(Line items between OP and net)'],
-    },
+    { label: 'SG&A' },
+    { label: 'Share expenses' },
+    { label: 'Operating Profit' },
+    { label: '(Line items between OP and net)' },
   ] as const;
+
+  const pnlFullYearScale = useMemo(() => {
+    if (selectedTimeframe !== 'full-year') {
+      return 1;
+    }
+    return (monthRange[1] - monthRange[0] + 1) / 12;
+  }, [monthRange, selectedTimeframe]);
 
   const renderPnlRows = useCallback(
     (rows: PnlBreakdownRow[], showUnit: boolean = true) => {
@@ -2335,11 +2366,18 @@ export default function BusinessGroupPerformancePage() {
         row: PnlBreakdownRow,
         index: number,
         level: number,
-        isGroup: boolean
+        isGroup: boolean,
+        parentLabel?: string
       ) => {
         const functionId =
           pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
-        const showDrilldown = Boolean(functionId);
+        const isYtmView = selectedTimeframe === 'ytm';
+        const normalizedParent = parentLabel?.trim().toLowerCase();
+        const isRevenueControllable =
+          normalizedParent === 'revenue' &&
+          normalizePnlLineItem(row.lineItem) === 'controllable';
+        const showDrilldown = Boolean(functionId) && !isRevenueControllable;
+        const isTopLevel = level === 0;
         return (
           <tr
             key={`${row.unit}-${row.lineItem}-${index}`}
@@ -2359,44 +2397,42 @@ export default function BusinessGroupPerformancePage() {
             </td>
             <td className='px-4 py-3 text-gray-600'>
               <span
-                className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
+                className={
+                  isGroup || isTopLevel
+                    ? 'font-semibold text-gray-900'
+                    : 'text-gray-700'
+                }
                 style={{ paddingLeft: `${level * 16}px` }}>
                 {row.lineItem}
               </span>
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.fullYearBudget)}
+              {formatPnlValue(
+                isYtmView
+                  ? row.ytmActual
+                  : row.fullYearForecast * pnlFullYearScale
+              )}
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.ytmBudget)}
+              {formatPnlValue(
+                isYtmView
+                  ? row.lastYearYtm
+                  : row.lastYearFullYear * pnlFullYearScale
+              )}
             </td>
-            <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.lastYearYtm)}
+            <td className='px-4 py-3 text-right'>
+              {showDrilldown && functionId ? (
+                <button
+                  type='button'
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    navigateToFunctionPerformance(functionId);
+                  }}
+                  className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
+                  View details
+                </button>
+              ) : null}
             </td>
-            <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.ytmActual)}
-            </td>
-            <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.fullYearForecast)}
-            </td>
-            <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.lastYearFullYear)}
-            </td>
-          <td className='px-4 py-3 text-right'>
-            {showDrilldown && functionId ? (
-              <button
-                type='button'
-                onClick={(event) => {
-                  event.stopPropagation();
-                  navigateToFunctionPerformance(functionId);
-                }}
-                className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
-                View details
-              </button>
-            ) : (
-              <span className='text-xs text-transparent'>View details</span>
-            )}
-          </td>
           </tr>
         );
       };
@@ -2416,10 +2452,6 @@ export default function BusinessGroupPerformancePage() {
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
         </tr>
       );
 
@@ -2436,7 +2468,9 @@ export default function BusinessGroupPerformancePage() {
         const rowMatch = getNextRow(node.label);
         const items: React.ReactNode[] = [];
         if (rowMatch) {
-          items.push(renderValueRow(rowMatch.row, rowMatch.index, level, true));
+          items.push(
+            renderValueRow(rowMatch.row, rowMatch.index, level, true, undefined)
+          );
         } else if (node.children && node.children.length > 0) {
           items.push(renderLabelRow(node.label, level));
         }
@@ -2445,7 +2479,13 @@ export default function BusinessGroupPerformancePage() {
             const childMatch = getNextRow(child);
             if (childMatch) {
               items.push(
-                renderValueRow(childMatch.row, childMatch.index, level + 1, false)
+                renderValueRow(
+                  childMatch.row,
+                  childMatch.index,
+                  level + 1,
+                  false,
+                  node.label
+                )
               );
             }
             return;
@@ -2468,7 +2508,12 @@ export default function BusinessGroupPerformancePage() {
 
       return output;
     },
-    [formatPnlValue, navigateToFunctionPerformance]
+    [
+      formatPnlValue,
+      navigateToFunctionPerformance,
+      pnlFullYearScale,
+      selectedTimeframe,
+    ]
   );
 
   const renderTableRow = (
@@ -2636,14 +2681,20 @@ export default function BusinessGroupPerformancePage() {
                     {months.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
+                      const isDisabled = selectedTimeframe === 'ytm';
                       return (
                         <button
                           key={month}
                           onClick={() => handleMonthClick(index)}
+                          disabled={isDisabled}
                           className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                             isSelected
                               ? 'bg-primary-600 text-white'
                               : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                          } ${
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-50 hover:text-gray-600'
+                              : ''
                           }`}>
                           {month}
                         </button>
@@ -3058,25 +3109,13 @@ export default function BusinessGroupPerformancePage() {
                       Line item
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Full year budget
+                      {selectedTimeframe === 'ytm' ? 'YTM actual' : 'Full year FCST'}
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      YTM budget
+                      Last year
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year (YTM)
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      YTM actual
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Full year FCST
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year (full year)
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      <span className='sr-only'>Details</span>
+                      Details
                     </th>
                   </tr>
                 </thead>
@@ -3084,7 +3123,7 @@ export default function BusinessGroupPerformancePage() {
                   {selectedPnlRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={5}
                         className='px-4 py-6 text-center text-sm text-gray-500'>
                         No P&amp;L breakdown available.
                       </td>
@@ -3097,7 +3136,7 @@ export default function BusinessGroupPerformancePage() {
                         <tr className='bg-gray-50'>
                           <td
                             className='px-4 py-2 font-semibold text-gray-900'
-                            colSpan={9}>
+                            colSpan={5}>
                             {unit}
                           </td>
                         </tr>
@@ -3403,25 +3442,13 @@ export default function BusinessGroupPerformancePage() {
                       Line item
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Full year budget
+                      {selectedTimeframe === 'ytm' ? 'YTM actual' : 'Full year FCST'}
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      YTM budget
+                      Last year
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year (YTM)
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      YTM actual
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Full year FCST
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year (full year)
-                    </th>
-                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      <span className='sr-only'>Details</span>
+                      Details
                     </th>
                   </tr>
                 </thead>
@@ -3429,7 +3456,7 @@ export default function BusinessGroupPerformancePage() {
                   {activePnlRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={5}
                         className='px-4 py-6 text-center text-sm text-gray-500'>
                         No P&amp;L breakdown available.
                       </td>
@@ -3438,7 +3465,11 @@ export default function BusinessGroupPerformancePage() {
                     activePnlRows.map((row, index) => {
                       const functionId =
                         pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
-                      const showDrilldown = Boolean(functionId);
+                      const isControllable =
+                        normalizePnlLineItem(row.lineItem) === 'controllable';
+                      const showDrilldown =
+                        Boolean(functionId) && !isControllable;
+                      const isYtmView = selectedTimeframe === 'ytm';
                       return (
                         <tr
                           key={`${row.unit}-${row.lineItem}-${index}`}
@@ -3450,22 +3481,18 @@ export default function BusinessGroupPerformancePage() {
                             {row.lineItem}
                           </td>
                           <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.fullYearBudget)}
+                            {formatPnlValue(
+                              isYtmView
+                                ? row.ytmActual
+                                : row.fullYearForecast * pnlFullYearScale
+                            )}
                           </td>
                           <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.ytmBudget)}
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.lastYearYtm)}
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.ytmActual)}
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.fullYearForecast)}
-                          </td>
-                          <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(row.lastYearFullYear)}
+                            {formatPnlValue(
+                              isYtmView
+                                ? row.lastYearYtm
+                                : row.lastYearFullYear * pnlFullYearScale
+                            )}
                           </td>
                           <td className='px-4 py-3 text-right'>
                             {showDrilldown && functionId ? (
@@ -3478,11 +3505,7 @@ export default function BusinessGroupPerformancePage() {
                                 className='text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'>
                                 View details
                               </button>
-                            ) : (
-                              <span className='text-xs text-transparent'>
-                                View details
-                              </span>
-                            )}
+                            ) : null}
                           </td>
                         </tr>
                       );

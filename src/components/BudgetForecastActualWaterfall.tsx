@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Bar,
-  CartesianGrid,
-  Cell,
-  ComposedChart,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+    Bar,
+    CartesianGrid,
+    Cell,
+    ComposedChart,
+    LabelList,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { BudgetForecastStage } from '../types';
@@ -20,6 +20,7 @@ interface BudgetForecastActualWaterfallProps {
   title?: string;
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
+  onStageDoubleClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string; // Stage ID to highlight (e.g., 'market-performance')
   highlightedStageColor?: string; // Custom color for highlighted stage bar
   colorByDelta?: boolean;
@@ -38,14 +39,12 @@ const BrokenAxisTick = ({
   y,
   payload,
   brokenAxis,
-  index,
   formatValue,
 }: {
   x?: number;
   y?: number;
   payload?: { value: number };
   brokenAxis: BrokenAxisConfig;
-  index?: number;
   formatValue?: (value: number) => string;
 }) => {
   if (x === undefined || y === undefined || !payload) return null;
@@ -54,8 +53,7 @@ const BrokenAxisTick = ({
   const skipAmount = skipRangeEnd - skipRangeStart;
 
   const actualValue = value > skipRangeStart ? value + skipAmount : value;
-  const isFirstTickAboveBreak = value > skipRangeStart && index !== undefined && index > 0;
-  const shouldShowBreak = isFirstTickAboveBreak && value <= skipRangeStart + 300;
+  const shouldShowBreak = value === skipRangeStart;
 
   const displayValue = formatValue
     ? formatValue(actualValue)
@@ -67,7 +65,7 @@ const BrokenAxisTick = ({
         {displayValue}
       </text>
       {shouldShowBreak && (
-        <g transform='translate(8, 12)'>
+        <g transform='translate(8, -30)'>
           <rect x={-10} y={-2} width={18} height={14} fill='white' />
           <line x1={-8} y1={0} x2={6} y2={0} stroke='#4b5563' strokeWidth={3} />
           <line x1={-8} y1={8} x2={6} y2={8} stroke='#4b5563' strokeWidth={3} />
@@ -139,7 +137,6 @@ const BrokenBarShape = (props: {
         ry={2}
       />
       <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
-      <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
       <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
       <rect
         x={x}
@@ -162,6 +159,7 @@ export default function BudgetForecastActualWaterfall({
   title = 'Budget Forecast Actual Waterfall',
   subtitle,
   onStageClick,
+  onStageDoubleClick,
   highlightedStage,
   highlightedStageColor,
   colorByDelta = false,
@@ -175,6 +173,7 @@ export default function BudgetForecastActualWaterfall({
   const navigate = useNavigate();
   const { formatAmount, currencyLabel } = useCurrency();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [definitionTooltip, setDefinitionTooltip] = useState<{
     text: string;
     left: number;
@@ -300,11 +299,6 @@ export default function BudgetForecastActualWaterfall({
       const barValueRealized = shouldSplit
         ? Math.round(realizedMagnitude * splitSign * 100) / 100
         : splitBase;
-      const barValueForecastPos = barValueForecast >= 0 ? barValueForecast : 0;
-      const barValueForecastNeg = barValueForecast < 0 ? barValueForecast : 0;
-      const barValueRealizedPos = barValueRealized >= 0 ? barValueRealized : 0;
-      const barValueRealizedNeg = barValueRealized < 0 ? barValueRealized : 0;
-
       return {
         ...stage,
         name: stage.label,
@@ -314,24 +308,43 @@ export default function BudgetForecastActualWaterfall({
         barValueTotal: splitBase,
         barValueForecast,
         barValueRealized,
-        barValueForecastPos,
-        barValueForecastNeg,
-        barValueRealizedPos,
-        barValueRealizedNeg,
         isPositive: (stage.delta ?? stage.value) >= 0,
       };
     });
   }, [stages, brokenAxis, splitNonPrimaryBars]);
 
   const handleBarClick = (stage: BudgetForecastStage) => {
-    if (onStageClick) {
-      onStageClick(stage);
-      return;
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
     }
-    if (stage.isClickable && stage.navigationTarget) {
-      navigate(stage.navigationTarget);
+    clickTimeoutRef.current = setTimeout(() => {
+      if (onStageClick) {
+        onStageClick(stage);
+        return;
+      }
+      if (stage.isClickable && stage.navigationTarget) {
+        navigate(stage.navigationTarget);
+      }
+    }, 220);
+  };
+
+  const handleBarDoubleClick = (stage: BudgetForecastStage) => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+    if (onStageDoubleClick) {
+      onStageDoubleClick(stage);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
   const [axisLabelBottom, setAxisLabelBottom] = useState(0);
@@ -731,61 +744,6 @@ export default function BudgetForecastActualWaterfall({
             />
             {splitNonPrimaryBars ? (
               <>
-                {/* Forecast portion of delta (top) */}
-                <Bar
-                  dataKey='barValueForecast'
-                  stackId='a'
-                  name='Forecast portion'
-                  onClick={(data) => {
-                    const payload = (data as { payload?: BudgetForecastStage }).payload;
-                    if (payload) {
-                      handleBarClick(payload);
-                    }
-                  }}
-                  shape={
-                    brokenAxis
-                      ? (props: unknown) => (
-                          <BrokenBarShape
-                            {...(props as Record<string, unknown>)}
-                            brokenAxis={brokenAxis}
-                          />
-                        )
-                      : undefined
-                  }
-                >
-                  {stages.map((stage, index) => {
-                    const highlighted = isHighlighted(stage);
-                    const strokeColor =
-                      stage.isClickable || onStageClick
-                        ? getSegmentStrokeColor(stage)
-                        : 'none';
-                    const shadowColor =
-                      stage.type === 'positive'
-                        ? 'rgba(22, 163, 74, 0.4)'
-                        : stage.type === 'negative'
-                        ? 'rgba(220, 38, 38, 0.4)'
-                        : 'rgba(107, 114, 128, 0.4)';
-                    return (
-                      <Cell
-                        key={`cell-forecast-${index}`}
-                        fill={getSegmentFillColor(stage, 'forecast')}
-                        stroke={strokeColor}
-                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
-                        strokeDasharray={
-                          stage.stage === 'early-signals' ? '4 2' : undefined
-                        }
-                        style={{
-                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
-                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
-                          filter: highlighted
-                            ? `drop-shadow(0 4px 6px ${shadowColor})`
-                            : 'none',
-                        }}
-                        onClick={() => handleBarClick(stage)}
-                      />
-                    );
-                  })}
-                </Bar>
                 {/* Realized portion of delta (bottom) */}
                 <Bar
                   dataKey='barValueRealized'
@@ -795,6 +753,12 @@ export default function BudgetForecastActualWaterfall({
                     const payload = (data as { payload?: BudgetForecastStage }).payload;
                     if (payload) {
                       handleBarClick(payload);
+                    }
+                  }}
+                  onDoubleClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarDoubleClick(payload);
                     }
                   }}
                   shape={
@@ -909,6 +873,10 @@ export default function BudgetForecastActualWaterfall({
                   />
                   {stages.map((stage, index) => {
                     const highlighted = isHighlighted(stage);
+                    const useSegment =
+                      (stage as { swapSplitSegments?: boolean }).swapSplitSegments
+                        ? 'forecast'
+                        : 'realized';
                     const strokeColor =
                       stage.isClickable || onStageClick
                         ? getSegmentStrokeColor(stage)
@@ -922,7 +890,7 @@ export default function BudgetForecastActualWaterfall({
                     return (
                       <Cell
                         key={`cell-realized-${index}`}
-                        fill={getSegmentFillColor(stage, 'realized')}
+                        fill={getSegmentFillColor(stage, useSegment)}
                         stroke={strokeColor}
                         strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
                         strokeDasharray={
@@ -936,6 +904,69 @@ export default function BudgetForecastActualWaterfall({
                             : 'none',
                         }}
                         onClick={() => handleBarClick(stage)}
+                        onDoubleClick={() => handleBarDoubleClick(stage)}
+                      />
+                    );
+                  })}
+                </Bar>
+                {/* Forecast portion of delta (top) */}
+                <Bar
+                  dataKey='barValueForecast'
+                  stackId='a'
+                  name='Forecast portion'
+                  onClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarClick(payload);
+                    }
+                  }}
+                  onDoubleClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarDoubleClick(payload);
+                    }
+                  }}
+                  shape={
+                    brokenAxis
+                      ? (props: unknown) => (
+                          <BrokenBarShape
+                            {...(props as Record<string, unknown>)}
+                            brokenAxis={brokenAxis}
+                          />
+                        )
+                      : undefined
+                  }
+                >
+                  {stages.map((stage, index) => {
+                    const highlighted = isHighlighted(stage);
+                    const strokeColor =
+                      stage.isClickable || onStageClick
+                        ? getSegmentStrokeColor(stage)
+                        : 'none';
+                    const shadowColor =
+                      stage.type === 'positive'
+                        ? 'rgba(22, 163, 74, 0.4)'
+                        : stage.type === 'negative'
+                        ? 'rgba(220, 38, 38, 0.4)'
+                        : 'rgba(107, 114, 128, 0.4)';
+                    return (
+                      <Cell
+                        key={`cell-forecast-${index}`}
+                        fill={getSegmentFillColor(stage, 'forecast')}
+                        stroke={strokeColor}
+                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeDasharray={
+                          stage.stage === 'early-signals' ? '4 2' : undefined
+                        }
+                        style={{
+                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          filter: highlighted
+                            ? `drop-shadow(0 4px 6px ${shadowColor})`
+                            : 'none',
+                        }}
+                        onClick={() => handleBarClick(stage)}
+                        onDoubleClick={() => handleBarDoubleClick(stage)}
                       />
                     );
                   })}
@@ -950,6 +981,12 @@ export default function BudgetForecastActualWaterfall({
                   const payload = (data as { payload?: BudgetForecastStage }).payload;
                   if (payload) {
                     handleBarClick(payload);
+                  }
+                }}
+                onDoubleClick={(data) => {
+                  const payload = (data as { payload?: BudgetForecastStage }).payload;
+                  if (payload) {
+                    handleBarDoubleClick(payload);
                   }
                 }}
                 shape={
@@ -1109,6 +1146,7 @@ export default function BudgetForecastActualWaterfall({
                           : 'none',
                       }}
                       onClick={() => handleBarClick(stage)}
+                      onDoubleClick={() => handleBarDoubleClick(stage)}
                       onMouseEnter={(e) => {
                         if (stage.isClickable && !highlighted) {
                           (e.currentTarget as SVGElement).style.opacity = '0.8';

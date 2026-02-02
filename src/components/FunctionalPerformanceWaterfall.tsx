@@ -645,7 +645,12 @@ export default function FunctionalPerformanceWaterfall({
     const skipAmount = skipRangeEnd - skipRangeStart;
 
     // Find max value after transformation
-    const maxOriginalValue = Math.max(...stages.map((s) => s.value));
+    const maxOriginalValue = Math.max(
+      ...stages.map((s) => s.value),
+      ...stages
+        .map((s) => s.referenceValue)
+        .filter((value): value is number => typeof value === 'number')
+    );
     const maxTransformed = maxOriginalValue > skipRangeEnd
       ? maxOriginalValue - skipAmount
       : maxOriginalValue;
@@ -807,30 +812,50 @@ export default function FunctionalPerformanceWaterfall({
             )}
             {/* Y-axis break indicator is rendered via the custom tick component */}
             <Tooltip
-              formatter={(value, _name, props) => {
-                const payload = props.payload as
-                  | {
+              wrapperStyle={{ pointerEvents: 'none' }}
+              content={(props) => {
+                if (!props.active || !props.payload || props.payload.length === 0) {
+                  return null;
+                }
+                const payload = props.payload[0]?.payload as
+                  | (FunctionalPerformanceStage & {
                       cumulativeValue?: number;
                       delta?: number;
                       referenceValue?: number;
-                    }
+                    })
                   | undefined;
-                const numericValue =
-                  typeof value === 'number'
-                    ? value
-                    : Number(Array.isArray(value) ? value[0] : value ?? 0);
-                const cumulative = payload?.cumulativeValue ?? numericValue;
-                const lines = [
-                  `Value: ${formatAmountM(cumulative)} ${currencyLabel}`,
-                ];
-                if (typeof payload?.referenceValue === 'number') {
-                  lines.push(
-                    `Baseline spend: ${formatAmountM(
-                      payload.referenceValue
-                    )} ${currencyLabel}`
-                  );
+                if (!payload) {
+                  return null;
                 }
-                return lines.join('\n');
+                const stage = stages.find((item) => item.id === payload.id) ?? payload;
+                const delta = payload.delta ?? stage.delta ?? stage.value;
+                const isBaseline = stage.type === 'baseline';
+                const bucketValue = isBaseline ? stage.value : delta;
+                const referenceValue =
+                  typeof stage.referenceValue === 'number'
+                    ? stage.referenceValue
+                    : payload.referenceValue;
+                const baselineValue =
+                  stage.id === 'target-spend' && typeof referenceValue === 'number'
+                    ? referenceValue
+                    : isBaseline
+                      ? stage.value
+                      : referenceValue;
+
+                return (
+                  <div className='rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-lg'>
+                    <p className='font-semibold text-gray-900'>{stage.label}</p>
+                    <p className='mt-1'>
+                      Value: {bucketValue > 0 ? '+' : ''}
+                      {formatAmountM(bucketValue)} {currencyLabel}
+                    </p>
+                    {typeof baselineValue === 'number' && (
+                      <p className='mt-1 text-[11px] text-gray-600'>
+                        Baseline spend: {formatAmountM(baselineValue)} {currencyLabel}
+                      </p>
+                    )}
+                  </div>
+                );
               }}
             />
             <Bar dataKey='baselineValue' stackId='a' fill='transparent' />

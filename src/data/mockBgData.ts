@@ -100,8 +100,8 @@ export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> =
                 'The current-year OP budget is set at USD 1,935M, implying a 30.7% YoY growth ambition, broadly in line with peer BUs within HH BG.',
                 'Budget delivery is highly dependent on in-year improvement initiatives, which account for 34.2% of total OP, indicating a heavy reliance on execution rather than secured run-rate.',
                 'Execution risk is elevated, with market pressure and pipeline leakage representing the most critical threats, driven by:',
-                '3.1.Significant historical exposure to volume/mix changes, as evidenced by a –USD 368.5M OP impact in D/E group last year.',
-                '3.2.Potential underestimation of leakage risk, with only USD 6.5M leakage assumed against a USD 662M pipeline (~1%), suggesting limited buffer for execution slippage.',
+                '• Significant historical exposure to volume/mix changes, as evidenced by a –USD 368.5M OP impact in D/E group last year.',
+                '• Potential underestimation of leakage risk, with only USD 6.5M leakage assumed against a USD 662M pipeline (~1%), suggesting limited buffer for execution slippage.',
             ],
             initiative: [
                 'Procurement and Topline together drive the majority of pipeline impact, with Procurement representing the largest share and Categories A and C contributing a disproportionate portion of the value.',
@@ -470,6 +470,10 @@ type BusinessUnit = {
     grossProfit: number;
     operatingProfit: number;
     netProfit: number;
+    ytmRevenueActual: number;
+    ytmGrossProfitActual: number;
+    ytmOperatingProfitActual: number;
+    ytmNetProfitActual: number;
     revenueBudget: number;
     grossProfitBudget: number;
     operatingProfitBudget: number;
@@ -9270,6 +9274,93 @@ export type InitiativeImplementationDetail = {
     actualL4Date: string;
 };
 
+const DEFAULT_IMPLEMENTATION_TEMPLATE: InitiativeImplementationDetail[] = [
+    {
+        initiativeId: 13001,
+        name: '[Pricing] Recover margin through contract repricing',
+        plannedImpact: 0.85,
+        targetL4Date: '03/31/2026',
+        actualL4Date: '03/31/2026',
+    },
+    {
+        initiativeId: 13002,
+        name: '[Procurement] BOM cost reduction via supplier negotiations',
+        plannedImpact: 0.95,
+        targetL4Date: '04/30/2026',
+        actualL4Date: '05/10/2026',
+    },
+    {
+        initiativeId: 13003,
+        name: '[Manufacturing] Improve UPPH through line balancing',
+        plannedImpact: 0.75,
+        targetL4Date: '05/31/2026',
+        actualL4Date: '06/15/2026',
+    },
+    {
+        initiativeId: 13004,
+        name: '[Quality] Reduce scrap with process controls',
+        plannedImpact: 0.60,
+        targetL4Date: '06/30/2026',
+        actualL4Date: '06/25/2026',
+    },
+    {
+        initiativeId: 13005,
+        name: '[OPEX] Consolidate indirect spend',
+        plannedImpact: 0.55,
+        targetL4Date: '07/31/2026',
+        actualL4Date: '08/10/2026',
+    },
+    {
+        initiativeId: 13006,
+        name: '[Logistics] Optimize freight mix and routing',
+        plannedImpact: 0.50,
+        targetL4Date: '08/31/2026',
+        actualL4Date: '09/05/2026',
+    },
+    {
+        initiativeId: 13007,
+        name: '[R&D] Reduce rework via design standardization',
+        plannedImpact: 0.45,
+        targetL4Date: '09/30/2026',
+        actualL4Date: '10/12/2026',
+    },
+    {
+        initiativeId: 13008,
+        name: '[Inventory] Reduce excess FG through S&OP discipline',
+        plannedImpact: 0.65,
+        targetL4Date: '10/31/2026',
+        actualL4Date: '10/20/2026',
+    },
+    {
+        initiativeId: 13009,
+        name: '[Yield] Improve first-pass yield on core lines',
+        plannedImpact: 0.70,
+        targetL4Date: '11/30/2026',
+        actualL4Date: '12/15/2026',
+    },
+    {
+        initiativeId: 13010,
+        name: '[Labor] Optimize staffing mix for peak shifts',
+        plannedImpact: 0.58,
+        targetL4Date: '12/31/2026',
+        actualL4Date: '01/15/2027',
+    },
+    {
+        initiativeId: 13011,
+        name: '[Energy] Reduce utilities cost via load scheduling',
+        plannedImpact: 0.35,
+        targetL4Date: '02/28/2027',
+        actualL4Date: '03/10/2027',
+    },
+    {
+        initiativeId: 13012,
+        name: '[SG&A] Streamline support functions',
+        plannedImpact: 0.40,
+        targetL4Date: '03/31/2027',
+        actualL4Date: '03/25/2027',
+    },
+];
+
 const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
     string,
     InitiativeImplementationDetail[]
@@ -10758,6 +10849,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 903000.0,
                             operatingProfit: 337000.0,
                             netProfit: 211000.0,
+                            ytmRevenueActual: 7397000.0,
+                            ytmGrossProfitActual: 903000.0,
+                            ytmOperatingProfitActual: 337000.0,
+                            ytmNetProfitActual: 211000.0,
                             revenueBudget: 43215000.0,
                             grossProfitBudget: 5274000.0,
                             operatingProfitBudget: 1971000.0,
@@ -10791,6 +10886,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 365000.0,
                             operatingProfit: 165000.0,
                             netProfit: 69000.0,
+                            ytmRevenueActual: 3386000.0,
+                            ytmGrossProfitActual: 365000.0,
+                            ytmOperatingProfitActual: 165000.0,
+                            ytmNetProfitActual: 69000.0,
                             revenueBudget: 21239000.0,
                             grossProfitBudget: 2288000.0,
                             operatingProfitBudget: 1032000.0,
@@ -10824,6 +10923,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 110000.0,
                             operatingProfit: 39000.0,
                             netProfit: 25000.0,
+                            ytmRevenueActual: 912000.0,
+                            ytmGrossProfitActual: 110000.0,
+                            ytmOperatingProfitActual: 39000.0,
+                            ytmNetProfitActual: 25000.0,
                             revenueBudget: 5463000.0,
                             grossProfitBudget: 656000.0,
                             operatingProfitBudget: 236000.0,
@@ -10853,10 +10956,14 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                         },
             {
                             name: 'D/E Group',
-                            revenue: 6373000.0,
-                            grossProfit: 640000.0,
-                            operatingProfit: 326000.0,
-                            netProfit: 204000.0,
+                            revenue: 4535000.0,
+                            grossProfit: 408000.0,
+                            operatingProfit: 232000.0,
+                            netProfit: 145000.0,
+                            ytmRevenueActual: 4535000.0,
+                            ytmGrossProfitActual: 408000.0,
+                            ytmOperatingProfitActual: 232000.0,
+                            ytmNetProfitActual: 145000.0,
                             revenueBudget: 37793000.0,
                             grossProfitBudget: 3794000.0,
                             operatingProfitBudget: 1935000.0,
@@ -10870,10 +10977,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             lastYearGrossProfit: 3168000.0,
                             lastYearOperatingProfit: 1481000.0,
                             lastYearNetProfit: 1110000.0,
-                            ytmLastYearRevenue: 5828000.0,
-                            ytmLastYearGrossProfit: 532000.0,
-                            ytmLastYearOperatingProfit: 249000.0,
-                            ytmLastYearNetProfit: 186000.0,
+                            ytmLastYearRevenue: 4147000.0,
+                            ytmLastYearGrossProfit: 339000.0,
+                            ytmLastYearOperatingProfit: 177000.0,
+                            ytmLastYearNetProfit: 133000.0,
                             forecastRevenue: 37951000.0,
                             forecastGrossProfit: 3810000.0,
                             forecastOperatingProfit: 1943000.0,
@@ -10882,7 +10989,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             opImpactDetails: OP_IMPACT_DATA['HH|D/E Group'] ?? [],
                             valueDriverBreakdown: getValueDriverBreakdown('HH', 'D/E Group'),
                             functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'D/E Group'),
-                            functionalPerformance: buildFunctionalPerformance(37793000.0, 6373000.0, 1935000.0, 326000.0),
+                            functionalPerformance: buildFunctionalPerformance(37793000.0, 4535000.0, 1935000.0, 232000.0),
                         },
             {
                             name: 'Others',
@@ -10890,6 +10997,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 82000.0,
                             operatingProfit: 37000.0,
                             netProfit: 23000.0,
+                            ytmRevenueActual: 488000.0,
+                            ytmGrossProfitActual: 82000.0,
+                            ytmOperatingProfitActual: 37000.0,
+                            ytmNetProfitActual: 23000.0,
                             revenueBudget: 3241000.0,
                             grossProfitBudget: 541000.0,
                             operatingProfitBudget: 249000.0,
@@ -10929,6 +11040,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 68000.0,
                             operatingProfit: 43000.0,
                             netProfit: 29000.0,
+                            ytmRevenueActual: 216000.0,
+                            ytmGrossProfitActual: 68000.0,
+                            ytmOperatingProfitActual: 43000.0,
+                            ytmNetProfitActual: 29000.0,
                             revenueBudget: 1961000.0,
                             grossProfitBudget: 620000.0,
                             operatingProfitBudget: 390000.0,
@@ -10962,6 +11077,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 14000.0,
                             operatingProfit: 6000.0,
                             netProfit: 4000.0,
+                            ytmRevenueActual: 106000.0,
+                            ytmGrossProfitActual: 14000.0,
+                            ytmOperatingProfitActual: 6000.0,
+                            ytmNetProfitActual: 4000.0,
                             revenueBudget: 1173000.0,
                             grossProfitBudget: 154000.0,
                             operatingProfitBudget: 65000.0,
@@ -10992,9 +11111,13 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
             {
                 name: 'Audio',
                             revenue: 6000.0,
-                            grossProfit: -0.0,
+                            grossProfit: 0.0,
                             operatingProfit: -1000.0,
                             netProfit: -1000.0,
+                            ytmRevenueActual: 6000.0,
+                            ytmGrossProfitActual: 0.0,
+                            ytmOperatingProfitActual: -1000.0,
+                            ytmNetProfitActual: -1000.0,
                             revenueBudget: 639000.0,
                             grossProfitBudget: -19000.0,
                             operatingProfitBudget: -115000.0,
@@ -11009,7 +11132,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             lastYearOperatingProfit: -91000.0,
                             lastYearNetProfit: -79000.0,
                             ytmLastYearRevenue: 6000.0,
-                            ytmLastYearGrossProfit: -0.0,
+                            ytmLastYearGrossProfit: 0.0,
                             ytmLastYearOperatingProfit: -1000.0,
                             ytmLastYearNetProfit: -1000.0,
                             forecastRevenue: 650000.0,
@@ -11028,6 +11151,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 6000.0,
                             operatingProfit: -1000.0,
                             netProfit: -1000.0,
+                            ytmRevenueActual: 30000.0,
+                            ytmGrossProfitActual: 6000.0,
+                            ytmOperatingProfitActual: -1000.0,
+                            ytmNetProfitActual: -1000.0,
                             revenueBudget: 984000.0,
                             grossProfitBudget: 203000.0,
                             operatingProfitBudget: -37000.0,
@@ -11060,7 +11187,11 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             revenue: 25000.0,
                             grossProfit: 7000.0,
                             operatingProfit: 1000.0,
-                            netProfit: -0.0,
+                            netProfit: 0.0,
+                            ytmRevenueActual: 25000.0,
+                            ytmGrossProfitActual: 7000.0,
+                            ytmOperatingProfitActual: 1000.0,
+                            ytmNetProfitActual: 0.0,
                             revenueBudget: 825000.0,
                             grossProfitBudget: 236000.0,
                             operatingProfitBudget: 17000.0,
@@ -11069,7 +11200,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             ytmRevenueBudget: 139000.0,
                             ytmGrossProfitBudget: 39000.0,
                             ytmOperatingProfitBudget: 2000.0,
-                            ytmNetProfitBudget: -0.0,
+                            ytmNetProfitBudget: 0.0,
                             lastYearRevenue: 670000.0,
                             lastYearGrossProfit: 188000.0,
                             lastYearOperatingProfit: 8000.0,
@@ -11077,7 +11208,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             ytmLastYearRevenue: 21000.0,
                             ytmLastYearGrossProfit: 6000.0,
                             ytmLastYearOperatingProfit: 0.0,
-                            ytmLastYearNetProfit: -0.0,
+                            ytmLastYearNetProfit: 0.0,
                             forecastRevenue: 805000.0,
                             forecastGrossProfit: 230000.0,
                             forecastOperatingProfit: 17000.0,
@@ -11100,6 +11231,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 451000.0,
                             operatingProfit: 236000.0,
                             netProfit: 179000.0,
+                            ytmRevenueActual: 3558000.0,
+                            ytmGrossProfitActual: 451000.0,
+                            ytmOperatingProfitActual: 236000.0,
+                            ytmNetProfitActual: 179000.0,
                             revenueBudget: 23055000.0,
                             grossProfitBudget: 2925000.0,
                             operatingProfitBudget: 1532000.0,
@@ -11133,6 +11268,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 603000.0,
                             operatingProfit: 347000.0,
                             netProfit: 274000.0,
+                            ytmRevenueActual: 3625000.0,
+                            ytmGrossProfitActual: 603000.0,
+                            ytmOperatingProfitActual: 347000.0,
+                            ytmNetProfitActual: 274000.0,
                             revenueBudget: 24736000.0,
                             grossProfitBudget: 4114000.0,
                             operatingProfitBudget: 2366000.0,
@@ -11166,6 +11305,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 935000.0,
                             operatingProfit: 481000.0,
                             netProfit: 366000.0,
+                            ytmRevenueActual: 6572000.0,
+                            ytmGrossProfitActual: 935000.0,
+                            ytmOperatingProfitActual: 481000.0,
+                            ytmNetProfitActual: 366000.0,
                             revenueBudget: 45046000.0,
                             grossProfitBudget: 6411000.0,
                             operatingProfitBudget: 3298000.0,
@@ -11199,6 +11342,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 22000.0,
                             operatingProfit: 11000.0,
                             netProfit: 9000.0,
+                            ytmRevenueActual: 143000.0,
+                            ytmGrossProfitActual: 22000.0,
+                            ytmOperatingProfitActual: 11000.0,
+                            ytmNetProfitActual: 9000.0,
                             revenueBudget: 903000.0,
                             grossProfitBudget: 139000.0,
                             operatingProfitBudget: 70000.0,
@@ -11238,6 +11385,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 14000.0,
                             operatingProfit: 8000.0,
                             netProfit: 4000.0,
+                            ytmRevenueActual: 169000.0,
+                            ytmGrossProfitActual: 14000.0,
+                            ytmOperatingProfitActual: 8000.0,
+                            ytmNetProfitActual: 4000.0,
                             revenueBudget: 2820000.0,
                             grossProfitBudget: 240000.0,
                             operatingProfitBudget: 131000.0,
@@ -11271,6 +11422,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 1000.0,
                             operatingProfit: 1000.0,
                             netProfit: 0.0,
+                            ytmRevenueActual: 16000.0,
+                            ytmGrossProfitActual: 1000.0,
+                            ytmOperatingProfitActual: 1000.0,
+                            ytmNetProfitActual: 0.0,
                             revenueBudget: 225000.0,
                             grossProfitBudget: 15000.0,
                             operatingProfitBudget: 9000.0,
@@ -11304,6 +11459,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 9000.0,
                             operatingProfit: 3000.0,
                             netProfit: 2000.0,
+                            ytmRevenueActual: 60000.0,
+                            ytmGrossProfitActual: 9000.0,
+                            ytmOperatingProfitActual: 3000.0,
+                            ytmNetProfitActual: 2000.0,
                             revenueBudget: 752000.0,
                             grossProfitBudget: 113000.0,
                             operatingProfitBudget: 39000.0,
@@ -11337,6 +11496,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 11000.0,
                             operatingProfit: 2000.0,
                             netProfit: 1000.0,
+                            ytmRevenueActual: 72000.0,
+                            ytmGrossProfitActual: 11000.0,
+                            ytmOperatingProfitActual: 2000.0,
+                            ytmNetProfitActual: 1000.0,
                             revenueBudget: 719000.0,
                             grossProfitBudget: 112000.0,
                             operatingProfitBudget: 22000.0,
@@ -11370,6 +11533,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 15000.0,
                             operatingProfit: 4000.0,
                             netProfit: 2000.0,
+                            ytmRevenueActual: 103000.0,
+                            ytmGrossProfitActual: 15000.0,
+                            ytmOperatingProfitActual: 4000.0,
+                            ytmNetProfitActual: 2000.0,
                             revenueBudget: 857000.0,
                             grossProfitBudget: 123000.0,
                             operatingProfitBudget: 36000.0,
@@ -11409,6 +11576,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 70000.0,
                             operatingProfit: 26000.0,
                             netProfit: 17000.0,
+                            ytmRevenueActual: 1104000.0,
+                            ytmGrossProfitActual: 70000.0,
+                            ytmOperatingProfitActual: 26000.0,
+                            ytmNetProfitActual: 17000.0,
                             revenueBudget: 7722000.0,
                             grossProfitBudget: 486000.0,
                             operatingProfitBudget: 185000.0,
@@ -11442,6 +11613,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 9000.0,
                             operatingProfit: 2000.0,
                             netProfit: 2000.0,
+                            ytmRevenueActual: 307000.0,
+                            ytmGrossProfitActual: 9000.0,
+                            ytmOperatingProfitActual: 2000.0,
+                            ytmNetProfitActual: 2000.0,
                             revenueBudget: 1917000.0,
                             grossProfitBudget: 53000.0,
                             operatingProfitBudget: 15000.0,
@@ -11475,6 +11650,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 18000.0,
                             operatingProfit: 10000.0,
                             netProfit: 7000.0,
+                            ytmRevenueActual: 188000.0,
+                            ytmGrossProfitActual: 18000.0,
+                            ytmOperatingProfitActual: 10000.0,
+                            ytmNetProfitActual: 7000.0,
                             revenueBudget: 1138000.0,
                             grossProfitBudget: 107000.0,
                             operatingProfitBudget: 63000.0,
@@ -11528,12 +11707,32 @@ const buildInitiativesForBu = (
     const meetsTarget =
         bg === 'HH' &&
         bu.toLowerCase().includes('d/e');
+    const sponsorPool = [
+        'Mr. A',
+        'Ms. B',
+        'Mr. C',
+        'Ms. D',
+        'Mr. E',
+        'Ms. F',
+        'Mr. G',
+        'Ms. H',
+        'Mr. I',
+        'Ms. J',
+    ];
 
     return baseRows.map((row) => {
         const target = scaleInitiativeValue(row.target, multiplier);
         const l1Base = scaleInitiativeValue(row.l1ImpactYtm, multiplier);
         const l2Base = scaleInitiativeValue(row.l2ImpactYtm, multiplier);
         const l3Base = scaleInitiativeValue(row.l3ImpactYtm, multiplier);
+        const sponsor =
+            row.sponsor ??
+            sponsorPool[
+                Math.floor(
+                    buildInitiativeSeed(`${bg}-${bu}-${row.vs}-sponsor`) *
+                        sponsorPool.length
+                )
+            ];
         if (!meetsTarget) {
             return {
                 ...row,
@@ -11541,6 +11740,7 @@ const buildInitiativesForBu = (
                 l1ImpactYtm: l1Base,
                 l2ImpactYtm: l2Base,
                 l3ImpactYtm: l3Base,
+                sponsor,
             };
         }
         const lineSeed = buildInitiativeSeed(`${bg}-${bu}-${row.vs}`);
@@ -11562,6 +11762,7 @@ const buildInitiativesForBu = (
             l1ImpactYtm: scaleInitiativeValue(target, l1Multiplier),
             l2ImpactYtm: scaleInitiativeValue(target, l2Multiplier),
             l3ImpactYtm: scaleInitiativeValue(target, l3Multiplier),
+            sponsor,
         };
     });
 };
@@ -11572,6 +11773,21 @@ const buildImplementationSeed = (value: string) => {
         hash = (hash * 31 + value.charCodeAt(i)) % 10000;
     }
     return hash;
+};
+
+const formatImplementationDate = (date: Date) => {
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${month}/${day}/${date.getFullYear()}`;
+};
+
+const shiftImplementationDate = (dateValue: string, dayDelta: number) => {
+    const base = new Date(dateValue);
+    if (Number.isNaN(base.getTime())) {
+        return dateValue;
+    }
+    base.setDate(base.getDate() + dayDelta);
+    return formatImplementationDate(base);
 };
 
 const adjustImplementationDetails = (
@@ -11587,10 +11803,14 @@ const adjustImplementationDetails = (
     const normalized = details.map((detail, index) => {
         const scaledImpact = Math.round(detail.plannedImpact * impactScale * 100) / 100;
         const plannedImpact = isDeGroup ? Math.max(2, scaledImpact) : scaledImpact;
+        const dateSeed = buildImplementationSeed(`${key}-${detail.initiativeId}-${index}`);
+        const lag = (dateSeed % 61) - 20; // -20 to +40 days
+        const actualL4Date = shiftImplementationDate(detail.targetL4Date, lag);
         return {
             ...detail,
             initiativeId: detail.initiativeId + idOffset + index,
             plannedImpact,
+            actualL4Date,
         };
     });
     if (!isDeGroup) {
@@ -11612,8 +11832,7 @@ const adjustImplementationDetails = (
 };
 
 const getImplementationTemplate = () => {
-    const firstKey = Object.keys(INITIATIVE_IMPLEMENTATION_DATA_BASE)[0];
-    return firstKey ? INITIATIVE_IMPLEMENTATION_DATA_BASE[firstKey] : [];
+    return DEFAULT_IMPLEMENTATION_TEMPLATE;
 };
 
 export const INITIATIVE_IMPLEMENTATION_DATA: Record<
