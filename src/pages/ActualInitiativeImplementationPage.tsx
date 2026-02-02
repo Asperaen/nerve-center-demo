@@ -329,7 +329,7 @@ export default function ActualInitiativeImplementationPage() {
     const stored = getStoredTimeframe();
     return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
   });
-  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] =
     useState<boolean>(false);
@@ -402,7 +402,7 @@ export default function ActualInitiativeImplementationPage() {
     if (isMonthRangeCustom) {
       return;
     }
-    setMonthRange(activeTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+    setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
   }, [activeTimeframe, isMonthRangeCustom]);
 
   useEffect(() => {
@@ -738,7 +738,7 @@ export default function ActualInitiativeImplementationPage() {
     setActiveTimeframe(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    setMonthRange(timeframe === 'ytm' ? [0, 2] : [0, 11]);
+    setMonthRange(timeframe === 'ytm' ? [0, 1] : [0, 11]);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
@@ -752,6 +752,9 @@ export default function ActualInitiativeImplementationPage() {
   };
 
   const handleMonthClick = (monthIndex: number) => {
+    if (activeTimeframe === 'ytm') {
+      return;
+    }
     if (monthAnchor === null || !isMonthRangeCustom) {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
@@ -862,14 +865,20 @@ export default function ActualInitiativeImplementationPage() {
                     {months.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
+                      const isDisabled = activeTimeframe === 'ytm';
                       return (
                         <button
                           key={month}
                           onClick={() => handleMonthClick(index)}
+                          disabled={isDisabled}
                           className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                             isSelected
                               ? 'bg-primary-600 text-white'
                               : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                          } ${
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-50 hover:text-gray-600'
+                              : ''
                           }`}>
                           {month}
                         </button>
@@ -881,7 +890,7 @@ export default function ActualInitiativeImplementationPage() {
                       onClick={() => {
                         setIsMonthRangeCustom(false);
                         setMonthAnchor(null);
-                        setMonthRange(activeTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+                        setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
                       }}
                       className='text-xs text-primary-600 hover:text-primary-700 font-semibold'>
                       Reset range

@@ -1326,6 +1326,20 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     (bucket) => bucket.id === activeBucketId
   );
 
+  const calculateTargetReduction = () => {
+    // Return random number between 7 and 10%
+    return Math.random() * (10 - 7) + 7;
+  }
+
+  const targetReduction = useMemo(() => {
+    return calculateTargetReduction();
+  }, []);
+
+  const calculateActualReduction = (actualSpend: number, targetSpend: number, targetReduction: number) => {
+    return (actualSpend / targetSpend) / (1 - targetReduction) - 1;
+  }
+
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
       <div className='max-w-[1920px] mx-auto px-8 py-8 space-y-6'>
@@ -1505,12 +1519,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        procurementDeviationTotals.baselineSpend === 0
-                          ? 0
-                          : ((procurementDeviationTotals.baselineSpend -
-                              procurementDeviationTotals.targetSpend) /
-                              procurementDeviationTotals.baselineSpend) *
-                              100
+                        targetReduction
                       )}
                     </span>
                   </span>
@@ -1518,12 +1527,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        procurementDeviationTotals.baselineSpend === 0
-                          ? 0
-                          : ((procurementDeviationTotals.baselineSpend -
-                              procurementDeviationTotals.actualSpend) /
-                              procurementDeviationTotals.baselineSpend) *
-                              100
+                        calculateActualReduction(procurementDeviationTotals.actualSpend, procurementDeviationTotals.targetSpend, targetReduction)
                       )}
                     </span>
                   </span>
@@ -1691,19 +1695,14 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   <span>
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(0)}
+                      {formatPercent(targetReduction)}
                     </span>
                   </span>
                   <span>
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        manufacturingMvaTotals.budgetMvaCost === 0
-                          ? 0
-                          : ((manufacturingMvaTotals.budgetMvaCost -
-                              manufacturingMvaTotals.actualMvaCost) /
-                              manufacturingMvaTotals.budgetMvaCost) *
-                              100
+                        calculateActualReduction(manufacturingMvaTotals.actualMvaCost, manufacturingMvaTotals.budgetMvaCost, targetReduction)
                       )}
                     </span>
                   </span>
@@ -1743,18 +1742,14 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   <span>
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(0)}
+                      {formatPercent(targetReduction)}
                     </span>
                   </span>
                   <span>
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        rndTotals.budgetValue === 0
-                          ? 0
-                          : ((rndTotals.budgetValue - rndTotals.actualValue) /
-                              rndTotals.budgetValue) *
-                              100
+                        calculateActualReduction(rndTotals.actualValue, rndTotals.budgetValue, targetReduction)
                       )}
                     </span>
                   </span>

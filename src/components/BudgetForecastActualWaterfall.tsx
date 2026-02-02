@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Bar,
-  CartesianGrid,
-  Cell,
-  ComposedChart,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+    Bar,
+    CartesianGrid,
+    Cell,
+    ComposedChart,
+    LabelList,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { BudgetForecastStage } from '../types';
@@ -20,6 +20,7 @@ interface BudgetForecastActualWaterfallProps {
   title?: string;
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
+  onStageDoubleClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string; // Stage ID to highlight (e.g., 'market-performance')
   highlightedStageColor?: string; // Custom color for highlighted stage bar
   colorByDelta?: boolean;
@@ -158,6 +159,7 @@ export default function BudgetForecastActualWaterfall({
   title = 'Budget Forecast Actual Waterfall',
   subtitle,
   onStageClick,
+  onStageDoubleClick,
   highlightedStage,
   highlightedStageColor,
   colorByDelta = false,
@@ -171,6 +173,7 @@ export default function BudgetForecastActualWaterfall({
   const navigate = useNavigate();
   const { formatAmount, currencyLabel } = useCurrency();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [definitionTooltip, setDefinitionTooltip] = useState<{
     text: string;
     left: number;
@@ -311,14 +314,37 @@ export default function BudgetForecastActualWaterfall({
   }, [stages, brokenAxis, splitNonPrimaryBars]);
 
   const handleBarClick = (stage: BudgetForecastStage) => {
-    if (onStageClick) {
-      onStageClick(stage);
-      return;
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
     }
-    if (stage.isClickable && stage.navigationTarget) {
-      navigate(stage.navigationTarget);
+    clickTimeoutRef.current = setTimeout(() => {
+      if (onStageClick) {
+        onStageClick(stage);
+        return;
+      }
+      if (stage.isClickable && stage.navigationTarget) {
+        navigate(stage.navigationTarget);
+      }
+    }, 220);
+  };
+
+  const handleBarDoubleClick = (stage: BudgetForecastStage) => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+    if (onStageDoubleClick) {
+      onStageDoubleClick(stage);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
   const [axisLabelBottom, setAxisLabelBottom] = useState(0);
@@ -729,6 +755,12 @@ export default function BudgetForecastActualWaterfall({
                       handleBarClick(payload);
                     }
                   }}
+                  onDoubleClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarDoubleClick(payload);
+                    }
+                  }}
                   shape={
                     brokenAxis
                       ? (props: unknown) => (
@@ -872,6 +904,7 @@ export default function BudgetForecastActualWaterfall({
                             : 'none',
                         }}
                         onClick={() => handleBarClick(stage)}
+                        onDoubleClick={() => handleBarDoubleClick(stage)}
                       />
                     );
                   })}
@@ -885,6 +918,12 @@ export default function BudgetForecastActualWaterfall({
                     const payload = (data as { payload?: BudgetForecastStage }).payload;
                     if (payload) {
                       handleBarClick(payload);
+                    }
+                  }}
+                  onDoubleClick={(data) => {
+                    const payload = (data as { payload?: BudgetForecastStage }).payload;
+                    if (payload) {
+                      handleBarDoubleClick(payload);
                     }
                   }}
                   shape={
@@ -927,6 +966,7 @@ export default function BudgetForecastActualWaterfall({
                             : 'none',
                         }}
                         onClick={() => handleBarClick(stage)}
+                        onDoubleClick={() => handleBarDoubleClick(stage)}
                       />
                     );
                   })}
@@ -941,6 +981,12 @@ export default function BudgetForecastActualWaterfall({
                   const payload = (data as { payload?: BudgetForecastStage }).payload;
                   if (payload) {
                     handleBarClick(payload);
+                  }
+                }}
+                onDoubleClick={(data) => {
+                  const payload = (data as { payload?: BudgetForecastStage }).payload;
+                  if (payload) {
+                    handleBarDoubleClick(payload);
                   }
                 }}
                 shape={
@@ -1100,6 +1146,7 @@ export default function BudgetForecastActualWaterfall({
                           : 'none',
                       }}
                       onClick={() => handleBarClick(stage)}
+                      onDoubleClick={() => handleBarDoubleClick(stage)}
                       onMouseEnter={(e) => {
                         if (stage.isClickable && !highlighted) {
                           (e.currentTarget as SVGElement).style.opacity = '0.8';

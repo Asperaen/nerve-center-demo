@@ -6,8 +6,12 @@ import { type TimeframeOption, type TimeframeOptionItem } from '../components/Ti
 import { WAVE_LINK } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import type { BgInitiativePerformanceRow } from '../data/mockBgData';
-import { BG_INITIATIVE_PERFORMANCE, KEY_CALLOUTS_BY_BG } from '../data/mockBgData';
+import type { BgInitiativePerformanceRow, BudgetWaterfallRow } from '../data/mockBgData';
+import {
+  BG_INITIATIVE_PERFORMANCE,
+  BUDGET_WATERFALL_DATA,
+  KEY_CALLOUTS_BY_BG,
+} from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
   getStoredTimeframe,
@@ -294,6 +298,8 @@ const getUnitId = (groupId: string, unitName: string) =>
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+const toMillions = (value: number) => value / 1_000;
+
  
 
 export default function IdeationProgressPage() {
@@ -406,8 +412,96 @@ export default function IdeationProgressPage() {
       });
     });
 
-    if (initiativeRows.length === 0) {
-      return PLAN_TABLE_ROWS;
+    const selectedBudgetRows = (() => {
+      if (BUDGET_WATERFALL_DATA.length === 0) {
+        return [] as BudgetWaterfallRow[];
+      }
+      if (selectedBu === 'all') {
+        return BUDGET_WATERFALL_DATA;
+      }
+      const selectedBgName =
+        selectedGroupInfo?.group.group ??
+        mainBuOptions.find((bu) => bu.id === selectedBu)?.name ??
+        selectedBu;
+      const bgRows = BUDGET_WATERFALL_DATA.filter((row) => row.bg === selectedBgName);
+      if (!selectedGroupInfo) {
+        return bgRows;
+      }
+      const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+      const overallId = `${groupId}-overall`;
+      const selectedUnitIds = Array.from(selectedGroupIds).filter(
+        (id) => id !== overallId
+      );
+      if (selectedUnitIds.length === 0) {
+        return bgRows;
+      }
+      const selectedUnitNames = selectedGroupInfo.group.businessUnits
+        .filter((unit) => selectedUnitIds.includes(getUnitId(groupId, unit.name)))
+        .map((unit) => unit.name);
+      if (selectedUnitNames.length === 0) {
+        return bgRows;
+      }
+      return bgRows.filter((row) => selectedUnitNames.includes(row.bu));
+    })();
+    const ideationTargetFullYearMn =
+      selectedBudgetRows.length > 0
+        ? selectedBudgetRows.reduce((sum, row) => sum + row.ideationTarget, 0)
+        : toMillions(
+            businessGroups
+              .flatMap((group) => group.businessUnits)
+              .reduce((sum, unit) => sum + unit.ideationTarget, 0)
+          );
+    const totalInitiativeTarget = initiativeRows.reduce(
+      (sum, row) => sum + row.target,
+      0
+    );
+    const scaleInitiativeValues =
+      totalInitiativeTarget === 0 ? 0 : ideationTargetFullYearMn / totalInitiativeTarget;
+    const scaledInitiativeRows =
+      scaleInitiativeValues === 1
+        ? initiativeRows
+        : initiativeRows.map((row) => ({
+            ...row,
+            target: row.target * scaleInitiativeValues,
+            l1ImpactYtm: row.l1ImpactYtm * scaleInitiativeValues,
+            l2ImpactYtm: row.l2ImpactYtm * scaleInitiativeValues,
+            l3ImpactYtm: row.l3ImpactYtm * scaleInitiativeValues,
+          }));
+
+    if (scaledInitiativeRows.length === 0) {
+      const baseTotal =
+        PLAN_TABLE_ROWS.find((row) => row.isTotal)?.total ??
+        PLAN_TABLE_ROWS.reduce((sum, row) => sum + row.total, 0);
+      const fallbackScale =
+        baseTotal === 0 ? 0 : ideationTargetFullYearMn / baseTotal;
+      const roundPct = (value: number) => Math.round(value * 10) / 10;
+      return PLAN_TABLE_ROWS.map((row) => {
+        const total = row.total * fallbackScale;
+        const l1 = row.l1 * fallbackScale;
+        const l2 = row.l2 * fallbackScale;
+        const l3 = row.l3 * fallbackScale;
+        const pctL1 = total === 0 ? 0 : roundPct((l1 / total) * 100);
+        const pctL2 = total === 0 ? 0 : roundPct((l2 / total) * 100);
+        const pctL3 = total === 0 ? 0 : roundPct((l3 / total) * 100);
+        const countL1 = Math.max(0, Math.round(total / 5));
+        const owners = Math.max(0, Math.round(total / 10));
+        const avgPerIo = total === 0 ? 0 : total / Math.max(1, countL1);
+        return {
+          ...row,
+          total,
+          l1,
+          l2,
+          l3,
+          pctL1: clamp(pctL1, 0, 140),
+          pctL2: clamp(pctL2, 0, 140),
+          pctL3: clamp(pctL3, 0, 140),
+          runRateTarget: row.runRateTarget ? total : row.runRateTarget,
+          runRateImpact: row.runRateImpact ? l3 : row.runRateImpact,
+          countL1,
+          owners,
+          avgPerIo,
+        };
+      });
     }
 
     const aggregateByVs =
@@ -424,7 +518,7 @@ export default function IdeationProgressPage() {
       { parent: string; vs: string; target: number; l1: number; l2: number; l3: number; sponsor?: string }
     >();
 
-    initiativeRows.forEach((row) => {
+    scaledInitiativeRows.forEach((row) => {
       const parent = row.parentVs ?? row.vs;
       if (!parentTotals.has(parent)) {
         parentTotals.set(parent, { target: 0, l1: 0, l2: 0, l3: 0 });
@@ -541,10 +635,22 @@ export default function IdeationProgressPage() {
       });
     });
 
-    const totalTarget = rows.reduce((sum, row) => sum + row.total, 0);
-    const totalL1 = rows.reduce((sum, row) => sum + row.l1, 0);
-    const totalL2 = rows.reduce((sum, row) => sum + row.l2, 0);
-    const totalL3 = rows.reduce((sum, row) => sum + row.l3, 0);
+    const totalTarget = Array.from(parentTotals.values()).reduce(
+      (sum, entry) => sum + entry.target,
+      0
+    );
+    const totalL1 = Array.from(parentTotals.values()).reduce(
+      (sum, entry) => sum + entry.l1,
+      0
+    );
+    const totalL2 = Array.from(parentTotals.values()).reduce(
+      (sum, entry) => sum + entry.l2,
+      0
+    );
+    const totalL3 = Array.from(parentTotals.values()).reduce(
+      (sum, entry) => sum + entry.l3,
+      0
+    );
     if (rows.length > 0) {
       const roundPct = (value: number) => Math.round(value * 10) / 10;
       const pctL1 = totalTarget === 0 ? 0 : roundPct((totalL1 / totalTarget) * 100);
@@ -572,7 +678,7 @@ export default function IdeationProgressPage() {
       });
     }
     if (aggregateByVs && rows.length === 0) {
-      initiativeRows.forEach((row) => {
+      scaledInitiativeRows.forEach((row) => {
         rows.push(
           toPlanRow(
             row.vs,
@@ -619,11 +725,16 @@ export default function IdeationProgressPage() {
     });
 
     return Array.from(deduped.values());
-  }, [businessGroups, selectedBu, selectedGroupIds, selectedGroupInfo]);
+  }, [
+    businessGroups,
+    mainBuOptions,
+    selectedBu,
+    selectedGroupIds,
+    selectedGroupInfo,
+  ]);
 
   useEffect(() => {
-    const timeframeParam =
-      searchParams.get('timeframe') ?? searchParams.get('toggle');
+    const timeframeParam = searchParams.get('timeframe');
     if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
       setActiveTimeframe(timeframeParam);
     }
@@ -654,7 +765,7 @@ export default function IdeationProgressPage() {
     }
   }, [activeTimeframe]);
 
-  const [monthRange, setMonthRange] = useState<[number, number]>([0, 2]);
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] = useState(false);
   const months = [
@@ -676,17 +787,20 @@ export default function IdeationProgressPage() {
     if (isMonthRangeCustom) {
       return;
     }
-    setMonthRange(activeTimeframe === 'ytm' ? [0, 2] : [0, 11]);
+    setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
   }, [activeTimeframe, isMonthRangeCustom]);
 
   const timeframeScale = useMemo(() => {
     if (isMonthRangeCustom) {
       return (monthRange[1] - monthRange[0] + 1) / 12;
     }
-    return getTimeframeScale(activeTimeframe === 'ytm' ? 3 : 12);
+    return getTimeframeScale(activeTimeframe === 'ytm' ? 2 : 12);
   }, [activeTimeframe, isMonthRangeCustom, monthRange]);
 
   const handleMonthClick = (monthIndex: number) => {
+    if (activeTimeframe === 'ytm') {
+      return;
+    }
     if (monthAnchor === null || !isMonthRangeCustom) {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
@@ -715,23 +829,23 @@ export default function IdeationProgressPage() {
     const round = (value: number) => Math.round(value * 10) / 10;
     return monthlyImpactPlanRows.map((row) => {
       return {
-      ...row,
-      total: round(row.total),
-      l1: round(row.l1 * scale),
-      l2: round(row.l2 * scale),
-      l3: round(row.l3 * scale),
-      pctL1: row.pctL1,
-      pctL2: row.pctL2,
-      pctL3: row.pctL3,
-      runRateTarget: round(
-        (row.runRateTarget ?? row.total * 0.9) * scale
-      ),
-      runRateImpact: round(
-        (row.runRateImpact ?? row.total * 0.7) * scale
-      ),
-      countL1: Math.max(0, Math.round(row.countL1 * scale)),
-      owners: Math.max(0, Math.round(row.owners * scale)),
-      avgPerIo: row.avgPerIo,
+        ...row,
+        total: round(row.total * scale),
+        l1: round(row.l1 * scale),
+        l2: round(row.l2 * scale),
+        l3: round(row.l3 * scale),
+        pctL1: row.pctL1,
+        pctL2: row.pctL2,
+        pctL3: row.pctL3,
+        runRateTarget: round(
+          (row.runRateTarget ?? row.total * 0.9) * scale
+        ),
+        runRateImpact: round(
+          (row.runRateImpact ?? row.total * 0.7) * scale
+        ),
+        countL1: Math.max(0, Math.round(row.countL1 * scale)),
+        owners: Math.max(0, Math.round(row.owners * scale)),
+        avgPerIo: row.avgPerIo,
       };
     });
   }, [monthlyImpactPlanRows, timeframeScale]);
@@ -863,14 +977,15 @@ export default function IdeationProgressPage() {
     setActiveTimeframe(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    setMonthRange(timeframe === 'ytm' ? [0, 2] : [0, 11]);
+    setMonthRange(timeframe === 'ytm' ? [0, 1] : [0, 11]);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('timeframe', timeframe);
-      next.set('toggle', timeframe);
+      next.set('timeframe', timeframe);
+      next.delete('toggle');
       next.set(
         'months',
-        timeframe === 'ytm' ? '0-2' : '0-11'
+        timeframe === 'ytm' ? '0-1' : '0-11'
       );
       return next;
     });
@@ -940,14 +1055,20 @@ export default function IdeationProgressPage() {
                     {months.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
+                      const isDisabled = activeTimeframe === 'ytm';
                       return (
                         <button
                           key={month}
                           onClick={() => handleMonthClick(index)}
+                          disabled={isDisabled}
                           className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                             isSelected
                               ? 'bg-primary-600 text-white'
                               : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                          } ${
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-50 hover:text-gray-600'
+                              : ''
                           }`}>
                           {month}
                         </button>

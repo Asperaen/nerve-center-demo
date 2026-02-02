@@ -8,7 +8,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
  
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Link,
   useNavigate,
@@ -232,6 +232,10 @@ const buildGroupRow = (
       acc.grossProfit += unit.grossProfit;
       acc.operatingProfit += unit.operatingProfit;
       acc.netProfit += unit.netProfit;
+        acc.ytmRevenueActual += unit.ytmRevenueActual ?? 0;
+        acc.ytmGrossProfitActual += unit.ytmGrossProfitActual ?? 0;
+        acc.ytmOperatingProfitActual += unit.ytmOperatingProfitActual ?? 0;
+        acc.ytmNetProfitActual += unit.ytmNetProfitActual ?? 0;
       acc.revenueBudget += unit.revenueBudget;
       acc.grossProfitBudget += unit.grossProfitBudget;
       acc.operatingProfitBudget += unit.operatingProfitBudget;
@@ -259,6 +263,10 @@ const buildGroupRow = (
       grossProfit: 0,
       operatingProfit: 0,
       netProfit: 0,
+      ytmRevenueActual: 0,
+      ytmGrossProfitActual: 0,
+      ytmOperatingProfitActual: 0,
+      ytmNetProfitActual: 0,
       revenueBudget: 0,
       grossProfitBudget: 0,
       operatingProfitBudget: 0,
@@ -287,7 +295,8 @@ const buildGroupRow = (
   const insightBase = `${name} performance.`;
   const budgetScale = budgetMode === 'ytm' ? ytmScale : fullYearScale;
   const lastYearScale = lastYearMode === 'ytm' ? ytmScale : fullYearScale;
-  const valueScale = valueMode === 'budget' ? budgetScale : fullYearScale;
+  const valueScale =
+    valueMode === 'budget' ? budgetScale : valueMode === 'actual' ? 1 : fullYearScale;
   const revenue = toMillions(
     valueMode === 'budget'
       ? budgetMode === 'ytm'
@@ -295,7 +304,7 @@ const buildGroupRow = (
         : totals.revenueBudget
       : valueMode === 'forecast'
       ? totals.forecastRevenue
-      : totals.revenue
+      : totals.ytmRevenueActual ?? totals.revenue
   ) * valueScale;
   const grossProfit = toMillions(
     valueMode === 'budget'
@@ -304,7 +313,7 @@ const buildGroupRow = (
         : totals.grossProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastGrossProfit
-      : totals.grossProfit
+      : totals.ytmGrossProfitActual ?? totals.grossProfit
   ) * valueScale;
   const operatingProfit = toMillions(
     valueMode === 'budget'
@@ -313,7 +322,7 @@ const buildGroupRow = (
         : totals.operatingProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastOperatingProfit
-      : totals.operatingProfit
+      : totals.ytmOperatingProfitActual ?? totals.operatingProfit
   ) * valueScale;
   const netProfit = toMillions(
     valueMode === 'budget'
@@ -322,7 +331,7 @@ const buildGroupRow = (
         : totals.netProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastNetProfit
-      : totals.netProfit
+      : totals.ytmNetProfitActual ?? totals.netProfit
   ) * valueScale;
   const revenueBudget = toMillions(
     budgetMode === 'ytm' ? totals.ytmRevenueBudget : totals.revenueBudget
@@ -412,7 +421,8 @@ const buildUnitRow = (
     .replace(/[^a-z0-9]+/g, '-')}`;
   const budgetScale = budgetMode === 'ytm' ? ytmScale : fullYearScale;
   const lastYearScale = lastYearMode === 'ytm' ? ytmScale : fullYearScale;
-  const valueScale = valueMode === 'budget' ? budgetScale : fullYearScale;
+  const valueScale =
+    valueMode === 'budget' ? budgetScale : valueMode === 'actual' ? 1 : fullYearScale;
   const revenue = toMillions(
     valueMode === 'budget'
       ? budgetMode === 'ytm'
@@ -420,7 +430,7 @@ const buildUnitRow = (
         : unit.revenueBudget
       : valueMode === 'forecast'
       ? unit.forecastRevenue
-      : unit.revenue
+      : unit.ytmRevenueActual ?? unit.revenue
   ) * valueScale;
   const grossProfit = toMillions(
     valueMode === 'budget'
@@ -429,7 +439,7 @@ const buildUnitRow = (
         : unit.grossProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastGrossProfit
-      : unit.grossProfit
+      : unit.ytmGrossProfitActual ?? unit.grossProfit
   ) * valueScale;
   const operatingProfit = toMillions(
     valueMode === 'budget'
@@ -438,7 +448,7 @@ const buildUnitRow = (
         : unit.operatingProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastOperatingProfit
-      : unit.operatingProfit
+      : unit.ytmOperatingProfitActual ?? unit.operatingProfit
   ) * valueScale;
   const netProfit = toMillions(
     valueMode === 'budget'
@@ -447,7 +457,7 @@ const buildUnitRow = (
         : unit.netProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastNetProfit
-      : unit.netProfit
+      : unit.ytmNetProfitActual ?? unit.netProfit
   ) * valueScale;
   const revenueBudget = toMillions(
     budgetMode === 'ytm' ? unit.ytmRevenueBudget : unit.revenueBudget
@@ -1154,10 +1164,35 @@ export default function ExecutiveSummaryPage({
     [formatMn, getOpImpactRowsForStage]
   );
 
-  const renderIdeationTooltip = useCallback((stage: BudgetForecastStage) => {
+  const getInitiativePerformanceUrl = () => {
+    if (!selectedGroup || selectedBu === 'all') {
+      return null;
+    }
+    const params = new URLSearchParams();
+    params.set('bg', selectedBu);
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const overallId = `${groupId}-overall`;
+    const selectedUnitIds = Array.from(selectedGroupIds).filter(
+      (id) => id !== overallId
+    );
+    if (selectedUnitIds.length > 0) {
+      const unitNames = selectedGroup.businessUnits
+        .filter((unit) => selectedUnitIds.includes(getUnitId(groupId, unit.name)))
+        .map((unit) => unit.name);
+      if (unitNames.length > 0) {
+        params.set('bu', unitNames.join(','));
+      }
+    }
+    params.set('timeframe', selectedTimeframeScope);
+    params.set('months', `${monthRange[0]}-${monthRange[1]}`);
+    return `/initiative-performance?${params.toString()}`;
+  };
+
+  const renderIdeationTooltip = (stage: BudgetForecastStage) => {
     if (stage.stage !== 'ideation') {
       return null;
     }
+    const initiativePerformanceUrl = getInitiativePerformanceUrl();
 
     const rows = [
       {
@@ -1268,6 +1303,13 @@ export default function ExecutiveSummaryPage({
         <p className='text-xs font-semibold text-gray-700 mb-2'>
           In-year improvement targets
         </p>
+        {initiativePerformanceUrl && (
+          <Link
+            to={initiativePerformanceUrl}
+            className='text-xs font-semibold text-blue-600 underline'>
+            Open initiative performance →
+          </Link>
+        )}
         <div className='overflow-hidden rounded-md border border-gray-200'>
           <table className='w-full text-xs'>
             <thead className='bg-gray-50 border-b border-gray-200'>
@@ -1310,7 +1352,7 @@ export default function ExecutiveSummaryPage({
         </div>
       </div>
     );
-  }, []);
+  };
 
   const renderBudgetTooltip = useCallback(
     (stage: BudgetForecastStage) =>
@@ -1346,6 +1388,7 @@ export default function ExecutiveSummaryPage({
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] =
     useState<boolean>(false);
+  const hasParsedMonthParamsRef = useRef(false);
   const isActualsView = !isBudgetView && selectedVersion === 'actual';
   const isPercentView = financialView === 'margin';
   const months = [
@@ -1370,7 +1413,7 @@ export default function ExecutiveSummaryPage({
     setSelectedTimeframeScope(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    if (isActualsView) {
+    if (isActualsView || timeframe === 'ytm') {
       setMonthRange([0, 1]);
       return;
     }
@@ -1378,13 +1421,21 @@ export default function ExecutiveSummaryPage({
   };
 
   const handleMonthClick = (monthIndex: number) => {
-    if (isActualsView && monthIndex > 1) {
+    if (isActualsView || selectedTimeframeScope === 'ytm') {
       return;
     }
     if (monthAnchor === null || !isMonthRangeCustom) {
       setMonthAnchor(monthIndex);
       setMonthRange([monthIndex, monthIndex]);
       setIsMonthRangeCustom(true);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('months');
+          return next;
+        },
+        { replace: true }
+      );
       return;
     }
     const start = Math.min(monthAnchor, monthIndex);
@@ -1395,15 +1446,12 @@ export default function ExecutiveSummaryPage({
   };
 
   useEffect(() => {
-    if (isActualsView) {
-      setIsMonthRangeCustom(false);
-      setMonthAnchor(null);
-      setMonthRange([0, 1]);
-      return;
-    }
+    const isYtm = selectedTimeframeScope === 'ytm';
+    const nextRange: [number, number] =
+      isActualsView || isYtm ? [0, 1] : [0, 11];
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    setMonthRange(selectedTimeframeScope === 'ytm' ? [0, 1] : [0, 11]);
+    setMonthRange(nextRange);
   }, [selectedTimeframeScope, isActualsView]);
 
   useEffect(() => {
@@ -1422,18 +1470,23 @@ export default function ExecutiveSummaryPage({
 
   useEffect(() => {
     const toggleParam = searchParams.get('toggle');
+    const timeframeParam = searchParams.get('timeframe');
+    const timeframeValue =
+      timeframeParam === 'ytm' || timeframeParam === 'full-year'
+        ? timeframeParam
+        : toggleParam;
     const versionParam = searchParams.get('version');
     if (versionParam === 'budget' || versionParam === 'actual' || versionParam === 'forecast') {
       setSelectedVersion(isBudgetView ? 'budget' : versionParam);
     } else if (toggleParam === 'budget') {
       setSelectedVersion('budget');
-    } else if (toggleParam === 'full-year') {
+    } else if (timeframeValue === 'full-year') {
       setSelectedVersion(isBudgetView ? 'budget' : 'forecast');
-    } else if (toggleParam === 'ytm') {
+    } else if (timeframeValue === 'ytm') {
       setSelectedVersion(isBudgetView ? 'budget' : 'actual');
     }
-    if (toggleParam === 'ytm' || toggleParam === 'full-year') {
-      setSelectedTimeframeScope(toggleParam);
+    if (timeframeValue === 'ytm' || timeframeValue === 'full-year') {
+      setSelectedTimeframeScope(timeframeValue);
     }
   }, [searchParams, isBudgetView]);
 
@@ -1453,6 +1506,10 @@ export default function ExecutiveSummaryPage({
   }, [searchParams, mainBuOptions]);
 
   useEffect(() => {
+    if (hasParsedMonthParamsRef.current) {
+      return;
+    }
+    hasParsedMonthParamsRef.current = true;
     const viewParam = searchParams.get('view');
     if (viewParam === 'absolute' || viewParam === 'margin') {
       setFinancialView(viewParam);
@@ -1485,11 +1542,15 @@ export default function ExecutiveSummaryPage({
           next.set('version', selectedVersion);
           changed = true;
         }
-        if (next.get('toggle') !== selectedTimeframeScope) {
-          next.set('toggle', selectedTimeframeScope);
+        if (next.get('timeframe') !== selectedTimeframeScope) {
+          next.set('timeframe', selectedTimeframeScope);
           changed = true;
         }
-        if (next.get('months') !== nextMonths) {
+        if (next.get('toggle') !== next.get('timeframe')) {
+          next.delete('toggle');
+          changed = true;
+        }
+        if (monthAnchor === null && next.get('months') !== nextMonths) {
           next.set('months', nextMonths);
           changed = true;
         }
@@ -1503,6 +1564,7 @@ export default function ExecutiveSummaryPage({
     );
   }, [
     financialView,
+    monthAnchor,
     monthRange,
     selectedTimeframeScope,
     selectedVersion,
@@ -2738,7 +2800,8 @@ export default function ExecutiveSummaryPage({
                       {months.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
-                        const isDisabled = isActualsView && index > 1;
+                        const isDisabled =
+                          isActualsView || selectedTimeframeScope === 'ytm';
                         return (
                           <button
                             key={month}
@@ -2820,14 +2883,21 @@ export default function ExecutiveSummaryPage({
                       {months.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
+                        const isDisabled =
+                          isActualsView || selectedTimeframeScope === 'ytm';
                         return (
                           <button
                             key={month}
                             onClick={() => handleMonthClick(index)}
+                            disabled={isDisabled}
                             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                               isSelected
                                 ? 'bg-primary-600 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                            } ${
+                              isDisabled
+                                ? 'cursor-not-allowed opacity-50 hover:text-gray-600'
+                                : ''
                             }`}>
                             {month}
                           </button>
@@ -3068,6 +3138,14 @@ export default function ExecutiveSummaryPage({
                         stage.stage === 'ideation'
                       ) {
                         setActiveBudgetStage(stage);
+                      }
+                    }}
+                    onStageDoubleClick={(stage) => {
+                      if (stage.stage === 'ideation') {
+                        const url = getInitiativePerformanceUrl();
+                        if (url) {
+                          navigate(url);
+                        }
                       }
                     }}
                     tooltipContent={renderBudgetTooltip}

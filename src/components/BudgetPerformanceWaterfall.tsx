@@ -8,6 +8,7 @@ interface BudgetPerformanceWaterfallProps {
   title?: string;
   subtitle?: ReactNode;
   onStageClick?: (stage: BudgetForecastStage) => void;
+  onStageDoubleClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string;
   brokenAxis?: BrokenAxisConfig | 'auto';
   tooltipContent?: (stage: BudgetForecastStage) => ReactNode | null;
@@ -18,6 +19,7 @@ export default function BudgetPerformanceWaterfall({
   title = 'Budget deviation waterfall of BU performance by value driver',
   subtitle,
   onStageClick,
+  onStageDoubleClick,
   highlightedStage,
   brokenAxis = 'auto',
   tooltipContent,
@@ -42,6 +44,7 @@ export default function BudgetPerformanceWaterfall({
       title={title}
       subtitle={subtitle}
       onStageClick={onStageClick}
+      onStageDoubleClick={onStageDoubleClick}
       highlightedStage={highlightedStage}
       colorByDelta
       tooltipContent={tooltipContent}
