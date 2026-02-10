@@ -25,6 +25,7 @@ import {
   ProductAnalysisLayer,
 } from '../components/layers';
 import { type TimeframeOption } from '../components/TimeframePicker';
+import { MONTHS, TREND_MONTHS } from '../constants';
 import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { PNL_BREAKDOWN_DATA, type PnlBreakdownRow } from '../data/mockBgData';
@@ -42,20 +43,6 @@ import type {
 import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
-const TREND_MONTHS = [
-  'Dec',
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-];
 const toMillions = (value: number) => value / 1_000;
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
@@ -533,20 +520,6 @@ export default function BusinessGroupPerformancePage() {
   const [selectedCOGSTab] = useState<'sites' | 'products'>('sites');
   const isBudgetMode = selectedTimeframe === 'budget';
   const isPercentView = financialView === 'margin';
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
   const timeframeScale = useMemo(
     () => (monthRange[1] - monthRange[0] + 1) / 12,
     [monthRange]
@@ -1438,6 +1411,100 @@ export default function BusinessGroupPerformancePage() {
     const l3Stage = getStage('l3-vs-target');
     const l4Stage = getStage('l4-vs-planned');
     const l5Stage = getStage('l4-to-l5-leakage');
+
+    // Check if we're viewing HH + D/E Group for hardcoded waterfall data
+    const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+
+    // Hardcoded waterfall values for HH + D/E Group
+    if (isHHDEGroup) {
+      return [
+        {
+          ...budgetStage,
+          stage: 'budget',
+          label: 'Budget',
+          value: 271.2,
+          delta: 271.2,
+          type: 'baseline',
+          description: budgetStage?.description ?? 'Budget baseline',
+          isClickable: false,
+        },
+        {
+          stage: 'confirmed-volume-mix',
+          label: 'Volume / mix change',
+          value: 104.9,
+          delta: -166.3,
+          type: 'negative',
+          description: 'Volume and mix change impact',
+          isClickable: false,
+        },
+        {
+          stage: 'one-off-items',
+          label: 'One-off items change',
+          value: 152.0,
+          delta: 47.1,
+          type: 'positive',
+          description: 'One-off items change impact',
+          isClickable: false,
+        },
+        {
+          stage: 'headwinds-tailwinds',
+          label: 'Change in headwind / tailwind',
+          value: 228.5,
+          delta: 76.5,
+          type: 'positive',
+          description: 'Headwind / tailwind change impact',
+          isClickable: true,
+          navigationTarget: '/market-intelligence?focus=headwinds-tailwinds',
+        },
+        {
+          ...l3Stage,
+          stage: 'l3-vs-target',
+          label: 'L3 vs. target',
+          value: 235.8,
+          delta: 7.3,
+          type: 'positive',
+          description: l3Stage?.description ?? 'L3 initiative performance vs target',
+        },
+        {
+          ...l4Stage,
+          stage: 'l4-vs-planned',
+          label: 'L4 vs. target',
+          value: 234.8,
+          delta: -1.0,
+          type: 'negative',
+          description: l4Stage?.description ?? 'L4 initiative performance vs target',
+        },
+        {
+          ...l5Stage,
+          stage: 'l4-to-l5-leakage',
+          label: 'L5 vs. target',
+          value: 233.0,
+          delta: -1.8,
+          type: 'negative',
+          description: l5Stage?.description ?? 'L5 initiative performance vs target',
+        },
+        {
+          stage: 'one-off-adjustments',
+          label: 'Other factors',
+          value: 232.2,
+          delta: -0.8,
+          type: 'negative',
+          description: 'Other factors impacting actuals',
+          isClickable: false,
+        },
+        {
+          ...actualStage,
+          stage: 'actuals',
+          label: 'Actual',
+          value: 232.2,
+          delta: 232.2,
+          type: 'baseline',
+          description: actualStage?.description ?? 'Actual realized value',
+          isClickable: false,
+        },
+      ] as BudgetForecastStage[];
+    }
+
     const budgetBase = Math.abs(selectionMetrics.selectedOpBaseline);
     const actualBase = Math.abs(selectionMetrics.selectedOpValue);
     const clampDelta = (value: number, maxAbs: number) => {
@@ -1561,9 +1628,15 @@ export default function BusinessGroupPerformancePage() {
         isClickable: false,
       },
     ] as BudgetForecastStage[];
-  }, [opImpactTotals, selectionMetrics.selectedOpBaseline]);
+  }, [opImpactTotals, selectionMetrics.selectedOpBaseline, selectedBu, selectedBuNames]);
 
   const buildScaledWaterfallStages = (): BudgetForecastStage[] => {
+    // For HH + D/E Group, return hardcoded stages without any scaling/adjustment
+    const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+    if (isHHDEGroup) {
+      return reconciliationBaseStages;
+    }
+
     const budgetValue = selectionMetrics.selectedOpBaseline;
     const actualValue = selectionMetrics.selectedOpValue;
     const baseBudgetValue =
@@ -1706,7 +1779,7 @@ export default function BusinessGroupPerformancePage() {
   const performanceWaterfallStages = useMemo(
     () =>
       buildScaledWaterfallStages().filter((stage) => stage.stage !== 'forecast'),
-    [selectionMetrics.selectedOpBaseline, selectionMetrics.selectedOpValue]
+    [selectionMetrics.selectedOpBaseline, selectionMetrics.selectedOpValue, selectedBu, selectedBuNames, reconciliationBaseStages]
   );
 
   const budgetWaterfallStages = useMemo(() => {
@@ -1934,13 +2007,30 @@ export default function BusinessGroupPerformancePage() {
         );
       });
 
-      const sortedRows = [...filteredRows].sort(
+      // For HH + D/E Group, use the hardcoded delta value and scale rows to match
+      const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+      const totalImpact = isHHDEGroup
+        ? (activeDeviationStage.delta ?? 0)
+        : rows.reduce((sum, row) => sum + row.opImpact, 0);
+
+      // Scale rows proportionally if using hardcoded values for HH + D/E Group
+      let adjustedRows = filteredRows;
+      if (isHHDEGroup && rows.length > 0) {
+        const originalSum = rows.reduce((sum, row) => sum + row.opImpact, 0);
+        const scaleFactor = originalSum !== 0 ? totalImpact / originalSum : 1;
+        adjustedRows = filteredRows.map((row) => ({
+          ...row,
+          opImpact: roundToOne(row.opImpact * scaleFactor),
+        }));
+      }
+
+      const sortedRows = [...adjustedRows].sort(
         (a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact)
       );
 
       return {
         type: 'op-impact' as const,
-        totalImpact: rows.reduce((sum, row) => sum + row.opImpact, 0),
+        totalImpact,
         rows: sortedRows,
       };
     }
@@ -2041,6 +2131,7 @@ export default function BusinessGroupPerformancePage() {
     getOpImpactRowsForStage,
     impactRationaleFilter,
     impactSearch,
+    selectedBu,
     selectedBuNames,
     selectedTimeframe,
   ]);
@@ -2070,10 +2161,10 @@ export default function BusinessGroupPerformancePage() {
     const baselineMargin = calcMargin(metric.baseline, baselineRevenue);
     const lastYearMargin = calcMargin(metric.stly, lastYearRevenue);
     const budgetPercent = usePercentView
-      ? calcPercent(displayMargin, baselineMargin)
+      ? displayMargin - baselineMargin  // Percentage point delta
       : calcPercent(metric.value, metric.baseline);
     const lastYearPercent = usePercentView
-      ? calcPercent(displayMargin, lastYearMargin)
+      ? displayMargin - lastYearMargin  // Percentage point delta
       : calcPercent(metric.value, metric.stly);
     const primaryPercent = isBudgetMode ? lastYearPercent : budgetPercent;
     const formatCellValue = (value: number) =>
@@ -2371,7 +2462,6 @@ export default function BusinessGroupPerformancePage() {
       ) => {
         const functionId =
           pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
-        const isYtmView = selectedTimeframe === 'ytm';
         const normalizedParent = parentLabel?.trim().toLowerCase();
         const isRevenueControllable =
           normalizedParent === 'revenue' &&
@@ -2407,18 +2497,13 @@ export default function BusinessGroupPerformancePage() {
               </span>
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(
-                isYtmView
-                  ? row.ytmActual
-                  : row.fullYearForecast * pnlFullYearScale
-              )}
+              {formatPnlValue(row.ytmActual)}
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(
-                isYtmView
-                  ? row.lastYearYtm
-                  : row.lastYearFullYear * pnlFullYearScale
-              )}
+              {formatPnlValue(row.ytmBudget)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue((row.ytmActual ?? 0) - (row.ytmBudget ?? 0))}
             </td>
             <td className='px-4 py-3 text-right'>
               {showDrilldown && functionId ? (
@@ -2449,6 +2534,7 @@ export default function BusinessGroupPerformancePage() {
               {label}
             </span>
           </td>
+          <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
@@ -2651,7 +2737,7 @@ export default function BusinessGroupPerformancePage() {
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-32'>
-                    Timeframe
+                    Timeframe <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex bg-gray-100 rounded-lg p-1'>
                     {(
@@ -2675,10 +2761,10 @@ export default function BusinessGroupPerformancePage() {
                 </div>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-32'>
-                    Months
+                    Months <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex flex-wrap gap-1'>
-                    {months.map((month, index) => {
+                    {MONTHS.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
                       const isDisabled = selectedTimeframe === 'ytm';
@@ -2701,6 +2787,13 @@ export default function BusinessGroupPerformancePage() {
                       );
                     })}
                   </div>
+                  {isMonthRangeCustom && (
+                    <button
+                      onClick={() => handleTimeframeChange(selectedTimeframe === 'ytm' ? 'ytm' : 'full-year')}
+                      className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                      Reset timeframe
+                    </button>
+                  )}
                 </div>
               </div>
             }
@@ -3109,10 +3202,13 @@ export default function BusinessGroupPerformancePage() {
                       Line item
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      {selectedTimeframe === 'ytm' ? 'YTM actual' : 'Full year FCST'}
+                      YTM Actual
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year
+                      YTM Budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Deviation
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                       Details
@@ -3123,7 +3219,7 @@ export default function BusinessGroupPerformancePage() {
                   {selectedPnlRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className='px-4 py-6 text-center text-sm text-gray-500'>
                         No P&amp;L breakdown available.
                       </td>
@@ -3136,7 +3232,7 @@ export default function BusinessGroupPerformancePage() {
                         <tr className='bg-gray-50'>
                           <td
                             className='px-4 py-2 font-semibold text-gray-900'
-                            colSpan={5}>
+                            colSpan={6}>
                             {unit}
                           </td>
                         </tr>
@@ -3442,10 +3538,13 @@ export default function BusinessGroupPerformancePage() {
                       Line item
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      {selectedTimeframe === 'ytm' ? 'YTM actual' : 'Full year FCST'}
+                      YTM Actual
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                      Last year
+                      YTM Budget
+                    </th>
+                    <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                      Deviation
                     </th>
                     <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                       Details
@@ -3456,7 +3555,7 @@ export default function BusinessGroupPerformancePage() {
                   {activePnlRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className='px-4 py-6 text-center text-sm text-gray-500'>
                         No P&amp;L breakdown available.
                       </td>
@@ -3469,7 +3568,6 @@ export default function BusinessGroupPerformancePage() {
                         normalizePnlLineItem(row.lineItem) === 'controllable';
                       const showDrilldown =
                         Boolean(functionId) && !isControllable;
-                      const isYtmView = selectedTimeframe === 'ytm';
                       return (
                         <tr
                           key={`${row.unit}-${row.lineItem}-${index}`}
@@ -3481,18 +3579,13 @@ export default function BusinessGroupPerformancePage() {
                             {row.lineItem}
                           </td>
                           <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(
-                              isYtmView
-                                ? row.ytmActual
-                                : row.fullYearForecast * pnlFullYearScale
-                            )}
+                            {formatPnlValue(row.ytmActual)}
                           </td>
                           <td className='px-4 py-3 text-right text-gray-700'>
-                            {formatPnlValue(
-                              isYtmView
-                                ? row.lastYearYtm
-                                : row.lastYearFullYear * pnlFullYearScale
-                            )}
+                            {formatPnlValue(row.ytmBudget)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatPnlValue((row.ytmActual ?? 0) - (row.ytmBudget ?? 0))}
                           </td>
                           <td className='px-4 py-3 text-right'>
                             {showDrilldown && functionId ? (

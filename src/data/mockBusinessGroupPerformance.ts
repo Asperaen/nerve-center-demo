@@ -1,3 +1,5 @@
+import { TREND_MONTHS } from '../constants';
+
 export interface MonthlyTrendPoint {
   month: string; // e.g., "Jan", "Feb"
   value: number; // value in billions
@@ -32,23 +34,9 @@ const generateTrend = (
   volatility: number = 0.1,
   trend: 'up' | 'down' | 'flat' = 'up'
 ): MonthlyTrendPoint[] => {
-  const months = [
-    'Dec',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-  ];
   const trendFactor = trend === 'up' ? 0.03 : trend === 'down' ? -0.02 : 0;
 
-  return months.map((month, index) => {
+  return TREND_MONTHS.map((month, index) => {
     const trendValue = baseValue * (1 + trendFactor * (index - 11));
     const randomVariation = (Math.random() - 0.5) * volatility * baseValue;
     return {

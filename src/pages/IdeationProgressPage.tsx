@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HeaderFilters from '../components/HeaderFilters';
 import { type TimeframeOption, type TimeframeOptionItem } from '../components/TimeframePicker';
-import { WAVE_LINK } from '../constants';
+import { WAVE_LINK, MONTHS } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { BgInitiativePerformanceRow, BudgetWaterfallRow } from '../data/mockBgData';
@@ -768,20 +768,6 @@ export default function IdeationProgressPage() {
   const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] = useState(false);
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   useEffect(() => {
     if (isMonthRangeCustom) {
@@ -1029,7 +1015,7 @@ export default function IdeationProgressPage() {
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-28'>
-                    Timeframe
+                    Timeframe <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div
                     className={`flex bg-gray-100 rounded-lg p-1`}>
@@ -1049,10 +1035,10 @@ export default function IdeationProgressPage() {
                 </div>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-28'>
-                    Months
+                    Months <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex flex-wrap gap-1'>
-                    {months.map((month, index) => {
+                    {MONTHS.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
                       const isDisabled = activeTimeframe === 'ytm';

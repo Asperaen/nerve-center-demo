@@ -21,6 +21,7 @@ import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
 import RootCauseAnalysisSidebar from '../components/RootCauseAnalysisSidebar';
 import { type TimeframeOption } from '../components/TimeframePicker';
+import { MONTHS, TREND_MONTHS } from '../constants';
 import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import {
@@ -50,21 +51,6 @@ import {
   getStoredTimeframe,
   setStoredTimeframe,
 } from '../utils/timeframeStorage';
-
-const TREND_MONTHS = [
-  'Dec',
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-];
 
 const toMillions = (value: number) => value / 1_000;
 
@@ -850,40 +836,34 @@ export default function ExecutiveSummaryPage({
         index: number,
         level: number,
         isGroup: boolean
-      ) => (
-        <tr
-          key={`${row.unit}-${row.lineItem}-${index}`}
-          className='border-b border-gray-200 last:border-b-0'>
-          <td className='px-4 py-3 text-gray-600'>
-            {showUnit ? row.unit : ''}
-          </td>
-          <td className='px-4 py-3 text-gray-600'>
-            <span
-              className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
-              style={{ paddingLeft: `${level * 16}px` }}>
-              {row.lineItem}
-            </span>
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.fullYearBudget)}
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.ytmBudget)}
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.lastYearYtm)}
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.ytmActual)}
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.fullYearForecast)}
-          </td>
-          <td className='px-4 py-3 text-right text-gray-700'>
-            {formatPnlValue(row.lastYearFullYear)}
-          </td>
-        </tr>
-      );
+      ) => {
+        const deviation = (row.fullYearBudget ?? 0) - (row.lastYearFullYear ?? 0);
+        return (
+          <tr
+            key={`${row.unit}-${row.lineItem}-${index}`}
+            className='border-b border-gray-200 last:border-b-0'>
+            <td className='px-4 py-3 text-gray-600'>
+              {showUnit ? row.unit : ''}
+            </td>
+            <td className='px-4 py-3 text-gray-600'>
+              <span
+                className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
+                style={{ paddingLeft: `${level * 16}px` }}>
+                {row.lineItem}
+              </span>
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.fullYearBudget)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(row.lastYearFullYear)}
+            </td>
+            <td className='px-4 py-3 text-right text-gray-700'>
+              {formatPnlValue(deviation)}
+            </td>
+          </tr>
+        );
+      };
 
       const renderLabelRow = (label: string, level: number) => (
         <tr key={`label-${label}-${level}`} className='border-b border-gray-200 last:border-b-0'>
@@ -893,9 +873,6 @@ export default function ExecutiveSummaryPage({
               {label}
             </span>
           </td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
-          <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
           <td className='px-4 py-3 text-right text-gray-400'>—</td>
@@ -1192,7 +1169,6 @@ export default function ExecutiveSummaryPage({
     if (stage.stage !== 'ideation') {
       return null;
     }
-    const initiativePerformanceUrl = getInitiativePerformanceUrl();
 
     const rows = [
       {
@@ -1303,13 +1279,6 @@ export default function ExecutiveSummaryPage({
         <p className='text-xs font-semibold text-gray-700 mb-2'>
           In-year improvement targets
         </p>
-        {initiativePerformanceUrl && (
-          <Link
-            to={initiativePerformanceUrl}
-            className='text-xs font-semibold text-blue-600 underline'>
-            Open initiative performance →
-          </Link>
-        )}
         <div className='overflow-hidden rounded-md border border-gray-200'>
           <table className='w-full text-xs'>
             <thead className='bg-gray-50 border-b border-gray-200'>
@@ -1391,20 +1360,6 @@ export default function ExecutiveSummaryPage({
   const hasParsedMonthParamsRef = useRef(false);
   const isActualsView = !isBudgetView && selectedVersion === 'actual';
   const isPercentView = financialView === 'margin';
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   const handleTimeframeChange = (timeframe: 'full-year' | 'ytm') => {
     if (isActualsView && timeframe === 'full-year') {
@@ -2273,7 +2228,13 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (selectedVersion === 'budget') {
-          navigate(`/budget?bg=${encodeURIComponent(groupId)}`);
+          const params = new URLSearchParams();
+          const bgParam = isSubGroup && parentBgId ? parentBgId : groupId;
+          params.set('bg', bgParam);
+          if (isSubGroup && parentBgId) {
+            params.set('bu', groupName);
+          }
+          navigate(`/budget?${params.toString()}`);
           return;
         }
         if (selectedVersion === 'forecast') {
@@ -2335,10 +2296,10 @@ export default function ExecutiveSummaryPage({
       calcMargin(metric.stly, lastYearRevenue) * monthScale;
     const usePercentView = isPercentView && !forceAbsoluteView;
     const budgetPercent = usePercentView
-      ? calcPercent(displayMargin, baselineMargin)
+      ? displayMargin - baselineMargin  // Percentage point delta
       : calcPercent(metric.value, metric.baseline);
     const lastYearPercent = usePercentView
-      ? calcPercent(displayMargin, lastYearMargin)
+      ? displayMargin - lastYearMargin  // Percentage point delta
       : calcPercent(metric.value, metric.stly);
     const primaryPercent = isBudgetMode ? lastYearPercent : budgetPercent;
     const formatCellValue = (value: number) =>
@@ -2554,7 +2515,13 @@ export default function ExecutiveSummaryPage({
           return;
         }
         if (selectedVersion === 'budget') {
-          navigate(`/budget?bg=${encodeURIComponent(buId)}`);
+          const params = new URLSearchParams();
+          const bgParam = isSubGroup && parentBgId ? parentBgId : buId;
+          params.set('bg', bgParam);
+          if (isSubGroup && parentBgId) {
+            params.set('bu', group.name);
+          }
+          navigate(`/budget?${params.toString()}`);
           return;
         }
         if (selectedVersion === 'forecast') {
@@ -2765,7 +2732,7 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Timeframe
+                      Timeframe <span className='text-gray-400'>(2026)</span>
                     </span>
                     <div className='flex bg-gray-100 rounded-lg p-1'>
                       {(
@@ -2799,10 +2766,10 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Months
+                      Months <span className='text-gray-400'>(2026)</span>
                     </span>
                     <div className='flex flex-wrap gap-1'>
-                      {months.map((month, index) => {
+                      {MONTHS.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
                         const isDisabled =
@@ -2857,7 +2824,7 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Timeframe
+                      Timeframe <span className='text-gray-400'>(2026)</span>
                     </span>
                     <div
                       className={`flex bg-gray-100 rounded-lg p-1`}>
@@ -2882,10 +2849,10 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Months
+                      Months <span className='text-gray-400'>(2026)</span>
                     </span>
                     <div className='flex flex-wrap gap-1'>
-                      {months.map((month, index) => {
+                      {MONTHS.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
                         const isDisabled =
@@ -3228,19 +3195,10 @@ export default function ExecutiveSummaryPage({
                             Full year budget
                           </th>
                           <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                            YTM budget
-                          </th>
-                          <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                            Last year (YTM)
-                          </th>
-                          <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                            YTM actual
-                          </th>
-                          <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                            Full year FCST
-                          </th>
-                          <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                             Last year (full year)
+                          </th>
+                          <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                            Deviation
                           </th>
                         </tr>
                       </thead>
@@ -3248,7 +3206,7 @@ export default function ExecutiveSummaryPage({
                         {activePnlRows.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={8}
+                              colSpan={5}
                               className='px-4 py-6 text-center text-sm text-gray-500'>
                               No P&amp;L breakdown available.
                             </td>
@@ -3262,7 +3220,7 @@ export default function ExecutiveSummaryPage({
                                 <tr className='bg-gray-50'>
                                   <td
                                     className='px-4 py-2 font-semibold text-gray-900'
-                                    colSpan={8}>
+                                    colSpan={5}>
                                     {unit}
                                   </td>
                                 </tr>

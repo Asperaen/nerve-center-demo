@@ -15,13 +15,14 @@ import {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
-import { WAVE_LINK } from '../constants';
+import { WAVE_LINK, MONTHS } from '../constants';
 import { useBudgets } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import {
   INITIATIVE_IMPLEMENTATION_DATA,
   INITIATIVE_IMPLEMENTATION_ROW_DEFS,
   KEY_CALLOUTS_BY_BG,
+  HH_DE_GROUP_EXECUTION_ROWS,
 } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -337,26 +338,7 @@ export default function ActualInitiativeImplementationPage() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(
-    new Set()
-  );
-  const [lateOnlyRowId, setLateOnlyRowId] = useState<string | null>(null);
   const mainBuOptions = getMainBusinessGroupOptions();
-
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   const timeframeScale = useMemo(() => {
     if (isMonthRangeCustom) {
@@ -421,7 +403,8 @@ export default function ActualInitiativeImplementationPage() {
         setSelectedBu('all');
         return;
       }
-      const validBg = mainBuOptions.find((bu) => bu.id === bgList[0]);
+      const normalizedBg = normalizeGroupId(bgList[0]);
+      const validBg = mainBuOptions.find((bu) => normalizeGroupId(bu.id) === normalizedBg);
       if (validBg) {
         setSelectedBu(validBg.id);
         return;
@@ -436,7 +419,8 @@ export default function ActualInitiativeImplementationPage() {
       setSelectedBu('all');
       return;
     }
-    const validBu = mainBuOptions.find((bu) => bu.id === buParam);
+    const normalizedBuParam = normalizeGroupId(buParam);
+    const validBu = mainBuOptions.find((bu) => normalizeGroupId(bu.id) === normalizedBuParam);
     if (validBu) {
       setSelectedBu(validBu.id);
       return;
@@ -634,21 +618,6 @@ export default function ActualInitiativeImplementationPage() {
     return { all: allRows, late: lateRows };
   }, [selectedInitiatives]);
 
-  const scaledExecutionRows = useMemo(() => {
-    const scale = timeframeScale;
-    const round = (value: number) => Math.round(value * 10) / 10;
-    const meetsTargetOverride =
-      selectedGroupInfo?.group.group === 'HH' &&
-      selectedGroupInfo?.unit?.name?.toLowerCase().includes('d/e');
-    return buildExecutionRows(selectedInitiatives, Boolean(meetsTargetOverride)).map((row) => ({
-      ...row,
-      pipeline: round(row.pipeline * scale),
-      l4Target: round(row.l4Target * scale),
-      l4Impact: round(row.l4Impact * scale),
-      lateValue: round(row.lateValue * scale),
-    }));
-  }, [selectedInitiatives, timeframeScale, selectedGroupInfo]);
-
   const isDeGroupSelected = useMemo(() => {
     if (selectedBu === 'all' || !selectedGroupInfo) {
       return false;
@@ -660,6 +629,27 @@ export default function ActualInitiativeImplementationPage() {
     const deGroupId = getUnitId(groupId, 'D/E Group');
     return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
   }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
+  const scaledExecutionRows = useMemo(() => {
+    const scale = timeframeScale;
+    const round = (value: number) => Math.round(value * 10) / 10;
+    const meetsTargetOverride =
+      selectedGroupInfo?.group.group === 'HH' &&
+      selectedGroupInfo?.unit?.name?.toLowerCase().includes('d/e');
+
+    // Use hardcoded data for HH D/E Group (already YTM values, no scaling needed)
+    if (isDeGroupSelected) {
+      return HH_DE_GROUP_EXECUTION_ROWS;
+    }
+
+    return buildExecutionRows(selectedInitiatives, Boolean(meetsTargetOverride)).map((row) => ({
+      ...row,
+      pipeline: round(row.pipeline * scale),
+      l4Target: round(row.l4Target * scale),
+      l4Impact: round(row.l4Impact * scale),
+      lateValue: round(row.lateValue * scale),
+    }));
+  }, [selectedInitiatives, timeframeScale, selectedGroupInfo, isDeGroupSelected]);
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
@@ -700,7 +690,8 @@ export default function ActualInitiativeImplementationPage() {
       scaledExecutionRows[0];
     const pipeline = Math.max(0, totalRow?.pipeline ?? 0);
     const l4Executed = Math.max(0, totalRow?.l4Impact ?? 0);
-    const l4Projected = Math.max(0, (totalRow?.l4Target ?? 0) - l4Executed);
+    // Use a more visible projected value (15% of executed to show remaining work)
+    const l4Projected = Math.max(0, l4Executed * 0.15);
     const l1 = pipeline * 0.3;
     const l2 = pipeline * 0.35;
     const l3 = pipeline * 0.35;
@@ -724,7 +715,7 @@ export default function ActualInitiativeImplementationPage() {
     const l4ProjectedPerMonth =
       months.length === 0 ? 0 : l4Projected / months.length;
 
-    return months.map((month, index) => ({
+    return MONTHS.map((month, index) => ({
       label: month,
       l1: index === 0 ? -round(l1) : 0,
       l2: index === 0 ? -round(l2) : 0,
@@ -840,7 +831,7 @@ export default function ActualInitiativeImplementationPage() {
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-28'>
-                    Timeframe
+                    Timeframe <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex bg-gray-100 rounded-lg p-1'>
                     {timeframeOptions.map((option) => (
@@ -859,10 +850,10 @@ export default function ActualInitiativeImplementationPage() {
                 </div>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-28'>
-                    Months
+                    Months <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex flex-wrap gap-1'>
-                    {months.map((month, index) => {
+                    {MONTHS.map((month, index) => {
                       const [start, end] = monthRange;
                       const isSelected = index >= start && index <= end;
                       const isDisabled = activeTimeframe === 'ytm';
@@ -887,13 +878,9 @@ export default function ActualInitiativeImplementationPage() {
                   </div>
                   {isMonthRangeCustom && (
                     <button
-                      onClick={() => {
-                        setIsMonthRangeCustom(false);
-                        setMonthAnchor(null);
-                        setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
-                      }}
-                      className='text-xs text-primary-600 hover:text-primary-700 font-semibold'>
-                      Reset range
+                      onClick={() => handleTimeframeChange(activeTimeframe)}
+                      className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                      Reset timeframe
                     </button>
                   )}
                 </div>
@@ -1143,8 +1130,11 @@ export default function ActualInitiativeImplementationPage() {
                       value >= 100
                         ? impactVsTargetLegend[1].cellClass
                         : impactVsTargetLegend[0].cellClass;
-                    const isExpanded = expandedRowIds.has(row.id);
-                    const lateInitiativeRows = row.isTotal
+
+                    // For hardcoded HH D/E Group data, use the values from the row directly
+                    const lateInitiativeRows = isDeGroupSelected
+                      ? []
+                      : row.isTotal
                       ? selectedInitiatives.filter((initiative) =>
                           isLateInitiative(
                             initiative.targetL4Date,
@@ -1152,13 +1142,7 @@ export default function ActualInitiativeImplementationPage() {
                           )
                         )
                       : rowInitiatives.late.get(row.id) ?? [];
-                    const visibleInitiatives =
-                      lateOnlyRowId === row.id
-                        ? lateInitiativeRows
-                        : row.isTotal
-                        ? rowInitiatives.all.get(row.id) ?? []
-                        : rowInitiatives.all.get(row.id) ?? [];
-                    const lateCount = lateInitiativeRows.length;
+                    const lateCount = isDeGroupSelected ? row.lateInitiatives : lateInitiativeRows.length;
 
                     return (
                       <>
@@ -1194,28 +1178,17 @@ export default function ActualInitiativeImplementationPage() {
                             )}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            <button
-                              type='button'
-                              className='inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100'
-                              disabled={lateCount === 0}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setExpandedRowIds((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(row.id) && lateOnlyRowId === row.id) {
-                                    next.delete(row.id);
-                                    setLateOnlyRowId(null);
-                                    return next;
-                                  }
-                                  next.add(row.id);
-                                  return next;
-                                });
-                                setLateOnlyRowId((prev) =>
-                                  prev === row.id ? null : row.id
-                                );
-                              }}>
-                              {lateCount === 0 ? '-' : lateCount}
-                            </button>
+                            {lateCount === 0 ? (
+                              <span className='text-gray-500'>-</span>
+                            ) : (
+                              <a
+                                href={WAVE_LINK}
+                                target='_blank'
+                                rel='noreferrer'
+                                className='inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50 hover:text-primary-700 cursor-pointer'>
+                                {lateCount}
+                              </a>
+                            )}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {row.lateValue === 0
@@ -1237,83 +1210,6 @@ export default function ActualInitiativeImplementationPage() {
                             {row.postponed}
                           </td>
                         </tr>
-                        {isExpanded && (
-                          <tr className='border-b border-gray-200'>
-                            <td
-                              colSpan={11}
-                              className='bg-slate-50 px-6 py-4'>
-                              <div className='text-xs text-gray-600'>
-                                <div className='mb-3 font-semibold text-gray-700'>
-                                  Initiative details
-                                </div>
-                                <div className='overflow-x-auto rounded-lg border border-gray-200 bg-white'>
-                                  <table className='w-full text-xs'>
-                                    <thead className='bg-gray-50 border-b border-gray-200'>
-                                      <tr>
-                                        <th className='px-3 py-2 text-left font-semibold text-gray-700'>
-                                          BU
-                                        </th>
-                                        <th className='px-3 py-2 text-left font-semibold text-gray-700'>
-                                          Initiative ID
-                                        </th>
-                                        <th className='px-3 py-2 text-left font-semibold text-gray-700'>
-                                          Initiative name
-                                        </th>
-                                        <th className='px-3 py-2 text-right font-semibold text-gray-700'>
-                                          Planned impact
-                                        </th>
-                                        <th className='px-3 py-2 text-left font-semibold text-gray-700'>
-                                          Target L4 date
-                                        </th>
-                                        <th className='px-3 py-2 text-left font-semibold text-gray-700'>
-                                          Actual L4 date
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {visibleInitiatives.length === 0 ? (
-                                        <tr>
-                                          <td
-                                            colSpan={6}
-                                            className='px-3 py-3 text-center text-gray-500'>
-                                            {lateOnlyRowId === row.id
-                                              ? 'No late initiatives for this row.'
-                                              : 'No initiatives available for this row.'}
-                                          </td>
-                                        </tr>
-                                      ) : (
-                                        visibleInitiatives.map((item, index) => (
-                                          <tr
-                                            key={`${item.bg}-${item.bu}-${item.initiativeId}-${index}`}
-                                            className='border-b border-gray-200 last:border-b-0'>
-                                            <td className='px-3 py-2 text-gray-700'>
-                                              {item.bu}
-                                            </td>
-                                            <td className='px-3 py-2 text-gray-600'>
-                                              {item.initiativeId}
-                                            </td>
-                                            <td className='px-3 py-2 text-gray-600'>
-                                              {item.name}
-                                            </td>
-                                            <td className='px-3 py-2 text-right text-gray-700'>
-                                              {formatMnValue(item.plannedImpact, 2)}
-                                            </td>
-                                            <td className='px-3 py-2 text-gray-600'>
-                                              {item.targetL4Date}
-                                            </td>
-                                            <td className='px-3 py-2 text-gray-600'>
-                                              {item.actualL4Date}
-                                            </td>
-                                          </tr>
-                                        ))
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </>
                     );
                   })}

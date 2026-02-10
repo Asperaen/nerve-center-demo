@@ -20,6 +20,7 @@ import TimeframePicker, {
   type TimeframeOption,
   type TimeframeOptionItem,
 } from '../components/TimeframePicker';
+import { TREND_MONTHS } from '../constants';
 import { useBudgets, type BusinessGroup } from '../contexts/BudgetContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import {
@@ -48,20 +49,6 @@ import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 const toMillions = (value: number) => value / 1_000;
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
-const TREND_MONTHS = [
-  'Dec',
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-];
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase();
   return key === 'other' ? 'others' : key;
