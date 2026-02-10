@@ -1255,6 +1255,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(stagePersonnel),
         delta: stagePersonnel,
         type: getCostStageType(stagePersonnel),
+        isClickable: true,
       },
       {
         id: 'rnd-rental-dep',
@@ -1919,6 +1920,95 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             name: '21. Automation',
                             kpi: 'UPPH',
                             date: '2024.9',
+                          },
+                        ].map((row) => (
+                          <tr key={row.name} className='border-t border-gray-200'>
+                            <td className='py-2'>{row.name}</td>
+                            <td className='py-2'>{row.kpi}</td>
+                            <td className='py-2'>{row.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : activeBucketId === 'rnd-personnel' ? (
+              <>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <h3 className='text-lg font-semibold text-gray-900'>
+                      Top initiative deviation
+                    </h3>
+                  </div>
+                  <button
+                    type='button'
+                    className='rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300'
+                    onClick={() => setActiveBucketId(null)}>
+                    Close
+                  </button>
+                </div>
+                <div className='mt-4 space-y-6 text-sm text-gray-700'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Top initiative deviation
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          KPI impacted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          name: 'Initiative 1',
+                          gap: '-1.5Mn',
+                          kpi: 'Utilization',
+                        },
+                        {
+                          name: 'Initiative 2',
+                          gap: '-2.2Mn',
+                          kpi: 'Utilization',
+                        },
+                      ].map((row) => (
+                        <tr key={row.name} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.name}</td>
+                          <td className='py-2'>{row.gap}</td>
+                          <td className='py-2'>{row.kpi}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div>
+                    <h4 className='text-lg font-semibold text-gray-900 mb-2'>
+                      Key Performance Foundations
+                    </h4>
+                    <table className='w-full text-sm'>
+                      <thead>
+                        <tr>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Performance foundation
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            KPI impacted
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Process confirmation date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          {
+                            name: 'Resourcing and project management',
+                            kpi: 'Utilization',
+                            date: '2025.1',
                           },
                         ].map((row) => (
                           <tr key={row.name} className='border-t border-gray-200'>

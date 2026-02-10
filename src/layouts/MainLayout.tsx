@@ -4,6 +4,7 @@ import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import CurrencyToggle from '../components/CurrencyToggle';
 import RightSidebar from '../components/RightSidebar';
 import CalendarSidebar from '../components/CalendarSidebar';
+import GlobalBanner from '../components/GlobalBanner';
 import { mockCalendarEvents } from '../data/mockCalendar';
 import type { MeetingMaterial } from '../types';
 
@@ -98,8 +99,9 @@ export default function MainLayout() {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 relative'>
+      <GlobalBanner />
       <div
-        className={`fixed top-3 z-50 ${
+        className={`fixed top-16 z-50 ${
           isSidebarCollapsed ? 'right-20' : 'right-72'
         }`}>
         <CurrencyToggle />
