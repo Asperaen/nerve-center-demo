@@ -28,6 +28,7 @@ export default function BusinessGroupPerformanceWaterfall({
       onStageClick={onStageClick}
       highlightedStage={highlightedStage}
       brokenAxis={brokenAxis}
+      showClickDetailsForAll={true}
     />
   );
 }

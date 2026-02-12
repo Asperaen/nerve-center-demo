@@ -976,7 +976,7 @@ export default function FunctionalPerformanceWaterfall({
                   x1={group.left}
                   y1={group.groupY}
                   x2={group.left}
-                  y2={group.groupY + 8}
+                  y2={group.groupY - 8}
                   stroke='#4b5563'
                   strokeWidth={2}
                 />
@@ -984,7 +984,7 @@ export default function FunctionalPerformanceWaterfall({
                   x1={group.right}
                   y1={group.groupY}
                   x2={group.right}
-                  y2={group.groupY + 8}
+                  y2={group.groupY - 8}
                   stroke='#4b5563'
                   strokeWidth={2}
                 />
@@ -1018,7 +1018,7 @@ export default function FunctionalPerformanceWaterfall({
               x1={initiativeGrouping.left}
               y1={initiativeGrouping.groupY}
               x2={initiativeGrouping.left}
-              y2={initiativeGrouping.groupY + 8}
+              y2={initiativeGrouping.groupY - 8}
               stroke='#4b5563'
               strokeWidth={2}
             />
@@ -1026,7 +1026,7 @@ export default function FunctionalPerformanceWaterfall({
               x1={initiativeGrouping.right}
               y1={initiativeGrouping.groupY}
               x2={initiativeGrouping.right}
-              y2={initiativeGrouping.groupY + 8}
+              y2={initiativeGrouping.groupY - 8}
               stroke='#4b5563'
               strokeWidth={2}
             />

@@ -15,7 +15,6 @@ import {
   useOutletContext,
   useSearchParams,
 } from 'react-router-dom';
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import BudgetPerformanceWaterfall from '../components/BudgetPerformanceWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
 import MeetingSchedulingModal from '../components/MeetingSchedulingModal';
@@ -1012,51 +1011,6 @@ export default function ExecutiveSummaryPage({
       .filter((row): row is FunctionTargetRow => Boolean(row));
   }, [isBudgetView, selectedBu, selectedGroup, selectedUnits]);
 
-  const parseKpiDelta = (value: string) => {
-    if (!value) {
-      return null;
-    }
-    const match = value.match(/-?\d+(\.\d+)?/);
-    if (!match) {
-      return null;
-    }
-    const numeric = Number(match[0]);
-    if (Number.isNaN(numeric)) {
-      return null;
-    }
-    return { numeric, isPercent: value.includes('%') };
-  };
-
-  const formatKpiValue = (value: number, isPercent: boolean) => {
-    if (Number.isNaN(value)) {
-      return '—';
-    }
-    if (isPercent) {
-      const rounded = Math.round(value * 10) / 10;
-      return `${rounded}%`;
-    }
-    const rounded = Math.round(value * 10) / 10;
-    return `${rounded}`;
-  };
-
-  const getKpiBenchmarkTarget = useCallback((row: FunctionTargetRow) => {
-    const parsed = parseKpiDelta(row.coreImprovementTarget);
-    if (!parsed) {
-      return {
-        benchmark: '—',
-        target: row.coreImprovementTarget || '—',
-      };
-    }
-    const seed = row.coreKpi.length + row.function.length;
-    const base = parsed.isPercent
-      ? (seed % 12) + 4
-      : (seed % 4000) + 800;
-    const target = base + parsed.numeric;
-    return {
-      benchmark: formatKpiValue(base, parsed.isPercent),
-      target: formatKpiValue(target, parsed.isPercent),
-    };
-  }, []);
   const impactRationaleOptions = useMemo(
     () =>
       Array.from(new Set(opImpactRows.map((row) => row.costRationale))).filter(
@@ -1172,7 +1126,7 @@ export default function ExecutiveSummaryPage({
 
     const rows = [
       {
-        category: 'Pricing',
+        category: 'Topline / Pricing',
         kpi: 'Contribution margin %',
         baseline: '3%',
         inYear: '4%',
@@ -1180,24 +1134,52 @@ export default function ExecutiveSummaryPage({
       },
       {
         category: '',
-        kpi: 'Margin on BOM %',
+        kpi: 'Margin on BOM % (cross functional)',
         baseline: '4%',
         inYear: '5%',
         fullyRamped: '6%',
       },
       {
         category: 'Manufacturing',
-        kpi: 'UPPH',
+        kpi: 'UPPH - Direct labor',
         baseline: '1.30',
         inYear: '1.56',
         fullyRamped: '1.95',
       },
       {
         category: '',
-        kpi: 'OEE2',
+        kpi: 'Headcount - Indirect labor',
+        baseline: '1250',
+        inYear: '1095',
+        fullyRamped: '1035',
+      },
+      {
+        category: '',
+        kpi: 'OEE2 - Equipment Efficiency',
         baseline: '75%',
         inYear: '82%',
         fullyRamped: '85%',
+      },
+      {
+        category: '',
+        kpi: 'Material Yield (%)* - Material consumption efficiency',
+        baseline: '123%',
+        inYear: '117%',
+        fullyRamped: '105%',
+      },
+      {
+        category: '',
+        kpi: 'G&A Var. Unit cost',
+        baseline: '5.1',
+        inYear: '4.2',
+        fullyRamped: '3.7',
+      },
+      {
+        category: '',
+        kpi: 'G&A Fix (Abs) - G&A Fix cost against budget **',
+        baseline: '100',
+        inYear: '110',
+        fullyRamped: '110',
       },
       {
         category: '',
@@ -1208,24 +1190,17 @@ export default function ExecutiveSummaryPage({
       },
       {
         category: 'Procurement',
-        kpi: 'New part material reduction',
-        baseline: '30%',
-        inYear: '35%',
-        fullyRamped: '37%',
+        kpi: 'MP day-1 BOM cost achievement',
+        baseline: '92%',
+        inYear: '96%',
+        fullyRamped: '98%',
       },
       {
         category: '',
-        kpi: 'Existing part material reduction',
-        baseline: '3%',
-        inYear: '4%',
-        fullyRamped: '6%',
-      },
-      {
-        category: '',
-        kpi: 'BOM (% of revenue)',
-        baseline: '77%',
-        inYear: '76%',
-        fullyRamped: '73%',
+        kpi: 'Spending cost reduction (%)',
+        baseline: '15%',
+        inYear: '18%',
+        fullyRamped: '20%',
       },
       {
         category: 'R&D productivity',
@@ -1451,19 +1426,43 @@ export default function ExecutiveSummaryPage({
       setSelectedGroupIds(new Set());
       return;
     }
-    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
-    if (!buParam) {
+    const bgParam = searchParams.get('bg');
+    const buParam = searchParams.get('bu');
+
+    // If both bg and bu are present, select the BG and mark the BU as selected
+    if (bgParam && buParam) {
+      const normalizedBg = normalizeGroupId(bgParam);
+      const validBu = mainBuOptions.find((bu) => normalizeGroupId(bu.id) === normalizedBg);
+      if (validBu) {
+        setSelectedBu(validBu.id);
+        // Find the business unit and set it as selected
+        const group = businessGroups.find((g) => normalizeGroupId(g.group) === normalizedBg);
+        if (group) {
+          const unit = group.businessUnits.find((u) => u.name === buParam);
+          if (unit) {
+            const unitId = `${normalizedBg}-${unit.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+            setSelectedGroupIds(new Set([unitId]));
+          }
+        }
+      }
       return;
     }
-    if (buParam === 'all') {
+
+    // Otherwise, just handle bg parameter
+    const param = bgParam ?? buParam;
+    if (!param) {
+      return;
+    }
+    if (param === 'all') {
       setSelectedBu('all');
       return;
     }
-    const validBu = mainBuOptions.find((bu) => bu.id === buParam);
+    const normalizedParam = normalizeGroupId(param);
+    const validBu = mainBuOptions.find((bu) => normalizeGroupId(bu.id) === normalizedParam);
     if (validBu) {
       setSelectedBu(validBu.id);
     }
-  }, [isBudgetView, searchParams, mainBuOptions]);
+  }, [isBudgetView, searchParams, mainBuOptions, businessGroups]);
 
   useEffect(() => {
     if (hasParsedMonthParamsRef.current) {
@@ -2285,15 +2284,12 @@ export default function ExecutiveSummaryPage({
     const lastYearRevenue = revenueMetric?.stly ?? 0;
     const calcMargin = (value: number, revenue: number) =>
       revenue === 0 ? 0 : (value / revenue) * 100;
-    const monthScale = isBudgetView
-      ? 1
-      : (monthRange[1] - monthRange[0] + 1) / 12;
     const displayMargin =
-      calcMargin(displayValue, displayRevenue) * monthScale;
+      calcMargin(displayValue, displayRevenue);
     const baselineMargin =
-      calcMargin(metric.baseline, baselineRevenue) * monthScale;
+      calcMargin(metric.baseline, baselineRevenue);
     const lastYearMargin =
-      calcMargin(metric.stly, lastYearRevenue) * monthScale;
+      calcMargin(metric.stly, lastYearRevenue);
     const usePercentView = isPercentView && !forceAbsoluteView;
     const budgetPercent = usePercentView
       ? displayMargin - baselineMargin  // Percentage point delta
@@ -2327,7 +2323,7 @@ export default function ExecutiveSummaryPage({
       usePercentView && revenueMetric
         ? metric.trend.map((t, index) => {
             const revenueValue = revenueMetric.trend[index]?.value ?? 0;
-            return calcMargin(t.value, revenueValue) * monthScale;
+            return calcMargin(t.value, revenueValue);
           })
         : metric.trend.map((t) => t.value);
     const minVal = Math.min(...trendValues);
@@ -2747,7 +2743,7 @@ export default function ExecutiveSummaryPage({
                         return (
                           <button
                             key={option.id}
-                            onClick={() => handleTimeframeChange(option.id)}
+                            onClick={isDisabled ? undefined : () => handleTimeframeChange(option.id)}
                             disabled={isDisabled}
                             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                               isSelected
@@ -2755,7 +2751,7 @@ export default function ExecutiveSummaryPage({
                                 : 'text-gray-600 hover:text-gray-900'
                             } ${
                               isDisabled
-                                ? 'cursor-not-allowed opacity-50 hover:text-gray-600'
+                                ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50'
                                 : ''
                             }`}>
                             {option.label}
@@ -2833,18 +2829,28 @@ export default function ExecutiveSummaryPage({
                           { id: 'full-year', label: 'Full year' },
                           { id: 'ytm', label: 'Year to Month' },
                         ] as const
-                      ).map((option) => (
-                        <button
-                          key={option.id}
-                          onClick={() => handleTimeframeChange(option.id)}
-                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                            selectedTimeframeScope === option.id
-                              ? 'bg-white text-gray-900 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}>
-                          {option.label}
-                        </button>
-                      ))}
+                      ).map((option) => {
+                        const isDisabled =
+                          isActualsView && option.id === 'full-year';
+                        const isSelected = selectedTimeframeScope === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={isDisabled ? undefined : () => handleTimeframeChange(option.id)}
+                            disabled={isDisabled}
+                            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                              isSelected
+                                ? 'bg-white text-gray-900 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
+                            } ${
+                              isDisabled
+                                ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50'
+                                : ''
+                            }`}>
+                            {option.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className='flex items-center gap-4'>
@@ -3279,11 +3285,18 @@ export default function ExecutiveSummaryPage({
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
                   <p className='text-xs tracking-wide text-gray-500'>
-                    Selected BGs
+                    Selected BGs and BUs
                   </p>
-                  <p className='mt-2 text-lg font-semibold text-gray-900'>
-                    {selectedBuLabel}
-                  </p>
+                  <div className='mt-2 space-y-1'>
+                    <p className='text-lg font-semibold text-gray-900'>
+                      {selectedBuLabel}
+                    </p>
+                    {selectedUnits.length > 0 && (
+                      <p className='text-sm text-gray-600'>
+                        {selectedUnits.map(u => u.name).join(', ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className='rounded-lg border border-gray-200 bg-slate-50 p-4'>
                   <p className='text-xs uppercase tracking-wide text-gray-500'>
@@ -3323,110 +3336,158 @@ export default function ExecutiveSummaryPage({
                     <thead className='bg-gray-50 border-b border-gray-200'>
                       <tr>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Function
+                          Category
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Core KPI
+                          KPI
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Benchmark KPI
+                          Baseline (2025)
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Target KPI
-                        </th>
-                        <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                          OP target
+                          In-year target (2026)
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          KPI ramp up target
+                          Fully ramp up target
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {activeBudgetDetails.rows.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={6}
-                            className='px-4 py-6 text-center text-sm text-gray-500'>
-                            Select a BU to view in-year improvement targets.
+                      {[
+                        {
+                          category: 'Topline / Pricing',
+                          kpi: 'Contribution margin %',
+                          baseline: '3%',
+                          inYear: '4%',
+                          fullyRamped: '5%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'Margin on BOM % (cross functional)',
+                          baseline: '4%',
+                          inYear: '5%',
+                          fullyRamped: '6%',
+                        },
+                        {
+                          category: 'Manufacturing',
+                          kpi: 'UPPH - Direct labor',
+                          baseline: '1.30',
+                          inYear: '1.56',
+                          fullyRamped: '1.95',
+                        },
+                        {
+                          category: '',
+                          kpi: 'Headcount - Indirect labor',
+                          baseline: '1250',
+                          inYear: '1095',
+                          fullyRamped: '1035',
+                        },
+                        {
+                          category: '',
+                          kpi: 'OEE2 - Equipment Efficiency',
+                          baseline: '75%',
+                          inYear: '82%',
+                          fullyRamped: '85%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'Material Yield (%)* - Material consumption efficiency',
+                          baseline: '123%',
+                          inYear: '117%',
+                          fullyRamped: '105%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'G&A Var. Unit cost',
+                          baseline: '5.1',
+                          inYear: '4.2',
+                          fullyRamped: '3.7',
+                        },
+                        {
+                          category: '',
+                          kpi: 'G&A Fix (Abs) - G&A Fix cost against budget **',
+                          baseline: '100',
+                          inYear: '110',
+                          fullyRamped: '110',
+                        },
+                        {
+                          category: '',
+                          kpi: 'FPY',
+                          baseline: '80%',
+                          inYear: '91%',
+                          fullyRamped: '95%',
+                        },
+                        {
+                          category: 'Procurement',
+                          kpi: 'MP day-1 BOM cost achievement',
+                          baseline: '92%',
+                          inYear: '96%',
+                          fullyRamped: '98%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'Spending cost reduction (%)',
+                          baseline: '15%',
+                          inYear: '18%',
+                          fullyRamped: '20%',
+                        },
+                        {
+                          category: 'R&D productivity',
+                          kpi: 'Labor productivity (Mn USD rev. / FTE)',
+                          baseline: '3.1',
+                          inYear: '4.2',
+                          fullyRamped: '5.1',
+                        },
+                        {
+                          category: '',
+                          kpi: 'Non-labor productivity (Mn USD rev. / Non FTE)',
+                          baseline: '8.1',
+                          inYear: '8.5',
+                          fullyRamped: '9.2',
+                        },
+                        {
+                          category: '',
+                          kpi: 'R&D intensity (% of revenue)',
+                          baseline: '9%',
+                          inYear: '8%',
+                          fullyRamped: '7%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'GP per unit R&D spent (Mn USD)',
+                          baseline: '6.2',
+                          inYear: '7.1',
+                          fullyRamped: '7.9',
+                        },
+                        {
+                          category: 'SG&A',
+                          kpi: '% of revenue',
+                          baseline: '6%',
+                          inYear: '5%',
+                          fullyRamped: '5%',
+                        },
+                        {
+                          category: '',
+                          kpi: 'GP per unit SG&A spent (Mn USD)',
+                          baseline: '8.2',
+                          inYear: '9.1',
+                          fullyRamped: '10.3',
+                        },
+                      ].map((row, index) => (
+                        <tr
+                          key={`${row.kpi}-${index}`}
+                          className='border-b border-gray-200 last:border-b-0'>
+                          <td className='px-4 py-3 text-gray-700'>
+                            {row.category}
+                          </td>
+                          <td className='px-4 py-3 text-gray-700'>{row.kpi}</td>
+                          <td className='px-4 py-3 text-gray-700'>{row.baseline}</td>
+                          <td className='px-4 py-3 text-gray-700'>{row.inYear}</td>
+                          <td className='px-4 py-3 text-gray-700'>
+                            {row.fullyRamped}
                           </td>
                         </tr>
-                      ) : (
-                        activeBudgetDetails.rows.map((row) => {
-                          const kpiValues = getKpiBenchmarkTarget(row);
-                          return (
-                          <tr
-                            key={`${row.function}-${row.coreKpi}-${row.coreImprovementTarget}`}
-                            className='border-b border-gray-200 last:border-b-0'>
-                            <td className='px-4 py-3 text-gray-700'>
-                              {row.function}
-                            </td>
-                            <td className='px-4 py-3 text-gray-700'>
-                              {row.coreKpi}
-                            </td>
-                            <td className='px-4 py-3 text-gray-700'>
-                              {kpiValues.benchmark}
-                            </td>
-                            <td className='px-4 py-3 text-gray-700'>
-                              {kpiValues.target}
-                            </td>
-                            <td className='px-4 py-3 text-right text-gray-700'>
-                              {typeof row.opTarget === 'number'
-                                ? formatMn(row.opTarget)
-                                : row.opTarget || '-'}
-                            </td>
-                            <td className='px-4 py-3 text-gray-700'>
-                              {(() => {
-                                const seed =
-                                  row.coreKpi.length +
-                                  row.function.length +
-                                  row.coreImprovementTarget.length;
-                                const isPositive = seed % 2 === 0;
-                                const color = isPositive ? '#16a34a' : '#dc2626';
-                                const base = isPositive ? 3 : 7;
-                                const points = Array.from({ length: 7 }, (_, i) => {
-                                  const trend = isPositive ? i : -i;
-                                  const wobble = (seed + i * 3) % 4;
-                                  return { index: i, value: base + trend + (wobble - 1.5) * 0.4 };
-                                });
-                                return (
-                                  <div className='h-8 w-24'>
-                                    <ResponsiveContainer width='100%' height='100%'>
-                                      <LineChart data={points} margin={{ top: 2, right: 4, left: 4, bottom: 2 }}>
-                                        <XAxis
-                                          dataKey='index'
-                                          hide={false}
-                                          axisLine
-                                          tick={false}
-                                          tickLine={false}
-                                          height={8}
-                                        />
-                                        <YAxis
-                                          hide={false}
-                                          axisLine
-                                          tick={false}
-                                          tickLine={false}
-                                          domain={['auto', 'auto']}
-                                          width={8}
-                                        />
-                                        <Line
-                                          type='monotone'
-                                          dataKey='value'
-                                          stroke={color}
-                                          strokeWidth={2}
-                                          dot={false}
-                                          isAnimationActive={false}
-                                        />
-                                      </LineChart>
-                                    </ResponsiveContainer>
-                                  </div>
-                                );
-                              })()}
-                            </td>
-                          </tr>
-                        );
-                        })
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 ) : (

@@ -361,9 +361,10 @@ export default function MarketIntelligencePage() {
     `${formatAmount(value, { maximumFractionDigits: 0 })}M`;
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>('full-year');
-  const [selectedBu, setSelectedBu] = useState<string>(
-    searchParams.get('bg') || searchParams.get('bu') || 'all'
-  );
+  const [selectedBu, setSelectedBu] = useState<string>(() => {
+    const buParam = searchParams.get('bg') || searchParams.get('bu');
+    return buParam ? normalizeGroupId(buParam) : 'all';
+  });
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
@@ -443,7 +444,7 @@ export default function MarketIntelligencePage() {
   useEffect(() => {
     const buParam = searchParams.get('bg') ?? searchParams.get('bu');
     if (buParam) {
-      setSelectedBu(buParam);
+      setSelectedBu(normalizeGroupId(buParam));
     }
   }, [searchParams]);
 
@@ -1014,7 +1015,18 @@ export default function MarketIntelligencePage() {
   const forecastWaterfallStages = useMemo(() => {
     const budgetStageValue = selectedForecastTotals.budget;
     const forecastTargetValue = selectedForecastTotals.forecast;
-    // Calculate early signals from enabled applied assumptions
+
+    // Calculate total early signals impact from ALL assumptions (not just enabled)
+    const allEarlySignalsImpact = appliedAssumptions.reduce(
+      (sum, assumption) => sum + assumption.impact,
+      0
+    );
+
+    // Base forecast value (constant - not affected by which assumptions are enabled)
+    const baseForecastValue = roundToOne(forecastTargetValue - allEarlySignalsImpact);
+    const totalDelta = roundToOne(baseForecastValue - budgetStageValue);
+
+    // Calculate early signals from ENABLED applied assumptions only
     const enabledApplied = appliedAssumptions.filter((assumption) =>
       enabledAssumptionIds.has(assumption.id)
     );
@@ -1023,8 +1035,6 @@ export default function MarketIntelligencePage() {
       0
     );
     const earlySignalsDelta = roundToOne(rawEarlySignals);
-    const baseForecastValue = roundToOne(forecastTargetValue - earlySignalsDelta);
-    const totalDelta = roundToOne(baseForecastValue - budgetStageValue);
 
   const split = [0.3, 0.2, 0.1, 0.25, 0.15];
   const deltas = split.map((ratio) => roundToOne(totalDelta * ratio));
@@ -1091,7 +1101,7 @@ export default function MarketIntelligencePage() {
       headwindTailwindDelta,
       'Headwind/tailwind change',
       undefined,
-      true,
+      false,
       0.5
     );
     addStage(
@@ -1100,7 +1110,7 @@ export default function MarketIntelligencePage() {
       oneOffItemsDelta,
       'One-off items change',
       undefined,
-      true,
+      false,
       0.3
     );
     addStage(
@@ -1109,7 +1119,7 @@ export default function MarketIntelligencePage() {
       initiativePerformanceDelta,
       'Initiative implementation',
       undefined,
-      true,
+      false,
       0.7
     );
     addStage(
@@ -1707,6 +1717,7 @@ export default function MarketIntelligencePage() {
               }
               hideLegend
               splitNonPrimaryBars
+              showClickDetailsForAll={true}
               onStageClick={(stage) => {
                 setActivePerformanceSection(stage.stage);
                 setSelectedFocusStage(null);
