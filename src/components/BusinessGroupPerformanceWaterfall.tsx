@@ -10,6 +10,7 @@ interface BusinessGroupPerformanceWaterfallProps {
   onStageClick?: (stage: BudgetForecastStage) => void;
   highlightedStage?: string;
   brokenAxis?: BrokenAxisConfig | 'auto';
+  labelDefinitions?: Record<string, string>;
 }
 
 export default function BusinessGroupPerformanceWaterfall({
@@ -19,6 +20,7 @@ export default function BusinessGroupPerformanceWaterfall({
   onStageClick,
   highlightedStage,
   brokenAxis = 'auto',
+  labelDefinitions,
 }: BusinessGroupPerformanceWaterfallProps) {
   return (
     <BudgetForecastActualWaterfall
@@ -29,6 +31,7 @@ export default function BusinessGroupPerformanceWaterfall({
       highlightedStage={highlightedStage}
       brokenAxis={brokenAxis}
       showClickDetailsForAll={true}
+      labelDefinitions={labelDefinitions}
     />
   );
 }
