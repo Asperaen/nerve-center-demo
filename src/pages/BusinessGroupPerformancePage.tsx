@@ -45,7 +45,7 @@ import { setStoredTimeframe } from '../utils/timeframeStorage';
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const toMillions = (value: number) => value / 1_000;
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -1085,7 +1085,7 @@ export default function BusinessGroupPerformancePage() {
   const resolvePnlGroupKey = useCallback((groupName: string) => {
     const normalized = normalizeGroupId(groupName);
     if (normalized === 'hh') {
-      return 'HH';
+      return 'HH (Parent)';
     }
     if (normalized === 'fit') {
       return 'FIT';

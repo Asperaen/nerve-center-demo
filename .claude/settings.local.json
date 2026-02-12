@@ -4,7 +4,11 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(wc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run:*)",
+      "Bash(kill:*)"
     ]
   }
 }

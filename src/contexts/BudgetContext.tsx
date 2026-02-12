@@ -45,7 +45,7 @@ interface BudgetContextValue {
 const BudgetContext = createContext<BudgetContextValue | undefined>(undefined);
 
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 

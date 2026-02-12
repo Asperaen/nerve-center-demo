@@ -285,7 +285,7 @@ const getTimeframeScale = (monthsSelected: number) => {
 };
 
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -311,7 +311,7 @@ export default function IdeationProgressPage() {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     });
-  const mainBuOptions = getMainBusinessGroupOptions();
+  const mainBuOptions = useMemo(() => getMainBusinessGroupOptions(), []);
   const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
     const stored = getStoredTimeframe();
     return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
@@ -322,7 +322,8 @@ export default function IdeationProgressPage() {
       return 'all';
     }
     const buOptions = getMainBusinessGroupOptions();
-    const validBu = buOptions.find((bu) => bu.id === bgParam);
+    const normalizedBgParam = normalizeGroupId(bgParam);
+    const validBu = buOptions.find((bu) => normalizeGroupId(bu.id) === normalizedBgParam);
     return validBu ? validBu.id : bgParam;
   });
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
@@ -351,6 +352,57 @@ export default function IdeationProgressPage() {
     }
     return null;
   }, [businessGroups, selectedBu]);
+
+  // Sync selectedBu when URL params change
+  useEffect(() => {
+    const bgParam = searchParams.get('bg') ?? searchParams.get('bgs');
+    if (bgParam) {
+      const normalizedBg = normalizeGroupId(bgParam);
+      const validBg = mainBuOptions.find((bu) => normalizeGroupId(bu.id) === normalizedBg);
+      if (validBg && selectedBu !== validBg.id) {
+        setSelectedBu(validBg.id);
+      }
+    } else if (selectedBu !== 'all') {
+      setSelectedBu('all');
+    }
+  }, [mainBuOptions, searchParams, selectedBu]);
+
+  // Sync selectedGroupIds from URL bu param
+  useEffect(() => {
+    if (!selectedGroupInfo || selectedBu === 'all') {
+      setSelectedGroupIds(new Set());
+      return;
+    }
+
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    const overallId = `${groupId}-overall`;
+
+    const buParam = searchParams.get('bu');
+    if (buParam) {
+      const requestedUnits = buParam
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      if (requestedUnits.length > 0) {
+        const unitIds = requestedUnits
+          .map((unitName) => getUnitId(groupId, unitName))
+          .filter((unitId) =>
+            selectedGroupInfo.group.businessUnits.some(
+              (unit) => getUnitId(groupId, unit.name) === unitId
+            )
+          );
+
+        if (unitIds.length > 0) {
+          setSelectedGroupIds(new Set(unitIds));
+          return;
+        }
+      }
+    }
+
+    // Default to overall if no units specified
+    setSelectedGroupIds(new Set([overallId]));
+  }, [selectedGroupInfo, searchParams, selectedBu]);
 
   const monthlyImpactPlanRows = useMemo<PlanRow[]>(() => {
     const normalizedSelected = normalizeLabel(selectedBu);

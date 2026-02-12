@@ -878,47 +878,35 @@ export default function FunctionalPerformanceWaterfall({
             >
               <LabelList
                 dataKey='delta'
-                position='middle'
+                position='top'
                 content={(props) => {
-                  const { x, y, width, height, value, index } = props as {
+                  const { x, y, width, value, index } = props as {
                     x?: number;
                     y?: number;
                     width?: number;
-                    height?: number;
                     value?: number;
                     index?: number;
                   };
                   if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
-                  
+
                   const stage = stages[index];
-                  const isBaseline = stage?.type === 'baseline';
                   const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
                   const displayValue = formatAxisValue(numericValue);
-                  
-                  if (brokenAxis && isBaseline) {
-                    // For baseline bars with broken axis: show label directly above the bar
-                    return (
-                      <text
-                        x={x + (width ?? 0) / 2}
-                        y={(y ?? 0) - 8}
-                        textAnchor='middle'
-                        fill='#4b5563'
-                        fontSize={11}
-                        fontWeight='bold'
-                      >
-                        {displayValue}
-                      </text>
-                    );
-                  }
-                  
-                  // For delta bars: show label in middle with white text
+
+                  // Match label color to bar color
+                  const labelColor = stage.type === 'baseline'
+                    ? '#9ca3af'
+                    : stage.type === 'positive'
+                    ? '#22c55e'
+                    : '#ef4444';
+
                   return (
                     <text
                       x={x + (width ?? 0) / 2}
-                      y={(y ?? 0) + (height ?? 0) / 2 + 4}
+                      y={(y ?? 0) - 8}
                       textAnchor='middle'
-                      fill='white'
-                      fontSize={10}
+                      fill={labelColor}
+                      fontSize={11}
                       fontWeight='bold'
                     >
                       {displayValue}

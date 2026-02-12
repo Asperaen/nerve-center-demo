@@ -17,7 +17,7 @@ import {
   mockMVABreakdownKeyCallOut,
 } from '../../data/mockForecast';
 import type { BreadcrumbItem } from '../../types';
-import { calculateBrokenAxis, type BrokenAxisConfig } from '../../utils/brokenAxisUtils';
+import type { BrokenAxisConfig } from '../../utils/brokenAxisUtils';
 
 // Custom Y-axis tick component with break indicator
 const BrokenAxisTick = ({
@@ -119,47 +119,40 @@ export default function MVABreakdownLayer({
     );
   }, []);
 
-  // Auto-calculate broken axis
-  const brokenAxis = useMemo(() => {
-    const result = calculateBrokenAxis(orderedStages);
-    return result.brokenAxis;
-  }, [orderedStages]);
+  // Disable broken axis for MVA waterfall to make variance bars visible
+  const brokenAxis = useMemo<BrokenAxisConfig | undefined>(() => {
+    return undefined;
+  }, []);
 
   // Prepare chart data for MVA Breakdown
   const mvaChartData = useMemo(() => {
     return orderedStages.map((stage, index) => {
-      const prevValue = index > 0 ? orderedStages[index - 1].value : 0;
-      const currentValue = stage.value;
-      const delta =
-        stage.delta ?? (index === 0 ? currentValue : currentValue - prevValue);
-
       const isBaseline = stage.type === 'baseline';
+      const currentValue = stage.value;
+
+      // Use the actual delta from the data
+      const delta = stage.delta ?? 0;
+
       let barValue: number;
       let baselineValue: number;
 
-      if (brokenAxis) {
-        const { skipRangeStart, skipRangeEnd } = brokenAxis;
-        const skipAmount = skipRangeEnd - skipRangeStart;
-        const transformValue = (v: number) =>
-          v > skipRangeEnd ? v - skipAmount : v > skipRangeStart ? skipRangeStart : v;
-
-        if (isBaseline) {
-          baselineValue = 0;
-          barValue = transformValue(currentValue);
-        } else {
-          const transformedPrev = transformValue(prevValue);
-          const transformedCurrent = transformValue(currentValue);
-          if (delta < 0) {
-            baselineValue = transformedCurrent;
-            barValue = Math.abs(delta);
-          } else {
-            baselineValue = transformedPrev;
-            barValue = delta;
-          }
-        }
+      if (isBaseline) {
+        // Baseline bars show from 0 to their full value
+        baselineValue = 0;
+        barValue = currentValue;
       } else {
-        barValue = isBaseline ? currentValue : delta;
-        baselineValue = isBaseline ? 0 : prevValue;
+        // Delta bars stack properly to show waterfall effect
+        const prevValue = index > 0 ? orderedStages[index - 1].value : 0;
+
+        if (delta < 0) {
+          // Negative variances: bar goes down from current position
+          baselineValue = currentValue;
+          barValue = Math.abs(delta);
+        } else {
+          // Positive variances: bar goes up from previous position
+          baselineValue = prevValue;
+          barValue = Math.abs(delta);
+        }
       }
 
       return {
@@ -174,7 +167,7 @@ export default function MVABreakdownLayer({
         originalValue: currentValue,
       };
     });
-  }, [orderedStages, brokenAxis]);
+  }, [orderedStages]);
 
   return (
     <div className='space-y-6 animate-in slide-in-from-right duration-300'>
@@ -255,6 +248,10 @@ export default function MVABreakdownLayer({
                 />
               ) : (
                 <YAxis
+                  domain={[
+                    Math.min(...orderedStages.map((s) => s.value)) - 100,
+                    Math.max(...orderedStages.map((s) => s.value)) + 100,
+                  ]}
                   style={{ fontSize: '13px' }}
                   label={{
                     value: 'MVA Cost',

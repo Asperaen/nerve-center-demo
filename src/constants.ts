@@ -1,4 +1,4 @@
-export const WAVE_LINK = "https://default-dts.mckinseywave.com/workbook/5a9a04e3-a150-4881-9095-064ba5782df4"
+export const WAVE_LINK = "https://default-dts.mckinseywave.com/workbook/cb7be199-c552-4577-8baf-de84b873b55b"
 
 // Calendar year months for toggle controls (Jan-Dec)
 export const MONTHS = [

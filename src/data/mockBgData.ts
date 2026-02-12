@@ -91,6 +91,11 @@ export type KeyCalloutSet = {
     initiative: string[];
     actualImplementation: string[];
     actualReconciliation: string[];
+    functionalPerformance?: {
+        procurement?: string[];
+        manufacturing?: string[];
+        rnd?: string[];
+    };
 }
 
 export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> = {
@@ -124,6 +129,23 @@ export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> =
                 '5.2. Fast-tracking late-stage initiatives with the highest OP impact to minimize leakage in the primary positive impact source.',
                 '5.3. Tightening spend controls and reassessing discretionary programs to recover identified leakage potential.',
             ],
+            functionalPerformance: {
+                procurement: [
+                    'Procurement spend for D/E Group is tracking above budget primarily due to material cost inflation and unfavorable category mix shifts.',
+                    'Category A and Category C are the main contributors to overspend, with input cost volatility driving the variance.',
+                    'Supplier consolidation initiatives are underway but have not yet materialized into cost savings in YTM actuals.',
+                ],
+                manufacturing: [
+                    'MVA cost for D/E Group shows favorable performance, with actual at 2,293 vs budget of 2,311.',
+                    'Direct labor efficiency improvements (–45) more than offset increases from volume/mix (+35) and labor rate inflation (+25).',
+                    'Focus areas remain IDL headcount management (–15), G&A variable efficiency (–12), and fixed cost control (–11).',
+                ],
+                rnd: [
+                    'R&D spend in D/E Group is above budget due to accelerated project timelines and increased prototype testing requirements.',
+                    'Personnel costs remain the primary driver, with specialized engineering headcount additions to support new platform development.',
+                    'Non-FTE spend is trending higher as external testing and validation activities ramp up ahead of product launches.',
+                ],
+            },
         },
     },
 };
@@ -218,7 +240,7 @@ export type BudgetWaterfallRow = {
 
 export const BUDGET_WATERFALL_DATA: BudgetWaterfallRow[] = [
     {
-        bg: 'HH',
+        bg: 'HH (Parent)',
         bu: 'A Group',
         lastYearOp: 1544.83,
         volumeMix: -452.74,
@@ -231,7 +253,7 @@ export const BUDGET_WATERFALL_DATA: BudgetWaterfallRow[] = [
         budgetTarget: 1970.58,
     },
     {
-        bg: 'HH',
+        bg: 'HH (Parent)',
         bu: 'B Group',
         lastYearOp: 535.43,
         volumeMix: -54.89,
@@ -244,7 +266,7 @@ export const BUDGET_WATERFALL_DATA: BudgetWaterfallRow[] = [
         budgetTarget: 1032.21,
     },
     {
-        bg: 'HH',
+        bg: 'HH (Parent)',
         bu: 'C Group',
         lastYearOp: 178.48,
         volumeMix: -67.47,
@@ -257,7 +279,7 @@ export const BUDGET_WATERFALL_DATA: BudgetWaterfallRow[] = [
         budgetTarget: 236.02,
     },
     {
-        bg: 'HH',
+        bg: 'HH (Parent)',
         bu: 'D/E Group',
         lastYearOp: 1480.58,
         volumeMix: -368.52,
@@ -270,7 +292,7 @@ export const BUDGET_WATERFALL_DATA: BudgetWaterfallRow[] = [
         budgetTarget: 1934.82,
     },
     {
-        bg: 'HH',
+        bg: 'HH (Parent)',
         bu: 'Others',
         lastYearOp: 190.38,
         volumeMix: -106.33,
@@ -553,11 +575,22 @@ type BusinessGroup = {
 const buildIdeationTarget = (operatingProfitBudget: number) =>
     Math.max(1000, Math.round(operatingProfitBudget * 0.2));
 
+// P&L breakdown-based functional performance values for specific units
+// These values are already YTM-adjusted and should NOT be scaled in calculations
+// Forward declaration - will be initialized after PNL_BREAKDOWN_DATA is defined
+let FUNCTIONAL_PERFORMANCE_OVERRIDES: Record<string, {
+    procurement?: { budget: number; actual: number; isYtm: true };
+    rnd?: { budget: number; actual: number; isYtm: true };
+}> = {};
+
+export { FUNCTIONAL_PERFORMANCE_OVERRIDES };
+
 const buildFunctionalPerformance = (
     topLineBudget: number,
     topLineActual: number,
     opBudget: number,
-    opActual: number
+    opActual: number,
+    unitKey?: string
 ): UnitFunctionalPerformance => {
     const totalCostBudget = opBudget - topLineBudget;
     const totalCostActual = opActual - topLineActual;
@@ -569,9 +602,12 @@ const buildFunctionalPerformance = (
         sharedExpenses: 0.1,
     };
 
+    // Check if we have P&L breakdown-based overrides for this unit
+    const override = unitKey ? FUNCTIONAL_PERFORMANCE_OVERRIDES[unitKey] : undefined;
+
     return {
         topLine: { budget: topLineBudget, actual: topLineActual },
-        procurement: {
+        procurement: override?.procurement || {
             budget: totalCostBudget * splits.procurement,
             actual: totalCostActual * splits.procurement,
         },
@@ -579,7 +615,7 @@ const buildFunctionalPerformance = (
             budget: totalCostBudget * splits.manufacturing,
             actual: totalCostActual * splits.manufacturing,
         },
-        rnd: {
+        rnd: override?.rnd || {
             budget: totalCostBudget * splits.rnd,
             actual: totalCostActual * splits.rnd,
         },
@@ -595,7 +631,7 @@ const buildFunctionalPerformance = (
 };
 
 const MVA_SITE_DATA: Record<string, MvaSiteBreakdown[]> = {
-    'HH|A Group': [
+    'HH (Parent)|A Group': [
         {
             site: 'Overall',
             actualDl: 455,
@@ -669,7 +705,7 @@ const MVA_SITE_DATA: Record<string, MvaSiteBreakdown[]> = {
             actualMvaCost: 519.52,
         },
     ],
-    'HH|B Group': [
+    'HH (Parent)|B Group': [
         {
             site: 'Overall',
             actualDl: 211,
@@ -743,7 +779,7 @@ const MVA_SITE_DATA: Record<string, MvaSiteBreakdown[]> = {
             actualMvaCost: 241.7,
         },
     ],
-    'HH|C Group': [
+    'HH (Parent)|C Group': [
         {
             site: 'Overall',
             actualDl: 56,
@@ -817,81 +853,81 @@ const MVA_SITE_DATA: Record<string, MvaSiteBreakdown[]> = {
             actualMvaCost: 64.19,
         },
     ],
-    'HH|D/E Group': [
+    'HH (Parent)|D/E Group': [
         {
             site: 'Overall',
-            actualDl: 908,
-            actualIdl: 413,
-            actualGa: 330,
+            actualDl: 1261,
+            actualIdl: 573,
+            actualGa: 459,
             budgetDl: 1271,
             budgetIdl: 578,
             budgetGa: 462,
             budgetMvaCost: 2311,
-            volMixChange: -166.33,
-            laborRateImpact: -72.61,
-            dlEfficiencyGap: 108.91,
-            idlHcGap: -165.02,
-            gaVariableEfficiency: -92.41,
-            gaFixedCostGap: -39.6,
-            fxImpact: -233.02,
-            actualMvaCost: 1650.79,
+            volMixChange: 35,
+            laborRateImpact: 25,
+            dlEfficiencyGap: -45,
+            idlHcGap: -15,
+            gaVariableEfficiency: -12,
+            gaFixedCostGap: -11,
+            fxImpact: 5,
+            actualMvaCost: 2293,
         },
         {
             site: 'Site A',
-            actualDl: 227,
-            actualIdl: 103,
-            actualGa: 83,
+            actualDl: 315,
+            actualIdl: 143,
+            actualGa: 115,
             budgetDl: 318,
             budgetIdl: 144,
             budgetGa: 116,
             budgetMvaCost: 578,
-            volMixChange: -41.58,
-            laborRateImpact: -18.15,
-            dlEfficiencyGap: 27.23,
-            idlHcGap: -41.26,
-            gaVariableEfficiency: -23.1,
-            gaFixedCostGap: -9.9,
-            fxImpact: -58.25,
-            actualMvaCost: 412.7,
+            volMixChange: -0.83,
+            laborRateImpact: -3.65,
+            dlEfficiencyGap: 0.73,
+            idlHcGap: -1.26,
+            gaVariableEfficiency: -0.6,
+            gaFixedCostGap: -0.15,
+            fxImpact: -1.25,
+            actualMvaCost: 573,
         },
         {
             site: 'Site B',
-            actualDl: 318,
-            actualIdl: 144,
-            actualGa: 116,
+            actualDl: 442,
+            actualIdl: 200,
+            actualGa: 161,
             budgetDl: 445,
             budgetIdl: 202,
             budgetGa: 162,
             budgetMvaCost: 809,
-            volMixChange: -58.22,
-            laborRateImpact: -25.41,
-            dlEfficiencyGap: 38.12,
-            idlHcGap: -57.76,
-            gaVariableEfficiency: -32.34,
-            gaFixedCostGap: -13.86,
-            fxImpact: -81.56,
-            actualMvaCost: 577.78,
+            volMixChange: -1.16,
+            laborRateImpact: -5.11,
+            dlEfficiencyGap: 1.02,
+            idlHcGap: -1.76,
+            gaVariableEfficiency: -0.84,
+            gaFixedCostGap: -0.21,
+            fxImpact: -1.75,
+            actualMvaCost: 803,
         },
         {
             site: 'Site C',
-            actualDl: 363,
-            actualIdl: 165,
-            actualGa: 132,
+            actualDl: 504,
+            actualIdl: 229,
+            actualGa: 183,
             budgetDl: 508,
             budgetIdl: 231,
             budgetGa: 185,
             budgetMvaCost: 924,
-            volMixChange: -66.53,
-            laborRateImpact: -29.04,
-            dlEfficiencyGap: 43.57,
-            idlHcGap: -66.01,
-            gaVariableEfficiency: -36.96,
-            gaFixedCostGap: -15.84,
-            fxImpact: -93.21,
-            actualMvaCost: 660.31,
+            volMixChange: -1.33,
+            laborRateImpact: -5.84,
+            dlEfficiencyGap: 1.17,
+            idlHcGap: -2.01,
+            gaVariableEfficiency: -0.96,
+            gaFixedCostGap: -0.24,
+            fxImpact: -2.00,
+            actualMvaCost: 917,
         },
     ],
-    'HH|Others': [
+    'HH (Parent)|Others': [
         {
             site: 'Overall',
             actualDl: 28,
@@ -2242,7 +2278,7 @@ export type BgInitiativePerformanceBu = {
 
 
 const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformanceBu[]> = {
-    'HH': [
+    'HH (Parent)': [
         {
             bu: 'A Group',
             initiatives: [
@@ -2811,7 +2847,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
 };
 
 const INITIATIVE_PERFORMANCE_TEMPLATE =
-    BG_INITIATIVE_PERFORMANCE_BASE_RAW['HH']?.[0]?.initiatives ?? [];
+    BG_INITIATIVE_PERFORMANCE_BASE_RAW['HH (Parent)']?.[0]?.initiatives ?? [];
 
 const BG_INITIATIVE_PERFORMANCE_BASE: Record<string, BgInitiativePerformanceBu[]> = {
     ...BG_INITIATIVE_PERFORMANCE_BASE_RAW,
@@ -2843,7 +2879,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE: Record<string, BgInitiativePerformanceBu[]
 };
 
 const BG_MONTHLY_IMPACT: Record<string, BgMonthlyImpactRow[]> = {
-    'HH': [
+    'HH (Parent)': [
         {
             vs: 'Topline VS',
             total: 285.0,
@@ -4242,7 +4278,7 @@ const BG_MONTHLY_IMPACT: Record<string, BgMonthlyImpactRow[]> = {
 };
 
 export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
-    'HH|A Group': [
+    'HH (Parent)|A Group': [
         {
             category: 'One-off',
             lineItem: 'COGS - Manufacturing expense',
@@ -4314,7 +4350,7 @@ export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
             opImpact: -13.08,
         },
     ],
-    'HH|B Group': [
+    'HH (Parent)|B Group': [
         {
             category: 'One-off',
             lineItem: 'COGS - Manufacturing expense',
@@ -4365,7 +4401,7 @@ export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
             opImpact: 0.3,
         },
     ],
-    'HH|C Group': [
+    'HH (Parent)|C Group': [
         {
             category: 'One-off',
             lineItem: 'COGS - Manufacturing expense',
@@ -4838,7 +4874,7 @@ export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
     'FII|CNSBG': [],
     'FII|IPBG': [],
     'FII|Others': [],
-    'HH|D/E Group': [
+    'HH (Parent)|D/E Group': [
         {
             category: 'Volume/mix',
             lineItem: 'Revenue',
@@ -4910,11 +4946,11 @@ export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
             opImpact: -9.3,
         },
     ],
-    'HH|Others': []
+    'HH (Parent)|Others': []
 };
 
 export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
-  HH: [
+  'HH (Parent)': [
     {
       unit: 'A Group',
       lineItem: 'Revenue',
@@ -5520,9 +5556,9 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
       lineItem: 'Revenue',
       fullYearBudget: 37793000.0,
       ytmBudget: 6357000.0,
-      lastYearYtm: 5828000.0,
-      ytmActual: 6373000.0,
-      fullYearForecast: 37951000.0,
+      lastYearYtm: 4182000.0,
+      ytmActual: 4535000.0,
+      fullYearForecast: 37634000.0,
       lastYearFullYear: 34704000.0,
     },
     {
@@ -5690,9 +5726,9 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
       lineItem: 'Operating profit',
       fullYearBudget: 1935000.0,
       ytmBudget: 271000.0,
-      lastYearYtm: 249000.0,
-      ytmActual: 326000.0,
-      fullYearForecast: 1943000.0,
+      lastYearYtm: 178000.0,
+      ytmActual: 232000.0,
+      fullYearForecast: 1927000.0,
       lastYearFullYear: 1481000.0,
     },
     {
@@ -5700,9 +5736,9 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
       lineItem: '(Line items between OP and net)',
       fullYearBudget: -726000.0,
       ytmBudget: -68000.0,
-      lastYearYtm: -62000.0,
-      ytmActual: -122000.0,
-      fullYearForecast: -729000.0,
+      lastYearYtm: -44000.0,
+      ytmActual: -87000.0,
+      fullYearForecast: -723000.0,
       lastYearFullYear: -370000.0,
     },
     {
@@ -5710,9 +5746,9 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
       lineItem: 'Net profit',
       fullYearBudget: 1209000.0,
       ytmBudget: 203000.0,
-      lastYearYtm: 186000.0,
-      ytmActual: 204000.0,
-      fullYearForecast: 1214000.0,
+      lastYearYtm: 134000.0,
+      ytmActual: 145000.0,
+      fullYearForecast: 1204000.0,
       lastYearFullYear: 1110000.0,
     },
     {
@@ -9326,8 +9362,70 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
   ],
 };
 
+// Build functional performance overrides from P&L breakdown data
+// This extracts Controllable COGS and R&D values for all business units
+const buildFunctionalPerformanceOverrides = (): Record<string, {
+    procurement?: { budget: number; actual: number; isYtm: true };
+    rnd?: { budget: number; actual: number; isYtm: true };
+}> => {
+    const overrides: Record<string, {
+        procurement?: { budget: number; actual: number; isYtm: true };
+        rnd?: { budget: number; actual: number; isYtm: true };
+    }> = {};
 
+    // Iterate through all business groups in P&L breakdown data
+    Object.entries(PNL_BREAKDOWN_DATA).forEach(([businessGroup, rows]) => {
+        // Track the current unit and whether we're in a COGS section
+        let currentUnit = '';
+        let inCogsSection = false;
 
+        rows.forEach((row) => {
+            // Update current unit tracker
+            if (row.unit !== currentUnit) {
+                currentUnit = row.unit;
+                inCogsSection = false;
+            }
+
+            // Mark when we enter COGS section
+            if (row.lineItem === 'COGS') {
+                inCogsSection = true;
+            }
+
+            const unitKey = `${businessGroup}|${currentUnit}`;
+
+            // Extract Controllable COGS values (negative values under COGS section)
+            if (inCogsSection && row.lineItem === 'Controllable' && row.ytmBudget < 0) {
+                if (!overrides[unitKey]) {
+                    overrides[unitKey] = {};
+                }
+                overrides[unitKey].procurement = {
+                    budget: Math.abs(row.ytmBudget),
+                    actual: Math.abs(row.ytmActual),
+                    isYtm: true,
+                };
+                // Reset flag after finding Controllable COGS for this unit
+                inCogsSection = false;
+            }
+
+            // Extract R&D values (negative values as direct line item)
+            if (row.lineItem === 'R&D' && row.ytmBudget < 0) {
+                if (!overrides[unitKey]) {
+                    overrides[unitKey] = {};
+                }
+                overrides[unitKey].rnd = {
+                    budget: Math.abs(row.ytmBudget),
+                    actual: Math.abs(row.ytmActual),
+                    isYtm: true,
+                };
+            }
+        });
+    });
+
+    return overrides;
+};
+
+// Initialize the overrides with values from P&L breakdown
+FUNCTIONAL_PERFORMANCE_OVERRIDES = buildFunctionalPerformanceOverrides();
 
 export type InitiativeImplementationDetail = {
     initiativeId: number;
@@ -10076,7 +10174,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '9/10/2035',
         },
     ],
-    'HH|A Group': [
+    'HH (Parent)|A Group': [
         {
             initiativeId: 12357,
             name: '[Management Layer Optimization] Consolidate overlapping supervisory roles across Business Units by flattening the management hierarchy, eliminating ~10% of mid-management positions (approx. 25 FTEs)',
@@ -10148,7 +10246,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '12/10/2035',
         },
     ],
-    'HH|B Group': [
+    'HH (Parent)|B Group': [
         {
             initiativeId: 2614,
             name: '[Headcount Optimization] Eliminate redundant indirect roles following footprint rationalization',
@@ -10199,7 +10297,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '12/5/2035',
         },
     ],
-    'HH|C Group': [
+    'HH (Parent)|C Group': [
         {
             initiativeId: 12421,
             name: '[Productivity Improvement] Improve UPPH through standardized work instructions',
@@ -10243,7 +10341,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '10/5/2035',
         },
     ],
-    'HH|D/E Group': [
+    'HH (Parent)|D/E Group': [
         {
             initiativeId: 2344,
             name: '[Capacity Rationalization] Shut down underutilized production capacity',
@@ -10294,7 +10392,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '12/15/2035',
         },
     ],
-    'HH|E Group': [
+    'HH (Parent)|E Group': [
         {
             initiativeId: 12461,
             name: '[Shared Services Expansion] Centralize finance and HR transactional activities',
@@ -10345,7 +10443,7 @@ const INITIATIVE_IMPLEMENTATION_DATA_BASE: Record<
             actualL4Date: '5/25/2035',
         },
     ],
-    'HH|S Group': [
+    'HH (Parent)|S Group': [
         {
             initiativeId: 12481,
             name: '[IT Cost Optimization] Decommission legacy systems and consolidate licenses',
@@ -10833,7 +10931,7 @@ const getValueDriverBreakdown = (
     const groupScale = VALUE_DRIVER_GROUP_SCALE[group] ?? 0.5;
     const unitScale = VALUE_DRIVER_UNIT_SCALE[unitName] ?? 0.5;
     const scale =
-        group === 'HH' ? (hasDirectBase ? 1 : 0.6) : groupScale * unitScale;
+        group === 'HH (Parent)' ? (hasDirectBase ? 1 : 0.6) : groupScale * unitScale;
 
     return scaleValueDriverRows(VALUE_DRIVER_BASE_ROWS[baseKey], scale);
 };
@@ -10896,7 +10994,7 @@ const getFunctionTargetBreakdown = (
     const groupScale = VALUE_DRIVER_GROUP_SCALE[group] ?? 0.5;
     const unitScale = VALUE_DRIVER_UNIT_SCALE[unitName] ?? 0.5;
     const scale =
-        group === 'HH' ? (unitName === 'D group' ? 1 : 0.6) : groupScale * unitScale;
+        group === 'HH (Parent)' ? (unitName === 'D group' ? 1 : 0.6) : groupScale * unitScale;
 
     return scaleFunctionTargetRows(FUNCTION_TARGET_BASE_ROWS, scale);
 };
@@ -10904,7 +11002,7 @@ const getFunctionTargetBreakdown = (
 
 const BUSINESS_GROUP_DATA: BusinessGroup[] = [
     {
-        group: 'HH',
+        group: 'HH (Parent)',
         businessUnits: [
             {
                             name: 'A Group',
@@ -10937,10 +11035,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             forecastGrossProfit: 5290000.0,
                             forecastOperatingProfit: 1977000.0,
                             forecastNetProfit: 1236000.0,
-                            mvaSites: MVA_SITE_DATA['HH|A Group'] ?? [],
-                            opImpactDetails: OP_IMPACT_DATA['HH|A Group'] ?? [],
-                            valueDriverBreakdown: getValueDriverBreakdown('HH', 'A Group'),
-                            functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'A Group'),
+                            mvaSites: MVA_SITE_DATA['HH (Parent)|A Group'] ?? [],
+                            opImpactDetails: OP_IMPACT_DATA['HH (Parent)|A Group'] ?? [],
+                            valueDriverBreakdown: getValueDriverBreakdown('HH (Parent)', 'A Group'),
+                            functionTargetBreakdown: getFunctionTargetBreakdown('HH (Parent)', 'A Group'),
                             functionalPerformance: buildFunctionalPerformance(43215000.0, 7346000.0, 1971000.0, 335000.0),
                         },
             {
@@ -10949,10 +11047,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 2335000.0,
                             operatingProfit: 1053000.0,
                             netProfit: 439000.0,
-                            ytmRevenueActual: 3386000.0,
-                            ytmGrossProfitActual: 365000.0,
-                            ytmOperatingProfitActual: 165000.0,
-                            ytmNetProfitActual: 69000.0,
+                            ytmRevenueActual: 1444000.0,
+                            ytmGrossProfitActual: 156000.0,
+                            ytmOperatingProfitActual: 70000.0,
+                            ytmNetProfitActual: 29000.0,
                             revenueBudget: 21239000.0,
                             grossProfitBudget: 2288000.0,
                             operatingProfitBudget: 1032000.0,
@@ -10966,18 +11064,18 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             lastYearGrossProfit: 1781000.0,
                             lastYearOperatingProfit: 535000.0,
                             lastYearNetProfit: 402000.0,
-                            ytmLastYearRevenue: 3098000.0,
-                            ytmLastYearGrossProfit: 278000.0,
-                            ytmLastYearOperatingProfit: 84000.0,
-                            ytmLastYearNetProfit: 63000.0,
+                            ytmLastYearRevenue: 1321000.0,
+                            ytmLastYearGrossProfit: 119000.0,
+                            ytmLastYearOperatingProfit: 36000.0,
+                            ytmLastYearNetProfit: 27000.0,
                             forecastRevenue: 21675000.0,
                             forecastGrossProfit: 2335000.0,
                             forecastOperatingProfit: 1053000.0,
                             forecastNetProfit: 439000.0,
-                            mvaSites: MVA_SITE_DATA['HH|B Group'] ?? [],
-                            opImpactDetails: OP_IMPACT_DATA['HH|B Group'] ?? [],
-                            valueDriverBreakdown: getValueDriverBreakdown('HH', 'B Group'),
-                            functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'B Group'),
+                            mvaSites: MVA_SITE_DATA['HH (Parent)|B Group'] ?? [],
+                            opImpactDetails: OP_IMPACT_DATA['HH (Parent)|B Group'] ?? [],
+                            valueDriverBreakdown: getValueDriverBreakdown('HH (Parent)', 'B Group'),
+                            functionTargetBreakdown: getFunctionTargetBreakdown('HH (Parent)', 'B Group'),
                             functionalPerformance: buildFunctionalPerformance(21239000.0, 3386000.0, 1032000.0, 165000.0),
                         },
             {
@@ -10986,10 +11084,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             grossProfit: 662000.0,
                             operatingProfit: 238000.0,
                             netProfit: 149000.0,
-                            ytmRevenueActual: 912000.0,
-                            ytmGrossProfitActual: 110000.0,
-                            ytmOperatingProfitActual: 39000.0,
-                            ytmNetProfitActual: 25000.0,
+                            ytmRevenueActual: 809000.0,
+                            ytmGrossProfitActual: 97000.0,
+                            ytmOperatingProfitActual: 35000.0,
+                            ytmNetProfitActual: 22000.0,
                             revenueBudget: 5463000.0,
                             grossProfitBudget: 656000.0,
                             operatingProfitBudget: 236000.0,
@@ -11003,18 +11101,18 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             lastYearGrossProfit: 496000.0,
                             lastYearOperatingProfit: 178000.0,
                             lastYearNetProfit: 134000.0,
-                            ytmLastYearRevenue: 820000.0,
-                            ytmLastYearGrossProfit: 82000.0,
-                            ytmLastYearOperatingProfit: 30000.0,
-                            ytmLastYearNetProfit: 22000.0,
+                            ytmLastYearRevenue: 727000.0,
+                            ytmLastYearGrossProfit: 73000.0,
+                            ytmLastYearOperatingProfit: 26000.0,
+                            ytmLastYearNetProfit: 20000.0,
                             forecastRevenue: 5513000.0,
                             forecastGrossProfit: 662000.0,
                             forecastOperatingProfit: 238000.0,
                             forecastNetProfit: 149000.0,
-                            mvaSites: MVA_SITE_DATA['HH|C Group'] ?? [],
-                            opImpactDetails: OP_IMPACT_DATA['HH|C Group'] ?? [],
-                            valueDriverBreakdown: getValueDriverBreakdown('HH', 'C Group'),
-                            functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'C Group'),
+                            mvaSites: MVA_SITE_DATA['HH (Parent)|C Group'] ?? [],
+                            opImpactDetails: OP_IMPACT_DATA['HH (Parent)|C Group'] ?? [],
+                            valueDriverBreakdown: getValueDriverBreakdown('HH (Parent)', 'C Group'),
+                            functionTargetBreakdown: getFunctionTargetBreakdown('HH (Parent)', 'C Group'),
                             functionalPerformance: buildFunctionalPerformance(5463000.0, 912000.0, 236000.0, 39000.0),
                         },
             {
@@ -11048,11 +11146,11 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             forecastGrossProfit: 3779000.0,
                             forecastOperatingProfit: 1927000.0,
                             forecastNetProfit: 1204000.0,
-                            mvaSites: MVA_SITE_DATA['HH|D/E Group'] ?? [],
-                            opImpactDetails: OP_IMPACT_DATA['HH|D/E Group'] ?? [],
-                            valueDriverBreakdown: getValueDriverBreakdown('HH', 'D/E Group'),
-                            functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'D/E Group'),
-                            functionalPerformance: buildFunctionalPerformance(37793000.0, 4535000.0, 1935000.0, 232000.0),
+                            mvaSites: MVA_SITE_DATA['HH (Parent)|D/E Group'] ?? [],
+                            opImpactDetails: OP_IMPACT_DATA['HH (Parent)|D/E Group'] ?? [],
+                            valueDriverBreakdown: getValueDriverBreakdown('HH (Parent)', 'D/E Group'),
+                            functionTargetBreakdown: getFunctionTargetBreakdown('HH (Parent)', 'D/E Group'),
+                            functionalPerformance: buildFunctionalPerformance(37793000.0, 4535000.0, 1935000.0, 232000.0, 'HH (Parent)|D/E Group'),
                         },
             {
                             name: 'Others',
@@ -11085,14 +11183,14 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             forecastGrossProfit: 549000.0,
                             forecastOperatingProfit: 252000.0,
                             forecastNetProfit: 158000.0,
-                            mvaSites: MVA_SITE_DATA['HH|Others'] ?? [],
-                            opImpactDetails: OP_IMPACT_DATA['HH|Others'] ?? [],
-                            valueDriverBreakdown: getValueDriverBreakdown('HH', 'Others'),
-                            functionTargetBreakdown: getFunctionTargetBreakdown('HH', 'Others'),
+                            mvaSites: MVA_SITE_DATA['HH (Parent)|Others'] ?? [],
+                            opImpactDetails: OP_IMPACT_DATA['HH (Parent)|Others'] ?? [],
+                            valueDriverBreakdown: getValueDriverBreakdown('HH (Parent)', 'Others'),
+                            functionTargetBreakdown: getFunctionTargetBreakdown('HH (Parent)', 'Others'),
                             functionalPerformance: buildFunctionalPerformance(3241000.0, 488000.0, 249000.0, 37000.0),
                         },
         ],
-        monthlyImpact: BG_MONTHLY_IMPACT['HH'] ?? [],
+        monthlyImpact: BG_MONTHLY_IMPACT['HH (Parent)'] ?? [],
     },
     {
         group: 'FIT',
@@ -11210,10 +11308,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
             },
             {
                 name: 'Mobility',
-                            revenue: 971000.0,
-                            grossProfit: 200000.0,
-                            operatingProfit: -37000.0,
-                            netProfit: -26000.0,
+                            revenue: 997000.0,
+                            grossProfit: 206000.0,
+                            operatingProfit: -38000.0,
+                            netProfit: -27000.0,
                             ytmRevenueActual: 30000.0,
                             ytmGrossProfitActual: 6000.0,
                             ytmOperatingProfitActual: -1000.0,
@@ -11223,22 +11321,22 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: -37000.0,
                             ideationTarget: buildIdeationTarget(-37000.0),
                             netProfitBudget: -27000.0,
-                            ytmRevenueBudget: 165000.0,
-                            ytmGrossProfitBudget: 33000.0,
-                            ytmOperatingProfitBudget: -5000.0,
-                            ytmNetProfitBudget: -4000.0,
+                            ytmRevenueBudget: 16000.0,
+                            ytmGrossProfitBudget: 3000.0,
+                            ytmOperatingProfitBudget: -1000.0,
+                            ytmNetProfitBudget: 0.0,
                             lastYearRevenue: 847000.0,
                             lastYearGrossProfit: 171000.0,
                             lastYearOperatingProfit: -27000.0,
                             lastYearNetProfit: -23000.0,
-                            ytmLastYearRevenue: 26000.0,
+                            ytmLastYearRevenue: 25000.0,
                             ytmLastYearGrossProfit: 5000.0,
                             ytmLastYearOperatingProfit: -1000.0,
                             ytmLastYearNetProfit: -1000.0,
-                            forecastRevenue: 971000.0,
-                            forecastGrossProfit: 200000.0,
-                            forecastOperatingProfit: -37000.0,
-                            forecastNetProfit: -26000.0,
+                            forecastRevenue: 997000.0,
+                            forecastGrossProfit: 206000.0,
+                            forecastOperatingProfit: -38000.0,
+                            forecastNetProfit: -27000.0,
                             mvaSites: MVA_SITE_DATA['FIT|Mobility'] ?? [],
                             opImpactDetails: OP_IMPACT_DATA['FIT|Mobility'] ?? [],
                             valueDriverBreakdown: getValueDriverBreakdown('FIT', 'Mobility'),
@@ -11247,8 +11345,8 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
             },
             {
                 name: 'Belkin',
-                            revenue: 805000.0,
-                            grossProfit: 230000.0,
+                            revenue: 845000.0,
+                            grossProfit: 241000.0,
                             operatingProfit: 17000.0,
                             netProfit: -1000.0,
                             ytmRevenueActual: 25000.0,
@@ -11260,20 +11358,20 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 17000.0,
                             ideationTarget: buildIdeationTarget(17000.0),
                             netProfitBudget: -1000.0,
-                            ytmRevenueBudget: 139000.0,
-                            ytmGrossProfitBudget: 39000.0,
-                            ytmOperatingProfitBudget: 2000.0,
+                            ytmRevenueBudget: 14000.0,
+                            ytmGrossProfitBudget: 4000.0,
+                            ytmOperatingProfitBudget: 0.0,
                             ytmNetProfitBudget: 0.0,
                             lastYearRevenue: 670000.0,
                             lastYearGrossProfit: 188000.0,
                             lastYearOperatingProfit: 8000.0,
                             lastYearNetProfit: -1000.0,
-                            ytmLastYearRevenue: 21000.0,
+                            ytmLastYearRevenue: 20000.0,
                             ytmLastYearGrossProfit: 6000.0,
                             ytmLastYearOperatingProfit: 0.0,
                             ytmLastYearNetProfit: 0.0,
-                            forecastRevenue: 805000.0,
-                            forecastGrossProfit: 230000.0,
+                            forecastRevenue: 845000.0,
+                            forecastGrossProfit: 241000.0,
                             forecastOperatingProfit: 17000.0,
                             forecastNetProfit: -1000.0,
                             mvaSites: MVA_SITE_DATA['FIT|Belkin'] ?? [],
@@ -11303,10 +11401,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 1532000.0,
                             ideationTarget: buildIdeationTarget(1532000.0),
                             netProfitBudget: 1158000.0,
-                            ytmRevenueBudget: 6017000.0,
-                            ytmGrossProfitBudget: 545000.0,
-                            ytmOperatingProfitBudget: 333000.0,
-                            ytmNetProfitBudget: 302000.0,
+                            ytmRevenueBudget: 3008000.0,
+                            ytmGrossProfitBudget: 273000.0,
+                            ytmOperatingProfitBudget: 167000.0,
+                            ytmNetProfitBudget: 151000.0,
                             lastYearRevenue: 20566000.0,
                             lastYearGrossProfit: 1864000.0,
                             lastYearOperatingProfit: 1139000.0,
@@ -11340,10 +11438,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 2366000.0,
                             ideationTarget: buildIdeationTarget(2366000.0),
                             netProfitBudget: 1872000.0,
-                            ytmRevenueBudget: 7378000.0,
-                            ytmGrossProfitBudget: 877000.0,
-                            ytmOperatingProfitBudget: 588000.0,
-                            ytmNetProfitBudget: 558000.0,
+                            ytmRevenueBudget: 2951000.0,
+                            ytmGrossProfitBudget: 351000.0,
+                            ytmOperatingProfitBudget: 235000.0,
+                            ytmNetProfitBudget: 223000.0,
                             lastYearRevenue: 20276000.0,
                             lastYearGrossProfit: 2409000.0,
                             lastYearOperatingProfit: 1616000.0,
@@ -11377,10 +11475,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 3298000.0,
                             ideationTarget: buildIdeationTarget(3298000.0),
                             netProfitBudget: 2510000.0,
-                            ytmRevenueBudget: 3057000.0,
-                            ytmGrossProfitBudget: 311000.0,
-                            ytmOperatingProfitBudget: 187000.0,
-                            ytmNetProfitBudget: 170000.0,
+                            ytmRevenueBudget: 5503000.0,
+                            ytmGrossProfitBudget: 559000.0,
+                            ytmOperatingProfitBudget: 336000.0,
+                            ytmNetProfitBudget: 307000.0,
                             lastYearRevenue: 39794000.0,
                             lastYearGrossProfit: 4045000.0,
                             lastYearOperatingProfit: 2428000.0,
@@ -11457,10 +11555,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 131000.0,
                             ideationTarget: buildIdeationTarget(131000.0),
                             netProfitBudget: 66000.0,
-                            ytmRevenueBudget: 407000.0,
-                            ytmGrossProfitBudget: 29000.0,
-                            ytmOperatingProfitBudget: 13000.0,
-                            ytmNetProfitBudget: 9000.0,
+                            ytmRevenueBudget: 81000.0,
+                            ytmGrossProfitBudget: 6000.0,
+                            ytmOperatingProfitBudget: 3000.0,
+                            ytmNetProfitBudget: 2000.0,
                             lastYearRevenue: 2714000.0,
                             lastYearGrossProfit: 193000.0,
                             lastYearOperatingProfit: 84000.0,
@@ -11635,10 +11733,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
         businessUnits: [
             {
                 name: 'Sharp',
-                            revenue: 7626000.0,
-                            grossProfit: 480000.0,
-                            operatingProfit: 183000.0,
-                            netProfit: 114000.0,
+                            revenue: 7817000.0,
+                            grossProfit: 492000.0,
+                            operatingProfit: 187000.0,
+                            netProfit: 117000.0,
                             ytmRevenueActual: 1104000.0,
                             ytmGrossProfitActual: 70000.0,
                             ytmOperatingProfitActual: 26000.0,
@@ -11648,22 +11746,22 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 185000.0,
                             ideationTarget: buildIdeationTarget(185000.0),
                             netProfitBudget: 116000.0,
-                            ytmRevenueBudget: 3179000.0,
-                            ytmGrossProfitBudget: 187000.0,
-                            ytmOperatingProfitBudget: 64000.0,
-                            ytmNetProfitBudget: 48000.0,
+                            ytmRevenueBudget: 954000.0,
+                            ytmGrossProfitBudget: 56000.0,
+                            ytmOperatingProfitBudget: 19000.0,
+                            ytmNetProfitBudget: 14000.0,
                             lastYearRevenue: 7351000.0,
                             lastYearGrossProfit: 432000.0,
                             lastYearOperatingProfit: 147000.0,
                             lastYearNetProfit: 110000.0,
-                            ytmLastYearRevenue: 1064000.0,
-                            ytmLastYearGrossProfit: 62000.0,
+                            ytmLastYearRevenue: 1038000.0,
+                            ytmLastYearGrossProfit: 61000.0,
                             ytmLastYearOperatingProfit: 21000.0,
                             ytmLastYearNetProfit: 16000.0,
-                            forecastRevenue: 7626000.0,
-                            forecastGrossProfit: 480000.0,
-                            forecastOperatingProfit: 183000.0,
-                            forecastNetProfit: 114000.0,
+                            forecastRevenue: 7817000.0,
+                            forecastGrossProfit: 492000.0,
+                            forecastOperatingProfit: 187000.0,
+                            forecastNetProfit: 117000.0,
                             mvaSites: MVA_SITE_DATA['Others|Sharp'] ?? [],
                             opImpactDetails: OP_IMPACT_DATA['Others|Sharp'] ?? [],
                             valueDriverBreakdown: getValueDriverBreakdown('Others', 'Sharp'),
@@ -11672,10 +11770,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
             },
             {
                 name: 'MIH/EV',
-                            revenue: 1881000.0,
-                            grossProfit: 52000.0,
-                            operatingProfit: 15000.0,
-                            netProfit: 11000.0,
+                            revenue: 1952000.0,
+                            grossProfit: 54000.0,
+                            operatingProfit: 16000.0,
+                            netProfit: 12000.0,
                             ytmRevenueActual: 307000.0,
                             ytmGrossProfitActual: 9000.0,
                             ytmOperatingProfitActual: 2000.0,
@@ -11685,22 +11783,22 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 15000.0,
                             ideationTarget: buildIdeationTarget(15000.0),
                             netProfitBudget: 12000.0,
-                            ytmRevenueBudget: 768000.0,
-                            ytmGrossProfitBudget: 24000.0,
-                            ytmOperatingProfitBudget: -31000.0,
-                            ytmNetProfitBudget: -23000.0,
+                            ytmRevenueBudget: 230000.0,
+                            ytmGrossProfitBudget: 7000.0,
+                            ytmOperatingProfitBudget: -9000.0,
+                            ytmNetProfitBudget: -7000.0,
                             lastYearRevenue: 1753000.0,
                             lastYearGrossProfit: 54000.0,
                             lastYearOperatingProfit: -71000.0,
                             lastYearNetProfit: -53000.0,
-                            ytmLastYearRevenue: 286000.0,
-                            ytmLastYearGrossProfit: 9000.0,
-                            ytmLastYearOperatingProfit: -12000.0,
-                            ytmLastYearNetProfit: -9000.0,
-                            forecastRevenue: 1881000.0,
-                            forecastGrossProfit: 52000.0,
-                            forecastOperatingProfit: 15000.0,
-                            forecastNetProfit: 11000.0,
+                            ytmLastYearRevenue: 275000.0,
+                            ytmLastYearGrossProfit: 8000.0,
+                            ytmLastYearOperatingProfit: -11000.0,
+                            ytmLastYearNetProfit: -8000.0,
+                            forecastRevenue: 1952000.0,
+                            forecastGrossProfit: 54000.0,
+                            forecastOperatingProfit: 16000.0,
+                            forecastNetProfit: 12000.0,
                             mvaSites: MVA_SITE_DATA['Others|MIH/EV'] ?? [],
                             opImpactDetails: OP_IMPACT_DATA['Others|MIH/EV'] ?? [],
                             valueDriverBreakdown: getValueDriverBreakdown('Others', 'MIH/EV'),
@@ -11709,10 +11807,10 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
             },
             {
                 name: 'Others',
-                            revenue: 1116000.0,
-                            grossProfit: 105000.0,
-                            operatingProfit: 62000.0,
-                            netProfit: 39000.0,
+                            revenue: 1160000.0,
+                            grossProfit: 109000.0,
+                            operatingProfit: 64000.0,
+                            netProfit: 40000.0,
                             ytmRevenueActual: 188000.0,
                             ytmGrossProfitActual: 18000.0,
                             ytmOperatingProfitActual: 10000.0,
@@ -11722,22 +11820,22 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             operatingProfitBudget: 63000.0,
                             ideationTarget: buildIdeationTarget(63000.0),
                             netProfitBudget: 39000.0,
-                            ytmRevenueBudget: 454000.0,
-                            ytmGrossProfitBudget: 45000.0,
-                            ytmOperatingProfitBudget: 21000.0,
-                            ytmNetProfitBudget: 16000.0,
+                            ytmRevenueBudget: 136000.0,
+                            ytmGrossProfitBudget: 14000.0,
+                            ytmOperatingProfitBudget: 6000.0,
+                            ytmNetProfitBudget: 5000.0,
                             lastYearRevenue: 1055000.0,
                             lastYearGrossProfit: 105000.0,
                             lastYearOperatingProfit: 49000.0,
                             lastYearNetProfit: 37000.0,
-                            ytmLastYearRevenue: 178000.0,
-                            ytmLastYearGrossProfit: 18000.0,
+                            ytmLastYearRevenue: 171000.0,
+                            ytmLastYearGrossProfit: 17000.0,
                             ytmLastYearOperatingProfit: 8000.0,
                             ytmLastYearNetProfit: 6000.0,
-                            forecastRevenue: 1116000.0,
-                            forecastGrossProfit: 105000.0,
-                            forecastOperatingProfit: 62000.0,
-                            forecastNetProfit: 39000.0,
+                            forecastRevenue: 1160000.0,
+                            forecastGrossProfit: 109000.0,
+                            forecastOperatingProfit: 64000.0,
+                            forecastNetProfit: 40000.0,
                             mvaSites: MVA_SITE_DATA['Others|Others'] ?? [],
                             opImpactDetails: OP_IMPACT_DATA['Others|Others'] ?? [],
                             valueDriverBreakdown: getValueDriverBreakdown('Others', 'Others'),
@@ -11752,40 +11850,40 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
         businessUnits: [
             {
                 name: 'Intergroup transaction',
-                revenue: -6863742.396,
-                grossProfit: -867582.4398,
-                operatingProfit: -410184.7391,
-                netProfit: -280992.3013,
-                ytmRevenueActual: -990457.977,
-                ytmGrossProfitActual: -123584.4261,
-                ytmOperatingProfitActual: -59723.53631,
-                ytmNetProfitActual: -40970.48095,
-                revenueBudget: -6792640.741,
-                grossProfitBudget: -857618.2714,
-                operatingProfitBudget: -405276.9475,
-                ideationTarget: buildIdeationTarget(-405276.9475),
-                netProfitBudget: -277515.9496,
-                ytmRevenueBudget: -893927.995,
-                ytmGrossProfitBudget: -89288.08253,
-                ytmOperatingProfitBudget: -43439.88723,
-                ytmNetProfitBudget: -36544.02917,
-                lastYearRevenue: -6143164.746,
-                lastYearGrossProfit: -614377.0274,
-                lastYearOperatingProfit: -289634.3475,
-                lastYearNetProfit: -244684.8532,
-                ytmLastYearRevenue: -887378.6997,
-                ytmLastYearGrossProfit: -86989.86176,
-                ytmLastYearOperatingProfit: -42224.32506,
-                ytmLastYearNetProfit: -35700.23914,
-                forecastRevenue: -6863742.396,
-                forecastGrossProfit: -867582.4398,
-                forecastOperatingProfit: -410184.7391,
-                forecastNetProfit: -280992.3013,
+                revenue: -6864000.0,
+                grossProfit: -868000.0,
+                operatingProfit: -410000.0,
+                netProfit: -281000.0,
+                ytmRevenueActual: -928000.0,
+                ytmGrossProfitActual: -117000.0,
+                ytmOperatingProfitActual: -57000.0,
+                ytmNetProfitActual: -40000.0,
+                revenueBudget: -6793000.0,
+                grossProfitBudget: -858000.0,
+                operatingProfitBudget: -405000.0,
+                ideationTarget: buildIdeationTarget(-405000.0),
+                netProfitBudget: -278000.0,
+                ytmRevenueBudget: -894000.0,
+                ytmGrossProfitBudget: -89000.0,
+                ytmOperatingProfitBudget: -43000.0,
+                ytmNetProfitBudget: -37000.0,
+                lastYearRevenue: -6143000.0,
+                lastYearGrossProfit: -614000.0,
+                lastYearOperatingProfit: -290000.0,
+                lastYearNetProfit: -245000.0,
+                ytmLastYearRevenue: -830000.0,
+                ytmLastYearGrossProfit: -82000.0,
+                ytmLastYearOperatingProfit: -41000.0,
+                ytmLastYearNetProfit: -35000.0,
+                forecastRevenue: -6864000.0,
+                forecastGrossProfit: -868000.0,
+                forecastOperatingProfit: -410000.0,
+                forecastNetProfit: -281000.0,
                 mvaSites: MVA_SITE_DATA['Intergroup transaction|Intergroup transaction'] ?? [],
                 opImpactDetails: OP_IMPACT_DATA['Intergroup transaction|Intergroup transaction'] ?? [],
                 valueDriverBreakdown: getValueDriverBreakdown('Intergroup transaction', 'Intergroup transaction'),
                 functionTargetBreakdown: getFunctionTargetBreakdown('Intergroup transaction', 'Intergroup transaction'),
-                functionalPerformance: buildFunctionalPerformance(-6792640.741, -990457.977, -405276.9475, -59723.53631),
+                functionalPerformance: buildFunctionalPerformance(-6793000.0, -928000.0, -405000.0, -57000.0),
             },
         ],
         monthlyImpact: BG_MONTHLY_IMPACT['Intergroup transaction'] ?? [],
@@ -11811,7 +11909,7 @@ const buildInitiativesForBu = (
     const seed = buildInitiativeSeed(`${bg}-${bu}`);
     const multiplier = 0.75 + seed * 0.6;
     const meetsTarget =
-        bg === 'HH' &&
+        bg === 'HH (Parent)' &&
         bu.toLowerCase().includes('d/e');
     const sponsorPool = [
         'Mr. A',
@@ -11902,7 +12000,7 @@ const adjustImplementationDetails = (
 ): InitiativeImplementationDetail[] => {
     const seed = buildImplementationSeed(key);
     const idOffset = (seed % 97) * 10;
-    const isDeGroup = key.toLowerCase().includes('hh|d/e');
+    const isDeGroup = key.toLowerCase().includes('hh (parent)|d/e');
     const impactScale = isDeGroup
         ? 1.6 + ((seed % 5) / 100)
         : 0.9 + ((seed % 13) / 100);
