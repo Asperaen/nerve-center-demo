@@ -1200,6 +1200,31 @@ export default function BusinessGroupPerformancePage() {
     const magnitude = Math.abs(percent);
     const directionText = delta >= 0 ? 'above' : 'below';
 
+    // Get selected BU name for custom content
+    const selectedBuName = selectedGroupIds.size === 1
+      ? tableData.find((row) => selectedGroupIds.has(row.id))?.name
+      : selectedGroupIds.size === 0
+      ? overallRow?.name
+      : undefined;
+
+    // Custom content for D/E Group
+    if (selectedBuName === 'D/E Group') {
+      return {
+        summary: `Actual NP reached USD 232M, trailing budget by negative USD 39M (–14.2%), indicating a volume / mix gap versus plan.`,
+        isGain: false,
+        drivers: [
+          'The primary negative driver is volume/mix softness, mainly driven by volume decline in Account B, which more than offset other positives.',
+          'Cost headwinds mainly from direct labor, resulting in an estimated ~2 p.p. gross margin impact.',
+          'Exchange rate (tailwind) and one-time benefit has secured over USD 100M OP, providing a meaningful upside lever.',
+        ],
+        actions: [
+          'Prioritizing margin recovery levers (pricing actions, mix optimization, and cost take-out).',
+          'Fast-tracking late-stage initiatives with the highest OP impact to minimize leakage in the primary positive impact source.',
+          'Tightening spend controls and reassessing discretionary programs to recover identified leakage potential.',
+        ],
+      };
+    }
+
     const drivers =
       delta >= 0
         ? [
@@ -1234,7 +1259,7 @@ export default function BusinessGroupPerformancePage() {
       drivers,
       actions,
     };
-  }, [tableData, selectionMetrics, sectionTitle, isBudgetMode]);
+  }, [tableData, selectionMetrics, sectionTitle, isBudgetMode, selectedGroupIds, currencyLabel]);
 
   const selectedBuLabel = useMemo(() => {
     if (selectedGroupIds.size === 0) {
@@ -1347,8 +1372,120 @@ export default function BusinessGroupPerformancePage() {
     [opImpactRows]
   );
 
+  // Hardcoded op impact details for HH + D/E Group
+  const hhDeGroupOpImpactItems = useMemo(() => [
+    {
+      id: 1,
+      bu: 'D/E group',
+      lineItem: 'Revenue',
+      costRationale: 'Market-driven',
+      item: 'D customer demand volume drops due to US PC market shrink',
+      opImpact: -85.0,
+      category: 'volume-mix',
+    },
+    {
+      id: 2,
+      bu: 'D/E group',
+      lineItem: 'Revenue',
+      costRationale: 'Market-driven',
+      item: 'H customer forecast product portfolio shifts to low price, low margin product series due to market change',
+      opImpact: -81.3,
+      category: 'volume-mix',
+    },
+    {
+      id: 3,
+      bu: 'D/E group',
+      lineItem: 'COGS - Manufacturing cost',
+      costRationale: 'Self-decision',
+      item: 'Inventory write off reversal',
+      opImpact: 33.0,
+      category: 'one-off',
+    },
+    {
+      id: 4,
+      bu: 'D/E group',
+      lineItem: 'COGS - Manufacturing cost',
+      costRationale: 'Market-driven',
+      item: 'Vietnam labor rate drops benefits direct labor cost',
+      opImpact: 11.5,
+      category: 'headwind-tailwind',
+    },
+    {
+      id: 5,
+      bu: 'D/E group',
+      lineItem: 'Non-operating gain/loss',
+      costRationale: 'Market-driven',
+      item: 'Government subsidy of newly issued policy which was not baked in budget',
+      opImpact: 49.7,
+      category: 'headwind-tailwind',
+    },
+    {
+      id: 6,
+      bu: 'D/E group',
+      lineItem: 'Non-operating gain/loss',
+      costRationale: 'Market-driven',
+      item: 'Exchange rate fluctuation between USD and RMB',
+      opImpact: 15.3,
+      category: 'headwind-tailwind',
+    },
+    {
+      id: 7,
+      bu: 'D/E group',
+      lineItem: 'COGS - BOM cost',
+      costRationale: 'Market-driven',
+      item: 'Leakage of manufacturing cost saving initiative resulted by volume drop',
+      opImpact: -0.5,
+      category: 'leakage',
+    },
+    {
+      id: 8,
+      bu: 'D/E group',
+      lineItem: 'COGS - Manufacturing cost',
+      costRationale: 'Market-driven',
+      item: 'Leakage of procurement cost saving initiative resulted by volume drop',
+      opImpact: -1.3,
+      category: 'leakage',
+    },
+    {
+      id: 9,
+      bu: 'D/E group',
+      lineItem: 'Non-operating gain/loss',
+      costRationale: 'Self-decision',
+      item: 'Intergroup (Among Sub-BU) transaction profit offset (and miscellany)',
+      opImpact: -0.8,
+      category: 'other',
+    },
+    {
+      id: 10,
+      bu: 'D/E group',
+      lineItem: 'COGS - BOM cost',
+      costRationale: 'Self-decision',
+      item: 'Supplier penalty claim on material (resin) delayed delivery',
+      opImpact: 14.1,
+      category: 'one-off',
+    },
+  ], []);
+
+  // Stage to item IDs mapping for HH + D/E Group
+  const stageToItemIdsMap: Record<string, number[]> = {
+    'volume-mix': [1, 2],
+    'confirmed-volume-mix': [1, 2],
+    'headwinds-tailwinds': [4, 5, 6],
+    'one-off-items': [3, 10],
+    'one-off-adjustments': [9],
+    'l4-to-l5-leakage': [7, 8],
+  };
+
   const getOpImpactRowsForStage = useCallback(
     (stage: BudgetForecastStage) => {
+      // Check if we're viewing HH + D/E Group for hardcoded data
+      const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+
+      if (isHHDEGroup) {
+        const itemIds = stageToItemIdsMap[stage.stage] || [];
+        return hhDeGroupOpImpactItems.filter((item) => itemIds.includes(item.id));
+      }
+
       if (opImpactRows.length === 0) {
         return [];
       }
@@ -1372,7 +1509,7 @@ export default function BusinessGroupPerformancePage() {
       }
       return [];
     },
-    [opImpactRows]
+    [opImpactRows, hhDeGroupOpImpactItems, selectedBu, selectedBuNames]
   );
 
   const renderOpImpactTooltip = useCallback(
@@ -1461,26 +1598,26 @@ export default function BusinessGroupPerformancePage() {
           delta: -166.3,
           type: 'negative',
           description: 'Volume and mix change impact',
-          isClickable: false,
-        },
-        {
-          stage: 'one-off-items',
-          label: 'One-off items change',
-          value: 152.0,
-          delta: 47.1,
-          type: 'positive',
-          description: 'One-off items change impact',
-          isClickable: false,
+          isClickable: true,
         },
         {
           stage: 'headwinds-tailwinds',
           label: 'Change in headwind / tailwind',
-          value: 228.5,
+          value: 181.4,
           delta: 76.5,
           type: 'positive',
           description: 'Headwind / tailwind change impact',
           isClickable: true,
           navigationTarget: '/market-intelligence?focus=headwinds-tailwinds',
+        },
+        {
+          stage: 'one-off-items',
+          label: 'One-off items change',
+          value: 228.5,
+          delta: 47.1,
+          type: 'positive',
+          description: 'One-off items change impact',
+          isClickable: true,
         },
         {
           ...l3Stage,
@@ -1590,16 +1727,7 @@ export default function BusinessGroupPerformancePage() {
         delta: volumeMixDelta,
         type: 'negative',
         description: 'Volume and mix change impact',
-        isClickable: false,
-      },
-      {
-        stage: 'one-off-items',
-        label: 'One-off items change',
-        value: 0,
-        delta: oneOffDelta,
-        type: oneOffDelta >= 0 ? 'positive' : 'negative',
-        description: 'One-off items change impact',
-        isClickable: false,
+        isClickable: true,
       },
       {
         stage: 'headwinds-tailwinds',
@@ -1610,6 +1738,15 @@ export default function BusinessGroupPerformancePage() {
         description: 'Headwind / tailwind change impact',
         isClickable: true,
         navigationTarget: '/market-intelligence?focus=headwinds-tailwinds',
+      },
+      {
+        stage: 'one-off-items',
+        label: 'One-off items change',
+        value: 0,
+        delta: oneOffDelta,
+        type: oneOffDelta >= 0 ? 'positive' : 'negative',
+        description: 'One-off items change impact',
+        isClickable: true,
       },
       {
         ...l3Stage,
@@ -1635,6 +1772,7 @@ export default function BusinessGroupPerformancePage() {
         type: 'positive',
         description:
           l5Stage?.description ?? 'L5 initiative performance vs L4 implemented',
+        isClickable: true,
       },
       {
         stage: 'one-off-adjustments',
@@ -1643,7 +1781,7 @@ export default function BusinessGroupPerformancePage() {
         delta: otherFactorsDelta,
         type: otherFactorsDelta >= 0 ? 'positive' : 'negative',
         description: 'Other factors impacting actuals',
-        isClickable: false,
+        isClickable: true,
       },
       {
         ...actualStage,
@@ -2013,7 +2151,9 @@ export default function BusinessGroupPerformancePage() {
       'one-off-items',
       'headwinds-tailwinds',
       'confirmed-volume-mix',
+      'volume-mix',
       'market-performance',
+      'l4-to-l5-leakage',
     ].includes(activeDeviationStage.stage);
 
     if (isOpImpactStage) {
@@ -3187,6 +3327,16 @@ export default function BusinessGroupPerformancePage() {
               </span>
             }
             brokenAxis="auto"
+            labelDefinitions={{
+              'volume-mix': 'Sales volume / mix change (RFQ won / loss)',
+              'confirmed-volume-mix': 'Sales volume / mix change (RFQ won / loss)',
+              'headwinds-tailwinds': 'Market headwind / tailwind (FX change, labor rate changes, R&D pressure due to CPU refresh)',
+              'one-off-items': 'Unexpected (not in budget) one-off items (one-time investments, known claims)',
+              'l3-vs-target': 'Pipeline planning gap',
+              'l4-vs-planned': 'Pipeline execution gap',
+              'l4-to-l5-leakage': 'Pipeline impact realization gap',
+              'one-off-adjustments': 'Other miscellaneous',
+            }}
             onStageClick={(stage: BudgetForecastStage) => {
               const selectedUnitNames = Array.from(selectedGroupIds)
                 .map((id) => unitRowsById.get(id)?.name)
