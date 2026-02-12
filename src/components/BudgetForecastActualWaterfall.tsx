@@ -31,6 +31,8 @@ interface BudgetForecastActualWaterfallProps {
   brokenAxis?: BrokenAxisConfig | 'auto';
   labelDefinitions?: Record<string, string>;
   splitNonPrimaryBars?: boolean;
+  /** If true, show "Click for details" on all clickable stages without exclusions */
+  showClickDetailsForAll?: boolean;
 }
 
 // Custom Y-axis tick component with break indicator
@@ -169,6 +171,7 @@ export default function BudgetForecastActualWaterfall({
   brokenAxis: brokenAxisProp = 'auto',
   labelDefinitions,
   splitNonPrimaryBars = false,
+  showClickDetailsForAll = false,
 }: BudgetForecastActualWaterfallProps) {
   const navigate = useNavigate();
   const { formatAmount, currencyLabel } = useCurrency();
@@ -318,7 +321,7 @@ export default function BudgetForecastActualWaterfall({
       clearTimeout(clickTimeoutRef.current);
     }
     clickTimeoutRef.current = setTimeout(() => {
-      if (onStageClick) {
+      if (onStageClick && stage.isClickable !== false) {
         onStageClick(stage);
         return;
       }
@@ -725,7 +728,7 @@ export default function BudgetForecastActualWaterfall({
                         )}
                       </>
                     )}
-                    {isClickable && (
+                    {isClickable !== false && (isClickable || onStageClick) && (showClickDetailsForAll || (stage.stage !== 'budget' && stage.stage !== 'actuals' && stage.stage !== 'l4-to-l5-leakage' && stage.stage !== 'confirmed-volume-mix' && stage.stage !== 'carry-over-improvements' && stage.stage !== 'planned-leakages')) && (
                       <p className='mt-2 text-[11px] text-gray-500'>
                         {onStageClick ? 'Click for details →' : 'Click to navigate →'}
                       </p>
@@ -877,8 +880,9 @@ export default function BudgetForecastActualWaterfall({
                       (stage as { swapSplitSegments?: boolean }).swapSplitSegments
                         ? 'forecast'
                         : 'realized';
+                    const isStageClickable = stage.isClickable !== false && (!!onStageClick || !!stage.navigationTarget);
                     const strokeColor =
-                      stage.isClickable || onStageClick
+                      isStageClickable
                         ? getSegmentStrokeColor(stage)
                         : 'none';
                     const shadowColor =
@@ -892,13 +896,13 @@ export default function BudgetForecastActualWaterfall({
                         key={`cell-realized-${index}`}
                         fill={getSegmentFillColor(stage, useSegment)}
                         stroke={strokeColor}
-                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeWidth={highlighted ? 3 : isStageClickable ? 1 : 0}
                         strokeDasharray={
                           stage.stage === 'early-signals' ? '4 2' : undefined
                         }
                         style={{
-                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
-                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          cursor: isStageClickable ? 'pointer' : 'default',
+                          opacity: highlighted || isStageClickable ? 1 : 0.95,
                           filter: highlighted
                             ? `drop-shadow(0 4px 6px ${shadowColor})`
                             : 'none',
@@ -939,8 +943,9 @@ export default function BudgetForecastActualWaterfall({
                 >
                   {stages.map((stage, index) => {
                     const highlighted = isHighlighted(stage);
+                    const isStageClickable = stage.isClickable !== false && (!!onStageClick || !!stage.navigationTarget);
                     const strokeColor =
-                      stage.isClickable || onStageClick
+                      isStageClickable
                         ? getSegmentStrokeColor(stage)
                         : 'none';
                     const shadowColor =
@@ -954,13 +959,13 @@ export default function BudgetForecastActualWaterfall({
                         key={`cell-forecast-${index}`}
                         fill={getSegmentFillColor(stage, 'forecast')}
                         stroke={strokeColor}
-                        strokeWidth={highlighted ? 3 : stage.isClickable ? 1 : 0}
+                        strokeWidth={highlighted ? 3 : isStageClickable ? 1 : 0}
                         strokeDasharray={
                           stage.stage === 'early-signals' ? '4 2' : undefined
                         }
                         style={{
-                          cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
-                          opacity: highlighted || stage.isClickable || onStageClick ? 1 : 0.95,
+                          cursor: isStageClickable ? 'pointer' : 'default',
+                          opacity: highlighted || isStageClickable ? 1 : 0.95,
                           filter: highlighted
                             ? `drop-shadow(0 4px 6px ${shadowColor})`
                             : 'none',
@@ -1102,6 +1107,7 @@ export default function BudgetForecastActualWaterfall({
                 {stages.map((stage, index) => {
                   const fillColor = getLegacyFillColor(stage);
                   const highlighted = isHighlighted(stage);
+                  const isStageClickable = stage.isClickable !== false && (!!onStageClick || !!stage.navigationTarget);
                   const getDarkerColor = () => {
                     if (stage.type === 'baseline') return '#4b5563';
                     if (stage.stage === 'early-signals') return '#111827';
@@ -1110,7 +1116,7 @@ export default function BudgetForecastActualWaterfall({
                   const strokeColor =
                     stage.stage === 'early-signals'
                       ? '#111827'
-                      : stage.isClickable || onStageClick
+                      : isStageClickable
                       ? getDarkerColor()
                       : 'none';
                   const shadowColor =
@@ -1130,7 +1136,7 @@ export default function BudgetForecastActualWaterfall({
                           ? 4
                           : stage.stage === 'early-signals'
                           ? 2
-                          : stage.isClickable
+                          : isStageClickable
                           ? 2
                           : 0
                       }
@@ -1138,9 +1144,9 @@ export default function BudgetForecastActualWaterfall({
                         stage.stage === 'early-signals' ? '4 2' : undefined
                       }
                       style={{
-                        cursor: stage.isClickable || onStageClick ? 'pointer' : 'default',
+                        cursor: isStageClickable ? 'pointer' : 'default',
                         opacity:
-                          highlighted || stage.isClickable || onStageClick ? 1 : 0.9,
+                          highlighted || isStageClickable ? 1 : 0.9,
                         filter: highlighted
                           ? `drop-shadow(0 4px 6px ${shadowColor})`
                           : 'none',
@@ -1148,12 +1154,12 @@ export default function BudgetForecastActualWaterfall({
                       onClick={() => handleBarClick(stage)}
                       onDoubleClick={() => handleBarDoubleClick(stage)}
                       onMouseEnter={(e) => {
-                        if (stage.isClickable && !highlighted) {
+                        if (isStageClickable && !highlighted) {
                           (e.currentTarget as SVGElement).style.opacity = '0.8';
                         }
                       }}
                       onMouseLeave={(e) => {
-                        if (stage.isClickable && !highlighted) {
+                        if (isStageClickable && !highlighted) {
                           (e.currentTarget as SVGElement).style.opacity = '1';
                         }
                       }}
@@ -1181,7 +1187,7 @@ export default function BudgetForecastActualWaterfall({
               x1={initiativeGrouping.left}
               y1={initiativeGrouping.groupY}
               x2={initiativeGrouping.left}
-              y2={initiativeGrouping.groupY + 8}
+              y2={initiativeGrouping.groupY - 8}
               stroke='#4b5563'
               strokeWidth={2}
             />
@@ -1189,7 +1195,7 @@ export default function BudgetForecastActualWaterfall({
               x1={initiativeGrouping.right}
               y1={initiativeGrouping.groupY}
               x2={initiativeGrouping.right}
-              y2={initiativeGrouping.groupY + 8}
+              y2={initiativeGrouping.groupY - 8}
               stroke='#4b5563'
               strokeWidth={2}
             />

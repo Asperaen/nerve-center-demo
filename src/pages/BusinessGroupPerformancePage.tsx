@@ -607,15 +607,18 @@ export default function BusinessGroupPerformancePage() {
   };
 
   const handleTimeframeChange = (timeframe: 'full-year' | 'ytm') => {
+    // Actual (Reconciliation) page only supports YTM
+    if (timeframe === 'full-year') {
+      return;
+    }
     setSelectedTimeframe(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    const nextRange: [number, number] =
-      timeframe === 'full-year' ? [0, 11] : [0, 1];
+    const nextRange: [number, number] = [0, 1];
     setMonthRange(nextRange);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('timeframe', timeframe);
+      next.set('timeframe', 'ytm');
       next.delete('toggle');
       next.set('months', `${nextRange[0]}-${nextRange[1]}`);
       next.set('view', financialView);
@@ -666,11 +669,15 @@ export default function BusinessGroupPerformancePage() {
   };
 
   useEffect(() => {
-    setStoredTimeframe(selectedTimeframe);
+    // Only store YTM for this page
+    if (selectedTimeframe === 'ytm') {
+      setStoredTimeframe(selectedTimeframe);
+    }
   }, [selectedTimeframe]);
 
   useEffect(() => {
-    if (selectedTimeframe !== 'ytm' && selectedTimeframe !== 'full-year') {
+    // Actual (Reconciliation) page only supports YTM
+    if (selectedTimeframe !== 'ytm') {
       setSelectedTimeframe('ytm');
     }
   }, [selectedTimeframe]);
@@ -683,17 +690,19 @@ export default function BusinessGroupPerformancePage() {
   }, [selectedTimeframe, isMonthRangeCustom]);
 
   useEffect(() => {
+    // Actual (Reconciliation) page only supports YTM, ignore URL params
     const timeframeParam = searchParams.get('timeframe');
-    if (!timeframeParam) {
-      return;
+    if (timeframeParam && timeframeParam !== 'ytm') {
+      // Force YTM and update URL to reflect the correct state
+      setSelectedTimeframe('ytm');
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('timeframe', 'ytm');
+        next.set('months', '0-1');
+        return next;
+      });
     }
-    if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
-      setSelectedTimeframe(timeframeParam);
-      return;
-    }
-    // If an invalid timeframe is preselected, default to YTM.
-    setSelectedTimeframe('ytm');
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -931,6 +940,23 @@ export default function BusinessGroupPerformancePage() {
       setSelectedGroupIds(new Set(validUnitIds));
     }
   }, [businessGroups, searchParams, selectedBu]);
+
+  // Auto-expand parent BG when BU is specified in URL
+  useEffect(() => {
+    const bgParam = searchParams.get('bg');
+    const buParam = searchParams.get('bu');
+    if (bgParam && buParam && selectedBu !== 'all') {
+      const normalizedBg = normalizeGroupId(bgParam);
+      setExpandedRows((prev) => {
+        if (!prev.has(normalizedBg)) {
+          const next = new Set(prev);
+          next.add(normalizedBg);
+          return next;
+        }
+        return prev;
+      });
+    }
+  }, [searchParams, selectedBu]);
 
   // Get sub-groups for expanded rows
   const getExpandedSubGroups = (bgId: string) => {
@@ -2745,18 +2771,27 @@ export default function BusinessGroupPerformancePage() {
                         { id: 'full-year', label: 'Full year' },
                         { id: 'ytm', label: 'Year to Month' },
                       ] as const
-                    ).map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() => handleTimeframeChange(option.id)}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                          selectedTimeframe === option.id
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}>
-                        {option.label}
-                      </button>
-                    ))}
+                    ).map((option) => {
+                      const isDisabled = option.id === 'full-year';
+                      const isSelected = selectedTimeframe === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={isDisabled ? undefined : () => handleTimeframeChange(option.id)}
+                          disabled={isDisabled}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            isSelected
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          } ${
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50'
+                              : ''
+                          }`}>
+                          {option.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className='flex items-center gap-4'>
@@ -3161,13 +3196,13 @@ export default function BusinessGroupPerformancePage() {
                 : '';
               if (stage.stage === 'l3-vs-target') {
                 navigate(
-                  `/initiative-performance?bg=hh&timeframe=ytm${unitParam}`
+                  `/initiative-performance?bg=${selectedBu}&timeframe=ytm${unitParam}`
                 );
                 return;
               }
               if (stage.stage === 'l4-vs-planned') {
                 navigate(
-                  `/actual-initiative-implementation?bg=hh&timeframe=ytm`
+                  `/actual-initiative-implementation?bg=${selectedBu}&timeframe=ytm${unitParam}`
                 );
                 return;
               }
