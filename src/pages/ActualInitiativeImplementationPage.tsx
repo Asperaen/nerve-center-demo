@@ -26,12 +26,11 @@ import {
 } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
-  getStoredTimeframe,
   setStoredTimeframe,
 } from '../utils/timeframeStorage';
 
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -326,10 +325,7 @@ export default function ActualInitiativeImplementationPage() {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     });
-  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>(() => {
-    const stored = getStoredTimeframe();
-    return stored === 'ytm' || stored === 'full-year' ? stored : 'full-year';
-  });
+  const [activeTimeframe, setActiveTimeframe] = useState<TimeframeOption>('ytm');
   const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] =
@@ -338,7 +334,7 @@ export default function ActualInitiativeImplementationPage() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
-  const mainBuOptions = getMainBusinessGroupOptions();
+  const mainBuOptions = useMemo(() => getMainBusinessGroupOptions(), []);
 
   const timeframeScale = useMemo(() => {
     if (isMonthRangeCustom) {
@@ -350,10 +346,16 @@ export default function ActualInitiativeImplementationPage() {
   useEffect(() => {
     const timeframeParam =
       searchParams.get('timeframe') ?? searchParams.get('toggle');
-    if (timeframeParam === 'ytm' || timeframeParam === 'full-year') {
-      setActiveTimeframe(timeframeParam);
+    if (timeframeParam && timeframeParam !== 'ytm') {
+      setActiveTimeframe('ytm');
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('timeframe', 'ytm');
+        next.set('months', '0-1');
+        return next;
+      });
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const monthsParam = searchParams.get('months');
@@ -634,7 +636,7 @@ export default function ActualInitiativeImplementationPage() {
     const scale = timeframeScale;
     const round = (value: number) => Math.round(value * 10) / 10;
     const meetsTargetOverride =
-      selectedGroupInfo?.group.group === 'HH' &&
+      selectedGroupInfo?.group.group === 'HH (Parent)' &&
       selectedGroupInfo?.unit?.name?.toLowerCase().includes('d/e');
 
     // Use hardcoded data for HH D/E Group (already YTM values, no scaling needed)
@@ -834,18 +836,22 @@ export default function ActualInitiativeImplementationPage() {
                     Timeframe <span className='text-gray-400'>(2026)</span>
                   </span>
                   <div className='flex bg-gray-100 rounded-lg p-1'>
-                    {timeframeOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => handleTimeframeChange(option.value)}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                          activeTimeframe === option.value
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}>
-                        {option.label}
-                      </button>
-                    ))}
+                    {timeframeOptions.map((option) => {
+                      const isDisabled = option.value === 'full-year';
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={isDisabled ? undefined : () => handleTimeframeChange(option.value)}
+                          disabled={isDisabled}
+                          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                            activeTimeframe === option.value
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          } ${isDisabled ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50' : ''}`}>
+                          {option.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className='flex items-center gap-4'>

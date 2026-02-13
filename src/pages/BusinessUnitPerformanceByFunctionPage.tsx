@@ -10,6 +10,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { getAllBusinessGroupData } from '../data/mockBusinessGroupPerformance';
 import { mockFunctionDeviationRows } from '../data/mockForecast';
 import { getStoredTimeframe } from '../utils/timeframeStorage';
+import { KEY_CALLOUTS_BY_BG } from '../data/mockBgData';
 
 const normalizeFunction = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, '');
@@ -199,7 +200,6 @@ export const generateDeviationDataset = (
   });
 
   const baselineScale = isHhDeGroup ? 1.1 : 0.7;
-  const targetScale = isHhDeGroup ? 0.6 : 1;
   const actualSpendValues = distributeTotal(
     actualLineValueForSelectedBUs,
     categories.length
@@ -210,6 +210,11 @@ export const generateDeviationDataset = (
     categories.length
   );
 
+  // For HH D/E Group, distribute the exact budget value across categories to preserve P&L breakdown totals
+  const targetSpendValues = isHhDeGroup
+    ? distributeTotal(budgetLineValueForSelectedBUs, categories.length)
+    : [];
+
   return categories.map((item, index) => {
     const actualSpend = actualSpendValues[index];
     const rawBaselineSpend = baselineSpendValues[index];
@@ -219,12 +224,7 @@ export const generateDeviationDataset = (
       ? rawBaselineSpend
       : roundToOne(clampToActual(rawBaselineSpend));
     const targetSpend = isHhDeGroup
-      ? roundToOne(
-          Math.max(
-            actualSpend * 1.05,
-            baselineSpend * targetScale * randomBetween(0.9, 1.0)
-          )
-        )
+      ? roundToOne(targetSpendValues[index])  // Use distributed budget value to preserve totals
       : roundToOne(
           clampToActual(baselineSpend * randomBetween(0.8, 1.1))
         );
@@ -500,21 +500,47 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
   }, [functionParam, scaledFunctionRow, selectedBus]);
 
-  const aiSummaryInsights = [
-    'Procurement is tracking above budget on key spend categories driven by mix and higher input costs.',
-    'L3 initiatives are behind target in IDS, while EMS shows stronger pipeline conversion.',
-    'FX and part price variance explain most of the delta versus budget for the selected BUs.',
-  ];
-  const manufacturingInsights = [
-    'MVA cost is above budget as DL efficiency gains trail plan in Site B and C.',
-    'IDL hourly rate pressure is partially offset by favorable fixed MOH absorption.',
-    'Variable MOH efficiency gaps remain the largest adverse driver vs budget.',
-  ];
-  const rndInsights = [
-    'R&D spend is tracking above target driven by new project intake and timing shifts.',
-    'Personnel delta remains the largest driver against plan, with HC mix changes in core programs.',
-    'Central and cross-BU support is stable, while prototype/testing costs trend higher.',
-  ];
+  // Get function-specific insights - check for D/E Group specific callouts first
+  const getInsightsForFunction = useMemo(() => {
+    return (functionType: 'procurement' | 'manufacturing' | 'rnd'): string[] => {
+      // Check if D/E Group is selected (either as a single selection or part of multiple)
+      const isDEGroupSelected = selectedBus.some(
+        (bu) => bu.toLowerCase().includes('d/e group') || bu.toLowerCase().includes('de group')
+      );
+
+      if (isDEGroupSelected) {
+        const deGroupCallouts = KEY_CALLOUTS_BY_BG['HH']?.['D/E Group']?.functionalPerformance?.[functionType];
+        if (deGroupCallouts && deGroupCallouts.length > 0) {
+          return deGroupCallouts;
+        }
+      }
+
+      // Fall back to generic insights
+      const defaultInsights = {
+        procurement: [
+          'Procurement is tracking above budget on key spend categories driven by mix and higher input costs.',
+          'L3 initiatives are behind target in IDS, while EMS shows stronger pipeline conversion.',
+          'FX and part price variance explain most of the delta versus budget for the selected BUs.',
+        ],
+        manufacturing: [
+          'MVA cost is above budget as DL efficiency gains trail plan in Site B and C.',
+          'IDL hourly rate pressure is partially offset by favorable fixed MOH absorption.',
+          'Variable MOH efficiency gaps remain the largest adverse driver vs budget.',
+        ],
+        rnd: [
+          'R&D spend is tracking above target driven by new project intake and timing shifts.',
+          'Personnel delta remains the largest driver against plan, with HC mix changes in core programs.',
+          'Central and cross-BU support is stable, while prototype/testing costs trend higher.',
+        ],
+      };
+
+      return defaultInsights[functionType];
+    };
+  }, [selectedBus]);
+
+  const aiSummaryInsights = getInsightsForFunction('procurement');
+  const manufacturingInsights = getInsightsForFunction('manufacturing');
+  const rndInsights = getInsightsForFunction('rnd');
 
   const selectedFunctionalUnits = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu);
@@ -550,12 +576,23 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const procurementOverallTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
       (acc, unit) => {
-        const opBudgetScale =
-          unit.operatingProfitBudget === 0
-            ? 1
-            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
-        acc.budget += unit.functionalPerformance.procurement.budget * opBudgetScale;
-        acc.actual += unit.functionalPerformance.procurement.actual;
+        const procurement = unit.functionalPerformance.procurement;
+        // Check if this unit has YTM-adjusted procurement values (should not be scaled)
+        const isYtmValue = (procurement as any).isYtm === true;
+
+        if (isYtmValue) {
+          // These are already YTM values from P&L breakdown, use directly
+          acc.budget += procurement.budget;
+          acc.actual += procurement.actual;
+        } else {
+          // Scale full year budget to YTM, actual is already YTM
+          const opBudgetScale =
+            unit.operatingProfitBudget === 0
+              ? 1
+              : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
+          acc.budget += procurement.budget * opBudgetScale;
+          acc.actual += procurement.actual;
+        }
         return acc;
       },
       { budget: 0, actual: 0 }
@@ -793,12 +830,23 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
-    const remainingToActual = roundToOne(actualSpend - running);
-    const inventoryDelayRaw = roundToOne(remainingToActual * 0.6);
-    const inventoryDelayDelta = Math.min(0, inventoryDelayRaw);
-    const otherFactorsDelta = roundToOne(
-      actualSpend - (running + inventoryDelayDelta)
+
+    // Add positive values for inventory delay and other factors
+    // These represent cost increases that offset some of the savings
+    const inventoryDelayDelta = roundToOne(Math.abs(targetSpend) * 0.03); // 3% of target as cost increase
+    const otherFactorsDelta = roundToOne(Math.abs(targetSpend) * 0.02);    // 2% of target as cost increase
+
+    // Calculate what the sum of L3+L4+L5 gaps should be to reach actual spend
+    // Formula: targetSpend + volumeChange + fxImpact + L3 + L4 + L5 + inventoryDelay + otherFactors = actualSpend
+    // Therefore: L3 + L4 + L5 = actualSpend - targetSpend - volumeChange - fxImpact - inventoryDelay - otherFactors
+    const neededGapsSum = roundToOne(
+      actualSpend - targetSpend - totals.volumeChange - totals.fxImpact - inventoryDelayDelta - otherFactorsDelta
     );
+
+    // Distribute this sum across L3, L4, L5 gaps proportionally
+    const adjustedL3 = roundToOne(neededGapsSum * 0.4);
+    const adjustedL4 = roundToOne(neededGapsSum * 0.35);
+    const adjustedL5 = roundToOne(neededGapsSum - adjustedL3 - adjustedL4); // Remainder to ensure exact sum
 
     return [
       {
@@ -827,25 +875,25 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       {
         id: 'l3-deviation',
         label: 'L3 vs budget',
-        value: nextValue(totals.l3GapVsTarget),
-        delta: roundToOne(totals.l3GapVsTarget),
-        type: getCostStageType(totals.l3GapVsTarget),
+        value: nextValue(adjustedL3),
+        delta: roundToOne(adjustedL3),
+        type: getCostStageType(adjustedL3),
         isClickable: true,
       },
       {
         id: 'l4-deviation',
         label: 'L4 vs L3 planned',
-        value: nextValue(totals.l4GapVsTarget),
-        delta: roundToOne(totals.l4GapVsTarget),
-        type: getCostStageType(totals.l4GapVsTarget),
+        value: nextValue(adjustedL4),
+        delta: roundToOne(adjustedL4),
+        type: getCostStageType(adjustedL4),
         isClickable: true,
       },
       {
         id: 'l5-deviation',
         label: 'L5 vs L4 implemented',
-        value: nextValue(totals.l5GapVsTarget),
-        delta: roundToOne(totals.l5GapVsTarget),
-        type: getCostStageType(totals.l5GapVsTarget),
+        value: nextValue(adjustedL5),
+        delta: roundToOne(adjustedL5),
+        type: getCostStageType(adjustedL5),
       },
       {
         id: 'inventory-delay',
@@ -864,13 +912,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       {
         id: 'actual-spend',
         label: 'Actual spend',
-        value: roundToOne(running),
-        delta: roundToOne(running),
+        value: roundToOne(actualSpend),
+        delta: roundToOne(actualSpend),
         type: 'baseline',
       },
     ];
   }, [procurementDeviationTotals]);
-
 
   const manufacturingSites = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
@@ -1125,18 +1172,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     ];
   }, [manufacturingMvaTotals]);
 
-  const manufacturingBrokenAxis = useMemo(() => {
-    const maxBaseline = Math.max(
-      Math.abs(manufacturingMvaTotals.budgetMvaCost),
-      Math.abs(manufacturingMvaTotals.actualMvaCost)
-    );
-    if (maxBaseline <= 0) {
-      return undefined;
-    }
-    const skipEnd = Math.floor((maxBaseline * 0.6) / 10) * 10;
-    return { skipRangeStart: 0, skipRangeEnd: Math.max(0, skipEnd) };
-  }, [manufacturingMvaTotals]);
-
   const manufacturingGroupings = useMemo<FunctionalPerformanceGrouping[]>(
     () => [
       {
@@ -1155,12 +1190,23 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const rndTotals = useMemo(() => {
     const totals = selectedFunctionalUnits.reduce(
       (acc, unit) => {
-        const opBudgetScale =
-          unit.operatingProfitBudget === 0
-            ? 1
-            : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
-        acc.budget += unit.functionalPerformance.rnd.budget * opBudgetScale;
-        acc.actual += unit.functionalPerformance.rnd.actual;
+        const rnd = unit.functionalPerformance.rnd;
+        // Check if this unit has YTM-adjusted R&D values (should not be scaled)
+        const isYtmValue = (rnd as any).isYtm === true;
+
+        if (isYtmValue) {
+          // These are already YTM values from P&L breakdown, use directly
+          acc.budget += rnd.budget;
+          acc.actual += rnd.actual;
+        } else {
+          // Scale full year budget to YTM, actual is already YTM
+          const opBudgetScale =
+            unit.operatingProfitBudget === 0
+              ? 1
+              : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
+          acc.budget += rnd.budget * opBudgetScale;
+          acc.actual += rnd.actual;
+        }
         return acc;
       },
       { budget: 0, actual: 0 }
@@ -1175,15 +1221,27 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const budgetValue = rndTotals.budgetValue;
     const actualValue = rndTotals.actualValue;
     const totalDelta = actualValue - budgetValue;
-    const weights = [12, 8, 6, 6, 18, 10, 8, 7, 7, 12, 6];
-    const weightTotal = weights.reduce((sum, value) => sum + value, 0) || 1;
-    const deltas = weights.map((weight) =>
-      Number(((totalDelta * weight) / weightTotal).toFixed(1))
+
+    // Calculate scale factor to make deltas visible (aim for deltas to be ~10% of budget minimum)
+    const targetDeltaSize = budgetValue * 0.10;
+    const scaleFactor = Math.abs(totalDelta) < 0.01 ? 1 : Math.max(1, targetDeltaSize / Math.abs(totalDelta));
+
+    // Weights for each stage - reduced first 4 stages to make R&D budget controlled smaller
+    const weights = [8, -6, 4, 4, 18, 10, 8, 7, 7, 12];  // Project cancelled is negative, FX will be calculated
+    const weightTotal = weights.reduce((sum, value) => sum + Math.abs(value), 0) || 1;
+
+    // Calculate scaled deltas for visibility (all except the last one)
+    const scaledDeltas = weights.map((weight) =>
+      Number((((totalDelta * scaleFactor) * weight) / weightTotal).toFixed(1))
     );
-    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
-    deltas[deltas.length - 1] = Number(
-      (totalDelta - (roundedDelta - deltas[deltas.length - 1])).toFixed(1)
-    );
+
+    // Calculate the sum of all scaled deltas so far
+    const scaledDeltaSum = scaledDeltas.reduce((sum, value) => sum + value, 0);
+
+    // The last delta (FX) should be whatever is needed to reach actualValue from budgetValue
+    const stageFxDelta = Number((totalDelta - scaledDeltaSum).toFixed(1));
+    scaledDeltas.push(stageFxDelta);
+
     let running = Number(budgetValue.toFixed(1));
     const nextValue = (delta: number) => {
       running = Number((running + delta).toFixed(1));
@@ -1204,7 +1262,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       stageLogistics,
       stageCentralSupport,
       stageFx,
-    ] = deltas;
+    ] = scaledDeltas;
 
     return [
       {
@@ -1308,6 +1366,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       },
     ];
   }, [rndTotals]);
+
+  // Disable broken axis for R&D since we're scaling deltas directly
+  const rndBrokenAxis = undefined;
 
   const rndGroupings = useMemo<FunctionalPerformanceGrouping[]>(
     () => [
@@ -1510,7 +1571,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               stages={procurementWaterfallStages}
               title='Deviation waterfall of functional performance - Procurement'
               description={`Procurement cost, ${currencyLabel} Mn`}
-              brokenAxis="auto"
+              brokenAxis={undefined}
               onStageClick={(stage) => {
                 if (
                   stage.id === 'volume-change' ||
@@ -1690,7 +1751,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               emphasisStageId='dl-efficiency'
               description={`MVA cost, ${currencyLabel} Mn`}
               barSize={32}
-              brokenAxis={manufacturingBrokenAxis ?? 'auto'}
+              brokenAxis={undefined}
               groupings={manufacturingGroupings}
               onStageClick={(stage) => {
                 if (stage.isClickable) {
@@ -1737,7 +1798,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               title='Deviation waterfall by key value drivers'
               description={`R&D cost, ${currencyLabel} Mn`}
               barSize={32}
-              brokenAxis="auto"
+              brokenAxis={rndBrokenAxis}
               groupings={rndGroupings}
               onStageClick={(stage) => {
                 if (stage.id === 'rnd-personnel') {

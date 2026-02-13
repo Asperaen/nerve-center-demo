@@ -54,7 +54,7 @@ import {
 const toMillions = (value: number) => value / 1_000;
 
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -734,7 +734,7 @@ export default function ExecutiveSummaryPage({
   const resolvePnlGroupKey = useCallback((groupName: string) => {
     const normalized = normalizeGroupId(groupName);
     if (normalized === 'hh') {
-      return 'HH';
+      return 'HH (Parent)';
     }
     if (normalized === 'fit') {
       return 'FIT';
@@ -817,7 +817,7 @@ export default function ExecutiveSummaryPage({
   ] as const;
 
   const renderPnlRows = useCallback(
-    (rows: PnlBreakdownRow[], showUnit: boolean = true) => {
+    (rows: PnlBreakdownRow[], showUnit: boolean = true, timeframeScope: TimeframeOption = 'full-year') => {
       const used = new Set<number>();
 
       const getNextRow = (label: string) => {
@@ -836,7 +836,15 @@ export default function ExecutiveSummaryPage({
         level: number,
         isGroup: boolean
       ) => {
-        const deviation = (row.fullYearBudget ?? 0) - (row.lastYearFullYear ?? 0);
+        // Use YTM or Full Year values based on toggle
+        const budgetValue = timeframeScope === 'ytm'
+          ? row.ytmBudget
+          : row.fullYearBudget;
+        const lastYearValue = timeframeScope === 'ytm'
+          ? row.lastYearYtm
+          : row.lastYearFullYear;
+        const deviation = (budgetValue ?? 0) - (lastYearValue ?? 0);
+
         return (
           <tr
             key={`${row.unit}-${row.lineItem}-${index}`}
@@ -852,10 +860,10 @@ export default function ExecutiveSummaryPage({
               </span>
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.fullYearBudget)}
+              {formatPnlValue(budgetValue)}
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
-              {formatPnlValue(row.lastYearFullYear)}
+              {formatPnlValue(lastYearValue)}
             </td>
             <td className='px-4 py-3 text-right text-gray-700'>
               {formatPnlValue(deviation)}
@@ -3218,7 +3226,7 @@ export default function ExecutiveSummaryPage({
                             </td>
                           </tr>
                         ) : groupedPnlRows.size <= 1 ? (
-                          renderPnlRows(activePnlRows, showPnlUnitColumn)
+                          renderPnlRows(activePnlRows, showPnlUnitColumn, selectedTimeframeScope)
                         ) : (
                           Array.from(groupedPnlRows.entries()).map(
                             ([unit, rows]) => (
@@ -3230,7 +3238,7 @@ export default function ExecutiveSummaryPage({
                                     {unit}
                                   </td>
                                 </tr>
-                                {renderPnlRows(rows, false)}
+                                {renderPnlRows(rows, false, selectedTimeframeScope)}
                               </React.Fragment>
                             )
                           )

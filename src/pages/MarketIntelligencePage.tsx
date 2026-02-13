@@ -50,7 +50,7 @@ import { setStoredTimeframe } from '../utils/timeframeStorage';
 const toMillions = (value: number) => value / 1_000;
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase();
+  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -448,7 +448,7 @@ export default function MarketIntelligencePage() {
     }
   }, [searchParams]);
 
-  const mainBuOptions = getMainBusinessGroupOptions();
+  const mainBuOptions = useMemo(() => getMainBusinessGroupOptions(), []);
   const selectedGroup = useMemo(() => {
     if (selectedBu === 'all') {
       return null;

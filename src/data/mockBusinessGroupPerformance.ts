@@ -89,7 +89,7 @@ const aiInsights: Record<string, Record<string, string>> = {
 export const mockBusinessGroupData: BusinessGroupData[] = [
   {
     id: 'hh',
-    name: 'HH',
+    name: 'HH (Parent)',
     rev: {
       value: 1349,
       baseline: 1547,
@@ -447,7 +447,7 @@ export interface SubBusinessGroupData extends BusinessGroupData {
 }
 
 // AI insights for sub-business groups
-const subGroupAiInsights: Record<string, Record<string, string>> = {
+export const subGroupAiInsights: Record<string, Record<string, string>> = {
   ipbg: {
     rev: 'IPBG revenue driven by industrial power solutions demand. Key wins in renewable energy sector contributing to growth.',
     gp: 'GP margins expanding with shift to higher-value integrated solutions. Component cost optimization ongoing.',
@@ -592,161 +592,6 @@ const subGroupAiInsights: Record<string, Record<string, string>> = {
     op: 'Operating costs managed through focused manufacturing and supply chain.',
     np: 'Net profit solid with premium positioning in specialized segments.',
   },
-};
-
-// Generate sub-business group data for a parent BG
-const generateSubGroupData = (
-  parentBgId: string,
-  parentData: BusinessGroupData
-): SubBusinessGroupData[] => {
-  // Define distributions based on parentBgId
-  let distributions;
-
-  if (parentBgId === 'hh') {
-    distributions = [
-      { id: 'ipbg', name: 'A Group', factor: 0.35, trend: 'up' as const },
-      { id: 'cnsbg', name: 'B Group', factor: 0.30, trend: 'flat' as const },
-      { id: 'cesbg', name: 'C Group', factor: 0.15, trend: 'up' as const },
-      { id: 'others_sub', name: 'E Group', factor: 0.10, trend: 'down' as const },
-      { id: 'others_sub_2', name: 'S Group', factor: 0.10, trend: 'down' as const },
-    ];
-  } else if (parentBgId === 'fit') {
-    distributions = [
-      { id: 'fit_sub1', name: 'Conn.', factor: 0.40, trend: 'up' as const },
-      { id: 'fit_sub2', name: 'Cable', factor: 0.35, trend: 'up' as const },
-      { id: 'fit_sub3', name: 'Audio', factor: 0.25, trend: 'up' as const },
-      { id: 'fit_sub4', name: 'Mobility', factor: 0.25, trend: 'up' as const },
-      { id: 'fit_sub5', name: 'Belkin', factor: 0.25, trend: 'up' as const },
-    ];
-  } else if (parentBgId === 'fih') {
-    distributions = [
-      { id: 'fih_sub1', name: 'Server', factor: 0.45, trend: 'up' as const },
-      { id: 'fih_sub2', name: 'AI/HPC', factor: 0.35, trend: 'up' as const },
-      { id: 'fih_sub3', name: 'Networking', factor: 0.20, trend: 'flat' as const },
-      { id: 'fih_sub4', name: 'Storage', factor: 0.20, trend: 'flat' as const },
-      { id: 'fih_sub5', name: 'IIOT', factor: 0.20, trend: 'flat' as const },
-      { id: 'fih_sub6', name: 'Automation', factor: 0.20, trend: 'flat' as const },
-    ];
-  } else if (parentBgId === 'fii') {
-    distributions = [
-      { id: 'fii_sub1', name: 'Smartphone', factor: 0.50, trend: 'flat' as const },
-      { id: 'fii_sub2', name: 'Feature Phone', factor: 0.30, trend: 'up' as const },
-      { id: 'fii_sub3', name: 'Smart Device', factor: 0.20, trend: 'up' as const },
-      { id: 'fii_sub4', name: 'ODM', factor: 0.20, trend: 'up' as const },
-      { id: 'fii_sub5', name: 'EMS', factor: 0.20, trend: 'up' as const },
-    ];
-  } else if (parentBgId === 'others') {
-    distributions = [
-      { id: 'others_sub1', name: 'Sharp', factor: 0.40, trend: 'up' as const },
-      { id: 'others_sub2', name: 'MIH/EV', factor: 0.35, trend: 'up' as const },
-      { id: 'others_sub3', name: 'Others', factor: 0.25, trend: 'flat' as const },
-    ];
-  } else {
-    // Default distribution for any other parentBgId
-    distributions = [
-      { id: 'ipbg', name: 'A Group', factor: 0.35, trend: 'up' as const },
-      { id: 'cnsbg', name: 'B Group', factor: 0.30, trend: 'flat' as const },
-      { id: 'cesbg', name: 'C Group', factor: 0.15, trend: 'up' as const },
-      { id: 'others_sub', name: 'E Group', factor: 0.10, trend: 'down' as const },
-      { id: 'others_sub_2', name: 'S Group', factor: 0.10, trend: 'down' as const },
-    ];
-  }
-
-  return distributions.map((dist) => {
-    const revValue = parentData.rev.value * dist.factor;
-    const revBaseline = parentData.rev.baseline * dist.factor;
-    const revStly = parentData.rev.stly * dist.factor;
-    const gpValue = parentData.gp.value * dist.factor;
-    const gpBaseline = parentData.gp.baseline * dist.factor;
-    const gpStly = parentData.gp.stly * dist.factor;
-    const opValue = parentData.op.value * dist.factor;
-    const opBaseline = parentData.op.baseline * dist.factor;
-    const opStly = parentData.op.stly * dist.factor;
-    const npValue = parentData.np.value * dist.factor;
-    const npBaseline = parentData.np.baseline * dist.factor;
-    const npStly = parentData.np.stly * dist.factor;
-
-    const calcPercent = (val: number, base: number) =>
-      base === 0 ? 0 : ((val - base) / base) * 100;
-
-    // Add some variance to percentages to make it more realistic
-    const variance = (Math.random() - 0.5) * 2; // -1 to +1
-
-    return {
-      id: `${parentBgId}-${dist.id}`,
-      parentBgId,
-      name: dist.name,
-      rev: {
-        value: revValue,
-        baseline: revBaseline,
-        stly: revStly,
-        percent: calcPercent(revValue, revBaseline) + variance,
-        trend: generateTrend(revValue, 0.08, dist.trend),
-        aiInsight: subGroupAiInsights[dist.id].rev,
-      },
-      gp: {
-        value: gpValue,
-        baseline: gpBaseline,
-        stly: gpStly,
-        percent: calcPercent(gpValue, gpBaseline) + variance,
-        trend: generateTrend(gpValue, 0.06, dist.trend),
-        aiInsight: subGroupAiInsights[dist.id].gp,
-      },
-      op: {
-        value: opValue,
-        baseline: opBaseline,
-        stly: opStly,
-        percent: calcPercent(opValue, opBaseline) + variance,
-        trend: generateTrend(opValue, 0.1, dist.trend),
-        aiInsight: subGroupAiInsights[dist.id].op,
-      },
-      np: {
-        value: npValue,
-        baseline: npBaseline,
-        stly: npStly,
-        percent: calcPercent(npValue, npBaseline) + variance,
-        trend: generateTrend(npValue, 0.12, dist.trend),
-        aiInsight: subGroupAiInsights[dist.id].np,
-      },
-    };
-  });
-};
-
-// Get sub-business groups for a given parent BG (without overall row)
-export const getSubBusinessGroups = (
-  parentBgId: string,
-  timeframe: BusinessGroupTimeframe = 'full-year'
-): SubBusinessGroupData[] => {
-  const parentBg = getBusinessGroupDataset(timeframe).find(
-    (bg) => bg.id === parentBgId
-  );
-  if (!parentBg) return [];
-  return generateSubGroupData(parentBgId, parentBg);
-};
-
-// Get sub-business groups with overall for a given parent BG
-export const getSubBusinessGroupsWithOverall = (
-  parentBgId: string,
-  timeframe: BusinessGroupTimeframe = 'full-year'
-): BusinessGroupData[] => {
-  const parentBg = getBusinessGroupDataset(timeframe).find(
-    (bg) => bg.id === parentBgId
-  );
-  if (!parentBg) return [];
-
-  const subGroups = generateSubGroupData(parentBgId, parentBg);
-
-  // Create overall row for this BG
-  const overall: BusinessGroupData = {
-    id: `${parentBgId}-overall`,
-    name: `${parentBg.name} overall`,
-    rev: { ...parentBg.rev },
-    gp: { ...parentBg.gp },
-    op: { ...parentBg.op },
-    np: { ...parentBg.np },
-  };
-
-  return [...subGroups, overall];
 };
 
 // Get parent BG info by ID
