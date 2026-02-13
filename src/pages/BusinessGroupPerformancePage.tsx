@@ -2779,20 +2779,73 @@ export default function BusinessGroupPerformancePage() {
     const canOpenPnl = isExpandable && !isOverallRow && !isSubGroup;
 
     const handleRowClick = () => {
-      if (!isClickable) {
+      console.log('Row clicked:', {
+        groupId: group.id,
+        groupName: group.name,
+        selectedBu,
+        isExpandable,
+        isOverallRow,
+        isSubGroup
+      });
+
+      // Don't do anything for overall rows
+      if (isOverallRow) {
         return;
       }
-      if (canOpenPnl) {
-        if (rowClickTimeoutRef.current !== null) {
-          window.clearTimeout(rowClickTimeoutRef.current);
+
+      // When clicking on a top-level business group row (when viewing all BGs),
+      // navigate to that specific BG
+      if (selectedBu === 'all' && isExpandable) {
+        console.log('Navigating to BG:', group.id);
+        setSelectedBu(group.id);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('bg', group.id);
+          next.set('timeframe', selectedTimeframe);
+          next.delete('toggle');
+          next.set('months', `${monthRange[0]}-${monthRange[1]}`);
+          next.set('view', financialView);
+          next.delete('bu');
+          next.delete('units');
+          next.delete('selected');
+          console.log('New URL params:', next.toString());
+          return next;
+        });
+        setExpandedRows(new Set());
+        return;
+      }
+
+      // For sub-group (business unit) rows or any other clickable rows,
+      // update the selection and URL params
+      const newSelectedIds = new Set(selectedGroupIds);
+
+      if (newSelectedIds.has(group.id)) {
+        newSelectedIds.delete(group.id);
+      } else {
+        newSelectedIds.add(group.id);
+      }
+
+      setSelectedGroupIds(newSelectedIds);
+
+      // Update URL params with the selection
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+
+        // If we have selections, add them to URL
+        if (newSelectedIds.size > 0) {
+          const selectedArray = Array.from(newSelectedIds);
+          next.set('selected', selectedArray.join(','));
+        } else {
+          next.delete('selected');
         }
-        rowClickTimeoutRef.current = window.setTimeout(() => {
-          toggleGroupSelection(group.id);
-          rowClickTimeoutRef.current = null;
-        }, 200);
-        return;
-      }
-      toggleGroupSelection(group.id);
+
+        next.set('timeframe', selectedTimeframe);
+        next.set('months', `${monthRange[0]}-${monthRange[1]}`);
+        next.set('view', financialView);
+
+        console.log('Updated selection URL params:', next.toString());
+        return next;
+      });
     };
     const handlePnlOpen = (event: React.MouseEvent<HTMLTableRowElement>) => {
       event.stopPropagation();
@@ -2826,7 +2879,10 @@ export default function BusinessGroupPerformancePage() {
             <input
               type='checkbox'
               checked={selectedGroupIds.has(group.id)}
-              onChange={() => toggleGroupSelection(group.id)}
+              onChange={(e) => {
+                e.stopPropagation();
+                toggleGroupSelection(group.id);
+              }}
               onClick={(event) => event.stopPropagation()}
               className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500'
               aria-label={`Select ${group.name}`}
