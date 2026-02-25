@@ -2478,10 +2478,10 @@ export const mockMVABreakdownKeyCallOut: KeyCallOut = {
 export const mockAppliedAssumptions: AppliedAssumption[] = [
   {
     id: 'assum-applied-1',
-    name: 'AI Data Center Acceleration',
-    description: 'Global data center trend accelerating faster than expected',
+    name: 'Labor Rate Decrease in Chihuahua, Mexico',
+    description: 'Excess labor availability in the local market reducing wage pressure and improving hiring leverage',
     impact: 40.0, // +40M impact (tailwind)
-    targetStage: 'headwinds-tailwinds',
+    targetStage: 'early-signals',
     impactType: 'positive',
     isApplied: true,
     color: '#10b981', // emerald-500 for positive/tailwind
@@ -2538,10 +2538,10 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
   },
   {
     id: 'assum-applied-2',
-    name: 'Apple AirPods Launch Delay',
-    description: 'Affects customer facts and revenue timing',
+    name: 'Steel Price Surge',
+    description: 'Steel price increase impacting material costs',
     impact: -5.0, // -5M impact (headwind)
-    targetStage: 'additional-risk',
+    targetStage: 'early-signals',
     impactType: 'negative',
     isApplied: true,
     color: '#f59e0b', // amber-500 for negative/headwind
@@ -2598,10 +2598,10 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
   },
   {
     id: 'assum-applied-3',
-    name: 'Copper Price Surge',
-    description: 'Copper price increase impacting material costs',
+    name: 'Resin Price Surge',
+    description: 'Resin price increase impacting material costs',
     impact: -5.0, // -5M impact (headwind)
-    targetStage: 'additional-risk',
+    targetStage: 'early-signals',
     impactType: 'negative',
     isApplied: true,
     color: '#ef4444', // red-500 for negative/headwind

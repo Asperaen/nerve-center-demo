@@ -31,7 +31,98 @@ type DeviationDataset = {
   l5GapVsTarget: number;
   actualSpend: number;
   category: string;
+  otherFactors?: number;
+  targetPctReduction?: number;
+  actualPctReduction?: number;
 }
+
+/** Static procurement deviation by category (Total + Category A–E). Numbers only, no invented values. */
+const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
+  {
+    category: 'Total',
+    baselineSpend: 1955,
+    targetSpend: 1733,
+    targetPctReduction: 11,
+    actualPctReduction: 37,
+    volumeChange: -594,
+    fxImpact: 160,
+    l3GapVsTarget: -139,
+    l4GapVsTarget: 11,
+    l5GapVsTarget: 64,
+    otherFactors: 3,
+    actualSpend: 1238,
+  },
+  {
+    category: 'Category A',
+    baselineSpend: 489,
+    targetSpend: 411,
+    targetPctReduction: 16,
+    actualPctReduction: 29,
+    volumeChange: -82,
+    fxImpact: 62,
+    l3GapVsTarget: -33,
+    l4GapVsTarget: -8,
+    l5GapVsTarget: -4,
+    otherFactors: 4,
+    actualSpend: 349,
+  },
+  {
+    category: 'Category B',
+    baselineSpend: 469,
+    targetSpend: 413,
+    targetPctReduction: 12,
+    actualPctReduction: 33,
+    volumeChange: -83,
+    fxImpact: 62,
+    l3GapVsTarget: -33,
+    l4GapVsTarget: -31,
+    l5GapVsTarget: -9,
+    otherFactors: -5,
+    actualSpend: 314,
+  },
+  {
+    category: 'Category C',
+    baselineSpend: 254,
+    targetSpend: 229,
+    targetPctReduction: 10,
+    actualPctReduction: -8,
+    volumeChange: -46,
+    fxImpact: 34,
+    l3GapVsTarget: -18,
+    l4GapVsTarget: 31,
+    l5GapVsTarget: 47,
+    otherFactors: -3,
+    actualSpend: 274,
+  },
+  {
+    category: 'Category D',
+    baselineSpend: 235,
+    targetSpend: 223,
+    targetPctReduction: 5,
+    actualPctReduction: 11,
+    volumeChange: -45,
+    fxImpact: 33,
+    l3GapVsTarget: -18,
+    l4GapVsTarget: 5,
+    l5GapVsTarget: 6,
+    otherFactors: 5,
+    actualSpend: 209,
+  },
+  {
+    category: 'Category E',
+    baselineSpend: 508,
+    targetSpend: 458,
+    targetPctReduction: 10,
+    actualPctReduction: 82,
+    volumeChange: -339,
+    fxImpact: -31,
+    l3GapVsTarget: -37,
+    l4GapVsTarget: 14,
+    l5GapVsTarget: 24,
+    otherFactors: 2,
+    actualSpend: 91,
+  },
+];
 
 const hashString = (value: string) => {
   let hash = 0;
@@ -279,6 +370,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     ['overall']
   );
   const [activeBucketId, setActiveBucketId] = useState<string | null>(null);
+  const [selectedProcurementCategoryIds, setSelectedProcurementCategoryIds] =
+    useState<string[]>(['total']);
+
+  const categoryToId = (category: string): string =>
+    category.toLowerCase().replace(/\s+/g, '-');
   const buParam = searchParams.get('bu') ?? '';
   const bgsParam = searchParams.get('bg') ?? searchParams.get('bgs') ?? '';
   const selectedBus = buParam
@@ -605,6 +701,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [selectedFunctionalUnits]);
 
   const procurementDeviationData = useMemo(() => {
+    if (isProcurement) {
+      return PROCUREMENT_DEVIATION_BY_CATEGORY.slice(1);
+    }
     const selectionKey = [
       ...selectedBgs.map(normalizeBu),
       ...selectedBus.map(normalizeBu),
@@ -617,9 +716,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       Math.abs(procurementOverallTotals.actual),
       selectionKey
     );
-  }, [procurementOverallTotals, selectedBgs, selectedBus]);
+  }, [isProcurement, procurementOverallTotals, selectedBgs, selectedBus]);
 
   const procurementDeviationTotals = useMemo(() => {
+    if (isProcurement) {
+      return PROCUREMENT_DEVIATION_BY_CATEGORY[0];
+    }
     const totals = procurementDeviationData.reduce(
       (acc, row) => {
         acc.baselineSpend += row.baselineSpend;
@@ -649,7 +751,78 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         Object.entries(totals).map(([key, value]) => [key, roundToOne(value)])
       ),
     } as DeviationDataset;
-  }, [procurementDeviationData]);
+  }, [isProcurement, procurementDeviationData]);
+
+  const procurementFilteredTotals = useMemo(() => {
+    if (!isProcurement) {
+      return procurementDeviationTotals;
+    }
+    const allRows = [procurementDeviationTotals, ...procurementDeviationData];
+    const selectedRows = allRows.filter((row) =>
+      selectedProcurementCategoryIds.includes(categoryToId(row.category))
+    );
+    if (selectedRows.length === 0) {
+      return procurementDeviationTotals;
+    }
+    const totals = selectedRows.reduce(
+      (acc, row) => {
+        acc.baselineSpend += row.baselineSpend;
+        acc.targetSpend += row.targetSpend;
+        acc.volumeChange += row.volumeChange;
+        acc.fxImpact += row.fxImpact;
+        acc.l3GapVsTarget += row.l3GapVsTarget;
+        acc.l4GapVsTarget += row.l4GapVsTarget;
+        acc.l5GapVsTarget += row.l5GapVsTarget;
+        acc.actualSpend += row.actualSpend;
+        if (row.otherFactors !== undefined) {
+          acc.otherFactors = (acc.otherFactors ?? 0) + row.otherFactors;
+        }
+        return acc;
+      },
+      {
+        baselineSpend: 0,
+        targetSpend: 0,
+        volumeChange: 0,
+        fxImpact: 0,
+        l3GapVsTarget: 0,
+        l4GapVsTarget: 0,
+        l5GapVsTarget: 0,
+        actualSpend: 0,
+        otherFactors: 0 as number | undefined,
+      }
+    );
+    const baselineSpend = roundToOne(totals.baselineSpend);
+    const targetSpend = roundToOne(totals.targetSpend);
+    const actualSpend = roundToOne(totals.actualSpend);
+    const result: DeviationDataset = {
+      category: 'Total',
+      baselineSpend,
+      targetSpend,
+      volumeChange: roundToOne(totals.volumeChange),
+      fxImpact: roundToOne(totals.fxImpact),
+      l3GapVsTarget: roundToOne(totals.l3GapVsTarget),
+      l4GapVsTarget: roundToOne(totals.l4GapVsTarget),
+      l5GapVsTarget: roundToOne(totals.l5GapVsTarget),
+      actualSpend,
+    };
+    if (totals.otherFactors !== undefined) {
+      result.otherFactors = roundToOne(totals.otherFactors);
+    }
+    if (baselineSpend > 0) {
+      result.targetPctReduction = roundToOne(
+        (1 - targetSpend / baselineSpend) * 100
+      );
+      result.actualPctReduction = roundToOne(
+        (1 - actualSpend / baselineSpend) * 100
+      );
+    }
+    return result;
+  }, [
+    isProcurement,
+    selectedProcurementCategoryIds,
+    procurementDeviationTotals,
+    procurementDeviationData,
+  ]);
 
   const procurementBuckets = [
     {
@@ -818,7 +991,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   ];
 
   const procurementWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
-    const totals = procurementDeviationTotals;
+    const totals = isProcurement
+      ? procurementFilteredTotals
+      : procurementDeviationTotals;
     const baselineSpend = Math.abs(totals.baselineSpend);
     const targetSpend = Math.abs(totals.targetSpend);
     const actualSpend = Math.abs(totals.actualSpend);
@@ -831,31 +1006,95 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
 
-    // Add positive values for inventory delay and other factors
-    // These represent cost increases that offset some of the savings
-    const inventoryDelayDelta = roundToOne(Math.abs(targetSpend) * 0.03); // 3% of target as cost increase
-    const otherFactorsDelta = roundToOne(Math.abs(targetSpend) * 0.02);    // 2% of target as cost increase
+    const useStaticTotals = totals.otherFactors !== undefined;
 
-    // Calculate what the sum of L3+L4+L5 gaps should be to reach actual spend
-    // Formula: targetSpend + volumeChange + fxImpact + L3 + L4 + L5 + inventoryDelay + otherFactors = actualSpend
-    // Therefore: L3 + L4 + L5 = actualSpend - targetSpend - volumeChange - fxImpact - inventoryDelay - otherFactors
+    if (useStaticTotals) {
+      // Use L3, L4, L5 and other factors from static data; no inventory delay
+      const otherFactorsDelta = roundToOne(totals.otherFactors ?? 0);
+      return [
+        {
+          id: 'target-spend',
+          label: 'Target spend',
+          value: roundToOne(baselineSpend),
+          delta: roundToOne(baselineSpend),
+          type: 'baseline',
+          referenceValue: roundToOne(targetSpend),
+        },
+        {
+          id: 'volume-change',
+          label: 'Volume change',
+          value: nextValue(totals.volumeChange),
+          delta: roundToOne(totals.volumeChange),
+          type: getCostStageType(totals.volumeChange),
+          isClickable: true,
+        },
+        {
+          id: 'fx-impact',
+          label: 'FX impact',
+          value: nextValue(totals.fxImpact),
+          delta: roundToOne(totals.fxImpact),
+          type: getCostStageType(totals.fxImpact),
+        },
+        {
+          id: 'l3-deviation',
+          label: 'L3 vs budget',
+          value: nextValue(totals.l3GapVsTarget),
+          delta: roundToOne(totals.l3GapVsTarget),
+          type: getCostStageType(totals.l3GapVsTarget),
+          isClickable: true,
+        },
+        {
+          id: 'l4-deviation',
+          label: 'L4 vs L3 planned',
+          value: nextValue(totals.l4GapVsTarget),
+          delta: roundToOne(totals.l4GapVsTarget),
+          type: getCostStageType(totals.l4GapVsTarget),
+          isClickable: true,
+        },
+        {
+          id: 'l5-deviation',
+          label: 'L5 vs L4 implemented',
+          value: nextValue(totals.l5GapVsTarget),
+          delta: roundToOne(totals.l5GapVsTarget),
+          type: getCostStageType(totals.l5GapVsTarget),
+        },
+        {
+          id: 'other-factors',
+          label: 'Other factors',
+          value: nextValue(otherFactorsDelta),
+          delta: otherFactorsDelta,
+          type: getCostStageType(otherFactorsDelta),
+        },
+        {
+          id: 'actual-spend',
+          label: 'Actual spend',
+          value: roundToOne(actualSpend),
+          delta: roundToOne(actualSpend),
+          type: 'baseline',
+        },
+      ];
+    }
+
+    // Generated data: invent inventory delay and other factors, then derive L3+L4+L5
+    const inventoryDelayDelta = roundToOne(Math.abs(targetSpend) * 0.03);
+    const otherFactorsDelta = roundToOne(Math.abs(targetSpend) * 0.02);
+
     const neededGapsSum = roundToOne(
       actualSpend - targetSpend - totals.volumeChange - totals.fxImpact - inventoryDelayDelta - otherFactorsDelta
     );
 
-    // Distribute this sum across L3, L4, L5 gaps proportionally
     const adjustedL3 = roundToOne(neededGapsSum * 0.4);
     const adjustedL4 = roundToOne(neededGapsSum * 0.35);
-    const adjustedL5 = roundToOne(neededGapsSum - adjustedL3 - adjustedL4); // Remainder to ensure exact sum
+    const adjustedL5 = roundToOne(neededGapsSum - adjustedL3 - adjustedL4);
 
     return [
       {
         id: 'target-spend',
         label: 'Target spend',
-        value: roundToOne(targetSpend),
-        delta: roundToOne(targetSpend),
+        value: roundToOne(baselineSpend),
+        delta: roundToOne(baselineSpend),
         type: 'baseline',
-        referenceValue: roundToOne(baselineSpend),
+        referenceValue: roundToOne(targetSpend),
       },
       {
         id: 'volume-change',
@@ -917,7 +1156,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: 'baseline',
       },
     ];
-  }, [procurementDeviationTotals]);
+  }, [isProcurement, procurementFilteredTotals, procurementDeviationTotals]);
 
   const manufacturingSites = useMemo(() => {
     const normalizedSelected = selectedBus.map(normalizeBu).filter(Boolean);
@@ -956,20 +1195,39 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
     const siteTotals = new Map<
       string,
-      { dl: { budget: number; actual: number }; idl: { budget: number; actual: number }; ga: { budget: number; actual: number } }
+      {
+        targetMva: number;
+        volumeMixChange: number;
+        laborRateChange: number;
+        dl: number;
+        idl: number;
+        gaVar: number;
+        gaFixed: number;
+        fxImpact: number;
+        actualMva: number;
+      }
     >();
     for (const entry of entries) {
       const current = siteTotals.get(entry.site) ?? {
-        dl: { budget: 0, actual: 0 },
-        idl: { budget: 0, actual: 0 },
-        ga: { budget: 0, actual: 0 },
+        targetMva: 0,
+        volumeMixChange: 0,
+        laborRateChange: 0,
+        dl: 0,
+        idl: 0,
+        gaVar: 0,
+        gaFixed: 0,
+        fxImpact: 0,
+        actualMva: 0,
       };
-      current.dl.budget += entry.budgetDl;
-      current.dl.actual += entry.actualDl;
-      current.idl.budget += entry.budgetIdl;
-      current.idl.actual += entry.actualIdl;
-      current.ga.budget += entry.budgetGa;
-      current.ga.actual += entry.actualGa;
+      current.targetMva += entry.budgetMvaCost;
+      current.volumeMixChange += entry.volMixChange;
+      current.laborRateChange += entry.laborRateImpact;
+      current.dl += entry.dlEfficiencyGap;
+      current.idl += entry.idlHcGap;
+      current.gaVar += entry.gaVariableEfficiency;
+      current.gaFixed += entry.gaFixedCostGap;
+      current.fxImpact += entry.fxImpact;
+      current.actualMva += entry.actualMvaCost;
       siteTotals.set(entry.site, current);
     }
 
@@ -1078,6 +1336,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     }
   }, [isManufacturing, manufacturingSites, selectedCategoryIds]);
 
+  useEffect(() => {
+    if (!isProcurement) return;
+    if (selectedProcurementCategoryIds.length === 0) {
+      setSelectedProcurementCategoryIds(['total']);
+    }
+  }, [isProcurement, selectedProcurementCategoryIds]);
+
   const manufacturingWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
     // Only DL efficiency gap bar should be clickable
     const manufacturingClickableIds = new Set(['dl-efficiency']);
@@ -1102,9 +1367,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       {
         id: 'target-mva',
         label: 'Target MVA',
-        value: Number(targetValue.toFixed(1)),
-        delta: Number(targetValue.toFixed(1)),
+        value: 2542,
+        delta: 2542,
         type: 'baseline',
+        referenceValue: Number(targetValue.toFixed(1)),
       },
       {
         id: 'vol-mix-change',
@@ -1218,154 +1484,115 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   }, [selectedFunctionalUnits]);
 
   const rndWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
-    const budgetValue = rndTotals.budgetValue;
-    const actualValue = rndTotals.actualValue;
-    const totalDelta = actualValue - budgetValue;
-
-    // Calculate scale factor to make deltas visible (aim for deltas to be ~10% of budget minimum)
-    const targetDeltaSize = budgetValue * 0.10;
-    const scaleFactor = Math.abs(totalDelta) < 0.01 ? 1 : Math.max(1, targetDeltaSize / Math.abs(totalDelta));
-
-    // Weights for each stage - reduced first 4 stages to make R&D budget controlled smaller
-    const weights = [8, -6, 4, 4, 18, 10, 8, 7, 7, 12];  // Project cancelled is negative, FX will be calculated
-    const weightTotal = weights.reduce((sum, value) => sum + Math.abs(value), 0) || 1;
-
-    // Calculate scaled deltas for visibility (all except the last one)
-    const scaledDeltas = weights.map((weight) =>
-      Number((((totalDelta * scaleFactor) * weight) / weightTotal).toFixed(1))
-    );
-
-    // Calculate the sum of all scaled deltas so far
-    const scaledDeltaSum = scaledDeltas.reduce((sum, value) => sum + value, 0);
-
-    // The last delta (FX) should be whatever is needed to reach actualValue from budgetValue
-    const stageFxDelta = Number((totalDelta - scaledDeltaSum).toFixed(1));
-    scaledDeltas.push(stageFxDelta);
-
-    let running = Number(budgetValue.toFixed(1));
-    const nextValue = (delta: number) => {
-      running = Number((running + delta).toFixed(1));
-      return running;
-    };
+    // Fixed bar data per spec: 185, 5, -67, 3, -8, 118, -2, -3, -2, -1, 4, 3, -11, 106
+    const specValues = [185, 5, -67, 3, -8, 118, -2, -3, -2, -1, 4, 3, -11, 106];
     const getCostStageType = (delta: number): 'positive' | 'negative' =>
       delta <= 0 ? 'positive' : 'negative';
 
-    const [
-      stageProjectNew,
-      stageProjectCancelled,
-      stageCustomerRequest,
-      stageTimelineChange,
-      stagePersonnel,
-      stageRentalDep,
-      stageTravel,
-      stagePrototype,
-      stageLogistics,
-      stageCentralSupport,
-      stageFx,
-    ] = scaledDeltas;
-
+    let running = specValues[0];
     return [
       {
-        id: 'rnd-expense-target',
+        id: 'target-spend',
         label: 'R&D Expense Target',
-        value: Number(budgetValue.toFixed(1)),
-        delta: Number(budgetValue.toFixed(1)),
+        value: 204,
+        delta: 204,
         type: 'baseline',
+        referenceValue: 185,
       },
       {
         id: 'project-newly-added',
         label: 'Project newly added',
-        value: nextValue(stageProjectNew),
-        delta: stageProjectNew,
-        type: getCostStageType(stageProjectNew),
+        value: (running += specValues[1]),
+        delta: specValues[1],
+        type: getCostStageType(specValues[1]),
       },
       {
         id: 'project-cancelled',
         label: 'Project cancelled',
-        value: nextValue(stageProjectCancelled),
-        delta: stageProjectCancelled,
-        type: getCostStageType(stageProjectCancelled),
+        value: (running += specValues[2]),
+        delta: specValues[2],
+        type: getCostStageType(specValues[2]),
       },
       {
         id: 'customer-request-item',
         label: 'Customer request item',
-        value: nextValue(stageCustomerRequest),
-        delta: stageCustomerRequest,
-        type: getCostStageType(stageCustomerRequest),
+        value: (running += specValues[3]),
+        delta: specValues[3],
+        type: getCostStageType(specValues[3]),
       },
       {
         id: 'timeline-change',
         label: 'Timeline change',
-        value: nextValue(stageTimelineChange),
-        delta: stageTimelineChange,
-        type: getCostStageType(stageTimelineChange),
+        value: (running += specValues[4]),
+        delta: specValues[4],
+        type: getCostStageType(specValues[4]),
       },
       {
         id: 'rnd-budget-controlled',
         label: 'R&D budget controlled by R&D',
-        value: Number(running.toFixed(1)),
-        delta: Number(running.toFixed(1)),
+        value: 118,
+        delta: 118,
         type: 'baseline',
       },
       {
         id: 'rnd-personnel',
         label: 'Personnel (61) delta',
-        value: nextValue(stagePersonnel),
-        delta: stagePersonnel,
-        type: getCostStageType(stagePersonnel),
+        value: (running = 118 + specValues[6]),
+        delta: specValues[6],
+        type: getCostStageType(specValues[6]),
         isClickable: true,
       },
       {
         id: 'rnd-rental-dep',
         label: 'Rental & Dep. (62) delta',
-        value: nextValue(stageRentalDep),
-        delta: stageRentalDep,
-        type: getCostStageType(stageRentalDep),
+        value: (running += specValues[7]),
+        delta: specValues[7],
+        type: getCostStageType(specValues[7]),
       },
       {
         id: 'rnd-travel',
         label: 'Travel (63) delta',
-        value: nextValue(stageTravel),
-        delta: stageTravel,
-        type: getCostStageType(stageTravel),
+        value: (running += specValues[8]),
+        delta: specValues[8],
+        type: getCostStageType(specValues[8]),
       },
       {
         id: 'rnd-prototype-testing',
         label: 'Prototype & Testing (64) delta',
-        value: nextValue(stagePrototype),
-        delta: stagePrototype,
-        type: getCostStageType(stagePrototype),
+        value: (running += specValues[9]),
+        delta: specValues[9],
+        type: getCostStageType(specValues[9]),
       },
       {
         id: 'rnd-logistics',
         label: 'Logistics (65) delta',
-        value: nextValue(stageLogistics),
-        delta: stageLogistics,
-        type: getCostStageType(stageLogistics),
+        value: (running += specValues[10]),
+        delta: specValues[10],
+        type: getCostStageType(specValues[10]),
       },
       {
         id: 'rnd-central-support',
         label: 'Central and cross BU support',
-        value: nextValue(stageCentralSupport),
-        delta: stageCentralSupport,
-        type: getCostStageType(stageCentralSupport),
+        value: (running += specValues[11]),
+        delta: specValues[11],
+        type: getCostStageType(specValues[11]),
       },
       {
         id: 'fx-impact',
         label: 'FX Impact',
-        value: nextValue(stageFx),
-        delta: stageFx,
-        type: getCostStageType(stageFx),
+        value: (running += specValues[12]),
+        delta: specValues[12],
+        type: getCostStageType(specValues[12]),
       },
       {
         id: 'rnd-expense-actual',
         label: 'R&D expense actual',
-        value: Number(actualValue.toFixed(1)),
-        delta: Number(actualValue.toFixed(1)),
+        value: 106,
+        delta: 106,
         type: 'baseline',
       },
     ];
-  }, [rndTotals]);
+  }, []);
 
   // Disable broken axis for R&D since we're scaling deltas directly
   const rndBrokenAxis = undefined;
@@ -1502,6 +1729,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                         L5 gap vs. target
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Other factors
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         Actual spend
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
@@ -1512,21 +1742,54 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   <tbody>
                     {[procurementDeviationTotals, ...procurementDeviationData].map(
                       (row, index) => {
-                        const baseline = row.baselineSpend;
-                        const targetReduction =
-                          baseline === 0
-                            ? 0
-                            : (row.targetSpend / row.baselineSpend - 1) * 100
-                        const actualReduction =
-                          baseline === 0
-                            ? 0
-                            : (row.actualSpend / row.baselineSpend - 1) * 100;
+                        const rowId = categoryToId(row.category);
+                        const targetReductionDisplay =
+                          row.targetPctReduction !== undefined
+                            ? row.targetPctReduction
+                            : row.baselineSpend === 0
+                              ? 0
+                              : (row.targetSpend / row.baselineSpend - 1) * 100;
+                        const actualReductionDisplay =
+                          row.actualPctReduction !== undefined
+                            ? row.actualPctReduction
+                            : row.baselineSpend === 0
+                              ? 0
+                              : (row.actualSpend / row.baselineSpend - 1) * 100;
                         return (
                           <tr
                             key={`${row.category}-${index}`}
                             className='border-b border-gray-200 last:border-b-0'>
-                            <td className='px-4 py-3 font-semibold text-gray-900'>
-                              {row.category}
+                            <td className='px-4 py-3'>
+                              <label className='flex items-center gap-3 text-gray-700'>
+                                <input
+                                  type='checkbox'
+                                  checked={selectedProcurementCategoryIds.includes(
+                                    rowId
+                                  )}
+                                  onChange={() => {
+                                    setSelectedProcurementCategoryIds(
+                                      (prev) => {
+                                        if (prev.includes(rowId)) {
+                                          const filtered = prev.filter(
+                                            (id) => id !== rowId
+                                          );
+                                          return filtered.length === 0
+                                            ? ['total']
+                                            : filtered;
+                                        }
+                                        // When selecting any non-Total row, unselect Total
+                                        const next = rowId === 'total'
+                                          ? [...prev, rowId]
+                                          : [...prev.filter((id) => id !== 'total'), rowId];
+                                        return next;
+                                      }
+                                    );
+                                  }}
+                                />
+                                <span className='font-semibold text-gray-900'>
+                                  {row.category}
+                                </span>
+                              </label>
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
                               {formatMn(row.baselineSpend)}
@@ -1535,7 +1798,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                               {formatMn(row.targetSpend)}
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
-                              {formatPercent(targetReduction)}
+                              {formatPercent(targetReductionDisplay)}
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
                               {formatMn(row.volumeChange)}
@@ -1552,11 +1815,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             <td className='px-4 py-3 text-right text-gray-700'>
                               {formatMn(row.l5GapVsTarget)}
                             </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {row.otherFactors !== undefined
+                                ? formatMn(row.otherFactors)
+                                : '—'}
+                            </td>
                             <td className='px-4 py-3 text-right font-semibold text-gray-900'>
                               {formatMn(row.actualSpend)}
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
-                              {formatPercent(actualReduction)}
+                              {formatPercent(actualReductionDisplay)}
                             </td>
                           </tr>
                         );
@@ -1587,7 +1855,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        targetReduction
+                        procurementFilteredTotals.targetPctReduction ?? targetReduction
                       )}
                     </span>
                   </span>
@@ -1595,7 +1863,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
                       {formatPercent(
-                        calculateActualReduction(procurementDeviationTotals.actualSpend, procurementDeviationTotals.targetSpend, targetReduction)
+                        procurementFilteredTotals.actualPctReduction !== undefined
+                          ? procurementFilteredTotals.actualPctReduction
+                          : calculateActualReduction(procurementFilteredTotals.actualSpend, procurementFilteredTotals.targetSpend, targetReduction)
                       )}
                     </span>
                   </span>
@@ -1634,33 +1904,38 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       <th className='px-4 py-3 text-left font-semibold text-gray-700'>
                         Site
                       </th>
-                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Target MVA
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Volume / mix change
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Labor rate change
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         DL
                       </th>
-                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         IDL
                       </th>
-                      <th className='px-4 py-3 text-center font-semibold text-gray-700'>
-                        G&amp;A
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        G&A Var
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        G&A Fixed
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        FX impact
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Actual MVA
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {manufacturingSites.flatMap((row) => {
                       const isSelected = selectedCategoryIds.includes(row.id);
-                      const renderCell = (metric: {
-                        budget: number;
-                        actual: number;
-                      }) => (
-                        <div className='text-sm text-gray-700'>
-                          <div className='font-semibold'>
-                            {formatMn(metric.actual)} (actuals)
-                          </div>
-                          <div className='text-xs text-gray-500'>
-                            vs {formatMn(metric.budget)} (budget)
-                          </div>
-                        </div>
-                      );
                       const parentRow = (
                         <tr key={row.id} className='border-b border-gray-200'>
                           <td className='px-4 py-3'>
@@ -1683,14 +1958,32 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                               </span>
                             </label>
                           </td>
-                          <td className='px-4 py-3 text-center'>
-                            {renderCell(row.dl)}
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.targetMva)}
                           </td>
-                          <td className='px-4 py-3 text-center'>
-                            {renderCell(row.idl)}
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.volumeMixChange)}
                           </td>
-                          <td className='px-4 py-3 text-center'>
-                            {renderCell(row.ga)}
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.laborRateChange)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.dl)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.idl)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.gaVar)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.gaFixed)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.fxImpact)}
+                          </td>
+                          <td className='px-4 py-3 text-right text-gray-700'>
+                            {formatMn(row.actualMva)}
                           </td>
                         </tr>
                       );
@@ -1726,14 +2019,32 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                               </span>
                             </label>
                           </td>
-                          <td className='px-4 py-2 text-center'>
-                            {renderCell(child.dl)}
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.targetMva)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
-                            {renderCell(child.idl)}
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.volumeMixChange)}
                           </td>
-                          <td className='px-4 py-2 text-center'>
-                            {renderCell(child.ga)}
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.laborRateChange)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.dl)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.idl)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.gaVar)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.gaFixed)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.fxImpact)}
+                          </td>
+                          <td className='px-4 py-2 text-right text-gray-700'>
+                            {formatMn(child.actualMva)}
                           </td>
                         </tr>
                       ));
@@ -1763,15 +2074,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   <span>
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(targetReduction)}
+                      {formatPercent(9)}
                     </span>
                   </span>
                   <span>
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(
-                        calculateActualReduction(manufacturingMvaTotals.actualMvaCost, manufacturingMvaTotals.budgetMvaCost, targetReduction)
-                      )}
+                      {formatPercent(35)}
                     </span>
                   </span>
                 </div>
@@ -1810,15 +2119,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                   <span>
                     Target % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(targetReduction)}
+                      {formatPercent(9)}
                     </span>
                   </span>
                   <span>
                     Actual % reduction:{' '}
                     <span className='font-semibold text-gray-900'>
-                      {formatPercent(
-                        calculateActualReduction(rndTotals.actualValue, rndTotals.budgetValue, targetReduction)
-                      )}
+                      {formatPercent(11)}
                     </span>
                   </span>
                 </div>
@@ -1890,7 +2197,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           <div
             className='w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl border border-gray-200'
             onClick={(event) => event.stopPropagation()}>
-            {activeBucketId === 'dl-efficiency' ? (
+            {(activeBucketId === 'l3-deviation' || activeBucketId === 'l4-deviation') ? (
               <>
                 <div className='flex items-start justify-between'>
                   <div>
@@ -1910,33 +2217,53 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <thead>
                       <tr>
                         <th className='text-left font-semibold text-gray-700 pb-2'>
-                          Top initiative deviation
-                        </th>
-                        <th className='text-left font-semibold text-gray-700 pb-2'>
-                          Gap to target
-                        </th>
-                        <th className='text-left font-semibold text-gray-700 pb-2'>
                           KPI impacted
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          KPI target
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          KPI actual
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          Gap to target
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        {
-                          name: 'Initiative 1',
-                          gap: '-2.0Mn',
-                          kpi: 'UPPH',
-                        },
-                        {
-                          name: 'Initiative 2',
-                          gap: '-1.3Mn',
-                          kpi: 'UPPH, OEE',
-                        },
-                      ].map((row) => (
-                        <tr key={row.name} className='border-t border-gray-200'>
-                          <td className='py-2'>{row.name}</td>
-                          <td className='py-2'>{row.gap}</td>
+                        { kpi: 'Unit price', target: 2.3, actual: 3.5, gap: -65 },
+                        { kpi: 'Unit price', target: 41.6, actual: 42.1, gap: -74 },
+                      ].map((row, i) => (
+                        <tr key={i} className='border-t border-gray-200'>
                           <td className='py-2'>{row.kpi}</td>
+                          <td className='py-2 text-right'>{row.target}</td>
+                          <td className='py-2 text-right'>{row.actual}</td>
+                          <td className='py-2 text-right'>{row.gap}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Initiative #
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { initiativeNo: 45233, gap: -65 },
+                        { initiativeNo: 58966, gap: -74 },
+                      ].map((row) => (
+                        <tr key={row.initiativeNo} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.initiativeNo}</td>
+                          <td className='py-2 text-right'>{row.gap}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1944,7 +2271,108 @@ export default function BusinessUnitPerformanceByFunctionPage() {
 
                   <div>
                     <h4 className='text-lg font-semibold text-gray-900 mb-2'>
-                      Key Performance Foundations
+                      Key Performance Foundation
+                    </h4>
+                    <table className='w-full text-sm'>
+                      <thead>
+                        <tr>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Performance foundation
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            KPI impacted
+                          </th>
+                          <th className='text-left font-semibold text-gray-700 pb-2'>
+                            Process confirmation date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className='border-t border-gray-200'>
+                          <td className='py-2'>Category % spend optimization</td>
+                          <td className='py-2'>Unit price</td>
+                          <td className='py-2'>2025.2</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : activeBucketId === 'dl-efficiency' ? (
+              <>
+                <div className='flex items-start justify-between'>
+                  <div>
+                    <h3 className='text-lg font-semibold text-gray-900'>
+                      Top initiative deviation
+                    </h3>
+                  </div>
+                  <button
+                    type='button'
+                    className='rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300'
+                    onClick={() => setActiveBucketId(null)}>
+                    Close
+                  </button>
+                </div>
+                <div className='mt-4 space-y-6 text-sm text-gray-700'>
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          KPI impacted
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          KPI target
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          KPI actual
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { kpi: 'UPPH', target: '3.7', actual: '3.1', gap: -54 },
+                        { kpi: 'OEE', target: '95%', actual: '92%', gap: -55 },
+                      ].map((row, i) => (
+                        <tr key={i} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.kpi}</td>
+                          <td className='py-2 text-right'>{row.target}</td>
+                          <td className='py-2 text-right'>{row.actual}</td>
+                          <td className='py-2 text-right'>{row.gap}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <table className='w-full text-sm'>
+                    <thead>
+                      <tr>
+                        <th className='text-left font-semibold text-gray-700 pb-2'>
+                          Initiative #
+                        </th>
+                        <th className='text-right font-semibold text-gray-700 pb-2'>
+                          Gap to target
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { initiativeNo: 15667, gap: -54 },
+                        { initiativeNo: 54778, gap: -55 },
+                      ].map((row) => (
+                        <tr key={row.initiativeNo} className='border-t border-gray-200'>
+                          <td className='py-2'>{row.initiativeNo}</td>
+                          <td className='py-2 text-right'>{row.gap}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div>
+                    <h4 className='text-lg font-semibold text-gray-900 mb-2'>
+                      Key Performance Foundation
                     </h4>
                     <table className='w-full text-sm'>
                       <thead>
@@ -1963,22 +2391,22 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       <tbody>
                         {[
                           {
-                            name: '17. Performance mgmt.',
+                            name: 'Performance mgmt.',
                             kpi: 'UPPH',
                             date: '2025.1',
                           },
                           {
-                            name: '19. Frontline capabilities',
+                            name: 'Frontline capabilities',
                             kpi: 'UPPH',
-                            date: '2025.4',
+                            date: '2024.4',
                           },
                           {
-                            name: '20. Asset / labor productivity',
+                            name: 'Asset / labor productivity',
                             kpi: 'UPPH, OEE',
                             date: '2024.9',
                           },
                           {
-                            name: '21. Automation',
+                            name: 'Automation',
                             kpi: 'UPPH',
                             date: '2024.9',
                           },

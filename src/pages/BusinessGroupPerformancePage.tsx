@@ -1947,7 +1947,7 @@ export default function BusinessGroupPerformancePage() {
   );
 
   const budgetWaterfallStages = useMemo(() => {
-    // budgetValue = Last Year OP (starting point)
+    // budgetValue = 2025 OP (starting point)
     // actualValue = Current Year OP Target (ending point)
     const budgetValue = selectionMetrics.selectedOpBaseline;
     const actualValue = selectionMetrics.selectedOpValue;
@@ -2000,7 +2000,7 @@ export default function BusinessGroupPerformancePage() {
     return [
       makeStage(
         'budget',
-        'Last year OP',
+        '2025 OP',
         roundToOne(budgetValue),
         roundToOne(budgetValue),
         'baseline'
@@ -2049,7 +2049,7 @@ export default function BusinessGroupPerformancePage() {
       ),
       makeStage(
         'actuals',
-        'Budget target',
+        '2026 OP target (Budget)',
         roundToOne(budgetTarget),
         roundToOne(budgetTarget),
         'baseline'

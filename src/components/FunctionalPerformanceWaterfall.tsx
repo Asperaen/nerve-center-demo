@@ -203,6 +203,36 @@ const BrokenBarShape = (props: {
       />
     );
   }
+  // Procurement first bucket: baseline as full bar height, target as bottom segment (light), baseline above target as top (darker)
+  if (isBaseline && shouldDrawReference && (payload?.id === 'target-spend' || payload?.id === 'target-mva')) {
+    const targetSegmentHeight = height * (Math.abs(referenceBarValue!) / Math.abs(barValue!));
+    const baselineAboveHeight = height - targetSegmentHeight;
+    const bottomY = y + baselineAboveHeight;
+    return (
+      <g>
+        {/* Bottom: target spend (0 to target) — light grey */}
+        <rect
+          x={x}
+          y={bottomY}
+          width={width}
+          height={targetSegmentHeight}
+          fill='#9ca3af'
+          rx={2}
+          ry={2}
+        />
+        {/* Top: baseline above target — darker */}
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={baselineAboveHeight}
+          fill='#6b7280'
+          rx={2}
+          ry={2}
+        />
+      </g>
+    );
+  }
   if (!isBaseline) {
     // Regular bar without break
     return (
@@ -546,7 +576,10 @@ export default function FunctionalPerformanceWaterfall({
         referenceBarValue,
       };
       if (!stage.isReference) {
-        lastNonReferenceValue = stage.value;
+        lastNonReferenceValue =
+          stage.id === 'target-spend' && typeof referenceValue === 'number'
+            ? referenceValue
+            : stage.value;
       }
       return chartPoint;
     });

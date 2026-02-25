@@ -1021,6 +1021,10 @@ export default function FinancePage() {
                     mockOPWaterfallStages.find(
                       (s) => s.stage === assumption.targetStage
                     )?.label || assumption.targetStage;
+                  const displayLabel =
+                    assumption.targetStage === 'early-signals'
+                      ? 'early signal'
+                      : stageLabel;
 
                   return (
                     <div
@@ -1076,7 +1080,7 @@ export default function FinancePage() {
                             </span>
                           </span>
                           <span>•</span>
-                          <span>Affects: {stageLabel}</span>
+                          <span>Affects: {displayLabel}</span>
                         </div>
                       </div>
                       <div className='flex items-center gap-3'>
@@ -1140,6 +1144,10 @@ export default function FinancePage() {
                       mockOPWaterfallStages.find(
                         (s) => s.stage === assumption.targetStage
                       )?.label || assumption.targetStage;
+                    const displayLabel =
+                      assumption.targetStage === 'early-signals'
+                        ? 'early signal'
+                        : stageLabel;
 
                     const isDragging = draggedAssumptionId === assumption.id;
 
@@ -1206,7 +1214,7 @@ export default function FinancePage() {
                               </span>
                             </span>
                             <span>•</span>
-                            <span>Affects: {stageLabel}</span>
+                            <span>Affects: {displayLabel}</span>
                           </div>
                         </div>
                         <div className='flex items-center gap-3'>

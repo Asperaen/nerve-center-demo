@@ -1759,6 +1759,10 @@ export default function MarketIntelligencePage() {
                     mockOPWaterfallStages.find(
                       (s) => s.stage === assumption.targetStage
                     )?.label || assumption.targetStage;
+                  const displayLabel =
+                    assumption.targetStage === 'early-signals'
+                      ? 'early signal'
+                      : stageLabel;
 
                   return (
                     <div
@@ -1814,7 +1818,7 @@ export default function MarketIntelligencePage() {
                             </span>
                           </span>
                           <span>•</span>
-                          <span>Affects: {stageLabel}</span>
+                          <span>Affects: {displayLabel}</span>
                         </div>
                       </div>
                       <div className='flex items-center gap-3'>

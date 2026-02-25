@@ -1830,7 +1830,7 @@ export default function ExecutiveSummaryPage({
       return [
         makeStage(
           'budget',
-          'Last year OP',
+          '2025 OP',
           roundToOne(lastYearOpValue),
           roundToOne(lastYearOpValue),
           'baseline'
@@ -1886,7 +1886,7 @@ export default function ExecutiveSummaryPage({
         ),
         makeStage(
           'actuals',
-          'Budget target',
+          '2026 OP target (Budget)',
           roundToOne(budgetTarget),
           roundToOne(budgetTarget),
           'baseline'
@@ -1953,7 +1953,7 @@ export default function ExecutiveSummaryPage({
     return [
       makeStage(
         'budget',
-        'Last year OP',
+        '2025 OP',
         roundToOne(lastYearOpValue),
         roundToOne(lastYearOpValue),
         'baseline'
@@ -2009,7 +2009,7 @@ export default function ExecutiveSummaryPage({
       ),
       makeStage(
         'actuals',
-        'Budget target',
+        '2026 OP target (Budget)',
         roundToOne(budgetTarget),
         roundToOne(budgetTarget),
         'baseline'
