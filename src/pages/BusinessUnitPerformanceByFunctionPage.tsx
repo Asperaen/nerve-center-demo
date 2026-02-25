@@ -1453,36 +1453,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     []
   );
 
-  const rndTotals = useMemo(() => {
-    const totals = selectedFunctionalUnits.reduce(
-      (acc, unit) => {
-        const rnd = unit.functionalPerformance.rnd;
-        // Check if this unit has YTM-adjusted R&D values (should not be scaled)
-        const isYtmValue = (rnd as any).isYtm === true;
-
-        if (isYtmValue) {
-          // These are already YTM values from P&L breakdown, use directly
-          acc.budget += rnd.budget;
-          acc.actual += rnd.actual;
-        } else {
-          // Scale full year budget to YTM, actual is already YTM
-          const opBudgetScale =
-            unit.operatingProfitBudget === 0
-              ? 1
-              : unit.ytmOperatingProfitBudget / unit.operatingProfitBudget;
-          acc.budget += rnd.budget * opBudgetScale;
-          acc.actual += rnd.actual;
-        }
-        return acc;
-      },
-      { budget: 0, actual: 0 }
-    );
-    return {
-      budgetValue: Math.abs(roundToOne(toMillions(totals.budget))),
-      actualValue: Math.abs(roundToOne(toMillions(totals.actual))),
-    };
-  }, [selectedFunctionalUnits]);
-
   const rndWaterfallStages = useMemo<FunctionalPerformanceStage[]>(() => {
     // Fixed bar data per spec: 185, 5, -67, 3, -8, 118, -2, -3, -2, -1, 4, 3, -11, 106
     const specValues = [185, 5, -67, 3, -8, 118, -2, -3, -2, -1, 4, 3, -11, 106];
