@@ -154,6 +154,9 @@ const BrokenBarShape = (props: {
     isReference?: boolean;
     barValue?: number;
     referenceBarValue?: number;
+    value?: number;
+    referenceValue?: number;
+    targetDisplayValue?: number;
   };
   brokenAxis?: BrokenAxisConfig;
 }) => {
@@ -208,6 +211,18 @@ const BrokenBarShape = (props: {
     const targetSegmentHeight = height * (Math.abs(referenceBarValue!) / Math.abs(barValue!));
     const baselineAboveHeight = height - targetSegmentHeight;
     const bottomY = y + baselineAboveHeight;
+    const targetValue =
+      typeof payload.targetDisplayValue === 'number'
+        ? payload.targetDisplayValue
+        : typeof payload.referenceValue === 'number'
+        ? payload.referenceValue
+        : typeof payload.referenceBarValue === 'number'
+        ? payload.referenceBarValue
+        : undefined;
+    const targetLabel =
+      targetValue !== undefined
+        ? Number(targetValue).toLocaleString('en-US', { maximumFractionDigits: 0 })
+        : '';
     return (
       <g>
         {/* Bottom: target spend (0 to target) — light grey */}
@@ -220,6 +235,20 @@ const BrokenBarShape = (props: {
           rx={2}
           ry={2}
         />
+        {/* Target value (e.g. 185) in middle of light grey segment — black font */}
+        {targetLabel && targetSegmentHeight >= 8 && (
+          <text
+            x={(x ?? 0) + (width ?? 0) / 2}
+            y={bottomY + targetSegmentHeight / 2}
+            textAnchor='middle'
+            dominantBaseline='middle'
+            fill='#000000'
+            fontSize={12}
+            fontWeight='bold'
+          >
+            {targetLabel}
+          </text>
+        )}
         {/* Top: baseline above target — darker */}
         <rect
           x={x}
@@ -574,10 +603,15 @@ export default function FunctionalPerformanceWaterfall({
         baselineValue,
         barValue,
         referenceBarValue,
+        ...((stage.id === 'target-spend' || stage.id === 'target-mva') &&
+        typeof referenceValue === 'number'
+          ? { targetDisplayValue: referenceValue }
+          : {}),
       };
       if (!stage.isReference) {
         lastNonReferenceValue =
-          stage.id === 'target-spend' && typeof referenceValue === 'number'
+          (stage.id === 'target-spend' || stage.id === 'target-mva') &&
+          typeof referenceValue === 'number'
             ? referenceValue
             : stage.value;
       }
@@ -863,29 +897,47 @@ export default function FunctionalPerformanceWaterfall({
                 const stage = stages.find((item) => item.id === payload.id) ?? payload;
                 const delta = payload.delta ?? stage.delta ?? stage.value;
                 const isBaseline = stage.type === 'baseline';
-                const bucketValue = isBaseline ? stage.value : delta;
                 const referenceValue =
                   typeof stage.referenceValue === 'number'
                     ? stage.referenceValue
-                    : payload.referenceValue;
-                const baselineValue =
-                  stage.id === 'target-spend' && typeof referenceValue === 'number'
+                    : (payload as { referenceValue?: number }).referenceValue;
+                const isTargetBucket =
+                  (stage.id === 'target-spend' || stage.id === 'target-mva') &&
+                  typeof referenceValue === 'number';
+                // For first bucket: baseline = 204, target = 185 — show clearly in tooltip
+                const baselineValue = isTargetBucket
+                  ? stage.value
+                  : stage.id === 'target-spend' && typeof referenceValue === 'number'
                     ? referenceValue
                     : isBaseline
                       ? stage.value
                       : referenceValue;
+                const targetValue = isTargetBucket ? referenceValue : undefined;
 
                 return (
                   <div className='rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-lg'>
                     <p className='font-semibold text-gray-900'>{stage.label}</p>
-                    <p className='mt-1'>
-                      Value: {bucketValue > 0 ? '+' : ''}
-                      {formatAmountM(bucketValue)} {currencyLabel}
-                    </p>
-                    {typeof baselineValue === 'number' && (
-                      <p className='mt-1 text-[11px] text-gray-600'>
-                        Baseline spend: {formatAmountM(baselineValue)} {currencyLabel}
-                      </p>
+                    {isTargetBucket && typeof baselineValue === 'number' && typeof targetValue === 'number' ? (
+                      <>
+                        <p className='mt-1'>
+                          Target: {formatAmountM(targetValue)} {currencyLabel}
+                        </p>
+                        <p className='mt-1 text-[11px] text-gray-600'>
+                          Baseline: {formatAmountM(baselineValue)} {currencyLabel}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className='mt-1'>
+                          Value: {delta > 0 ? '+' : ''}
+                          {formatAmountM(isBaseline ? stage.value : delta)} {currencyLabel}
+                        </p>
+                        {typeof baselineValue === 'number' && !isTargetBucket && (
+                          <p className='mt-1 text-[11px] text-gray-600'>
+                            Baseline spend: {formatAmountM(baselineValue)} {currencyLabel}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 );
@@ -923,15 +975,27 @@ export default function FunctionalPerformanceWaterfall({
                   if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
 
                   const stage = stages[index];
+                  const refVal =
+                    typeof stage.referenceValue === 'number'
+                      ? stage.referenceValue
+                      : undefined;
+                  const isTargetFirstBar =
+                    (stage.id === 'target-spend' || stage.id === 'target-mva') &&
+                    refVal !== undefined;
                   const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
-                  const displayValue = formatAxisValue(numericValue);
+                  const displayValue = isTargetFirstBar
+                    ? formatAxisValue(stage.value)
+                    : formatAxisValue(numericValue);
 
-                  // Match label color to bar color
-                  const labelColor = stage.type === 'baseline'
-                    ? '#9ca3af'
-                    : stage.type === 'positive'
-                    ? '#22c55e'
-                    : '#ef4444';
+                  // Baseline value (e.g. 204) in grey on top of bucket; target (185) is black in light grey area
+                  const labelColor =
+                    isTargetFirstBar
+                      ? '#9ca3af'
+                      : stage.type === 'baseline'
+                      ? '#9ca3af'
+                      : stage.type === 'positive'
+                      ? '#22c55e'
+                      : '#ef4444';
 
                   return (
                     <text
@@ -939,7 +1003,7 @@ export default function FunctionalPerformanceWaterfall({
                       y={(y ?? 0) - 8}
                       textAnchor='middle'
                       fill={labelColor}
-                      fontSize={11}
+                      fontSize={isTargetFirstBar ? 10 : 11}
                       fontWeight='bold'
                     >
                       {displayValue}
