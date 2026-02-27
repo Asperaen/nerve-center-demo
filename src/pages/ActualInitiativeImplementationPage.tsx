@@ -1151,7 +1151,6 @@ export default function ActualInitiativeImplementationPage() {
                     const lateCount = isDeGroupSelected ? row.lateInitiatives : lateInitiativeRows.length;
 
                     return (
-                      <>
                         <tr
                           key={row.id}
                           className={`border-b border-gray-200 ${rowClass}`}>
@@ -1216,7 +1215,6 @@ export default function ActualInitiativeImplementationPage() {
                             {row.postponed}
                           </td>
                         </tr>
-                      </>
                     );
                   })}
                 </tbody>

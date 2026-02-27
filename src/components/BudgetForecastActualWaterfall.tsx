@@ -101,6 +101,8 @@ const BrokenBarShape = (props: {
     strokeDasharray,
     payload,
   } = props;
+  const safeHeight = Math.max(0, height);
+  const safeWidth = Math.max(0, width);
   const isBaseline = payload?.type === 'baseline';
   const breakIndicatorHeight = 10;
 
@@ -109,8 +111,8 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={y}
-        width={width}
-        height={height}
+        width={safeWidth}
+        height={safeHeight}
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}
@@ -121,7 +123,26 @@ const BrokenBarShape = (props: {
     );
   }
 
-  const breakY = y + height - breakIndicatorHeight - 4;
+  const minHeightForBreak = breakIndicatorHeight + 6;
+  if (safeHeight < minHeightForBreak) {
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={safeWidth}
+        height={safeHeight}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        rx={2}
+        ry={2}
+      />
+    );
+  }
+
+  const topHeight = Math.max(0, safeHeight - breakIndicatorHeight - 6);
+  const breakY = y + safeHeight - breakIndicatorHeight - 4;
   const gapHeight = breakIndicatorHeight + 4;
 
   return (
@@ -129,8 +150,8 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={y}
-        width={width}
-        height={height - breakIndicatorHeight - 6}
+        width={safeWidth}
+        height={topHeight}
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}
@@ -143,7 +164,7 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={breakY + breakIndicatorHeight}
-        width={width}
+        width={safeWidth}
         height={4}
         fill={fill}
         stroke={stroke}
@@ -182,6 +203,8 @@ export default function BudgetForecastActualWaterfall({
     left: number;
     top: number;
   } | null>(null);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+  const [axisLabelBottom, setAxisLabelBottom] = useState(0);
   const formatAmountM = (value: number) =>
     `${formatAmount(value, {
       minimumFractionDigits: 1,
@@ -349,9 +372,6 @@ export default function BudgetForecastActualWaterfall({
     };
   }, []);
 
-  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
-  const [axisLabelBottom, setAxisLabelBottom] = useState(0);
-
   useEffect(() => {
     if (!chartContainerRef.current) {
       return;
@@ -507,7 +527,7 @@ export default function BudgetForecastActualWaterfall({
       <div className='flex items-center justify-between mb-6'>
         <div>
           <h2 className='text-2xl font-bold text-gray-900'>{title}</h2>
-          {subtitle && <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>}
+          {subtitle && <div className='text-sm text-gray-500 mt-1'>{subtitle}</div>}
         </div>
         {!hideLegend && (
           <div className='flex items-center gap-4'>
@@ -542,11 +562,17 @@ export default function BudgetForecastActualWaterfall({
           </div>
         )}
         <ResponsiveContainer
+          key={
+            chartData.length > 0
+              ? `wf-${chartData.length}`
+              : 'wf-empty'
+          }
           width='100%'
           height='100%'>
           <ComposedChart
             data={chartData}
-            margin={{ top: 32, right: 16, left: 16, bottom: 24 }}>
+            margin={{ top: 32, right: 16, left: 16, bottom: 24 }}
+            isAnimationActive={false}>
             <defs>
               <linearGradient id='favorableGradient' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='0%' stopColor='#bbf7d0' />
@@ -787,7 +813,6 @@ export default function BudgetForecastActualWaterfall({
                         index?: number;
                       };
                       if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
-                      
                       const stage = stages[index];
                       const isBaseline = stage?.type === 'baseline';
                       const rawValue = isBaseline
@@ -1017,7 +1042,6 @@ export default function BudgetForecastActualWaterfall({
                       index?: number;
                     };
                     if (x === undefined || y === undefined || width === undefined || index === undefined) return null;
-                    
                     const stage = stages[index];
                     const isBaseline = stage?.type === 'baseline';
                     const rawValue = isBaseline

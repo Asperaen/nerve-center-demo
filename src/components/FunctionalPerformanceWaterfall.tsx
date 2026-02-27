@@ -172,6 +172,8 @@ const BrokenBarShape = (props: {
     payload,
   } = props;
 
+  const safeHeight = Math.max(0, height);
+  const safeWidth = Math.max(0, width);
   const isBaseline = payload?.type === 'baseline';
   const isReference = payload?.isReference;
   const breakIndicatorHeight = 10;
@@ -185,9 +187,11 @@ const BrokenBarShape = (props: {
   const referenceRatio = shouldDrawReference
     ? Math.abs(referenceBarValue) / Math.abs(barValue)
     : 1;
-  const referenceHeight = shouldDrawReference ? height * referenceRatio : 0;
+  const referenceHeight = shouldDrawReference
+    ? Math.max(0, Math.min(safeHeight, safeHeight * referenceRatio))
+    : 0;
   const referenceY = shouldDrawReference
-    ? y + (height - referenceHeight)
+    ? y + (safeHeight - referenceHeight)
     : y;
 
   if (isReference) {
@@ -195,8 +199,8 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={y}
-        width={width}
-        height={height}
+        width={safeWidth}
+        height={safeHeight}
         fill='transparent'
         stroke={stroke ?? '#9ca3af'}
         strokeWidth={strokeWidth ?? 2}
@@ -208,8 +212,14 @@ const BrokenBarShape = (props: {
   }
   // Procurement first bucket: baseline as full bar height, target as bottom segment (light), baseline above target as top (darker)
   if (isBaseline && shouldDrawReference && (payload?.id === 'target-spend' || payload?.id === 'target-mva')) {
-    const targetSegmentHeight = height * (Math.abs(referenceBarValue!) / Math.abs(barValue!));
-    const baselineAboveHeight = height - targetSegmentHeight;
+    const targetSegmentHeight = Math.max(
+      0,
+      Math.min(
+        safeHeight,
+        safeHeight * (Math.abs(referenceBarValue!) / Math.abs(barValue!))
+      )
+    );
+    const baselineAboveHeight = Math.max(0, safeHeight - targetSegmentHeight);
     const bottomY = y + baselineAboveHeight;
     const targetValue =
       typeof payload.targetDisplayValue === 'number'
@@ -229,7 +239,7 @@ const BrokenBarShape = (props: {
         <rect
           x={x}
           y={bottomY}
-          width={width}
+          width={safeWidth}
           height={targetSegmentHeight}
           fill='#9ca3af'
           rx={2}
@@ -253,7 +263,7 @@ const BrokenBarShape = (props: {
         <rect
           x={x}
           y={y}
-          width={width}
+          width={safeWidth}
           height={baselineAboveHeight}
           fill='#6b7280'
           rx={2}
@@ -269,8 +279,8 @@ const BrokenBarShape = (props: {
         <rect
           x={x}
           y={y}
-          width={width}
-          height={height}
+          width={safeWidth}
+          height={safeHeight}
           fill={fill}
           rx={2}
           ry={2}
@@ -279,7 +289,7 @@ const BrokenBarShape = (props: {
           <rect
             x={x}
             y={referenceY}
-            width={width}
+            width={safeWidth}
             height={referenceHeight}
             fill='transparent'
             stroke='#111827'
@@ -294,14 +304,14 @@ const BrokenBarShape = (props: {
   }
 
   // If bar is too short, render simple bar without break indicator
-  if (height < minHeightForBreakIndicator) {
+  if (safeHeight < minHeightForBreakIndicator) {
     return (
       <g>
         <rect
           x={x}
           y={y}
-          width={width}
-          height={height}
+          width={safeWidth}
+          height={safeHeight}
           fill={fill}
           rx={2}
           ry={2}
@@ -310,7 +320,7 @@ const BrokenBarShape = (props: {
           <rect
             x={x}
             y={referenceY}
-            width={width}
+            width={safeWidth}
             height={referenceHeight}
             fill='transparent'
             stroke='#111827'
@@ -325,7 +335,8 @@ const BrokenBarShape = (props: {
   }
 
   // Baseline bar with break indicator - parallel horizontal bold lines at edges
-  const breakY = y + height - breakIndicatorHeight - 4;
+  const topHeight = Math.max(0, safeHeight - breakIndicatorHeight - 6);
+  const breakY = y + safeHeight - breakIndicatorHeight - 4;
   const gapHeight = breakIndicatorHeight + 4;
 
   return (
@@ -334,8 +345,8 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={y}
-        width={width}
-        height={height - breakIndicatorHeight - 6}
+        width={safeWidth}
+        height={topHeight}
         fill={fill}
         rx={2}
         ry={2}
@@ -370,7 +381,7 @@ const BrokenBarShape = (props: {
       <rect
         x={x}
         y={breakY + breakIndicatorHeight}
-        width={width}
+        width={safeWidth}
         height={4}
         fill={fill}
         rx={2}
@@ -380,7 +391,7 @@ const BrokenBarShape = (props: {
         <rect
           x={x}
           y={referenceY}
-          width={width}
+          width={safeWidth}
           height={referenceHeight}
           fill='transparent'
           stroke='#111827'

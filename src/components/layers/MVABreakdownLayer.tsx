@@ -69,23 +69,31 @@ const BrokenBarShape = (props: {
   brokenAxis: BrokenAxisConfig;
 }) => {
   const { x = 0, y = 0, width = 0, height = 0, fill, payload } = props;
+  const safeHeight = Math.max(0, height);
+  const safeWidth = Math.max(0, width);
   const isBaseline = payload?.type === 'baseline';
   const breakIndicatorHeight = 10;
 
   if (!isBaseline) {
-    return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
+    return <rect x={x} y={y} width={safeWidth} height={safeHeight} fill={fill} rx={2} ry={2} />;
   }
 
-  const breakY = y + height - breakIndicatorHeight - 4;
+  const minHeightForBreak = breakIndicatorHeight + 6;
+  if (safeHeight < minHeightForBreak) {
+    return <rect x={x} y={y} width={safeWidth} height={safeHeight} fill={fill} rx={2} ry={2} />;
+  }
+
+  const topHeight = Math.max(0, safeHeight - breakIndicatorHeight - 6);
+  const breakY = y + safeHeight - breakIndicatorHeight - 4;
   const gapHeight = breakIndicatorHeight + 4;
 
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height - breakIndicatorHeight - 6} fill={fill} rx={2} ry={2} />
+      <rect x={x} y={y} width={safeWidth} height={topHeight} fill={fill} rx={2} ry={2} />
       <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
       <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
       <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
-      <rect x={x} y={breakY + breakIndicatorHeight} width={width} height={4} fill={fill} rx={2} ry={2} />
+      <rect x={x} y={breakY + breakIndicatorHeight} width={safeWidth} height={4} fill={fill} rx={2} ry={2} />
     </g>
   );
 };

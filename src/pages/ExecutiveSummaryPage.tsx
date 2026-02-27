@@ -1643,9 +1643,6 @@ export default function ExecutiveSummaryPage({
   // Meeting handlers
   const handleScheduleNewMeeting = (meeting: Omit<Meeting, 'id'>) => {
     // In a real app, this would create the meeting via API
-    // For now, we'll just log it
-    console.log('Schedule new meeting:', meeting);
-    // You could also update mockCalendarEvents here
     alert(`Meeting "${meeting.title}" scheduled successfully!`);
   };
 
@@ -1654,7 +1651,6 @@ export default function ExecutiveSummaryPage({
     materials: MeetingMaterial[]
   ) => {
     // In a real app, this would update meetings via API
-    console.log('Add materials to meetings:', meetingIds, materials);
     alert(
       `Added ${materials.length} item${materials.length !== 1 ? 's' : ''} to ${
         meetingIds.length
@@ -2371,12 +2367,14 @@ export default function ExecutiveSummaryPage({
           </div>
           <div className='text-center'>
             {!isBudgetMode && (
-            <div className='text-xs text-gray-500 mb-0.5'>
-                vs budget {formatCellValue(comparisonBaseline)}
+            <div className='text-xs text-gray-500 mb-0.5 flex flex-col items-center'>
+                <span>vs budget</span>
+                <span>{formatCellValue(comparisonBaseline)}</span>
             </div>
             )}
-          <div className='text-xs text-gray-500'>
-              vs Last Year {formatCellValue(comparisonLastYear)}
+          <div className='text-xs text-gray-500 flex flex-col items-center'>
+              <span>vs Last Year</span>
+              <span>{formatCellValue(comparisonLastYear)}</span>
           </div>
           </div>
           <div className='flex flex-col gap-0.5'>

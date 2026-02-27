@@ -12,7 +12,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
@@ -372,6 +372,8 @@ export default function MarketIntelligencePage() {
     null
   );
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const userJustClearedSelectionRef = useRef(false);
+  const bgCheckboxRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [showComparisonDetails, setShowComparisonDetails] =
     useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -468,18 +470,27 @@ export default function MarketIntelligencePage() {
 
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
+    if (buId === 'all') {
+      setSelectedGroupIds(new Set(['overall']));
+    } else {
+      setSelectedGroupIds(new Set());
+    }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('bg', buId);
       next.delete('bu');
       next.delete('units');
+      if (buId === 'all') {
+        next.set('selected', 'overall');
+      } else {
+        next.delete('selected');
+      }
       return next;
     });
   };
 
   useEffect(() => {
     if (!selectedGroup) {
-      setSelectedGroupIds(new Set());
       return;
     }
     const groupId = normalizeGroupId(selectedGroup.group);
@@ -511,8 +522,67 @@ export default function MarketIntelligencePage() {
         }
       }
     }
-    setSelectedGroupIds(new Set([overallId]));
+    // When no bu/units param, sync from selected param so table checkbox selection persists
+    const selectedParam = searchParams.get('selected');
+    if (selectedParam) {
+      const rawIds = selectedParam
+        .split(',')
+        .map((s) => s.trim().replace(/\+/g, ' '))
+        .filter(Boolean);
+      const unitIdsForGroup = selectedGroup.businessUnits.map((u) =>
+        getUnitId(groupId, u.name)
+      );
+      const groupIds = new Set([
+        overallId,
+        groupId,
+        ...unitIdsForGroup,
+      ]);
+      const idsForGroup = rawIds.filter((id) => {
+        if (groupIds.has(id)) return true;
+        const normalizedId = id.toLowerCase();
+        if (normalizedId === 'overall' || normalizedId === overallId.toLowerCase()) return true;
+        return Array.from(groupIds).some((gid) => gid.toLowerCase() === normalizedId);
+      });
+      if (idsForGroup.length > 0) {
+        const toCanonical = (id: string) => {
+          if (id === 'overall' || id.toLowerCase() === 'overall') return overallId;
+          const normalizedId = id.toLowerCase();
+          const match = Array.from(groupIds).find((gid) => gid.toLowerCase() === normalizedId);
+          return match ?? id;
+        };
+        const resolved = idsForGroup.map(toCanonical);
+        const newSet = new Set(resolved);
+        // When all BUs for this BG are in the selection, ensure overallId is included so "all BUs under this BG" checkbox is selected
+        const allBUsInSet = unitIdsForGroup.every((uid) => newSet.has(uid));
+        if (allBUsInSet) {
+          newSet.add(overallId);
+        }
+        const same =
+          selectedGroupIds.size === newSet.size &&
+          [...newSet].every((id) => selectedGroupIds.has(id));
+        if (!same) {
+          setSelectedGroupIds(newSet);
+        }
+        return;
+      }
+    }
+    const unitIdsForGroup = selectedGroup.businessUnits.map((u) =>
+      getUnitId(groupId, u.name)
+    );
+    setSelectedGroupIds(new Set([overallId, ...unitIdsForGroup]));
   }, [pendingUnitSelection, searchParams, selectedGroup]);
+
+  // Default to all BUs when in specific BG view and selection is empty (e.g. initial load before URL sync)
+  useEffect(() => {
+    if (selectedBu === 'all' || !selectedGroup) return;
+    if (selectedGroupIds.size > 0) return;
+    const groupId = normalizeGroupId(selectedGroup.group);
+    const overallId = `${groupId}-overall`;
+    const unitIds = selectedGroup.businessUnits.map((u) =>
+      getUnitId(groupId, u.name)
+    );
+    setSelectedGroupIds(new Set([overallId, ...unitIds]));
+  }, [selectedBu, selectedGroup, selectedGroupIds.size]);
 
   const forecastTimeframeOptions: TimeframeOptionItem[] = [
     { value: 'full-year', label: 'Full year' },
@@ -614,11 +684,13 @@ export default function MarketIntelligencePage() {
             </div>
           </div>
           <div className='text-center'>
-            <div className='text-xs text-gray-500 mb-0.5'>
-              vs budget {formatMnWhole(metric.baseline)}
+            <div className='text-xs text-gray-500 mb-0.5 flex flex-col items-center'>
+              <span>vs budget</span>
+              <span>{formatMnWhole(metric.baseline)}</span>
             </div>
-            <div className='text-xs text-gray-500'>
-              vs Last Year {formatMnWhole(metric.stly)}
+            <div className='text-xs text-gray-500 flex flex-col items-center'>
+              <span>vs Last Year</span>
+              <span>{formatMnWhole(metric.stly)}</span>
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>
@@ -709,18 +781,13 @@ export default function MarketIntelligencePage() {
   ) => {
     const isExpanded = expandedRows.has(group.id);
     const shouldExpandOnClick = isExpandable && !isSubGroup && !isOverallRow;
-    const isRowClickable = shouldExpandOnClick || isSubGroup;
+    const isClickable = true;
 
     const handleRowClick = () => {
-      if (isSubGroup && parentBgId) {
-        setSelectedBu(parentBgId);
-        setPendingUnitSelection(getUnitId(parentBgId, group.name));
-        return;
-      }
-      if (shouldExpandOnClick) {
-        toggleRowExpansion(group.id);
-      }
+      toggleGroupSelection(group.id);
     };
+
+    const indentClass = isOverallRow ? '' : isSubGroup ? 'pl-14' : 'pl-6';
 
     return (
       <tr
@@ -729,13 +796,49 @@ export default function MarketIntelligencePage() {
           isOverallRow
             ? 'bg-primary-50/50'
             : isSubGroup
-            ? 'bg-gray-50'
-            : 'hover:bg-gray-50 transition-colors'
-        } ${isRowClickable ? 'cursor-pointer' : ''}`}
-        onClick={isRowClickable ? handleRowClick : undefined}>
-        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isRowClickable ? 'cursor-pointer' : ''}`}>
-          <div className='flex items-center gap-2'>
-            {isExpandable && (
+            ? 'bg-gray-50 hover:bg-gray-100'
+            : 'hover:bg-indigo-50/60 transition-colors'
+        } ${isClickable ? 'cursor-pointer' : ''}`}
+        onClick={isClickable ? handleRowClick : undefined}>
+        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isClickable ? 'cursor-pointer' : ''}`}>
+          <div className={`flex items-center gap-2 ${indentClass}`}>
+            {isOverallRow && selectedBu === 'all' ? (
+              <span className='w-4 h-4 shrink-0' aria-hidden />
+            ) : (
+              (() => {
+                const bgState = selectedBu === 'all' && !isSubGroup && bgCheckboxState[group.id];
+                let checked = bgState ? bgState.checked : selectedGroupIds.has(group.id);
+                let indeterminate = bgState?.indeterminate ?? false;
+                if (selectedBu !== 'all' && isOverallRow && selectedGroup) {
+                  const gid = normalizeGroupId(selectedGroup.group);
+                  const overallId = `${gid}-overall`;
+                  const unitIds = selectedGroup.businessUnits.map((u) => getUnitId(gid, u.name));
+                  const allSelected = selectedGroupIds.has(overallId) || unitIds.every((id) => selectedGroupIds.has(id));
+                  const someSelected = unitIds.some((id) => selectedGroupIds.has(id));
+                  checked = allSelected;
+                  indeterminate = someSelected && !allSelected;
+                }
+                return (
+                  <input
+                    type='checkbox'
+                    ref={(el) => {
+                      if (group.id && bgCheckboxRefs.current) {
+                        bgCheckboxRefs.current[group.id] = el;
+                        if (el) {
+                          el.indeterminate = indeterminate;
+                        }
+                      }
+                    }}
+                    checked={checked}
+                    onChange={() => toggleGroupSelection(group.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500'
+                    aria-label={`Select ${group.name}`}
+                  />
+                );
+              })()
+            )}
+            {shouldExpandOnClick && (
               <button
                 type='button'
                 className='text-gray-400'
@@ -836,10 +939,53 @@ export default function MarketIntelligencePage() {
     );
   }, [activeAssumptionFilterStage, appliedAssumptions, assumptionStageFilters]);
 
+  const isOverallRowId = (id: string) =>
+    id === 'overall' || id.endsWith('-overall');
+
   const selectedUnits = useMemo(() => {
     if (selectedBu === 'all') {
-      return businessGroups.flatMap((group) => group.businessUnits);
-    return businessGroups.flatMap((group) => group.businessUnits);
+      // Empty selection: show all units so chart doesn't go blank
+      if (selectedGroupIds.size === 0) {
+        return businessGroups.flatMap((group) => group.businessUnits);
+      }
+      // Only "Overall" row checked (no group/unit ids): show all units
+      const nonOverallIds = Array.from(selectedGroupIds).filter(
+        (id) => !isOverallRowId(id)
+      );
+      if (nonOverallIds.length === 0) {
+        return businessGroups.flatMap((group) => group.businessUnits);
+      }
+      // Build units from selected group/unit ids so unchecking a BU affects the waterfall
+      const units: BusinessUnitSource[] = [];
+      const seen = new Set<string>();
+      const selectedSet = new Set(nonOverallIds);
+      businessGroups.forEach((group) => {
+        const groupId = normalizeGroupId(group.group);
+        const unitIdsForGroup = group.businessUnits.map((u) =>
+          getUnitId(groupId, u.name)
+        );
+        const wholeGroupSelected =
+          selectedSet.has(groupId) &&
+          unitIdsForGroup.every((id) => selectedSet.has(id));
+        if (wholeGroupSelected) {
+          group.businessUnits.forEach((unit) => {
+            const unitId = getUnitId(groupId, unit.name);
+            if (!seen.has(unitId)) {
+              seen.add(unitId);
+              units.push(unit);
+            }
+          });
+        } else {
+          group.businessUnits.forEach((unit) => {
+            const unitId = getUnitId(groupId, unit.name);
+            if (selectedSet.has(unitId) && !seen.has(unitId)) {
+              seen.add(unitId);
+              units.push(unit);
+            }
+          });
+        }
+      });
+      return units;
     }
     if (!selectedGroup) {
       return [];
@@ -870,21 +1016,398 @@ export default function MarketIntelligencePage() {
         overallRow,
       ];
     }
-    if (!selectedGroup || selectedUnits.length === 0) {
+    if (!selectedGroup) {
       return [];
     }
     const groupId = normalizeGroupId(selectedGroup.group);
-    const unitRows = selectedUnits.map((unit) =>
+    // Show all BUs of the selected BG in the table; BU filter only affects overall/charts, not row visibility
+    const allUnitsForTable = selectedGroup.businessUnits;
+    const unitRows = allUnitsForTable.map((unit) =>
       buildUnitRow(groupId, unit)
     );
+    // BG row always shows total of all BUs for that BG; checkbox state (checked/indeterminate/unchecked) reflects selection
     const overallRow = buildGroupRow(
       selectedGroup.group,
-      selectedUnits,
+      selectedGroup.businessUnits,
       `${groupId}-overall`,
-      `${selectedGroup.group} overall`
+      selectedGroup.group
     );
-    return [...unitRows, overallRow];
-  }, [businessGroups, selectedBu, selectedGroup, selectedUnits]);
+    return [overallRow, ...unitRows];
+  }, [businessGroups, selectedBu, selectedGroup]);
+
+  const orderedTableData = useMemo(() => {
+    if (selectedBu !== 'all') {
+      return tableData;
+    }
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    const remainingRows = tableData.filter((row) => !isOverallRowId(row.id));
+    return overallRow ? [overallRow, ...remainingRows] : tableData;
+  }, [tableData, selectedBu]);
+
+  const allSelectableIdsInView = useMemo(() => {
+    if (selectedBu !== 'all') return [];
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    const bgIds = tableData
+      .filter((row) => !isOverallRowId(row.id))
+      .map((row) => row.id);
+    const allUnitIds = businessGroups.flatMap((g) => {
+      const gid = normalizeGroupId(g.group);
+      return g.businessUnits.map((u) => getUnitId(gid, u.name));
+    });
+    return overallRow
+      ? [overallRow.id, ...bgIds, ...allUnitIds]
+      : [...bgIds, ...allUnitIds];
+  }, [tableData, businessGroups, selectedBu]);
+
+  // BG checkbox state for "all" view: checked only when all BUs selected; indeterminate when some but not all BUs selected.
+  // (We do not use groupSelected for checked so that selecting one BU shows the BG as indeterminate, not checked.)
+  const bgCheckboxState = useMemo(() => {
+    if (selectedBu !== 'all') return {} as Record<string, { checked: boolean; indeterminate: boolean }>;
+    const result: Record<string, { checked: boolean; indeterminate: boolean }> = {};
+    businessGroups.forEach((group) => {
+      const groupId = normalizeGroupId(group.group);
+      const unitIds = group.businessUnits.map((u) => getUnitId(groupId, u.name));
+      const allUnitsSelected = unitIds.every((id) => selectedGroupIds.has(id));
+      const someUnitsSelected = unitIds.some((id) => selectedGroupIds.has(id));
+      result[groupId] = {
+        checked: allUnitsSelected,
+        indeterminate: someUnitsSelected && !allUnitsSelected,
+      };
+    });
+    return result;
+  }, [selectedBu, businessGroups, selectedGroupIds]);
+
+  // Sync BG checkbox indeterminate state to DOM when selection changes (ref callback only runs on mount)
+  useEffect(() => {
+    if (selectedBu === 'all') {
+      Object.entries(bgCheckboxState).forEach(([id, state]) => {
+        const el = bgCheckboxRefs.current[id];
+        if (el) el.indeterminate = state.indeterminate;
+      });
+      return;
+    }
+    // Single-BG view: sync overall row checkbox indeterminate when some (not all) BUs selected
+    if (selectedGroup) {
+      const gid = normalizeGroupId(selectedGroup.group);
+      const overallId = `${gid}-overall`;
+      const unitIds = selectedGroup.businessUnits.map((u) => getUnitId(gid, u.name));
+      const allSelected = selectedGroupIds.has(overallId) || unitIds.every((id) => selectedGroupIds.has(id));
+      const someSelected = unitIds.some((id) => selectedGroupIds.has(id));
+      const indeterminate = someSelected && !allSelected;
+      const el = bgCheckboxRefs.current[overallId];
+      if (el) el.indeterminate = indeterminate;
+    }
+  }, [selectedBu, bgCheckboxState, selectedGroup, selectedGroupIds]);
+
+  const toggleGroupSelection = useCallback(
+    (bgId: string) => {
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      const overallId = overallRow?.id;
+      const isOverall = isOverallRowId(bgId);
+
+      const getBuIdsForBg = (bid: string): string[] => {
+        const g = businessGroups.find(
+          (gr) => normalizeGroupId(gr.group) === bid
+        );
+        if (!g) return [];
+        const gid = normalizeGroupId(g.group);
+        return g.businessUnits.map((u) => getUnitId(gid, u.name));
+      };
+      const getParentBgId = (id: string): string | undefined => {
+        const g = businessGroups.find((gr) => {
+          const gid = normalizeGroupId(gr.group);
+          return gr.businessUnits.some(
+            (u) => getUnitId(gid, u.name) === id
+          );
+        });
+        return g ? normalizeGroupId(g.group) : undefined;
+      };
+      const isBgRow = (id: string): boolean =>
+        selectedBu === 'all' &&
+        tableData.some((r) => r.id === id) &&
+        !isOverallRowId(id) &&
+        !businessGroups.some((g) =>
+          g.businessUnits.some(
+            (u) => getUnitId(normalizeGroupId(g.group), u.name) === id
+          )
+        );
+
+      const next = new Set(selectedGroupIds);
+      let skipEmptyFallback = false;
+
+      if (isOverall) {
+        if (selectedBu !== 'all' && selectedGroup) {
+          // Single-BG view: when checkbox appears checked (all BUs selected), clicking should unselect overall and all BUs
+          const gid = normalizeGroupId(selectedGroup.group);
+          const buIdsForCurrentBg = selectedGroup.businessUnits.map((u) =>
+            getUnitId(gid, u.name)
+          );
+          const allBUsSelected = buIdsForCurrentBg.every((id) => next.has(id));
+          if (allBUsSelected) {
+            next.delete(bgId);
+            buIdsForCurrentBg.forEach((id) => next.delete(id));
+            skipEmptyFallback = true;
+          } else {
+            next.add(bgId);
+            buIdsForCurrentBg.forEach((id) => next.add(id));
+          }
+        } else if (next.has(bgId)) {
+          next.delete(bgId);
+        } else {
+          if (selectedBu !== 'all' && selectedGroup) {
+            const gid = normalizeGroupId(selectedGroup.group);
+            next.add(bgId);
+            selectedGroup.businessUnits.forEach((u) =>
+              next.add(getUnitId(gid, u.name))
+            );
+          } else {
+            allSelectableIdsInView.forEach((id) => next.add(id));
+          }
+        }
+      } else if (isBgRow(bgId)) {
+        const buIdsForBg = getBuIdsForBg(bgId);
+        if (next.has(bgId)) {
+          next.delete(bgId);
+          buIdsForBg.forEach((id) => next.delete(id));
+          if (overallId) next.delete(overallId);
+          const anyBgOrBuLeft = Array.from(next).some(
+            (id) =>
+              !isOverallRowId(id) &&
+              (tableData.some((r) => r.id === id && !isOverallRowId(r.id)) ||
+                businessGroups.some((g) =>
+                  g.businessUnits.some(
+                    (u) =>
+                      getUnitId(normalizeGroupId(g.group), u.name) === id
+                  )
+                ))
+          );
+          if (!anyBgOrBuLeft) skipEmptyFallback = true;
+        } else {
+          next.add(bgId);
+          buIdsForBg.forEach((id) => next.add(id));
+        }
+      } else {
+        const parentBgId = getParentBgId(bgId);
+        if (next.has(bgId)) {
+          next.delete(bgId);
+          if (parentBgId) {
+            next.delete(parentBgId);
+            const parentOverallId = `${parentBgId}-overall`;
+            next.delete(parentOverallId);
+          }
+          const anyBgOrBuLeft = Array.from(next).some(
+            (id) =>
+              !isOverallRowId(id) &&
+              (tableData.some((r) => r.id === id && !isOverallRowId(r.id)) ||
+                businessGroups.some((g) =>
+                  g.businessUnits.some(
+                    (u) =>
+                      getUnitId(normalizeGroupId(g.group), u.name) === id
+                  )
+                ))
+          );
+          if (!anyBgOrBuLeft && overallId) {
+            next.delete(overallId);
+            skipEmptyFallback = true;
+          }
+        } else {
+          next.add(bgId);
+          if (parentBgId) next.add(parentBgId);
+        }
+      }
+
+      if (!skipEmptyFallback && next.size === 0 && overallId) {
+        next.add(overallId);
+      }
+      if (skipEmptyFallback) {
+        userJustClearedSelectionRef.current = true;
+      }
+
+      setSelectedGroupIds(next);
+      setSearchParams((prev) => {
+        const nextParams = new URLSearchParams(prev);
+        // In single-BG view, keep Select BG/BU in sync by updating bg and bu params
+        if (selectedBu !== 'all' && selectedGroup) {
+          const gid = normalizeGroupId(selectedGroup.group);
+          nextParams.set('bg', gid);
+          const overallId = `${gid}-overall`;
+          const unitIds = selectedGroup.businessUnits.map((u) =>
+            getUnitId(gid, u.name)
+          );
+          const allSelected =
+            next.has(overallId) ||
+            unitIds.every((id) => next.has(id));
+          if (allSelected) {
+            nextParams.delete('bu');
+            nextParams.delete('units');
+          } else {
+            const selectedUnitNames = selectedGroup.businessUnits
+              .filter((u) => next.has(getUnitId(gid, u.name)))
+              .map((u) => u.name);
+            nextParams.set('bu', selectedUnitNames.join(','));
+            nextParams.delete('units');
+          }
+          nextParams.delete('selected');
+        } else {
+          if (next.size > 0) {
+            nextParams.set('selected', Array.from(next).join(','));
+          } else {
+            nextParams.delete('selected');
+          }
+        }
+        return nextParams;
+      });
+    },
+    [
+      tableData,
+      selectedGroupIds,
+      setSearchParams,
+      selectedBu,
+      selectedGroup,
+      businessGroups,
+      allSelectableIdsInView,
+    ]
+  );
+
+  // When selectedBu === 'all', sync URL selected param to selectedGroupIds
+  useEffect(() => {
+    if (selectedBu !== 'all') {
+      return;
+    }
+    const selectedParam = searchParams.get('selected');
+    if (!selectedParam) {
+      return;
+    }
+    const ids = selectedParam
+      .split(',')
+      .map((s) => s.trim().replace(/\+/g, ' '))
+      .filter(Boolean);
+    const knownIds = new Set<string>();
+    knownIds.add('overall');
+    businessGroups.forEach((group) => {
+      const groupId = normalizeGroupId(group.group);
+      knownIds.add(groupId);
+      group.businessUnits.forEach((unit) => {
+        knownIds.add(getUnitId(groupId, unit.name));
+      });
+    });
+    const validIds = ids
+      .map((id) => {
+        if (knownIds.has(id)) return id;
+        const normalized = normalizeGroupId(id);
+        return knownIds.has(normalized) ? normalized : null;
+      })
+      .filter((id): id is string => id != null);
+    if (validIds.length === 0) return;
+    if (selectedGroupIds.size > validIds.length) return;
+    if (selectedGroupIds.size > 0 && selectedGroupIds.size < validIds.length) return;
+    if (validIds.length === 1 && (validIds[0] === 'overall' || validIds[0].endsWith('-overall'))) {
+      setSelectedGroupIds(new Set(allSelectableIdsInView));
+      return;
+    }
+    // Skip sync when state already matches URL to avoid effect/re-render loop that blanks the waterfall
+    if (
+      selectedGroupIds.size === validIds.length &&
+      validIds.every((id) => selectedGroupIds.has(id))
+    ) {
+      return;
+    }
+    setSelectedGroupIds(new Set(validIds));
+  }, [searchParams, selectedBu, businessGroups, selectedGroupIds.size, allSelectableIdsInView]);
+
+  // Default selection to full set when selectedBu === 'all' and selection is empty
+  useEffect(() => {
+    if (selectedBu !== 'all') {
+      return;
+    }
+    if (selectedGroupIds.size > 0) {
+      return;
+    }
+    if (userJustClearedSelectionRef.current) {
+      userJustClearedSelectionRef.current = false;
+      return;
+    }
+    if (allSelectableIdsInView.length > 0) {
+      setSelectedGroupIds(new Set(allSelectableIdsInView));
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('selected', 'overall');
+        return next;
+      });
+    } else {
+      const overallRow = tableData.find((row) => isOverallRowId(row.id));
+      if (overallRow) {
+        setSelectedGroupIds(new Set([overallRow.id]));
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('selected', overallRow.id);
+          return next;
+        });
+      }
+    }
+  }, [selectedBu, selectedGroupIds.size, tableData, setSearchParams, allSelectableIdsInView]);
+
+  // Sync header (Select BG / Select BU) with table checkbox selection: when in "All BGs" view and
+  // the user narrows the table selection to a single BG (all or some BUs), update URL so the header reflects it.
+  useEffect(() => {
+    if (selectedBu !== 'all') return;
+    if (selectedGroupIds.size === 0) return;
+    const overallRow = tableData.find((row) => isOverallRowId(row.id));
+    const overallId = overallRow?.id;
+    if (overallId && selectedGroupIds.has(overallId) && selectedGroupIds.size === 1) return;
+    if (overallId && selectedGroupIds.has(overallId)) return;
+
+    const bgIds = businessGroups.map((g) => normalizeGroupId(g.group));
+    const selectedBgIds = bgIds.filter((id) => selectedGroupIds.has(id));
+    const selectedUnitIds = Array.from(selectedGroupIds).filter((id) =>
+      businessGroups.some((g) => {
+        const gid = normalizeGroupId(g.group);
+        return g.businessUnits.some((u) => getUnitId(gid, u.name) === id);
+      })
+    );
+
+    const unitToBg = new Map<string, string>();
+    businessGroups.forEach((g) => {
+      const gid = normalizeGroupId(g.group);
+      g.businessUnits.forEach((u) => {
+        unitToBg.set(getUnitId(gid, u.name), gid);
+      });
+    });
+    const bgsFromUnits = [...new Set(selectedUnitIds.map((id) => unitToBg.get(id)).filter(Boolean))] as string[];
+    const singleBgId = selectedBgIds.length === 1 ? selectedBgIds[0] : bgsFromUnits.length === 1 && selectedBgIds.length === 0 ? bgsFromUnits[0] : null;
+    if (singleBgId == null) return;
+
+    const group = businessGroups.find((gr) => normalizeGroupId(gr.group) === singleBgId);
+    if (!group) return;
+    const gid = normalizeGroupId(group.group);
+    const unitIds = group.businessUnits.map((u) => getUnitId(gid, u.name));
+    const selectedUnitsForBg = selectedUnitIds.filter((uid) => unitToBg.get(uid) === gid);
+    const allUnitsSelected = unitIds.every((id) => selectedGroupIds.has(id)) || selectedGroupIds.has(gid);
+    const unitNames = allUnitsSelected
+      ? []
+      : group.businessUnits.filter((u) => selectedGroupIds.has(getUnitId(gid, u.name))).map((u) => u.name);
+
+    // Sync selectedGroupIds so table and Select BU pills reflect the single-BG selection immediately
+    const singleBgOverallId = `${gid}-overall`;
+    const newSelectedGroupIds = allUnitsSelected
+      ? new Set<string>([singleBgOverallId])
+      : new Set(unitNames.map((name) => getUnitId(gid, name)));
+    setSelectedGroupIds(newSelectedGroupIds);
+
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('bg', gid);
+      if (unitNames.length > 0) {
+        next.set('bu', unitNames.join(','));
+      } else {
+        next.delete('bu');
+      }
+      next.delete('units');
+      next.delete('selected');
+      return next;
+    });
+    setSelectedBu(gid);
+  }, [selectedBu, selectedGroupIds, businessGroups, tableData, setSearchParams]);
 
   const selectedUnitIds = useMemo(() => {
     if (selectedBu === 'all' || !selectedGroup) {
@@ -904,7 +1427,23 @@ export default function MarketIntelligencePage() {
   }, [selectedBu, selectedGroup, selectedGroupIds]);
 
   const selectedBuLabel = useMemo(() => {
-    if (selectedBu === 'all' || !selectedGroup) {
+    if (selectedBu === 'all') {
+      const hasOverall =
+        selectedGroupIds.size === 0 ||
+        Array.from(selectedGroupIds).some((id) => isOverallRowId(id));
+      if (hasOverall) {
+        return 'All BUs';
+      }
+      const count = selectedUnits.length;
+      if (count === 1) {
+        return selectedUnits[0].name;
+      }
+      if (count === 0) {
+        return 'All BUs';
+      }
+      return `${count} BUs selected`;
+    }
+    if (!selectedGroup) {
       return 'All BUs';
     }
     const groupId = normalizeGroupId(selectedGroup.group);
@@ -924,7 +1463,7 @@ export default function MarketIntelligencePage() {
       return 'All BUs';
     }
     return `${selectedUnitNames.length} BUs selected`;
-  }, [selectedBu, selectedGroup, selectedGroupIds]);
+  }, [selectedBu, selectedGroup, selectedGroupIds, selectedUnits]);
 
   const selectedBuOptionId = useMemo(() => {
     if (selectedBu === 'all' || !selectedGroup) {
@@ -986,7 +1525,13 @@ export default function MarketIntelligencePage() {
   }, [businessGroups]);
 
   const selectedForecastTotals = useMemo(() => {
-    const totals = selectedUnits.reduce(
+    const allUnits = businessGroups.flatMap((group) => group.businessUnits);
+    // Use current selection so waterfall updates when BGs are unchecked; fallback to all units only when selection is empty so chart never goes blank
+    const unitsForTotals =
+      selectedBu === 'all'
+        ? (selectedUnits.length > 0 ? selectedUnits : allUnits)
+        : selectedUnits;
+    const totals = unitsForTotals.reduce(
       (acc, unit) => {
         acc.budgetOp += unit.operatingProfitBudget;
         acc.forecastOp += unit.forecastOperatingProfit;
@@ -1001,7 +1546,7 @@ export default function MarketIntelligencePage() {
       forecast: roundToOne(toMillions(totals.forecastOp)),
       actual: roundToOne(toMillions(totals.actualOp)),
     };
-  }, [selectedUnits]);
+  }, [selectedUnits, selectedBu, businessGroups]);
 
   useEffect(() => {
     const focusParam = searchParams.get('focus');
@@ -1472,6 +2017,9 @@ export default function MarketIntelligencePage() {
                     if (unitId === 'all') {
                       next.clear();
                       next.add(overallId);
+                      selectedGroup.businessUnits.forEach((u) =>
+                        next.add(getUnitId(groupId, u.name))
+                      );
                       setSearchParams((prevParams) => {
                         const params = new URLSearchParams(prevParams);
                         params.delete('bu');
@@ -1537,14 +2085,14 @@ export default function MarketIntelligencePage() {
                     </button>
                     {selectedGroup.businessUnits.map((unit) => {
                       const unitId = getUnitId(groupId, unit.name);
-                      const isSelected =
-                        !isAllSelected && selectedGroupIds.has(unitId);
+                      const isSelected = selectedGroupIds.has(unitId);
+                      const showHighlight = isSelected && !isAllSelected;
                       return (
                         <button
                           key={unitId}
                           onClick={() => toggleUnit(unitId)}
                           className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                            isSelected
+                            showHighlight
                               ? 'bg-white text-gray-900 shadow-sm'
                               : 'text-gray-600 hover:text-gray-900'
                           }`}>
@@ -1646,18 +2194,22 @@ export default function MarketIntelligencePage() {
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((group) => {
+                {orderedTableData.map((group) => {
                   const isOverallRow =
                     group.id === 'overall' || group.id.endsWith('-overall');
                   const isExpandable =
-                    selectedBu === 'all' && group.id !== 'overall';
+                    selectedBu === 'all' &&
+                    group.id !== 'overall' &&
+                    businessGroups.some(
+                      (g) => normalizeGroupId(g.group) === group.id
+                    );
                   const isExpanded = expandedRows.has(group.id);
 
                   return (
                     <Fragment key={group.id}>
                       {renderTableRow(
                         group,
-                        isExpandable,
+                        !!isExpandable,
                         false,
                         isOverallRow
                       )}

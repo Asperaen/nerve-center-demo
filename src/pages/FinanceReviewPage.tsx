@@ -91,12 +91,18 @@ const BrokenBarShape = (props: {
     return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
   }
 
+  const minHeightForBreak = breakIndicatorHeight + 6;
+  if (height < minHeightForBreak) {
+    return <rect x={x} y={y} width={width} height={height} fill={fill} rx={2} ry={2} />;
+  }
+
+  const topHeight = Math.max(0, height - breakIndicatorHeight - 6);
   const breakY = y + height - breakIndicatorHeight - 4;
   const gapHeight = breakIndicatorHeight + 4;
 
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height - breakIndicatorHeight - 6} fill={fill} rx={2} ry={2} />
+      <rect x={x} y={y} width={width} height={topHeight} fill={fill} rx={2} ry={2} />
       <rect x={x - 1} y={breakY - 2} width={width + 2} height={gapHeight} fill='white' />
       <line x1={x} y1={breakY - 1} x2={x + width} y2={breakY - 1} stroke='#4b5563' strokeWidth={3} />
       <line x1={x} y1={breakY + gapHeight - 3} x2={x + width} y2={breakY + gapHeight - 3} stroke='#4b5563' strokeWidth={3} />
