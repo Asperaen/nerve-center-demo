@@ -1791,10 +1791,6 @@ export default function BusinessGroupPerformancePage() {
     return unitRow?.name;
   }, [selectedGroupIds, unitRowsById]);
 
-  const selectedBuTitle = useMemo(() => selectedBuNames.join(', '), [
-    selectedBuNames,
-  ]);
-
   const selectedImpactUnits = useMemo(() => {
     const hasOverallSelected =
       selectedGroupIds.size === 0 ||

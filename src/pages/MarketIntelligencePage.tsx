@@ -777,7 +777,7 @@ export default function MarketIntelligencePage() {
     isExpandable: boolean = false,
     isSubGroup: boolean = false,
     isOverallRow: boolean = false,
-    parentBgId?: string
+    _parentBgId?: string
   ) => {
     const isExpanded = expandedRows.has(group.id);
     const shouldExpandOnClick = isExpandable && !isSubGroup && !isOverallRow;
@@ -806,9 +806,9 @@ export default function MarketIntelligencePage() {
               <span className='w-4 h-4 shrink-0' aria-hidden />
             ) : (
               (() => {
-                const bgState = selectedBu === 'all' && !isSubGroup && bgCheckboxState[group.id];
+                const bgState = selectedBu === 'all' && !isSubGroup ? bgCheckboxState[group.id] : undefined;
                 let checked = bgState ? bgState.checked : selectedGroupIds.has(group.id);
-                let indeterminate = bgState?.indeterminate ?? false;
+                let indeterminate = bgState ? bgState.indeterminate : false;
                 if (selectedBu !== 'all' && isOverallRow && selectedGroup) {
                   const gid = normalizeGroupId(selectedGroup.group);
                   const overallId = `${gid}-overall`;
@@ -1381,7 +1381,6 @@ export default function MarketIntelligencePage() {
     if (!group) return;
     const gid = normalizeGroupId(group.group);
     const unitIds = group.businessUnits.map((u) => getUnitId(gid, u.name));
-    const selectedUnitsForBg = selectedUnitIds.filter((uid) => unitToBg.get(uid) === gid);
     const allUnitsSelected = unitIds.every((id) => selectedGroupIds.has(id)) || selectedGroupIds.has(gid);
     const unitNames = allUnitsSelected
       ? []
