@@ -109,8 +109,8 @@ export const internalPulseColumns: PulseColumn[] = [
             },
           },
           {
-            id: 'belkin-revenue',
-            name: 'Belkin Revenue',
+            id: 'sdbg-revenue',
+            name: 'SDBG Revenue',
             value: 425.8,
             valuePercent: 18.5,
             unit: 'M USD',
@@ -121,8 +121,8 @@ export const internalPulseColumns: PulseColumn[] = [
             },
           },
           {
-            id: 'mobility-revenue',
-            name: 'Mobility Revenue',
+            id: 'mbu-revenue',
+            name: 'MBU Revenue',
             value: 348.4,
             valuePercent: 15.1,
             unit: 'M USD',

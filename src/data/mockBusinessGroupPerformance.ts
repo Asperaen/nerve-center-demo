@@ -1,5 +1,3 @@
-import { TREND_MONTHS } from '../constants';
-
 export interface MonthlyTrendPoint {
   month: string; // e.g., "Jan", "Feb"
   value: number; // value in billions
@@ -26,17 +24,31 @@ export interface BusinessGroupData {
   np: BusinessGroupMetricWithTrend;
 }
 
-export type BusinessGroupTimeframe = 'full-year' | 'ytm';
+export type BusinessGroupTimeframe = "full-year" | "ytm";
 
 // Helper to generate trend data
 const generateTrend = (
   baseValue: number,
   volatility: number = 0.1,
-  trend: 'up' | 'down' | 'flat' = 'up'
+  trend: "up" | "down" | "flat" = "up"
 ): MonthlyTrendPoint[] => {
-  const trendFactor = trend === 'up' ? 0.03 : trend === 'down' ? -0.02 : 0;
+  const months = [
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+  ];
+  const trendFactor = trend === "up" ? 0.03 : trend === "down" ? -0.02 : 0;
 
-  return TREND_MONTHS.map((month, index) => {
+  return months.map((month, index) => {
     const trendValue = baseValue * (1 + trendFactor * (index - 11));
     const randomVariation = (Math.random() - 0.5) * volatility * baseValue;
     return {
@@ -48,223 +60,184 @@ const generateTrend = (
 
 // AI insights for each business group and metric
 const aiInsights: Record<string, Record<string, string>> = {
-  hh: {
-    rev: 'HH revenue shows strong Q4 performance driven by premium product launches. Holiday season demand exceeded forecasts by 8%.',
-    gp: 'Gross profit margin improved due to supply chain optimization and favorable commodity pricing in Q3-Q4.',
-    op: 'Operating profit benefiting from automation investments made in H1. Labor cost efficiency up 12% YoY.',
-    np: 'Net profit growth reflects successful cost management and lower interest expenses from debt refinancing.',
+  pcbg: {
+    rev: "PCBG revenue at $6.1B YTD driven by AEBU1 notebook segment. Tracking slightly below target due to market conditions.",
+    gp: "GP at $228M with healthy margins from AEBU1 and AEBU2. Cost optimization initiatives ongoing.",
+    op: "Operating profit at $70M YTD, near budget. Manufacturing efficiency and product mix improvements in progress.",
+    np: "Net profit reflects operational discipline across PCBG business units.",
   },
-  fii: {
-    rev: 'FII revenue remained flat as market maturation offset new customer acquisitions. Focus shifting to value-added services.',
-    gp: 'Stable GP despite competitive pricing pressure. Product mix optimization maintaining margins.',
-    op: 'Operating costs well-controlled. Restructuring completed in Q2 now showing efficiency gains.',
-    np: 'Net profit stable with improved working capital management offsetting revenue pressure.',
+  aebu: {
+    rev: "AEBU revenue shows strong performance driven by notebook and docking station demand. AEBU1 remains the largest revenue contributor at $3.9B YTD.",
+    gp: "Gross profit margin at 3.8% with AEBU1 contributing majority of GP. BOM cost optimization ongoing.",
+    op: "Operating profit at $82M YTD, slightly below budget. Manufacturing efficiency improvements in progress.",
+    np: "Net profit growth reflects operational discipline. Focus on margin improvement initiatives across all sub-units.",
   },
-  fih: {
-    rev: 'FIH revenue growth driven by EV connector demand surge (+45% YoY) and data center expansion projects.',
-    gp: 'GP expanding with higher-margin EV and server products now representing 38% of portfolio.',
-    op: 'Operating leverage improving as Vietnam facility reaches 85% utilization. Scale benefits emerging.',
-    np: 'Strong NP growth reflecting operational excellence and favorable product mix shift.',
+  apbu: {
+    rev: "APBU revenue at $1.3B YTD driven by APBU2-C38 leading performance. APBU1 units facing market headwinds.",
+    gp: "GP margins challenged by competitive pricing pressure in application products market.",
+    op: "Operating loss in APBU1 units offset by APBU2 performance. Restructuring initiatives underway.",
+    np: "Net profit impacted by APBU1 losses. Focus on turnaround strategy for underperforming units.",
   },
-  fit: {
-    rev: 'FIT revenue up on 5G infrastructure deployments and smart device component wins. Nvidia partnership ramping.',
-    gp: 'GP improvement from proprietary component designs and reduced reliance on third-party IP.',
-    op: 'R&D investments in AI accelerator components expected to drive future OP growth. Current phase is investment.',
-    np: 'NP growth healthy despite increased R&D spend. Tax incentives in key markets contributing.',
+  sdbg: {
+    rev: "SDBG revenue at $1.3B YTD with SDBGBU2 as the leading contributor. System design business showing steady growth.",
+    gp: "GP margins varying by unit. SDBGBU2 maintaining healthy margins while smaller units face challenges.",
+    op: "Operating profit at $17M YTD, above budget. SDBGBU2 driving majority of the profit contribution.",
+    np: "Net profit growth reflecting strong performance in SDBGBU2 and cost management across the group.",
+  },
+  mbu: {
+    rev: "MBU revenue at $5M YTD with new product introductions driving growth momentum.",
+    gp: "GP margins improving as MBU scales operations and optimizes product costs.",
+    op: "Operating profit nearing break-even, ahead of schedule. Focus on profitable growth.",
+    np: "Net profit improvement reflecting operational efficiency gains in MBU.",
   },
   others: {
-    rev: 'Others segment showing strong growth from emerging market expansion and new B2B service offerings.',
-    gp: 'GP benefiting from diversification strategy and higher-margin specialty products.',
-    op: 'OP growth accelerating as startup costs for new ventures normalize. Break-even achieved in 3 of 5 new units.',
-    np: 'NP growth outpacing revenue due to operational maturity in previously loss-making units.',
+    rev: "Others segment includes ISBG and corporate functions. ISBG revenue at $106M YTD.",
+    gp: "GP margins healthy in ISBG. Central functions operating as cost centers.",
+    op: "Operating performance impacted by central overhead costs. ISBG showing improvement versus budget.",
+    np: "Net profit reflects mix of profitable ISBG and central overhead allocations.",
+  },
+  central: {
+    rev: "Central functions provide shared services across business groups.",
+    gp: "Central GP reflects shared service revenue and internal allocations.",
+    op: "Operating costs represent corporate overhead and shared service expenses.",
+    np: "Net impact from central functions reflects consolidated corporate activities.",
   },
   overall: {
-    rev: 'Consolidated revenue growth of 3.2% reflects balanced portfolio performance. EV and data center segments leading.',
-    gp: 'Overall GP healthy with margin expansion from product mix optimization across all business units.',
-    op: 'OP benefiting from shared services consolidation and cross-BU synergy initiatives launched in Q1.',
-    np: 'NP growth demonstrates effective cost management and strategic focus on high-margin opportunities.',
+    rev: "Compal consolidated revenue at $7.4B YTD with PCBG driving majority of performance.",
+    gp: "Overall GP at 3.5% margin with focus on improving product mix and cost reduction initiatives.",
+    op: "Consolidated OP at $82M YTD, tracking near budget. Operational efficiency programs ongoing.",
+    np: "NP growth demonstrates effective cost management. Focus on profitable growth across all business units.",
   },
 };
 
+/**
+ * Data based on Compal CEO Dashboard (YTM 2025, values in Million USD)
+ *
+ * Hierarchy: BG -> BU -> Sub-BU -> Sub-sub-BU
+ *
+ * PCBG: AEBU1, AEBU2, APBU (APBU1: APBU1-ABO/T88/T99, APBU2: APBU2-C38/T12/T89), ISBG, AEP, RD6, PCBGCEO
+ * SDBG: SDBGBU1, SDBGBU2, SDBGBU3, SDBGBU5, SDBGBU6
+ * MBU
+ * Central (Shared Expense)
+ */
 export const mockBusinessGroupData: BusinessGroupData[] = [
+  // PCBG (PC Business Group) - Aggregate of AEBU1, AEBU2, APBU, ISBG, AEP, RD6, PCBGCEO
   {
-    id: 'hh',
-    name: 'HH (Parent)',
+    id: "pcbg",
+    name: "PCBG",
     rev: {
-      value: 1349,
-      baseline: 1547,
-      stly: 1203,
-      percent: ((1349 - 1547) / 1547) * 100,
-      trend: generateTrend(10.0, 0.09, 'up'),
-      aiInsight: aiInsights.fit.rev,
+      value: 6093, // PCBG aggregate
+      baseline: 6245,
+      stly: 6512,
+      percent: ((6093 - 6245) / 6245) * 100,
+      trend: generateTrend(6093, 0.08, "flat"),
+      aiInsight:
+        aiInsights.pcbg?.rev ||
+        "PCBG revenue tracking near target with notebook segment leading.",
     },
     gp: {
-      value: 276,
-      baseline: 344,
-      stly: 215,
-      percent: ((276 - 344) / 344) * 100,
-      trend: generateTrend(10.0, 0.07, 'up'),
-      aiInsight: aiInsights.fit.gp,
+      value: 228,
+      baseline: 230,
+      stly: 218,
+      percent: ((228 - 230) / 230) * 100,
+      trend: generateTrend(228, 0.07, "flat"),
+      aiInsight:
+        aiInsights.pcbg?.gp ||
+        "GP margin stable with cost optimization efforts.",
     },
     op: {
-      value: 55,
-      baseline: 133,
-      stly: 38,
-      percent: ((55 - 133) / 133) * 100,
-      trend: generateTrend(10.0, 0.1, 'up'),
-      aiInsight: aiInsights.fit.op,
+      value: 70,
+      baseline: 73,
+      stly: 73,
+      percent: ((70 - 73) / 73) * 100,
+      trend: generateTrend(70, 0.09, "flat"),
+      aiInsight:
+        aiInsights.pcbg?.op ||
+        "OP slightly below target due to product mix shift.",
     },
     np: {
-      value: 47,
-      baseline: 83,
-      stly: 53,
-      percent: ((47 - 83) / 83) * 100,
-      trend: generateTrend(10.0, 0.11, 'up'),
-      aiInsight: aiInsights.fit.np,
+      value: 49,
+      baseline: 51,
+      stly: 51,
+      percent: ((49 - 51) / 51) * 100,
+      trend: generateTrend(49, 0.1, "flat"),
+      aiInsight:
+        aiInsights.pcbg?.np ||
+        "NP performance aligned with operational efficiency.",
     },
   },
+  // SDBG (Smart Device Business Group)
   {
-    id: 'fii',
-    name: 'FII',
+    id: "sdbg",
+    name: "SDBG",
     rev: {
-      value: 129,
-      baseline: 120.3,
-      stly: 129,
-      percent: 0.0,
-      trend: generateTrend(12.9, 0.05, 'flat'),
-      aiInsight: aiInsights.fii.rev,
+      value: 1306,
+      baseline: 1184,
+      stly: 1475,
+      percent: ((1306 - 1184) / 1184) * 100,
+      trend: generateTrend(1306, 0.07, "up"),
+      aiInsight: aiInsights.sdbg.rev,
     },
     gp: {
-      value: 129,
-      baseline: 120.3,
-      stly: 129,
-      percent: 0.0,
-      trend: generateTrend(12.9, 0.04, 'flat'),
-      aiInsight: aiInsights.fii.gp,
+      value: 34,
+      baseline: 27,
+      stly: 21,
+      percent: ((34 - 27) / 27) * 100,
+      trend: generateTrend(34, 0.08, "up"),
+      aiInsight: aiInsights.sdbg.gp,
     },
     op: {
-      value: 129,
-      baseline: 120.3,
-      stly: 129,
-      percent: 0.0,
-      trend: generateTrend(12.9, 0.06, 'flat'),
-      aiInsight: aiInsights.fii.op,
+      value: 17,
+      baseline: 10,
+      stly: 4,
+      percent: ((17 - 10) / 10) * 100,
+      trend: generateTrend(17, 0.1, "up"),
+      aiInsight: aiInsights.sdbg.op,
     },
     np: {
-      value: 129,
-      baseline: 120.3,
-      stly: 129,
-      percent: 0.0,
-      trend: generateTrend(12.9, 0.07, 'flat'),
-      aiInsight: aiInsights.fii.np,
+      value: 12,
+      baseline: 7,
+      stly: 3,
+      percent: ((12 - 7) / 7) * 100,
+      trend: generateTrend(12, 0.12, "up"),
+      aiInsight: aiInsights.sdbg.np,
     },
   },
+  // MBU
   {
-    id: 'fih',
-    name: 'FIH',
+    id: "mbu",
+    name: "MBU",
     rev: {
-      value: 183,
-      baseline: 120.3,
-      stly: 178,
-      percent: 2.8,
-      trend: generateTrend(18.0, 0.07, 'up'),
-      aiInsight: aiInsights.fih.rev,
+      value: 5,
+      baseline: 6,
+      stly: 2,
+      percent: ((5 - 6) / 6) * 100,
+      trend: generateTrend(5, 0.15, "up"),
+      aiInsight: "MBU revenue growing with new product introductions.",
     },
     gp: {
-      value: 183,
-      baseline: 120.3,
-      stly: 17.8,
-      percent: 2.8,
-      trend: generateTrend(18.0, 0.06, 'up'),
-      aiInsight: aiInsights.fih.gp,
+      value: 2,
+      baseline: 1,
+      stly: 0,
+      percent: ((2 - 1) / 1) * 100,
+      trend: generateTrend(2, 0.12, "up"),
+      aiInsight: "GP improvement driven by product margin optimization.",
     },
     op: {
-      value: 183,
-      baseline: 120.3,
-      stly: 178,
-      percent: 2.8,
-      trend: generateTrend(18.0, 0.08, 'up'),
-      aiInsight: aiInsights.fih.op,
+      value: 0,
+      baseline: 0,
+      stly: -1,
+      percent: 0,
+      trend: generateTrend(1, 0.1, "up"),
+      aiInsight: "OP reaching break-even point ahead of schedule.",
     },
     np: {
-      value: 183,
-      baseline: 120.3,
-      stly: 178,
-      percent: 2.8,
-      trend: generateTrend(18.0, 0.09, 'up'),
-      aiInsight: aiInsights.fih.np,
-    },
-  },
-  {
-    id: 'fit',
-    name: 'FIT',
-    rev: {
-      value: 1349,
-      baseline: 1547,
-      stly: 1203,
-      percent: ((1349 - 1547) / 1547) * 100,
-      trend: generateTrend(10.0, 0.09, 'up'),
-      aiInsight: aiInsights.fit.rev,
-    },
-    gp: {
-      value: 276,
-      baseline: 344,
-      stly: 215,
-      percent: ((276 - 344) / 344) * 100,
-      trend: generateTrend(10.0, 0.07, 'up'),
-      aiInsight: aiInsights.fit.gp,
-    },
-    op: {
-      value: 55,
-      baseline: 133,
-      stly: 38,
-      percent: ((55 - 133) / 133) * 100,
-      trend: generateTrend(10.0, 0.1, 'up'),
-      aiInsight: aiInsights.fit.op,
-    },
-    np: {
-      value: 47,
-      baseline: 83,
-      stly: 53,
-      percent: ((47 - 83) / 83) * 100,
-      trend: generateTrend(10.0, 0.11, 'up'),
-      aiInsight: aiInsights.fit.np,
-    },
-  },
-  {
-    id: 'others',
-    name: 'Others',
-    rev: {
-      value: 139,
-      baseline: 120.3,
-      stly: 132,
-      percent: 5.3,
-      trend: generateTrend(13.5, 0.1, 'up'),
-      aiInsight: aiInsights.others.rev,
-    },
-    gp: {
-      value: 139,
-      baseline: 120.3,
-      stly: 132,
-      percent: 5.3,
-      trend: generateTrend(13.5, 0.08, 'up'),
-      aiInsight: aiInsights.others.gp,
-    },
-    op: {
-      value: 139,
-      baseline: 120.3,
-      stly: 132,
-      percent: 5.3,
-      trend: generateTrend(13.5, 0.12, 'up'),
-      aiInsight: aiInsights.others.op,
-    },
-    np: {
-      value: 139,
-      baseline: 120.3,
-      stly: 132,
-      percent: 5.3,
-      trend: generateTrend(13.5, 0.14, 'up'),
-      aiInsight: aiInsights.others.np,
+      value: 0,
+      baseline: 0,
+      stly: -1,
+      percent: 0,
+      trend: generateTrend(1, 0.1, "up"),
+      aiInsight: "NP improvement reflecting operational efficiency gains.",
     },
   },
 ];
@@ -273,11 +246,15 @@ const ytmScaleByGroup: Record<
   string,
   { value: number; baseline: number; stly: number }
 > = {
-  hh: { value: 0.72, baseline: 0.74, stly: 0.71 },
-  fii: { value: 0.76, baseline: 0.75, stly: 0.74 },
-  fih: { value: 0.78, baseline: 0.77, stly: 0.76 },
-  fit: { value: 0.73, baseline: 0.75, stly: 0.72 },
-  others: { value: 0.7, baseline: 0.71, stly: 0.69 },
+  pcbg: { value: 0.73, baseline: 0.74, stly: 0.72 },
+  sdbg: { value: 0.78, baseline: 0.77, stly: 0.76 },
+  mbu: { value: 0.75, baseline: 0.74, stly: 0.73 },
+  // Sub-unit scales (for PCBG sub-units)
+  aebu1: { value: 0.72, baseline: 0.74, stly: 0.71 },
+  aebu2: { value: 0.74, baseline: 0.73, stly: 0.72 },
+  apbu: { value: 0.76, baseline: 0.75, stly: 0.74 },
+  isbg: { value: 0.71, baseline: 0.72, stly: 0.7 },
+  aep: { value: 0.73, baseline: 0.74, stly: 0.72 },
 };
 
 const roundTo = (value: number, digits: number = 1) => {
@@ -345,7 +322,6 @@ export const calculateOverallConsolidated = (
         value: acc.op.value + group.op.value,
         baseline: acc.op.baseline + group.op.baseline,
         stly: acc.op.stly + group.op.stly,
-
       },
       np: {
         value: acc.np.value + group.np.value,
@@ -363,21 +339,21 @@ export const calculateOverallConsolidated = (
 
   // Generate consolidated trend by summing all BU trends
   const generateConsolidatedTrend = (
-    metricKey: 'rev' | 'gp' | 'op' | 'np'
+    metricKey: "rev" | "gp" | "op" | "np"
   ): MonthlyTrendPoint[] => {
     const months = [
-      'Dec',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
     ];
     return months.map((month, index) => ({
       month,
@@ -389,14 +365,14 @@ export const calculateOverallConsolidated = (
   };
 
   return {
-    id: 'overall',
-    name: 'Grand total',
+    id: "overall",
+    name: "Grand total",
     rev: {
       value: totals.rev.value,
       baseline: totals.rev.baseline,
       stly: totals.rev.stly,
       percent: calcPercent(totals.rev.value, totals.rev.baseline),
-      trend: generateConsolidatedTrend('rev'),
+      trend: generateConsolidatedTrend("rev"),
       aiInsight: aiInsights.overall.rev,
     },
     gp: {
@@ -404,7 +380,7 @@ export const calculateOverallConsolidated = (
       baseline: totals.gp.baseline,
       stly: totals.gp.stly,
       percent: calcPercent(totals.gp.value, totals.gp.baseline),
-      trend: generateConsolidatedTrend('gp'),
+      trend: generateConsolidatedTrend("gp"),
       aiInsight: aiInsights.overall.gp,
     },
     op: {
@@ -412,7 +388,7 @@ export const calculateOverallConsolidated = (
       baseline: totals.op.baseline,
       stly: totals.op.stly,
       percent: calcPercent(totals.op.value, totals.op.baseline),
-      trend: generateConsolidatedTrend('op'),
+      trend: generateConsolidatedTrend("op"),
       aiInsight: aiInsights.overall.op,
     },
     np: {
@@ -420,19 +396,19 @@ export const calculateOverallConsolidated = (
       baseline: totals.np.baseline,
       stly: totals.np.stly,
       percent: calcPercent(totals.np.value, totals.np.baseline),
-      trend: generateConsolidatedTrend('np'),
+      trend: generateConsolidatedTrend("np"),
       aiInsight: aiInsights.overall.np,
     },
   };
 };
 
 const getBusinessGroupDataset = (
-  timeframe: BusinessGroupTimeframe = 'full-year'
+  timeframe: BusinessGroupTimeframe = "full-year"
 ): BusinessGroupData[] =>
-  timeframe === 'ytm' ? mockBusinessGroupDataYtm : mockBusinessGroupData;
+  timeframe === "ytm" ? mockBusinessGroupDataYtm : mockBusinessGroupData;
 
 export const getAllBusinessGroupData = (
-  timeframe: BusinessGroupTimeframe = 'full-year'
+  timeframe: BusinessGroupTimeframe = "full-year"
 ): BusinessGroupData[] => {
   const data = getBusinessGroupDataset(timeframe);
   return [...data, calculateOverallConsolidated(data)];
@@ -447,162 +423,330 @@ export interface SubBusinessGroupData extends BusinessGroupData {
 }
 
 // AI insights for sub-business groups
-export const subGroupAiInsights: Record<string, Record<string, string>> = {
-  ipbg: {
-    rev: 'IPBG revenue driven by industrial power solutions demand. Key wins in renewable energy sector contributing to growth.',
-    gp: 'GP margins expanding with shift to higher-value integrated solutions. Component cost optimization ongoing.',
-    op: 'Operating efficiency improving with lean manufacturing initiatives. Capacity utilization at 82%.',
-    np: 'Net profit growth reflects successful pricing strategy and operational discipline.',
+const subGroupAiInsights: Record<string, Record<string, string>> = {
+  // AEBU subgroups
+  aebu1: {
+    rev: "AEBU1 is the largest revenue contributor at $3.9B YTD, driven by notebook and system products.",
+    gp: "GP margins at 3.8% with ongoing cost optimization. BOM efficiency initiatives showing results.",
+    op: "Operating profit at $82M, slightly below budget due to volume softness in Q1.",
+    np: "Net profit reflecting solid operational performance with focus on margin improvement.",
   },
-  cnsbg: {
-    rev: 'CNSBG revenue growth from consumer electronics refresh cycles and new product introductions.',
-    gp: 'GP stable despite competitive pressure. Premium product mix providing margin support.',
-    op: 'Operating costs well-managed. Marketing investments in Q4 for product launches.',
-    np: 'Net profit benefiting from favorable tax positions and working capital improvements.',
+  aebu2: {
+    rev: "AEBU2 revenue at $640M YTD, growing 8% vs budget driven by product mix improvements.",
+    gp: "GP margins improved vs prior year through better material cost management.",
+    op: "Operating profit at $2M, significantly above budget. Turnaround initiatives successful.",
+    np: "Net profit positive after prior year losses, reflecting operational improvements.",
   },
-  cesbg: {
-    rev: 'CESBG revenue accelerating with cloud infrastructure expansion. Data center demand robust.',
-    gp: 'GP margins expanding on high-value server and networking solutions. Scale benefits emerging.',
-    op: 'Operating leverage improving as fixed costs spread across larger revenue base.',
-    np: 'Strong net profit growth reflecting market leadership in enterprise solutions.',
+  aep: {
+    rev: "AEP revenue at $87M YTD with strong growth vs budget (+17%). Emerging product lines ramping.",
+    gp: "GP margins healthy at 8%. Focus on premium product positioning.",
+    op: "Operating loss narrowing vs budget. Investment phase for new product development.",
+    np: "Net profit improving as new products reach scale. Break-even trajectory positive.",
   },
-  others_sub: {
-    rev: 'Other segments showing mixed performance. New ventures in pilot phase with growth potential.',
-    gp: 'GP margins vary by segment. Focus on higher-margin opportunities in emerging categories.',
-    op: 'Operating investments in new capabilities. Some units approaching break-even.',
-    np: 'Net profit recovering as startup costs normalize. Strategic patience required.',
+  // APBU subgroups
+  apbu1_t99: {
+    rev: "APBU1-T99 revenue below expectations due to market headwinds in target segments.",
+    gp: "GP margins under pressure from competitive pricing environment.",
+    op: "Operating loss reflecting volume shortfall and fixed cost absorption challenges.",
+    np: "Net profit impacted by operating losses. Restructuring initiatives underway.",
   },
-  others_sub_2: {
-    rev: 'Other segments showing mixed performance. New ventures in pilot phase with growth potential.',
-    gp: 'GP margins vary by segment. Focus on higher-margin opportunities in emerging categories.',
-    op: 'Operating investments in new capabilities. Some units approaching break-even.',
-    np: 'Net profit recovering as startup costs normalize. Strategic patience required.',
+  apbu1_t88: {
+    rev: "APBU1-T88 revenue at $90M YTD, below prior year but improving sequentially.",
+    gp: "GP margins challenged by input cost inflation and competitive dynamics.",
+    op: "Operating loss narrowing with cost reduction programs showing early results.",
+    np: "Net profit trajectory improving with operational efficiency initiatives.",
   },
-  fit_sub1: {
-    rev: '5G Infrastructure revenue growing with telecom network deployments and equipment upgrades.',
-    gp: 'GP margins benefiting from standardized components and volume production.',
-    op: 'Operating leverage improving with scale. Supply chain optimization reducing costs.',
-    np: 'Net profit growth driven by market share gains and operational efficiencies.',
+  apbu1_abo: {
+    rev: "APBU1-ABO revenue at $242M YTD, the largest unit in APBU1 segment.",
+    gp: "GP at $4M, margin pressure from product mix and competitive pricing.",
+    op: "Operating loss at -$6M, focus on turnaround and portfolio optimization.",
+    np: "Net profit impacted by operating challenges. Strategic review ongoing.",
   },
-  fit_sub2: {
-    rev: 'Smart Components revenue from IoT and connected device applications expanding rapidly.',
-    gp: 'GP margins expanding with proprietary sensor technologies and integration services.',
-    op: 'Operating investments in R&D yielding higher-margin product opportunities.',
-    np: 'Net profit benefiting from technology differentiation and premium pricing.',
+  apbu2_t89: {
+    rev: "APBU2-T89 revenue at $38M YTD with positive momentum in target markets.",
+    gp: "GP margins healthy with focus on value-added products and services.",
+    op: "Operating profit slightly positive, ahead of prior year performance.",
+    np: "Net profit reflecting improved operational execution and market positioning.",
   },
-  fit_sub3: {
-    rev: 'AI Accelerators revenue ramping with machine learning and AI processing demand.',
-    gp: 'GP margins premium due to specialized high-performance computing components.',
-    op: 'Operating costs managed through strategic partnerships and outsourcing.',
-    np: 'Strong net profit growth from leading-edge technology positioning.',
+  apbu2_t12: {
+    rev: "APBU2-T12 revenue at $25M YTD, strong margin profile with niche market focus.",
+    gp: "GP margins premium due to specialized product offerings.",
+    op: "Operating profit at $1.4M, consistent contributor to segment profitability.",
+    np: "Net profit solid with stable demand and efficient operations.",
   },
-  fit_sub4: {
-    rev: 'Mobility revenue growing with automotive and transportation technology solutions.',
-    gp: 'GP margins expanding with integrated mobility platform offerings.',
-    op: 'Operating investments in autonomous vehicle technologies driving future growth.',
-    np: 'Net profit benefiting from strategic partnerships in mobility ecosystem.',
+  apbu2_c38: {
+    rev: "APBU2-C38 is the largest APBU unit at $917M revenue YTD.",
+    gp: "GP at $28M, margin optimization ongoing through operational improvements.",
+    op: "Operating loss at -$0.8M, near break-even with improvement trajectory.",
+    np: "Net profit impacted by scale-related operating challenges.",
   },
-  fit_sub5: {
-    rev: 'Belkin revenue from consumer connectivity products and smart home solutions.',
-    gp: 'GP margins premium with established brand positioning and product differentiation.',
-    op: 'Operating efficiency high with mature product lines and global distribution.',
-    np: 'Net profit solid with strong cash flow generation from consumer business.',
+  // SDBG subgroups
+  sdbgbu1: {
+    rev: "SDBGBU1 revenue at $428M YTD, solid performance in system design business.",
+    gp: "GP margins challenged but OP positive due to operating efficiency.",
+    op: "Operating profit at $2.2M, contributing positively to segment results.",
+    np: "Net profit positive with focus on operational discipline.",
   },
-  fih_sub1: {
-    rev: 'Server revenue growing with enterprise data center and cloud computing demand.',
-    gp: 'GP margins expanding with high-volume server component production.',
-    op: 'Operating leverage improving with scale and manufacturing efficiency.',
-    np: 'Net profit growth strong from leadership in enterprise computing solutions.',
+  sdbgbu2: {
+    rev: "SDBGBU2 is the leading SDBG unit at $806M revenue, driving segment performance.",
+    gp: "GP at $28M, healthy margins reflecting favorable product mix.",
+    op: "Operating profit at $19M, the primary profit contributor in SDBG.",
+    np: "Net profit strong at $13M, demonstrating operational excellence.",
   },
-  fih_sub4: {
-    rev: 'Storage revenue from enterprise and cloud storage solutions expanding steadily.',
-    gp: 'GP margins premium with specialized storage technology and enterprise pricing.',
-    op: 'Operating costs controlled through established manufacturing processes.',
-    np: 'Net profit solid with consistent demand from enterprise storage market.',
+  sdbgbu3: {
+    rev: "SDBGBU3 revenue at $39M YTD, smaller unit with growth potential.",
+    gp: "GP at $4M with healthy margins in specialized segments.",
+    op: "Operating loss at -$1.3M, investment phase for market expansion.",
+    np: "Net profit impacted by growth investments. Positive trajectory expected.",
   },
-  fih_sub5: {
-    rev: 'IIOT revenue from industrial internet of things and smart manufacturing applications.',
-    gp: 'GP margins expanding with value-added industrial automation solutions.',
-    op: 'Operating investments in industrial technology development and partnerships.',
-    np: 'Net profit growth driven by adoption of Industry 4.0 technologies.',
+  sdbgbu5: {
+    rev: "SDBGBU5 revenue at $24M YTD, focused on niche applications.",
+    gp: "GP margins minimal due to competitive pricing environment.",
+    op: "Operating loss at -$3.3M, restructuring initiatives in progress.",
+    np: "Net profit impacted by operating challenges. Turnaround plan underway.",
   },
-  fih_sub6: {
-    rev: 'Automation revenue from factory automation and robotics systems increasing.',
-    gp: 'GP margins high with specialized automation equipment and systems integration.',
-    op: 'Operating efficiency improving with standardized automation platforms.',
-    np: 'Net profit benefiting from leadership in industrial automation solutions.',
+  sdbgbu6: {
+    rev: "SDBGBU6 revenue at $8M YTD, smallest unit with specialized focus.",
+    gp: "GP at $1.6M, healthy margins in niche markets.",
+    op: "Operating profit at $0.4M, positive contribution to segment.",
+    np: "Net profit positive, demonstrating viability of specialized business model.",
   },
-  fii_sub4: {
-    rev: 'ODM revenue from original design manufacturing services for global brands.',
-    gp: 'GP margins competitive in design and manufacturing services market.',
-    op: 'Operating costs managed through manufacturing scale and process optimization.',
-    np: 'Net profit stable with established ODM business model and client relationships.',
+  // Others subgroups
+  isbg: {
+    rev: "ISBG revenue at $106M YTD with stable performance vs prior year.",
+    gp: "GP at $16M, healthy margins reflecting product differentiation.",
+    op: "Operating loss at -$2M, improved significantly vs budget (-$11M).",
+    np: "Net profit trajectory positive with operational improvements.",
   },
-  fii_sub5: {
-    rev: 'EMS revenue from electronics manufacturing services expanding with demand.',
-    gp: 'GP margins maintaining competitive levels in manufacturing services.',
-    op: 'Operating efficiency high with global manufacturing footprint optimization.',
-    np: 'Net profit growth supported by manufacturing service expansion.',
+  mbu: {
+    rev: "MBU revenue at $5M YTD, emerging business with growth potential.",
+    gp: "GP at $1.7M, healthy margins in focused market segment.",
+    op: "Operating profit positive at $0.5M, ahead of budget.",
+    np: "Net profit positive, demonstrating business model viability.",
   },
-  fih_sub2: {
-    rev: 'Data Center revenue growing with cloud computing and AI infrastructure investments.',
-    gp: 'GP margins expanding with high-density and high-reliability product mix.',
-    op: 'Operating costs well-controlled through automation and process improvements.',
-    np: 'Net profit benefiting from premium positioning in growing data center market.',
+  rd6: {
+    rev: "RD6 represents R&D activities and cost center functions.",
+    gp: "GP reflects internal R&D cost allocations and project revenues.",
+    op: "Operating costs managed through R&D efficiency programs.",
+    np: "Net impact from R&D investments driving future product development.",
   },
-  fih_sub3: {
-    rev: 'Industrial revenue stable with steady demand from manufacturing and automation sectors.',
-    gp: 'GP margins maintained through product quality and reliability advantages.',
-    op: 'Operating efficiency stable with established processes and cost controls.',
-    np: 'Net profit solid with consistent performance in mature industrial markets.',
+  // Central subgroups
+  central_main: {
+    rev: "Central functions provide shared services across Compal business groups.",
+    gp: "GP reflects shared service revenue and cost allocations.",
+    op: "Operating costs represent corporate overhead and administrative expenses.",
+    np: "Net impact from central functions reflects consolidated corporate activities.",
   },
-  fii_sub1: {
-    rev: 'Consumer Electronics revenue reflecting market maturity and refresh cycles.',
-    gp: 'GP margins challenged by competitive pricing and component cost pressures.',
-    op: 'Operating costs managed through efficiency programs and cost optimization.',
-    np: 'Net profit stable with focus on working capital and expense management.',
+  pcbgceo: {
+    rev: "PCBGCEO revenue at $28M YTD from specialty products and services.",
+    gp: "GP at $1M, margin pressure from competitive dynamics.",
+    op: "Operating loss at -$2M, below budget performance.",
+    np: "Net profit impacted by operating challenges in current period.",
   },
-  fii_sub2: {
-    rev: 'Value-Added Services revenue growing with software and service offerings.',
-    gp: 'GP margins expanding with higher-value service and support contracts.',
-    op: 'Operating investments in service capabilities building future growth platform.',
-    np: 'Net profit improving as service business scales and margins expand.',
-  },
-  fii_sub3: {
-    rev: 'Emerging Markets revenue accelerating with geographic expansion initiatives.',
-    gp: 'GP margins varying by market but improving with localization strategies.',
-    op: 'Operating costs increasing with market development but offset by growth.',
-    np: 'Net profit growth driven by market penetration and scale benefits.',
-  },
-  others_sub1: {
-    rev: 'Emerging Ventures revenue from new business development and market entry.',
-    gp: 'GP margins building as products mature and scale advantages emerge.',
-    op: 'Operating investments heavy in initial phases but decreasing as businesses mature.',
-    np: 'Net profit trajectory improving with business model validation and scaling.',
-  },
-  others_sub2: {
-    rev: 'B2B Services revenue growing with enterprise software and consulting offerings.',
-    gp: 'GP margins premium due to service-based business model and recurring revenue.',
-    op: 'Operating leverage building with scalable service delivery platforms.',
-    np: 'Net profit growth strong with subscription model and client retention.',
-  },
-  others_sub3: {
-    rev: 'Specialty Products revenue from niche markets and customized solutions.',
-    gp: 'GP margins high due to specialized nature and value proposition.',
-    op: 'Operating costs managed through focused manufacturing and supply chain.',
-    np: 'Net profit solid with premium positioning in specialized segments.',
-  },
+};
+
+/**
+ * Generate sub-business group data for a parent BG
+ *
+ * Hierarchy:
+ * - PCBG: AEBU1, AEBU2, APBU, ISBG, AEP, RD6, PCBGCEO
+ * - APBU: APBU1-ABO, APBU1-T88, APBU1-T99, APBU2-C38, APBU2-T12, APBU2-T89
+ * - SDBG: SDBGBU1, SDBGBU2, SDBGBU3, SDBGBU5, SDBGBU6
+ * - MBU: (no sub-units)
+ * - Central: (no sub-units)
+ */
+const generateSubGroupData = (
+  parentBgId: string,
+  parentData: BusinessGroupData
+): SubBusinessGroupData[] => {
+  // Define distributions based on parentBgId
+  let distributions;
+
+  if (parentBgId === "pcbg") {
+    // PCBG sub-units based on revenue distribution
+    distributions = [
+      { id: "aebu1", name: "AEBU1", factor: 0.64, trend: "up" as const },
+      { id: "aebu2", name: "AEBU2", factor: 0.1, trend: "up" as const },
+      { id: "apbu", name: "APBU", factor: 0.22, trend: "down" as const },
+      { id: "isbg", name: "ISBG", factor: 0.017, trend: "flat" as const },
+      { id: "aep", name: "AEP", factor: 0.014, trend: "flat" as const },
+      { id: "rd6", name: "RD6", factor: 0.0, trend: "flat" as const },
+      { id: "pcbgceo", name: "PCBGCEO", factor: 0.005, trend: "flat" as const },
+    ];
+  } else if (parentBgId === "apbu" || parentBgId === "pcbg-apbu") {
+    distributions = [
+      {
+        id: "apbu1_t99",
+        name: "APBU1-T99",
+        factor: 0.01,
+        trend: "down" as const,
+      },
+      {
+        id: "apbu1_t88",
+        name: "APBU1-T88",
+        factor: 0.07,
+        trend: "down" as const,
+      },
+      {
+        id: "apbu1_abo",
+        name: "APBU1-ABO",
+        factor: 0.18,
+        trend: "down" as const,
+      },
+      {
+        id: "apbu2_t89",
+        name: "APBU2-T89",
+        factor: 0.03,
+        trend: "flat" as const,
+      },
+      {
+        id: "apbu2_t12",
+        name: "APBU2-T12",
+        factor: 0.02,
+        trend: "up" as const,
+      },
+      {
+        id: "apbu2_c38",
+        name: "APBU2-C38",
+        factor: 0.69,
+        trend: "flat" as const,
+      },
+    ];
+  } else if (parentBgId === "sdbg") {
+    distributions = [
+      { id: "sdbgbu1", name: "SDBGBU1", factor: 0.33, trend: "up" as const },
+      { id: "sdbgbu2", name: "SDBGBU2", factor: 0.62, trend: "up" as const },
+      { id: "sdbgbu3", name: "SDBGBU3", factor: 0.03, trend: "down" as const },
+      { id: "sdbgbu5", name: "SDBGBU5", factor: 0.02, trend: "down" as const },
+      { id: "sdbgbu6", name: "SDBGBU6", factor: 0.01, trend: "up" as const },
+    ];
+  } else if (parentBgId === "mbu") {
+    // MBU has no sub-units, return empty
+    return [];
+  } else if (parentBgId === "central") {
+    // Central has no sub-units, return empty
+    return [];
+  } else if (parentBgId === "aebu" || parentBgId === "pcbg-aebu1") {
+    // Legacy support for AEBU sub-units
+    distributions = [
+      { id: "aebu1", name: "AEBU1", factor: 0.84, trend: "up" as const },
+      { id: "aebu2", name: "AEBU2", factor: 0.14, trend: "up" as const },
+      { id: "aep", name: "AEP", factor: 0.02, trend: "flat" as const },
+    ];
+  } else {
+    // Default distribution - return empty for unknown parentBgId
+    return [];
+  }
+
+  return distributions.map((dist) => {
+    const revValue = parentData.rev.value * dist.factor;
+    const revBaseline = parentData.rev.baseline * dist.factor;
+    const revStly = parentData.rev.stly * dist.factor;
+    const gpValue = parentData.gp.value * dist.factor;
+    const gpBaseline = parentData.gp.baseline * dist.factor;
+    const gpStly = parentData.gp.stly * dist.factor;
+    const opValue = parentData.op.value * dist.factor;
+    const opBaseline = parentData.op.baseline * dist.factor;
+    const opStly = parentData.op.stly * dist.factor;
+    const npValue = parentData.np.value * dist.factor;
+    const npBaseline = parentData.np.baseline * dist.factor;
+    const npStly = parentData.np.stly * dist.factor;
+
+    const calcPercent = (val: number, base: number) =>
+      base === 0 ? 0 : ((val - base) / base) * 100;
+
+    // Add some variance to percentages to make it more realistic
+    const variance = (Math.random() - 0.5) * 2; // -1 to +1
+
+    return {
+      id: `${parentBgId}-${dist.id}`,
+      parentBgId,
+      name: dist.name,
+      rev: {
+        value: revValue,
+        baseline: revBaseline,
+        stly: revStly,
+        percent: calcPercent(revValue, revBaseline) + variance,
+        trend: generateTrend(revValue, 0.08, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].rev,
+      },
+      gp: {
+        value: gpValue,
+        baseline: gpBaseline,
+        stly: gpStly,
+        percent: calcPercent(gpValue, gpBaseline) + variance,
+        trend: generateTrend(gpValue, 0.06, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].gp,
+      },
+      op: {
+        value: opValue,
+        baseline: opBaseline,
+        stly: opStly,
+        percent: calcPercent(opValue, opBaseline) + variance,
+        trend: generateTrend(opValue, 0.1, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].op,
+      },
+      np: {
+        value: npValue,
+        baseline: npBaseline,
+        stly: npStly,
+        percent: calcPercent(npValue, npBaseline) + variance,
+        trend: generateTrend(npValue, 0.12, dist.trend),
+        aiInsight: subGroupAiInsights[dist.id].np,
+      },
+    };
+  });
+};
+
+// Get sub-business groups for a given parent BG (without overall row)
+export const getSubBusinessGroups = (
+  parentBgId: string,
+  timeframe: BusinessGroupTimeframe = "full-year"
+): SubBusinessGroupData[] => {
+  const parentBg = getBusinessGroupDataset(timeframe).find(
+    (bg) => bg.id === parentBgId
+  );
+  if (!parentBg) return [];
+  return generateSubGroupData(parentBgId, parentBg);
+};
+
+// Get sub-business groups with overall for a given parent BG
+export const getSubBusinessGroupsWithOverall = (
+  parentBgId: string,
+  timeframe: BusinessGroupTimeframe = "full-year"
+): BusinessGroupData[] => {
+  const parentBg = getBusinessGroupDataset(timeframe).find(
+    (bg) => bg.id === parentBgId
+  );
+  if (!parentBg) return [];
+
+  const subGroups = generateSubGroupData(parentBgId, parentBg);
+
+  // Create overall row for this BG
+  const overall: BusinessGroupData = {
+    id: `${parentBgId}-overall`,
+    name: `${parentBg.name} overall`,
+    rev: { ...parentBg.rev },
+    gp: { ...parentBg.gp },
+    op: { ...parentBg.op },
+    np: { ...parentBg.np },
+  };
+
+  return [...subGroups, overall];
 };
 
 // Get parent BG info by ID
 export const getParentBusinessGroup = (
   parentBgId: string,
-  timeframe: BusinessGroupTimeframe = 'full-year'
+  timeframe: BusinessGroupTimeframe = "full-year"
 ): BusinessGroupData | undefined => {
   return getBusinessGroupDataset(timeframe).find((bg) => bg.id === parentBgId);
 };
 
 // Get list of all main BU IDs and names for filter options
-export const getMainBusinessGroupOptions = (): { id: string; name: string }[] => {
+export const getMainBusinessGroupOptions = (): {
+  id: string;
+  name: string;
+}[] => {
   return mockBusinessGroupData.map((bg) => ({ id: bg.id, name: bg.name }));
 };

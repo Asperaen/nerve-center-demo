@@ -1088,13 +1088,22 @@ export default function BusinessGroupPerformancePage() {
       return 'HH (Parent)';
     }
     if (normalized === 'fit') {
-      return 'FIT';
+      return 'Compal';
     }
     if (normalized === 'fii') {
       return 'FII';
     }
     if (normalized === 'fih') {
       return 'FIH';
+    }
+    if (normalized === 'pcbg') {
+      return 'PCBG';
+    }
+    if (normalized === 'sdbg') {
+      return 'SDBG';
+    }
+    if (normalized === 'mbu') {
+      return 'MBU';
     }
     if (normalized === 'others') {
       return 'Others';
@@ -2095,48 +2104,48 @@ export default function BusinessGroupPerformancePage() {
           ],
           rows: [
             {
-              group: 'CONN',
-              owner: 'EMS',
+              group: 'AEBU',
+              owner: 'Commercial',
               values: [10, '-', 12, 15, 3, 0, 1],
             },
             {
               group: '',
-              owner: 'IDS',
+              owner: 'Consumer',
               values: [29, 1, 23, 24, 10, 1, 1],
             },
             {
               group: '',
-              owner: 'FMC',
+              owner: 'Gaming',
               values: ['-', 0, 1, 2, 3, 0, 0],
             },
             {
               group: '',
-              owner: 'A SBUs',
+              owner: 'Others',
               values: ['-', 7, 2, 7, 6, 0, 1],
             },
             {
-              group: 'Conn total',
+              group: 'AEBU total',
               owner: '',
               values: [39, 8, 39, 49, 22, 2, 3],
               isTotal: true,
             },
             {
-              group: 'Cable',
-              owner: 'TSC',
+              group: 'APBU',
+              owner: 'Server',
               values: [17, 3, 4, 4, 1, 0, 0],
             },
             {
               group: '',
-              owner: 'APS',
+              owner: 'AI/HPC',
               values: ['-', 1, 10, 3, 1, 0, 0],
             },
             {
               group: '',
-              owner: 'A SBUs',
+              owner: 'Others',
               values: ['-', 27, 12, 12, 1, 0, 1],
             },
             {
-              group: 'Cable total',
+              group: 'APBU total',
               owner: '',
               values: [17, 31, 26, 18, 2, 0, 1],
               isTotal: true,

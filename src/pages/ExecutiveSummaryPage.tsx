@@ -737,13 +737,22 @@ export default function ExecutiveSummaryPage({
       return 'HH (Parent)';
     }
     if (normalized === 'fit') {
-      return 'FIT';
+      return 'Compal';
     }
     if (normalized === 'fii') {
       return 'FII';
     }
     if (normalized === 'fih') {
       return 'FIH';
+    }
+    if (normalized === 'pcbg') {
+      return 'PCBG';
+    }
+    if (normalized === 'sdbg') {
+      return 'SDBG';
+    }
+    if (normalized === 'mbu') {
+      return 'MBU';
     }
     if (normalized === 'others') {
       return 'Others';
@@ -1808,7 +1817,7 @@ export default function ExecutiveSummaryPage({
       const sum = (key: BudgetMetricKey) =>
         roundToOne(
           selectedBudgetRows.reduce(
-            (total, row) => total + row[key] * monthFactor,
+            (total, row) => total + ((row[key] as number) ?? 0) * monthFactor,
             0
           )
         );

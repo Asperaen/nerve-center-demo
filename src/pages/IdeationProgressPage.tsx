@@ -497,14 +497,14 @@ export default function IdeationProgressPage() {
     })();
     const ideationTargetFullYearMn =
       selectedBudgetRows.length > 0
-        ? selectedBudgetRows.reduce((sum, row) => sum + row.ideationTarget, 0)
+        ? selectedBudgetRows.reduce((sum, row) => sum + (row.ideationTarget ?? 0), 0)
         : toMillions(
             businessGroups
               .flatMap((group) => group.businessUnits)
               .reduce((sum, unit) => sum + unit.ideationTarget, 0)
           );
     const totalInitiativeTarget = initiativeRows.reduce(
-      (sum, row) => sum + row.target,
+      (sum, row) => sum + (row.target ?? 0),
       0
     );
     const scaleInitiativeValues =
@@ -514,10 +514,10 @@ export default function IdeationProgressPage() {
         ? initiativeRows
         : initiativeRows.map((row) => ({
             ...row,
-            target: row.target * scaleInitiativeValues,
-            l1ImpactYtm: row.l1ImpactYtm * scaleInitiativeValues,
-            l2ImpactYtm: row.l2ImpactYtm * scaleInitiativeValues,
-            l3ImpactYtm: row.l3ImpactYtm * scaleInitiativeValues,
+            target: (row.target ?? 0) * scaleInitiativeValues,
+            l1ImpactYtm: (row.l1ImpactYtm ?? 0) * scaleInitiativeValues,
+            l2ImpactYtm: (row.l2ImpactYtm ?? 0) * scaleInitiativeValues,
+            l3ImpactYtm: (row.l3ImpactYtm ?? 0) * scaleInitiativeValues,
           }));
 
     if (scaledInitiativeRows.length === 0) {
@@ -571,32 +571,33 @@ export default function IdeationProgressPage() {
     >();
 
     scaledInitiativeRows.forEach((row) => {
-      const parent = row.parentVs ?? row.vs;
+      const parent = row.parentVs ?? row.vs ?? 'Unknown';
       if (!parentTotals.has(parent)) {
         parentTotals.set(parent, { target: 0, l1: 0, l2: 0, l3: 0 });
         parentOrder.push(parent);
       }
       const parentEntry = parentTotals.get(parent)!;
-      parentEntry.target += row.target;
-      parentEntry.l1 += row.l1ImpactYtm;
-      parentEntry.l2 += row.l2ImpactYtm;
-      parentEntry.l3 += row.l3ImpactYtm;
+      parentEntry.target += row.target ?? 0;
+      parentEntry.l1 += row.l1ImpactYtm ?? 0;
+      parentEntry.l2 += row.l2ImpactYtm ?? 0;
+      parentEntry.l3 += row.l3ImpactYtm ?? 0;
 
       if (row.parentVs) {
-        const key = `${parent}||${row.vs}`;
+        const vs = row.vs ?? 'Unknown';
+        const key = `${parent}||${vs}`;
         const line = lineItems.get(key) ?? {
           parent,
-          vs: row.vs,
+          vs,
           target: 0,
           l1: 0,
           l2: 0,
           l3: 0,
           sponsor: row.sponsor,
         };
-        line.target += row.target;
-        line.l1 += row.l1ImpactYtm;
-        line.l2 += row.l2ImpactYtm;
-        line.l3 += row.l3ImpactYtm;
+        line.target += row.target ?? 0;
+        line.l1 += row.l1ImpactYtm ?? 0;
+        line.l2 += row.l2ImpactYtm ?? 0;
+        line.l3 += row.l3ImpactYtm ?? 0;
         lineItems.set(key, line);
       }
     });
@@ -733,11 +734,11 @@ export default function IdeationProgressPage() {
       scaledInitiativeRows.forEach((row) => {
         rows.push(
           toPlanRow(
-            row.vs,
-            row.target,
-            row.l1ImpactYtm,
-            row.l2ImpactYtm,
-            row.l3ImpactYtm,
+            row.vs ?? 'Unknown',
+            row.target ?? 0,
+            row.l1ImpactYtm ?? 0,
+            row.l2ImpactYtm ?? 0,
+            row.l3ImpactYtm ?? 0,
             false,
             Boolean(row.parentVs),
             row.sponsor

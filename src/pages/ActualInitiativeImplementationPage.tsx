@@ -670,8 +670,8 @@ export default function ActualInitiativeImplementationPage() {
       scaledExecutionRows.find((row) => row.isTotal) ??
       scaledExecutionRows[0];
     const totalPipeline = totalRow.pipeline;
-    const l4Target = totalRow.l4Target;
-    const l4Impact = totalRow.l4Impact;
+    const l4Target = totalRow.l4Target ?? 0;
+    const l4Impact = totalRow.l4Impact ?? 0;
     const pct = totalRow.l4Pct ?? 0;
     const late = totalRow.lateValue ?? 0;
 
@@ -1166,18 +1166,18 @@ export default function ActualInitiativeImplementationPage() {
                             {formatMnValue(row.pipeline)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {formatMnValue(row.l4Target)}
+                            {formatMnValue(row.l4Target ?? 0)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {formatMnValue(row.l4Impact)}
+                            {formatMnValue(row.l4Impact ?? 0)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.l4Pct === null ? (
+                            {row.l4Pct === null || row.l4Pct === undefined ? (
                               'n/a'
                             ) : (
                               <span
                                 className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
-                                  row.l4Pct
+                                  row.l4Pct ?? 0
                                 )}`}>
                                 {row.l4Pct}%
                               </span>
@@ -1197,19 +1197,19 @@ export default function ActualInitiativeImplementationPage() {
                             )}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.lateValue === 0
+                            {(row.lateValue ?? 0) === 0
                               ? '-'
-                              : formatMnValue(row.lateValue)}
+                              : formatMnValue(row.lateValue ?? 0)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {row.milestonesDue}
+                            {row.milestonesDue ?? '-'}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             <span
                               className={`px-2 py-1 rounded-md text-xs font-semibold ${pctClass(
-                                row.milestonesCompletePct
+                                row.milestonesCompletePct ?? 0
                               )}`}>
-                              {row.milestonesCompletePct}%
+                              {row.milestonesCompletePct ?? 0}%
                             </span>
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
