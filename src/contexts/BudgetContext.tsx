@@ -46,6 +46,10 @@ const BudgetContext = createContext<BudgetContextValue | undefined>(undefined);
 
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
+  const normalized = key.replace(/\s*&\s*/g, ' ').replace(/\s+/g, '-');
+  if (normalized === 'other-subsidiary-intergroup-adjustments') {
+    return 'other-subsidiary-intergroup';
+  }
   return key === 'other' ? 'others' : key;
 };
 

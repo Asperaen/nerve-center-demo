@@ -19,7 +19,7 @@ export interface FunctionalPerformanceStage {
   label: string;
   value: number;
   delta?: number;
-  type: 'baseline' | 'positive' | 'negative';
+  type: 'baseline' | 'positive' | 'negative' | 'neutral';
   isClickable?: boolean;
   isReference?: boolean;
   referenceValue?: number;
@@ -689,7 +689,7 @@ export default function FunctionalPerformanceWaterfall({
       chartSize.height - 20,
       Math.max(8, axisLabelBottom + 110)
     );
-
+    // All section brackets on the same row (same groupY); do not stack by index.
     return groupings
       .map((group) => {
         const stageIds = new Set(group.stageIds);
@@ -712,6 +712,7 @@ export default function FunctionalPerformanceWaterfall({
 
   const getFillColor = (stage: FunctionalPerformanceStage) => {
     if (stage.type === 'baseline') return '#9ca3af';
+    if (stage.type === 'neutral') return '#9ca3af'; // same grey as actual spend bar for Volume change etc.
     return stage.type === 'positive' ? '#22c55e' : '#ef4444';
   };
 
@@ -1002,7 +1003,7 @@ export default function FunctionalPerformanceWaterfall({
                   const labelColor =
                     isTargetFirstBar
                       ? '#9ca3af'
-                      : stage.type === 'baseline'
+                      : stage.type === 'baseline' || stage.type === 'neutral'
                       ? '#9ca3af'
                       : stage.type === 'positive'
                       ? '#22c55e'
@@ -1133,7 +1134,7 @@ export default function FunctionalPerformanceWaterfall({
               fontSize={12}
               fontWeight={700}
               fill='#374151'>
-              Initiative performance
+              Controllable (initiative performance)
             </text>
           </svg>
         )}

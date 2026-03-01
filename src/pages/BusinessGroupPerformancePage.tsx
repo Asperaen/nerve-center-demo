@@ -40,12 +40,17 @@ import type {
   BudgetForecastStage,
   NavigationLayer,
 } from '../types';
+import { derivePnlPassthrough } from '../utils/pnlBreakdownUtils';
 import { setStoredTimeframe } from '../utils/timeframeStorage';
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const toMillions = (value: number) => value / 1_000;
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
+  const normalized = key.replace(/\s*&\s*/g, ' ').replace(/\s+/g, '-');
+  if (normalized === 'other-subsidiary-intergroup-adjustments') {
+    return 'other-subsidiary-intergroup';
+  }
   return key === 'other' ? 'others' : key;
 };
 
@@ -799,14 +804,14 @@ export default function BusinessGroupPerformancePage() {
         )
       );
       const overallRow = buildGroupRow(
-        'Overall',
+        'Consolidated Financial',
         businessGroups.flatMap((group) => group.businessUnits),
         valueMode,
         budgetMode,
         lastYearMode,
         timeframeScale,
         'overall',
-        'Overall'
+        'Consolidated Financial'
       );
       return [...groupRows, overallRow];
     }
@@ -959,7 +964,7 @@ export default function BusinessGroupPerformancePage() {
     setSelectedGroupIds(new Set(ids));
   }, [searchParams, selectedBu, selectedGroupIds.size, tableData, businessGroups]);
 
-  // When all BGs (and all BUs) are selected in All BGs view, ensure Overall is also selected so the Overall row is checked in "Financial actuals by BU - All BGs"
+  // When all BGs (and all BUs) are selected in All BGs view, ensure Overall is also selected so the Overall row is checked in "Financial actuals by BG / BU - All BGs"
   useEffect(() => {
     if (selectedBu !== 'all') return;
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
@@ -1167,7 +1172,7 @@ export default function BusinessGroupPerformancePage() {
       } else {
         next.add(bgId);
         buIdsForBg.forEach((id) => next.add(id));
-        // When all BGs are now selected, also select Overall so "Financial actuals by BU - All BGs" shows Overall checked
+        // When all BGs are now selected, also select Overall so "Financial actuals by BG / BU - All BGs" shows Overall checked
         if (overallId && selectedBu === 'all') {
           const allBgIds = tableData
             .filter((r) => !isOverallRowId(r.id) && !unitRowsById.has(r.id))
@@ -1588,6 +1593,9 @@ export default function BusinessGroupPerformancePage() {
     if (normalized === 'others') {
       return 'Others';
     }
+    if (normalized === 'other-subsidiary-intergroup') {
+      return 'Other subsidiary & Intergroup adjustments';
+    }
     return null;
   }, []);
 
@@ -1595,7 +1603,8 @@ export default function BusinessGroupPerformancePage() {
     if (!activePnlGroup) {
       return [];
     }
-    return PNL_BREAKDOWN_DATA[activePnlGroup] ?? [];
+    const rows = PNL_BREAKDOWN_DATA[activePnlGroup] ?? [];
+    return derivePnlPassthrough(rows);
   }, [activePnlGroup]);
 
   const unitGroupKeyById = useMemo(() => {
@@ -1651,7 +1660,8 @@ export default function BusinessGroupPerformancePage() {
       return [];
     }
     const rows = PNL_BREAKDOWN_DATA[selectedPnlGroupKey] ?? [];
-    return rows.filter((row) => selectedPnlUnitNames.includes(row.unit));
+    const filtered = rows.filter((row) => selectedPnlUnitNames.includes(row.unit));
+    return derivePnlPassthrough(filtered);
   }, [selectedPnlGroupKey, selectedPnlUnitNames]);
 
   const pnlTitle = useMemo(() => {
@@ -2842,6 +2852,7 @@ export default function BusinessGroupPerformancePage() {
         ? 'bg-red-100 text-red-700'
         : 'bg-gray-100 text-gray-600';
     const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
+    const deltaUnit = usePercentView ? ' p.p.' : '%';
 
     // Calculate trend line for sparkline
     const trendValues =
@@ -2899,13 +2910,13 @@ export default function BusinessGroupPerformancePage() {
             <span
               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
               {percentSign}
-              {primaryPercent.toFixed(1)}%
+              {primaryPercent.toFixed(1)}{deltaUnit}
             </span>
             {!isBudgetMode && (
               <span
                 className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
                 {lastYearPercentSign}
-                {lastYearPercent.toFixed(1)}%
+                {lastYearPercent.toFixed(1)}{deltaUnit}
               </span>
             )}
           </div>
@@ -2922,7 +2933,7 @@ export default function BusinessGroupPerformancePage() {
               <span
                 className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
                 {percentSign}
-                {primaryPercent.toFixed(1)}%
+                {primaryPercent.toFixed(1)}{deltaUnit}
               </span>
             </div>
 
@@ -3086,8 +3097,9 @@ export default function BusinessGroupPerformancePage() {
     { label: 'R&D', children: ['FTE', 'Non-FTE'] },
     { label: 'SG&A' },
     { label: 'Share expenses' },
-    { label: 'Operating Profit' },
+    { label: 'Operating profit' },
     { label: '(Line items between OP and net)' },
+    { label: 'Net profit' },
   ] as const;
 
   const pnlFullYearScale = useMemo(() => {
@@ -3126,6 +3138,9 @@ export default function BusinessGroupPerformancePage() {
           normalizePnlLineItem(row.lineItem) === 'controllable';
         const showDrilldown = Boolean(functionId) && !isRevenueControllable;
         const isTopLevel = level === 0;
+        const isBoldLineItem = ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem);
+        const isOpexToNetPlaceholder = row.lineItem === '(Line items between OP and net)';
+        const useBold = (isGroup || isTopLevel || isBoldLineItem) && !isOpexToNetPlaceholder;
         return (
           <tr
             key={`${row.unit}-${row.lineItem}-${index}`}
@@ -3146,7 +3161,7 @@ export default function BusinessGroupPerformancePage() {
             <td className='px-4 py-3 text-gray-600'>
               <span
                 className={
-                  isGroup || isTopLevel
+                  useBold
                     ? 'font-semibold text-gray-900'
                     : 'text-gray-700'
                 }
@@ -3719,7 +3734,7 @@ export default function BusinessGroupPerformancePage() {
                 <div className='flex items-center gap-2'>
                   <ChartBarIcon className='w-5 h-5 text-primary-600' />
                   <h2 className='text-2xl font-bold text-gray-900'>
-                    Financial actuals by BU - {sectionTitle}
+                    Financial actuals by BG / BU - {sectionTitle}
                   </h2>
                 </div>
                 <div className='flex items-center gap-4'>
@@ -4181,7 +4196,7 @@ export default function BusinessGroupPerformancePage() {
                           Line item
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Cost rationale
+                          Rationale
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
                           Item
@@ -4337,7 +4352,12 @@ export default function BusinessGroupPerformancePage() {
                           <td className='px-4 py-3 font-semibold text-gray-900'>
                             {row.unit}
                           </td>
-                          <td className='px-4 py-3 text-gray-600'>
+                          <td
+                            className={
+                              ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem)
+                                ? 'px-4 py-3 font-semibold text-gray-900'
+                                : 'px-4 py-3 text-gray-600'
+                            }>
                             {row.lineItem}
                           </td>
                           <td className='px-4 py-3 text-right text-gray-700'>

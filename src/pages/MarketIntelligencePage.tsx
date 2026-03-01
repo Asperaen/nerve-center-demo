@@ -2136,7 +2136,7 @@ export default function MarketIntelligencePage() {
           <div className='flex items-center justify-between mb-4'>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
-                Forecast Performance by Business Group
+                Forecast by Business Group
               </h2>
               <p className='text-sm text-gray-600 mt-1'>
                 Mn, {currencyLabel}

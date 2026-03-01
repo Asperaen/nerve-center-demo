@@ -16,7 +16,7 @@ interface BudgetPerformanceWaterfallProps {
 
 export default function BudgetPerformanceWaterfall({
   stages,
-  title = 'Budget deviation waterfall of BU performance by value driver',
+  title = 'Budget waterfall by value drivers',
   subtitle,
   onStageClick,
   onStageDoubleClick,
@@ -28,9 +28,9 @@ export default function BudgetPerformanceWaterfall({
     'confirmed-volume-mix':
       'OP impact from confirmed RFQ wins or losses in current year, reflected as locked changes in volume or mix.',
     'market-performance':
-      'Known structural impacts in current year from FX, labor rates, or business strategic initiatives, positive or negative.',
+      'Known structural impacts in current year from FX, labor rates, positive or negative.',
     'one-off-adjustments':
-      'Non-recurring costs or benefits gap between last year and current year (e.g., one-time investments or claims).',
+      'Non-recurring costs or benefits gap between last year and current year (e.g., one-time investments or one-time claims).',
     'carry-over-improvements':
       'OP impact contributed by last year L4 initiatives ramp up and L3 initiatives to be implemented.',
     ideation:

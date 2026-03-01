@@ -68,6 +68,51 @@ export type PnlBreakdownRow = {
     lastYearFullYear: number;
 }
 
+/** BOM child ratio: Buy-Sell 60%, AVAP 25%, Controllable 15% of BOM */
+const BOM_RATIO_BUY_SELL = 0.6;
+const BOM_RATIO_AVAP = 0.25;
+const BOM_RATIO_CONTROLLABLE = 0.15;
+
+/**
+ * For each BOM row, sets the next three rows (Buy-Sell, AVAP, Controllable) to
+ * 60%, 25%, 15% of the BOM row's numeric fields. Mutates rows in place.
+ */
+function applyBomChildRatios(rows: PnlBreakdownRow[]): void {
+    const numericKeys = [
+        'fullYearBudget',
+        'ytmBudget',
+        'lastYearYtm',
+        'ytmActual',
+        'fullYearForecast',
+        'lastYearFullYear',
+    ] as const;
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.lineItem !== 'BOM') continue;
+        const next1 = rows[i + 1];
+        const next2 = rows[i + 2];
+        const next3 = rows[i + 3];
+        if (
+            !next1 ||
+            !next2 ||
+            !next3 ||
+            next1.lineItem !== 'Buy-Sell' ||
+            next2.lineItem !== 'AVAP' ||
+            next3.lineItem !== 'Controllable' ||
+            next1.unit !== row.unit ||
+            next2.unit !== row.unit ||
+            next3.unit !== row.unit
+        ) {
+            continue;
+        }
+        for (const key of numericKeys) {
+            const bomVal = row[key];
+            next1[key] = bomVal * BOM_RATIO_BUY_SELL;
+            next2[key] = bomVal * BOM_RATIO_AVAP;
+            next3[key] = bomVal * BOM_RATIO_CONTROLLABLE;
+        }
+    }
+}
 
 export type ValueDriverRow = {
     vs: string;
@@ -116,8 +161,8 @@ export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> =
             actualImplementation: [
                 'Account A L5/L6 and Account B L5/L6 are driving the majority of pipeline delivery within Topline VS, with Services providing a smaller, steady contribution.',
                 'The largest leakage is concentrated in WH L6 (MFG VS) and Account B L10 (Topline VS), driven by milestone slippage and late change requests—warrants a focused deep-dive.',
-                'If the same leakage repeats, Topline VS delivery would be the primary shortfall, forcing reliance on WH L10 and Product platform B catch-up to meet run-rate targets.',
-                'Immediate actions: tighten weekly governance on Account B L5/L6 and WH L6, enforce change-control for L10 items, and add early-warning checkpoints for Product platform C.',
+                'If the same leakage repeats, Topline VS delivery would be the primary shortfall, forcing reliance on WH L10 and Account B catch-up to meet run-rate targets.',
+                'Immediate actions: tighten weekly governance on Account B L5/L6 and WH L6, enforce change-control for L10 items, and add early-warning checkpoints for Account C.',
             ],
             actualReconciliation: [
                 'Actual NP reached USD 88.7M, trailing budget by USD 10.2M (–10.3%), indicating a material gap versus plan.',
@@ -174,10 +219,10 @@ export const INITIATIVE_IMPLEMENTATION_ROW_DEFS: InitiativeImplementationRowDef[
     { id: 'mfg-sub-4', label: 'FSJ L10', isSub: true },
     { id: 'mfg-sub-5', label: 'FSJ L6', isSub: true },
     { id: 'rd', label: 'R&D VS', isGroup: true },
-    { id: 'rd-sub-1', label: 'Product platform A', isSub: true },
-    { id: 'rd-sub-2', label: 'Product platform B', isSub: true },
-    { id: 'rd-sub-3', label: 'Product platform C', isSub: true },
-    { id: 'rd-sub-4', label: 'Product platform D', isSub: true },
+    { id: 'rd-sub-1', label: 'Account A', isSub: true },
+    { id: 'rd-sub-2', label: 'Account B', isSub: true },
+    { id: 'rd-sub-3', label: 'Account C', isSub: true },
+    { id: 'rd-sub-4', label: 'Account D', isSub: true },
     { id: 'procurement', label: 'Procurement / BOM', isGroup: true },
     { id: 'total', label: 'Total', isTotal: true },
 ];
@@ -216,10 +261,10 @@ export const HH_DE_GROUP_EXECUTION_ROWS: InitiativeImplementationRow[] = [
     { id: 'mfg-sub-4', label: 'FSJ L10', sponsor: 'Plant ops', pipeline: 5.4, l4Target: 4.9, l4Impact: 5.0, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 50, postponed: 0, isSub: true },
     { id: 'mfg-sub-5', label: 'FSJ L6', sponsor: 'Plant ops', pipeline: 0, l4Target: 0, l4Impact: 0, l4Pct: null, lateInitiatives: 0, lateValue: 0, milestonesDue: 0, milestonesCompletePct: 0, postponed: 0, isSub: true },
     { id: 'rd', label: 'R&D VS', sponsor: undefined, pipeline: 17.4, l4Target: 15.7, l4Impact: 16.0, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 7, milestonesCompletePct: 86, postponed: 1, isGroup: true },
-    { id: 'rd-sub-1', label: 'Product platform A', sponsor: 'R&D lead', pipeline: 4.9, l4Target: 4.4, l4Impact: 4.5, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 100, postponed: 0, isSub: true },
-    { id: 'rd-sub-2', label: 'Product platform B', sponsor: 'R&D lead', pipeline: 5.5, l4Target: 5.0, l4Impact: 5.1, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 100, postponed: 0, isSub: true },
-    { id: 'rd-sub-3', label: 'Product platform C', sponsor: 'R&D lead', pipeline: 2.0, l4Target: 1.8, l4Impact: 1.8, l4Pct: 100, lateInitiatives: 0, lateValue: 0, milestonesDue: 1, milestonesCompletePct: 100, postponed: 0, isSub: true },
-    { id: 'rd-sub-4', label: 'Product platform D', sponsor: 'R&D lead', pipeline: 5.0, l4Target: 4.5, l4Impact: 4.6, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 50, postponed: 1, isSub: true },
+    { id: 'rd-sub-1', label: 'Account A', sponsor: 'R&D lead', pipeline: 4.9, l4Target: 4.4, l4Impact: 4.5, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 100, postponed: 0, isSub: true },
+    { id: 'rd-sub-2', label: 'Account B', sponsor: 'R&D lead', pipeline: 5.5, l4Target: 5.0, l4Impact: 5.1, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 100, postponed: 0, isSub: true },
+    { id: 'rd-sub-3', label: 'Account C', sponsor: 'R&D lead', pipeline: 2.0, l4Target: 1.8, l4Impact: 1.8, l4Pct: 100, lateInitiatives: 0, lateValue: 0, milestonesDue: 1, milestonesCompletePct: 100, postponed: 0, isSub: true },
+    { id: 'rd-sub-4', label: 'Account D', sponsor: 'R&D lead', pipeline: 5.0, l4Target: 4.5, l4Impact: 4.6, l4Pct: 102, lateInitiatives: 0, lateValue: 0, milestonesDue: 2, milestonesCompletePct: 50, postponed: 1, isSub: true },
     { id: 'procurement', label: 'Procurement / BOM', sponsor: undefined, pipeline: 3.0, l4Target: 2.7, l4Impact: 3.8, l4Pct: 141, lateInitiatives: 0, lateValue: 0, milestonesDue: 1, milestonesCompletePct: 100, postponed: 0, isGroup: true },
     { id: 'total', label: 'Total', sponsor: undefined, pipeline: 61.8, l4Target: 55.6, l4Impact: 54.6, l4Pct: 98, lateInitiatives: 2, lateValue: 4.8, milestonesDue: 34, milestonesCompletePct: 68, postponed: 2, isTotal: true },
 ];
@@ -2379,7 +2424,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform A',
+                    vs: 'Account A',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2387,7 +2432,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform B',
+                    vs: 'Account B',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2395,17 +2440,17 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform C',
+                    vs: 'Account C',
                     parentVs: 'R&D VS',
-                    target: 5.0,
-                    l1ImpactYtm: 3.0,
-                    l2ImpactYtm: 3.0,
-                    l3ImpactYtm: 4.0,
+                    target: 10.0,
+                    l1ImpactYtm: 4.0,
+                    l2ImpactYtm: 6.0,
+                    l3ImpactYtm: 8.0,
                 },
                 {
-                    vs: 'Product platform D',
+                    vs: 'Account D',
                     parentVs: 'R&D VS',
-                    target: 5.0,
+                    target: 10.0,
                     l1ImpactYtm: 1.0,
                     l2ImpactYtm: 3.0,
                     l3ImpactYtm: 4.0,
@@ -2520,7 +2565,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform A',
+                    vs: 'Account A',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2528,7 +2573,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform B',
+                    vs: 'Account B',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2536,17 +2581,17 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform C',
+                    vs: 'Account C',
                     parentVs: 'R&D VS',
-                    target: 5.0,
-                    l1ImpactYtm: 3.0,
-                    l2ImpactYtm: 3.0,
-                    l3ImpactYtm: 4.0,
+                    target: 10.0,
+                    l1ImpactYtm: 4.0,
+                    l2ImpactYtm: 6.0,
+                    l3ImpactYtm: 8.0,
                 },
                 {
-                    vs: 'Product platform D',
+                    vs: 'Account D',
                     parentVs: 'R&D VS',
-                    target: 5.0,
+                    target: 10.0,
                     l1ImpactYtm: 1.0,
                     l2ImpactYtm: 3.0,
                     l3ImpactYtm: 4.0,
@@ -2661,7 +2706,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform A',
+                    vs: 'Account A',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2669,7 +2714,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform B',
+                    vs: 'Account B',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2677,17 +2722,17 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform C',
+                    vs: 'Account C',
                     parentVs: 'R&D VS',
-                    target: 5.0,
-                    l1ImpactYtm: 3.0,
-                    l2ImpactYtm: 3.0,
-                    l3ImpactYtm: 4.0,
+                    target: 10.0,
+                    l1ImpactYtm: 4.0,
+                    l2ImpactYtm: 6.0,
+                    l3ImpactYtm: 8.0,
                 },
                 {
-                    vs: 'Product platform D',
+                    vs: 'Account D',
                     parentVs: 'R&D VS',
-                    target: 5.0,
+                    target: 10.0,
                     l1ImpactYtm: 1.0,
                     l2ImpactYtm: 3.0,
                     l3ImpactYtm: 4.0,
@@ -2802,7 +2847,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform A',
+                    vs: 'Account A',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2810,7 +2855,7 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform B',
+                    vs: 'Account B',
                     parentVs: 'R&D VS',
                     target: 10.0,
                     l1ImpactYtm: 1.0,
@@ -2818,17 +2863,17 @@ const BG_INITIATIVE_PERFORMANCE_BASE_RAW: Record<string, BgInitiativePerformance
                     l3ImpactYtm: 4.0,
                 },
                 {
-                    vs: 'Product platform C',
+                    vs: 'Account C',
                     parentVs: 'R&D VS',
-                    target: 5.0,
-                    l1ImpactYtm: 3.0,
-                    l2ImpactYtm: 3.0,
-                    l3ImpactYtm: 4.0,
+                    target: 10.0,
+                    l1ImpactYtm: 4.0,
+                    l2ImpactYtm: 6.0,
+                    l3ImpactYtm: 8.0,
                 },
                 {
-                    vs: 'Product platform D',
+                    vs: 'Account D',
                     parentVs: 'R&D VS',
-                    target: 5.0,
+                    target: 10.0,
                     l1ImpactYtm: 1.0,
                     l2ImpactYtm: 3.0,
                     l3ImpactYtm: 4.0,
@@ -2875,6 +2920,12 @@ const BG_INITIATIVE_PERFORMANCE_BASE: Record<string, BgInitiativePerformanceBu[]
         { bu: 'Sharp', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
         { bu: 'MIH/EV', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
         { bu: 'Others', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
+    ],
+    'Other subsidiary & Intergroup adjustments': [
+        { bu: 'Sharp', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
+        { bu: 'MIH/EV', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
+        { bu: 'Others', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
+        { bu: 'Intergroup transaction', initiatives: INITIATIVE_PERFORMANCE_TEMPLATE },
     ],
 };
 
@@ -4276,6 +4327,11 @@ const BG_MONTHLY_IMPACT: Record<string, BgMonthlyImpactRow[]> = {
         },
     ],
 };
+
+(BG_MONTHLY_IMPACT as Record<string, BgMonthlyImpactRow[]>)['Other subsidiary & Intergroup adjustments'] = [
+    ...(BG_MONTHLY_IMPACT['Others'] ?? []),
+    ...(BG_MONTHLY_IMPACT['Intergroup transaction'] ?? []),
+];
 
 export const OP_IMPACT_DATA: Record<string, OpImpactDetail[]> = {
     'HH (Parent)|A Group': [
@@ -9362,6 +9418,15 @@ export const PNL_BREAKDOWN_DATA: Record<string, PnlBreakdownRow[]> = {
   ],
 };
 
+PNL_BREAKDOWN_DATA['Other subsidiary & Intergroup adjustments'] = [
+  ...(PNL_BREAKDOWN_DATA['Others'] ?? []),
+];
+
+// Normalize BOM children to 60 / 25 / 15 ratio (Buy-Sell / AVAP / Controllable)
+Object.keys(PNL_BREAKDOWN_DATA).forEach((key) => {
+  applyBomChildRatios(PNL_BREAKDOWN_DATA[key]);
+});
+
 // Build functional performance overrides from P&L breakdown data
 // This extracts Controllable COGS and R&D values for all business units
 const buildFunctionalPerformanceOverrides = (): Record<string, {
@@ -11729,7 +11794,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
         monthlyImpact: BG_MONTHLY_IMPACT['FIH'] ?? [],
     },
     {
-        group: 'Others',
+        group: 'Other subsidiary & Intergroup adjustments',
         businessUnits: [
             {
                 name: 'Sharp',
@@ -11842,12 +11907,6 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                             functionTargetBreakdown: getFunctionTargetBreakdown('Others', 'Others'),
                             functionalPerformance: buildFunctionalPerformance(1138166.67, 188041.67, 63136.55, 10431.07),
                         },
-        ],
-        monthlyImpact: BG_MONTHLY_IMPACT['Others'] ?? [],
-    },
-    {
-        group: 'Intergroup transaction',
-        businessUnits: [
             {
                 name: 'Intergroup transaction',
                 revenue: -6792640.74,
@@ -11886,7 +11945,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
                 functionalPerformance: buildFunctionalPerformance(-6792640.74, -930005.43, -405276.95, -56799.17),
             },
         ],
-        monthlyImpact: BG_MONTHLY_IMPACT['Intergroup transaction'] ?? [],
+        monthlyImpact: BG_MONTHLY_IMPACT['Other subsidiary & Intergroup adjustments'] ?? [],
     },
 ];
 
@@ -11925,6 +11984,20 @@ const buildInitiativesForBu = (
     ];
 
     return baseRows.map((row) => {
+        if (
+            bg === 'HH (Parent)' &&
+            bu.toLowerCase().includes('d/e') &&
+            row.vs === 'Account D'
+        ) {
+            return {
+                ...row,
+                target: 1.0,
+                l1ImpactYtm: 0.4,
+                l2ImpactYtm: 0.7,
+                l3ImpactYtm: 0.9,
+                sponsor: 'Mr. I',
+            };
+        }
         const target = scaleInitiativeValue(row.target, multiplier);
         const l1Base = scaleInitiativeValue(row.l1ImpactYtm, multiplier);
         const l2Base = scaleInitiativeValue(row.l2ImpactYtm, multiplier);

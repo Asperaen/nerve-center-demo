@@ -1,4 +1,5 @@
 import { CogIcon } from '@heroicons/react/16/solid';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HeaderFilters from '../components/HeaderFilters';
@@ -168,7 +169,7 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd',
-    label: 'R&D',
+    label: 'R&D VS',
     total: 8.0,
     l1: 5.5,
     l2: 5.7,
@@ -183,7 +184,7 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-1',
-    label: 'Sub-VS3A',
+    label: 'Account A',
     sponsor: 'Mr. G',
     total: 2.0,
     l1: 2.0,
@@ -199,7 +200,7 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-2',
-    label: 'Sub-VS3B',
+    label: 'Account B',
     sponsor: 'Mr. H',
     total: 3.0,
     l1: 1.5,
@@ -215,34 +216,34 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-3',
-    label: 'Sub-VS3C',
+    label: 'Account C',
     sponsor: 'Mr. I',
-    total: 1.0,
-    l1: 1.0,
-    l2: 1.0,
-    l3: 1.0,
-    pctL1: 100,
-    pctL2: 100,
-    pctL3: 100,
-    countL1: 15,
-    owners: 7,
-    avgPerIo: 2.1,
+    total: 2.0,
+    l1: 1.8,
+    l2: 1.9,
+    l3: 1.9,
+    pctL1: 90,
+    pctL2: 95,
+    pctL3: 95,
+    countL1: 28,
+    owners: 17,
+    avgPerIo: 1.6,
     isSub: true,
   },
   {
     id: 'rd-sub-4',
-    label: 'Sub-VS34',
-    sponsor: 'Mr. J',
+    label: 'Account D',
+    sponsor: 'R&D lead',
     total: 1.0,
     l1: 0.8,
-    l2: 0.9,
-    l3: 0.9,
+    l2: 0.7,
+    l3: 0.2,
     pctL1: 80,
-    pctL2: 90,
-    pctL3: 90,
-    countL1: 13,
+    pctL2: 70,
+    pctL3: 20,
+    countL1: 15,
     owners: 10,
-    avgPerIo: 1.3,
+    avgPerIo: 1.5,
     isSub: true,
   },
   {
@@ -547,8 +548,8 @@ export default function IdeationProgressPage() {
           pctL1: clamp(pctL1, 0, 140),
           pctL2: clamp(pctL2, 0, 140),
           pctL3: clamp(pctL3, 0, 140),
-          runRateTarget: row.runRateTarget ? total : row.runRateTarget,
-          runRateImpact: row.runRateImpact ? l3 : row.runRateImpact,
+          runRateTarget: total * 2,
+          runRateImpact: l3 * 2,
           countL1,
           owners,
           avgPerIo,
@@ -629,8 +630,8 @@ export default function IdeationProgressPage() {
         pctL1: clamp(pctL1, 0, 140),
         pctL2: clamp(pctL2, 0, 140),
         pctL3: clamp(pctL3, 0, 140),
-        runRateTarget: target,
-        runRateImpact: l3,
+        runRateTarget: target * 2,
+        runRateImpact: l3 * 2,
         countL1,
         owners,
         avgPerIo,
@@ -721,8 +722,8 @@ export default function IdeationProgressPage() {
         pctL1,
         pctL2,
         pctL3,
-        runRateTarget: totalTarget,
-        runRateImpact: totalL3,
+        runRateTarget: totalTarget * 2,
+        runRateImpact: totalL3 * 2,
         countL1,
         owners,
         avgPerIo,
@@ -771,8 +772,8 @@ export default function IdeationProgressPage() {
         pctL1,
         pctL2,
         pctL3,
-        runRateTarget: total,
-        runRateImpact: l3,
+        runRateTarget: total * 2,
+        runRateImpact: l3 * 2,
       });
     });
 
@@ -862,10 +863,35 @@ export default function IdeationProgressPage() {
     });
   };
 
+  const isDeGroupSelected = useMemo(() => {
+    if (selectedBu === 'all' || !selectedGroupInfo) {
+      return false;
+    }
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    if (groupId !== 'hh') {
+      return false;
+    }
+    const deGroupId = getUnitId(groupId, 'D/E Group');
+    return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
+  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
+  const isDeGroupInSelection = useMemo(() => {
+    if (selectedBu === 'all' || !selectedGroupInfo) {
+      return false;
+    }
+    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
+    if (groupId !== 'hh') {
+      return false;
+    }
+    const deGroupId = getUnitId(groupId, 'D/E Group');
+    return selectedGroupIds.has(deGroupId);
+  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
   const scaledPlanRows = useMemo(() => {
     const scale = timeframeScale;
     const round = (value: number) => Math.round(value * 10) / 10;
-    return monthlyImpactPlanRows.map((row) => {
+    // Run-rate is 2× in-year; we scale those values by timeframe.
+    let rows = monthlyImpactPlanRows.map((row) => {
       return {
         ...row,
         total: round(row.total * scale),
@@ -886,19 +912,58 @@ export default function IdeationProgressPage() {
         avgPerIo: row.avgPerIo,
       };
     });
-  }, [monthlyImpactPlanRows, timeframeScale]);
 
-  const isDeGroupSelected = useMemo(() => {
-    if (selectedBu === 'all' || !selectedGroupInfo) {
-      return false;
+    if (isDeGroupInSelection) {
+      const accountDRowIndex = rows.findIndex((r) => r.label === 'Account D');
+      if (accountDRowIndex >= 0) {
+        rows = rows.slice();
+        rows[accountDRowIndex] = {
+          ...rows[accountDRowIndex],
+          sponsor: 'Mr. I',
+          total: 1.0,
+          l1: 0.4,
+          l2: 0.7,
+          l3: 0.9,
+          pctL1: 40.5,
+          pctL2: 70.7,
+          pctL3: 84.8,
+          runRateTarget: 1.0,
+          runRateImpact: 0.9,
+        };
+      }
     }
-    const groupId = normalizeGroupId(selectedGroupInfo.group.group);
-    if (groupId !== 'hh') {
-      return false;
+
+    // Recompute Total row: keep in-year target (scaled ideation target); L1/L2/L3 derived as ~30% of target; run rate = L3×2.
+    const totalRowIndex = rows.findIndex((r) => r.isTotal);
+    if (totalRowIndex >= 0) {
+      const roundPct = (value: number) => Math.round(value * 10) / 10;
+      rows = rows.slice();
+      const totalRow = rows[totalRowIndex];
+      const totalTarget = totalRow.total; // scaled ideation target (e.g. 309.2)
+      const l1 = round(totalTarget * 0.30);
+      const l2 = round(totalTarget * 0.297);
+      const l3 = round(totalTarget * 0.292);
+      const pctL1 =
+        totalTarget === 0 ? 0 : roundPct((l1 / totalTarget) * 100);
+      const pctL2 =
+        totalTarget === 0 ? 0 : roundPct((l2 / totalTarget) * 100);
+      const pctL3 =
+        totalTarget === 0 ? 0 : roundPct((l3 / totalTarget) * 100);
+      rows[totalRowIndex] = {
+        ...totalRow,
+        l1,
+        l2,
+        l3,
+        pctL1,
+        pctL2,
+        pctL3,
+        runRateTarget: round(totalTarget),
+        runRateImpact: round(l3 * 2),
+      };
     }
-    const deGroupId = getUnitId(groupId, 'D/E Group');
-    return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
-  }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
+
+    return rows;
+  }, [monthlyImpactPlanRows, timeframeScale, isDeGroupInSelection]);
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
@@ -1333,13 +1398,46 @@ export default function IdeationProgressPage() {
                         Total
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        L1+
+                        <span className='inline-flex items-center justify-center gap-1.5'>
+                          L1+
+                          <span className='relative group inline-flex items-center'>
+                            <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
+                            <span className='absolute left-1/2 top-full z-10 mt-2 w-72 max-w-[18rem] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
+                              <p>
+                                <span className='font-semibold text-gray-700'>L1 (Validate):</span>{' '}
+                                The initiative is scoped, its feasibility assessed, and an owner is assigned to ensure alignment with strategic priorities.
+                              </p>
+                            </span>
+                          </span>
+                        </span>
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        L2+
+                        <span className='inline-flex items-center justify-center gap-1.5'>
+                          L2+
+                          <span className='relative group inline-flex items-center'>
+                            <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
+                            <span className='absolute left-1/2 top-full z-10 mt-2 w-72 max-w-[18rem] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
+                              <p>
+                                <span className='font-semibold text-gray-700'>L2 (Plan):</span>{' '}
+                                A comprehensive implementation plan, KPIs, and timelines are developed to prepare the initiative for execution.
+                              </p>
+                            </span>
+                          </span>
+                        </span>
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                        L3+
+                        <span className='inline-flex items-center justify-center gap-1.5'>
+                          L3+
+                          <span className='relative group inline-flex items-center'>
+                            <InformationCircleIcon className='w-4 h-4 text-gray-400 group-hover:text-gray-600' />
+                            <span className='absolute left-1/2 top-full z-10 mt-2 w-72 max-w-[18rem] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg opacity-0 transition-opacity group-hover:opacity-100'>
+                              <p>
+                                <span className='font-semibold text-gray-700'>L3 (Implement):</span>{' '}
+                                The initiative is executed, with all critical actions completed to enable full benefit realization.
+                              </p>
+                            </span>
+                          </span>
+                        </span>
                       </th>
                       <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                         L1+

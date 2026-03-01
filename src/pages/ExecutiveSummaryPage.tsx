@@ -46,6 +46,7 @@ import type {
 } from '../types';
 import type { SelectedItem } from '../utils/meetingRelevance';
 import { findRelevantMeetings } from '../utils/meetingRelevance';
+import { derivePnlPassthrough } from '../utils/pnlBreakdownUtils';
 import {
   getStoredTimeframe,
   setStoredTimeframe,
@@ -53,8 +54,15 @@ import {
 
 const toMillions = (value: number) => value / 1_000;
 
+/** YTM end month index (0-based). Jan=0, Feb=1. Only months 0..YTM_END_MONTH_INDEX have actuals. */
+const YTM_END_MONTH_INDEX = 1;
+
 const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
+  const normalized = key.replace(/\s*&\s*/g, ' ').replace(/\s+/g, '-');
+  if (normalized === 'other-subsidiary-intergroup-adjustments') {
+    return 'other-subsidiary-intergroup';
+  }
   return key === 'other' ? 'others' : key;
 };
 
@@ -209,7 +217,8 @@ const buildGroupRow = (
   budgetMode: 'full-year' | 'ytm',
   lastYearMode: 'full-year' | 'ytm',
   idOverride?: string,
-  nameOverride?: string
+  nameOverride?: string,
+  actualValueScale?: number
 ): BusinessGroupData => {
   const totals = units.reduce(
     (acc, unit) => {
@@ -281,7 +290,11 @@ const buildGroupRow = (
   const budgetScale = budgetMode === 'ytm' ? ytmScale : fullYearScale;
   const lastYearScale = lastYearMode === 'ytm' ? ytmScale : fullYearScale;
   const valueScale =
-    valueMode === 'budget' ? budgetScale : valueMode === 'actual' ? 1 : fullYearScale;
+    valueMode === 'budget'
+      ? budgetScale
+      : valueMode === 'actual'
+      ? (actualValueScale ?? 1)
+      : fullYearScale;
   const revenue = toMillions(
     valueMode === 'budget'
       ? budgetMode === 'ytm'
@@ -399,7 +412,8 @@ const buildUnitRow = (
   ytmScale: number,
   valueMode: 'actual' | 'budget' | 'forecast',
   budgetMode: 'full-year' | 'ytm',
-  lastYearMode: 'full-year' | 'ytm'
+  lastYearMode: 'full-year' | 'ytm',
+  actualValueScale?: number
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
@@ -407,7 +421,11 @@ const buildUnitRow = (
   const budgetScale = budgetMode === 'ytm' ? ytmScale : fullYearScale;
   const lastYearScale = lastYearMode === 'ytm' ? ytmScale : fullYearScale;
   const valueScale =
-    valueMode === 'budget' ? budgetScale : valueMode === 'actual' ? 1 : fullYearScale;
+    valueMode === 'budget'
+      ? budgetScale
+      : valueMode === 'actual'
+      ? (actualValueScale ?? 1)
+      : fullYearScale;
   const revenue = toMillions(
     valueMode === 'budget'
       ? budgetMode === 'ytm'
@@ -748,6 +766,9 @@ export default function ExecutiveSummaryPage({
     if (normalized === 'others') {
       return 'Others';
     }
+    if (normalized === 'other-subsidiary-intergroup') {
+      return 'Other subsidiary & Intergroup adjustments';
+    }
     return null;
   }, []);
 
@@ -768,10 +789,11 @@ export default function ExecutiveSummaryPage({
       return [];
     }
     const rows = PNL_BREAKDOWN_DATA[pnlGroupKey] ?? [];
-    if (selectedUnitNames.length === 0) {
-      return rows;
-    }
-    return rows.filter((row) => selectedUnitNames.includes(row.unit));
+    const filtered =
+      selectedUnitNames.length === 0
+        ? rows
+        : rows.filter((row) => selectedUnitNames.includes(row.unit));
+    return derivePnlPassthrough(filtered);
   }, [pnlGroupKey, selectedUnitNames]);
 
   const pnlTitle = useMemo(() => {
@@ -810,10 +832,11 @@ export default function ExecutiveSummaryPage({
       ],
     },
     { label: 'R&D', children: ['FTE', 'Non-FTE'] },
-    {
-      label: 'Operating Profit',
-      children: ['(Line items between OP and net)'],
-    },
+    { label: 'SG&A' },
+    { label: 'Share expenses' },
+    { label: 'Operating profit' },
+    { label: '(Line items between OP and net)' },
+    { label: 'Net profit' },
   ] as const;
 
   const renderPnlRows = useCallback(
@@ -844,6 +867,7 @@ export default function ExecutiveSummaryPage({
           ? row.lastYearYtm
           : row.lastYearFullYear;
         const deviation = (budgetValue ?? 0) - (lastYearValue ?? 0);
+        const isBoldLineItem = ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem);
 
         return (
           <tr
@@ -854,7 +878,7 @@ export default function ExecutiveSummaryPage({
             </td>
             <td className='px-4 py-3 text-gray-600'>
               <span
-                className={isGroup ? 'font-semibold text-gray-900' : 'text-gray-700'}
+                className={isGroup || isBoldLineItem ? 'font-semibold text-gray-900' : 'text-gray-700'}
                 style={{ paddingLeft: `${level * 16}px` }}>
                 {row.lineItem}
               </span>
@@ -893,7 +917,8 @@ export default function ExecutiveSummaryPage({
         const rowMatch = getNextRow(node.label);
         const items: React.ReactNode[] = [];
         if (rowMatch) {
-          items.push(renderValueRow(rowMatch.row, rowMatch.index, level, true));
+          const isBoldRow = node.label === 'Operating profit' || node.label === 'Net profit';
+          items.push(renderValueRow(rowMatch.row, rowMatch.index, level, isBoldRow));
         } else if (node.children && node.children.length > 0) {
           items.push(renderLabelRow(node.label, level));
         }
@@ -1336,7 +1361,7 @@ export default function ExecutiveSummaryPage({
       ? 'full-year'
       : normalizeTimeframe(getStoredTimeframe())
   );
-  const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
+  const [monthRange, setMonthRange] = useState<[number, number]>([0, YTM_END_MONTH_INDEX]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);
   const [isMonthRangeCustom, setIsMonthRangeCustom] =
     useState<boolean>(false);
@@ -1345,21 +1370,41 @@ export default function ExecutiveSummaryPage({
   const isPercentView = financialView === 'margin';
 
   const handleTimeframeChange = (timeframe: 'full-year' | 'ytm') => {
-    if (isActualsView && timeframe === 'full-year') {
-      return;
-    }
     setSelectedTimeframeScope(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
     if (isActualsView || timeframe === 'ytm') {
-      setMonthRange([0, 1]);
+      setMonthRange([0, YTM_END_MONTH_INDEX]);
       return;
     }
-    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, 1]);
+    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, YTM_END_MONTH_INDEX]);
   };
 
   const handleMonthClick = (monthIndex: number) => {
-    if (isActualsView || selectedTimeframeScope === 'ytm') {
+    if (selectedTimeframeScope === 'ytm' && !isActualsView) {
+      return;
+    }
+    if (isActualsView) {
+      if (monthIndex > YTM_END_MONTH_INDEX) return;
+      if (monthAnchor === null || !isMonthRangeCustom) {
+        setMonthAnchor(monthIndex);
+        setMonthRange([monthIndex, monthIndex]);
+        setIsMonthRangeCustom(true);
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('months');
+            return next;
+          },
+          { replace: true }
+        );
+        return;
+      }
+      const start = Math.min(monthAnchor, monthIndex);
+      const end = Math.min(Math.max(monthAnchor, monthIndex), YTM_END_MONTH_INDEX);
+      setMonthRange([start, end]);
+      setMonthAnchor(null);
+      setIsMonthRangeCustom(true);
       return;
     }
     if (monthAnchor === null || !isMonthRangeCustom) {
@@ -1386,7 +1431,7 @@ export default function ExecutiveSummaryPage({
   useEffect(() => {
     const isYtm = selectedTimeframeScope === 'ytm';
     const nextRange: [number, number] =
-      isActualsView || isYtm ? [0, 1] : [0, 11];
+      isActualsView || isYtm ? [0, YTM_END_MONTH_INDEX] : [0, 11];
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
     setMonthRange(nextRange);
@@ -1396,10 +1441,10 @@ export default function ExecutiveSummaryPage({
     if (!isActualsView) {
       return;
     }
-    setSelectedTimeframeScope('ytm');
-    setIsMonthRangeCustom(false);
-    setMonthAnchor(null);
-    setMonthRange([0, 1]);
+    setMonthRange((prev) => {
+      if (prev[1] <= YTM_END_MONTH_INDEX) return prev;
+      return [Math.max(0, Math.min(prev[0], YTM_END_MONTH_INDEX)), YTM_END_MONTH_INDEX];
+    });
   }, [isActualsView]);
 
   useEffect(() => {
@@ -1493,14 +1538,28 @@ export default function ExecutiveSummaryPage({
       endRaw >= startRaw &&
       endRaw < 12
     ) {
-      setMonthRange([startRaw, endRaw]);
+      const versionParam = searchParams.get('version');
+      let start = startRaw;
+      let end = endRaw;
+      if (versionParam === 'actual') {
+        end = Math.min(end, YTM_END_MONTH_INDEX);
+        start = Math.min(start, end);
+      }
+      setMonthRange([start, end]);
       setIsMonthRangeCustom(true);
       setMonthAnchor(null);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    const nextMonths = `${monthRange[0]}-${monthRange[1]}`;
+    const nextMonths = (() => {
+      let [s, e] = monthRange;
+      if (selectedVersion === 'actual') {
+        e = Math.min(e, YTM_END_MONTH_INDEX);
+        s = Math.min(s, e);
+      }
+      return `${s}-${e}`;
+    })();
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -1659,14 +1718,32 @@ export default function ExecutiveSummaryPage({
   };
 
   const tableData = useMemo(() => {
-    const monthCount = monthRange[1] - monthRange[0] + 1;
-    const fullYearScale = monthCount / 12;
-    const ytmScale = monthCount / 2;
     const valueMode = isBudgetView || selectedVersion === 'budget'
       ? 'budget'
       : selectedVersion === 'forecast'
       ? 'forecast'
       : 'actual';
+    // For actual: use month range clamped to YTM so table responds to month selection
+    const clampedStart =
+      valueMode === 'actual'
+        ? Math.max(0, Math.min(monthRange[0], YTM_END_MONTH_INDEX))
+        : monthRange[0];
+    const clampedEnd =
+      valueMode === 'actual'
+        ? Math.min(monthRange[1], YTM_END_MONTH_INDEX)
+        : monthRange[1];
+    const selectedMonthCount = Math.max(0, clampedEnd - clampedStart) + 1;
+    const effectiveMonthCount =
+      valueMode === 'actual'
+        ? selectedMonthCount
+        : monthRange[1] - monthRange[0] + 1;
+    const monthCount = effectiveMonthCount;
+    const fullYearScale = monthCount / 12;
+    const ytmScale = monthCount / 2;
+    const actualValueScale =
+      valueMode === 'actual'
+        ? selectedMonthCount / (YTM_END_MONTH_INDEX + 1)
+        : undefined;
     const budgetMode =
       selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode =
@@ -1680,11 +1757,14 @@ export default function ExecutiveSummaryPage({
           ytmScale,
           valueMode,
           budgetMode,
-          lastYearMode
+          lastYearMode,
+          undefined,
+          undefined,
+          actualValueScale
         )
       );
       const overallRow = buildGroupRow(
-        'Overall',
+        'Consolidated Financial',
         businessGroups.flatMap((group) => group.businessUnits),
         fullYearScale,
         ytmScale,
@@ -1692,7 +1772,8 @@ export default function ExecutiveSummaryPage({
         budgetMode,
         lastYearMode,
         'overall',
-        'Overall'
+        'Consolidated Financial',
+        actualValueScale
       );
       return [...groupRows, overallRow];
     }
@@ -1712,7 +1793,8 @@ export default function ExecutiveSummaryPage({
         ytmScale,
         valueMode,
         budgetMode,
-        lastYearMode
+        lastYearMode,
+        actualValueScale
       )
     );
     const overallRow = buildGroupRow(
@@ -1724,7 +1806,8 @@ export default function ExecutiveSummaryPage({
       budgetMode,
       lastYearMode,
       `${groupId}-overall`,
-      `${selectedGroup.group} overall`
+      `${selectedGroup.group} overall`,
+      actualValueScale
     );
     return [...unitRows, overallRow];
   }, [
@@ -2091,6 +2174,10 @@ export default function ExecutiveSummaryPage({
     const calcPercent = (numerator: number, denominator: number) =>
       denominator === 0 ? 0 : (numerator / denominator) * 100;
     return {
+      revenue: {
+        lastYear: overallRow.rev.stly,
+        budget: overallRow.rev.value,
+      },
       lastYear: {
         gp: calcPercent(overallRow.gp.stly, overallRow.rev.stly),
         op: calcPercent(overallRow.op.stly, overallRow.rev.stly),
@@ -2156,14 +2243,31 @@ export default function ExecutiveSummaryPage({
   ]);
 
   const getExpandedSubGroups = (bgId: string) => {
-    const monthCount = monthRange[1] - monthRange[0] + 1;
-    const fullYearScale = monthCount / 12;
-    const ytmScale = monthCount / 2;
     const valueMode = isBudgetView || selectedVersion === 'budget'
       ? 'budget'
       : selectedVersion === 'forecast'
       ? 'forecast'
       : 'actual';
+    const clampedStart =
+      valueMode === 'actual'
+        ? Math.max(0, Math.min(monthRange[0], YTM_END_MONTH_INDEX))
+        : monthRange[0];
+    const clampedEnd =
+      valueMode === 'actual'
+        ? Math.min(monthRange[1], YTM_END_MONTH_INDEX)
+        : monthRange[1];
+    const selectedMonthCount = Math.max(0, clampedEnd - clampedStart) + 1;
+    const effectiveMonthCount =
+      valueMode === 'actual'
+        ? selectedMonthCount
+        : monthRange[1] - monthRange[0] + 1;
+    const monthCount = effectiveMonthCount;
+    const fullYearScale = monthCount / 12;
+    const ytmScale = monthCount / 2;
+    const actualValueScale =
+      valueMode === 'actual'
+        ? selectedMonthCount / (YTM_END_MONTH_INDEX + 1)
+        : undefined;
     const budgetMode =
       selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode =
@@ -2183,7 +2287,8 @@ export default function ExecutiveSummaryPage({
         ytmScale,
         valueMode,
         budgetMode,
-        lastYearMode
+        lastYearMode,
+        actualValueScale
       )
     );
   };
@@ -2321,6 +2426,7 @@ export default function ExecutiveSummaryPage({
         ? 'bg-red-100 text-red-700'
         : 'bg-gray-100 text-gray-600';
     const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
+    const deltaUnit = usePercentView ? ' p.p.' : '%';
 
     // Calculate trend line for sparkline
     const trendValues =
@@ -2381,13 +2487,13 @@ export default function ExecutiveSummaryPage({
             <span
               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
               {percentSign}
-              {primaryPercent.toFixed(1)}%
+              {primaryPercent.toFixed(1)}{deltaUnit}
             </span>
             {!isBudgetMode && (
             <span
                 className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
                 {lastYearPercentSign}
-                {lastYearPercent.toFixed(1)}%
+                {lastYearPercent.toFixed(1)}{deltaUnit}
             </span>
             )}
           </div>
@@ -2404,7 +2510,7 @@ export default function ExecutiveSummaryPage({
               <span
                 className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
                 {percentSign}
-                {primaryPercent.toFixed(1)}%
+                {primaryPercent.toFixed(1)}{deltaUnit}
               </span>
             </div>
 
@@ -2743,22 +2849,15 @@ export default function ExecutiveSummaryPage({
                           { id: 'ytm', label: 'Year to Month' },
                         ] as const
                       ).map((option) => {
-                        const isDisabled =
-                          isActualsView && option.id === 'full-year';
                         const isSelected = selectedTimeframeScope === option.id;
                         return (
                           <button
                             key={option.id}
-                            onClick={isDisabled ? undefined : () => handleTimeframeChange(option.id)}
-                            disabled={isDisabled}
+                            onClick={() => handleTimeframeChange(option.id)}
                             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                               isSelected
                                 ? 'bg-white text-gray-900 shadow-sm'
                                 : 'text-gray-600 hover:text-gray-900'
-                            } ${
-                              isDisabled
-                                ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50'
-                                : ''
                             }`}>
                             {option.label}
                           </button>
@@ -2775,10 +2874,13 @@ export default function ExecutiveSummaryPage({
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
                         const isDisabled =
-                          isActualsView || selectedTimeframeScope === 'ytm';
+                          isActualsView
+                            ? index > YTM_END_MONTH_INDEX
+                            : selectedTimeframeScope === 'ytm';
                         return (
                           <button
                             key={month}
+                            title={isActualsView && index > YTM_END_MONTH_INDEX ? 'Future month; no actuals yet.' : undefined}
                             onClick={() => handleMonthClick(index)}
                             disabled={isDisabled}
                             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -2796,6 +2898,28 @@ export default function ExecutiveSummaryPage({
                       })}
                     </div>
                   </div>
+                  {isMonthRangeCustom && (
+                    <button
+                      onClick={() =>
+                        handleTimeframeChange(
+                          selectedTimeframeScope as 'full-year' | 'ytm'
+                        )
+                      }
+                      className='text-xs text-gray-500 hover:text-gray-700 underline'>
+                      Reset timeframe
+                    </button>
+                  )}
+                  <p className='text-sm text-gray-500'>
+                    Showing:{' '}
+                    {selectedVersion === 'budget' ? 'Budget' : selectedVersion === 'actual' ? 'Actual' : 'Forecast'}{' '}
+                    {selectedTimeframeScope === 'ytm'
+                      ? `YTM (${MONTHS[0]}–${MONTHS[YTM_END_MONTH_INDEX]})`
+                      : isActualsView
+                      ? `Full year (YTM)`
+                      : isMonthRangeCustom
+                      ? `${MONTHS[monthRange[0]]}–${MONTHS[monthRange[1]]} 2026`
+                      : 'Full year'}
+                  </p>
                 </div>
               ) : (
                 <div className='flex flex-col gap-3'>
@@ -2836,22 +2960,15 @@ export default function ExecutiveSummaryPage({
                           { id: 'ytm', label: 'Year to Month' },
                         ] as const
                       ).map((option) => {
-                        const isDisabled =
-                          isActualsView && option.id === 'full-year';
                         const isSelected = selectedTimeframeScope === option.id;
                         return (
                           <button
                             key={option.id}
-                            onClick={isDisabled ? undefined : () => handleTimeframeChange(option.id)}
-                            disabled={isDisabled}
+                            onClick={() => handleTimeframeChange(option.id)}
                             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                               isSelected
                                 ? 'bg-white text-gray-900 shadow-sm'
                                 : 'text-gray-600 hover:text-gray-900'
-                            } ${
-                              isDisabled
-                                ? 'cursor-not-allowed opacity-40 pointer-events-none bg-gray-50'
-                                : ''
                             }`}>
                             {option.label}
                           </button>
@@ -2868,10 +2985,13 @@ export default function ExecutiveSummaryPage({
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
                         const isDisabled =
-                          isActualsView || selectedTimeframeScope === 'ytm';
+                          isActualsView
+                            ? index > YTM_END_MONTH_INDEX
+                            : selectedTimeframeScope === 'ytm';
                         return (
                           <button
                             key={month}
+                            title={isActualsView && index > YTM_END_MONTH_INDEX ? 'Future month; no actuals yet.' : undefined}
                             onClick={() => handleMonthClick(index)}
                             disabled={isDisabled}
                             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -2900,6 +3020,17 @@ export default function ExecutiveSummaryPage({
                       </button>
                     )}
                   </div>
+                  <p className='text-sm text-gray-500'>
+                    Showing:{' '}
+                    {selectedVersion === 'budget' ? 'Budget' : selectedVersion === 'actual' ? 'Actual' : 'Forecast'}{' '}
+                    {selectedTimeframeScope === 'ytm'
+                      ? `YTM (${MONTHS[0]}–${MONTHS[YTM_END_MONTH_INDEX]})`
+                      : isActualsView
+                      ? `Full year (YTM)`
+                      : isMonthRangeCustom
+                      ? `${MONTHS[monthRange[0]]}–${MONTHS[monthRange[1]]} 2026`
+                      : 'Full year'}
+                  </p>
                 </div>
               )
             }
@@ -3119,7 +3250,7 @@ export default function ExecutiveSummaryPage({
                 <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
                   <BudgetPerformanceWaterfall
                     stages={budgetWaterfallStages}
-                    title='Budget deviation waterfall of BU performance by value driver'
+                    title='Budget waterfall by value drivers'
                     subtitle={`Mn ${currencyLabel} • ${selectedBuLabel}`}
                     onStageClick={(stage) => {
                       if (
@@ -3143,6 +3274,28 @@ export default function ExecutiveSummaryPage({
                   {budgetMarginSummary && (
                     <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
                       <div className='flex w-full flex-col gap-4 sm:items-center sm:justify-between'>
+                        <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                          <div className='flex flex-col'>
+                            <span>last year actual Revenue</span>
+                            <span className='text-3xl  font-semibold'>
+                              {formatAmount(budgetMarginSummary.revenue.lastYear, {
+                                maximumFractionDigits: 0,
+                                minimumFractionDigits: 0,
+                              })}{' '}
+                              Mn {currencyLabel}
+                            </span>
+                          </div>
+                          <div className='flex flex-col items-end'>
+                            <span>current year budget Revenue</span>
+                            <span className='text-3xl  font-semibold'>
+                              {formatAmount(budgetMarginSummary.revenue.budget, {
+                                maximumFractionDigits: 0,
+                                minimumFractionDigits: 0,
+                              })}{' '}
+                              Mn {currencyLabel}
+                            </span>
+                          </div>
+                        </div>
                         <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
                           <div className='flex flex-col'>
                             <span>last year actual GP</span>
@@ -3509,7 +3662,7 @@ export default function ExecutiveSummaryPage({
                           Line item
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                          Cost rationale
+                          Rationale
                         </th>
                         <th className='px-4 py-3 text-left font-semibold text-gray-700'>
                           Item

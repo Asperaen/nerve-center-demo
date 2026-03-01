@@ -32,6 +32,7 @@ type DeviationDataset = {
   actualSpend: number;
   category: string;
   otherFactors?: number;
+  inventoryDelay?: number;
   targetPctReduction?: number;
   actualPctReduction?: number;
 }
@@ -40,87 +41,93 @@ type DeviationDataset = {
 const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
   {
     category: 'Total',
-    baselineSpend: 1955,
-    targetSpend: 1733,
-    targetPctReduction: 11,
-    actualPctReduction: 37,
-    volumeChange: -594,
-    fxImpact: 160,
-    l3GapVsTarget: -139,
-    l4GapVsTarget: 11,
-    l5GapVsTarget: 64,
-    otherFactors: 3,
-    actualSpend: 1238,
+    baselineSpend: 594,
+    targetSpend: 520,
+    targetPctReduction: 12,
+    volumeChange: -176,
+    fxImpact: 17,
+    otherFactors: -42,
+    inventoryDelay: 10,
+    l3GapVsTarget: -42,
+    l4GapVsTarget: 17,
+    l5GapVsTarget: 67,
+    actualSpend: 371,
+    actualPctReduction: 7,
   },
   {
     category: 'Category A',
-    baselineSpend: 489,
-    targetSpend: 411,
+    baselineSpend: 149,
+    targetSpend: 125,
     targetPctReduction: 16,
-    actualPctReduction: 29,
-    volumeChange: -82,
-    fxImpact: 62,
-    l3GapVsTarget: -33,
-    l4GapVsTarget: -8,
-    l5GapVsTarget: -4,
-    otherFactors: 4,
-    actualSpend: 349,
+    volumeChange: -25,
+    fxImpact: 17,
+    otherFactors: 1,
+    inventoryDelay: 2,
+    l3GapVsTarget: -10,
+    l4GapVsTarget: -2,
+    l5GapVsTarget: -1,
+    actualSpend: 106,
+    actualPctReduction: -9,
   },
   {
     category: 'Category B',
-    baselineSpend: 469,
-    targetSpend: 413,
+    baselineSpend: 143,
+    targetSpend: 125,
     targetPctReduction: 12,
-    actualPctReduction: 33,
-    volumeChange: -83,
-    fxImpact: 62,
-    l3GapVsTarget: -33,
+    volumeChange: -25,
+    fxImpact: 16,
+    otherFactors: 26,
+    inventoryDelay: 3,
+    l3GapVsTarget: -10,
     l4GapVsTarget: -31,
     l5GapVsTarget: -9,
-    otherFactors: -5,
-    actualSpend: 314,
+    actualSpend: 95,
+    actualPctReduction: -35,
   },
   {
     category: 'Category C',
-    baselineSpend: 254,
-    targetSpend: 229,
+    baselineSpend: 77,
+    targetSpend: 69,
     targetPctReduction: 10,
-    actualPctReduction: -8,
-    volumeChange: -46,
-    fxImpact: 34,
-    l3GapVsTarget: -18,
+    volumeChange: -14,
+    fxImpact: 9,
+    otherFactors: -55,
+    inventoryDelay: 1,
+    l3GapVsTarget: -6,
     l4GapVsTarget: 31,
     l5GapVsTarget: 47,
-    otherFactors: -3,
-    actualSpend: 274,
+    actualSpend: 83,
+    actualPctReduction: 94,
   },
   {
     category: 'Category D',
-    baselineSpend: 235,
-    targetSpend: 223,
+    baselineSpend: 71,
+    targetSpend: 68,
     targetPctReduction: 5,
-    actualPctReduction: 11,
-    volumeChange: -45,
-    fxImpact: 33,
-    l3GapVsTarget: -18,
+    volumeChange: -14,
+    fxImpact: 8,
+    otherFactors: -6,
+    inventoryDelay: 2,
+    l3GapVsTarget: -5,
     l4GapVsTarget: 5,
     l5GapVsTarget: 6,
-    otherFactors: 5,
-    actualSpend: 209,
+    actualSpend: 64,
+    actualPctReduction: 8,
   },
   {
     category: 'Category E',
-    baselineSpend: 508,
-    targetSpend: 458,
-    targetPctReduction: 10,
-    actualPctReduction: 82,
-    volumeChange: -339,
-    fxImpact: -31,
-    l3GapVsTarget: -37,
+    baselineSpend: 154,
+    targetSpend: 133,
+    targetPctReduction: 14,
+    volumeChange: -98,
+    fxImpact: -33,
+    otherFactors: -8,
+    inventoryDelay: 2,
+    l3GapVsTarget: -11,
     l4GapVsTarget: 14,
     l5GapVsTarget: 24,
-    otherFactors: 2,
-    actualSpend: 91,
+    actualSpend: 23,
+    actualPctReduction: 18,
   },
 ];
 
@@ -777,6 +784,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         if (row.otherFactors !== undefined) {
           acc.otherFactors = (acc.otherFactors ?? 0) + row.otherFactors;
         }
+        if (row.inventoryDelay !== undefined) {
+          acc.inventoryDelay = (acc.inventoryDelay ?? 0) + row.inventoryDelay;
+        }
         return acc;
       },
       {
@@ -789,6 +799,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         l5GapVsTarget: 0,
         actualSpend: 0,
         otherFactors: 0 as number | undefined,
+        inventoryDelay: 0 as number | undefined,
       }
     );
     const baselineSpend = roundToOne(totals.baselineSpend);
@@ -807,6 +818,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
     if (totals.otherFactors !== undefined) {
       result.otherFactors = roundToOne(totals.otherFactors);
+    }
+    if (totals.inventoryDelay !== undefined) {
+      result.inventoryDelay = roundToOne(totals.inventoryDelay);
     }
     if (baselineSpend > 0) {
       result.targetPctReduction = roundToOne(
@@ -1009,8 +1023,9 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const useStaticTotals = totals.otherFactors !== undefined;
 
     if (useStaticTotals) {
-      // Use L3, L4, L5 and other factors from static data; no inventory delay
+      // Use L3, L4, L5, other factors and inventory delay from static data
       const otherFactorsDelta = roundToOne(totals.otherFactors ?? 0);
+      const inventoryDelayDelta = roundToOne(totals.inventoryDelay ?? 0);
       return [
         {
           id: 'target-spend',
@@ -1025,7 +1040,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           label: 'Volume change',
           value: nextValue(totals.volumeChange),
           delta: roundToOne(totals.volumeChange),
-          type: getCostStageType(totals.volumeChange),
+          type: 'neutral', // Volume change is not a positive/negative "impact" in procurement; show grey
           isClickable: true,
         },
         {
@@ -1034,6 +1049,20 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           value: nextValue(totals.fxImpact),
           delta: roundToOne(totals.fxImpact),
           type: getCostStageType(totals.fxImpact),
+        },
+        {
+          id: 'other-factors',
+          label: 'Other factors',
+          value: nextValue(otherFactorsDelta),
+          delta: otherFactorsDelta,
+          type: getCostStageType(otherFactorsDelta),
+        },
+        {
+          id: 'inventory-delay',
+          label: 'Inventory delay',
+          value: nextValue(inventoryDelayDelta),
+          delta: inventoryDelayDelta,
+          type: getCostStageType(inventoryDelayDelta),
         },
         {
           id: 'l3-deviation',
@@ -1057,13 +1086,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           value: nextValue(totals.l5GapVsTarget),
           delta: roundToOne(totals.l5GapVsTarget),
           type: getCostStageType(totals.l5GapVsTarget),
-        },
-        {
-          id: 'other-factors',
-          label: 'Other factors',
-          value: nextValue(otherFactorsDelta),
-          delta: otherFactorsDelta,
-          type: getCostStageType(otherFactorsDelta),
         },
         {
           id: 'actual-spend',
@@ -1101,7 +1123,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'Volume change',
         value: nextValue(totals.volumeChange),
         delta: roundToOne(totals.volumeChange),
-        type: getCostStageType(totals.volumeChange),
+        type: 'neutral', // Volume change is not a positive/negative "impact" in procurement; show light grey
         isClickable: true,
       },
       {
@@ -1110,6 +1132,20 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(totals.fxImpact),
         delta: roundToOne(totals.fxImpact),
         type: getCostStageType(totals.fxImpact),
+      },
+      {
+        id: 'other-factors',
+        label: 'Other factors',
+        value: nextValue(otherFactorsDelta),
+        delta: otherFactorsDelta,
+        type: getCostStageType(otherFactorsDelta),
+      },
+      {
+        id: 'inventory-delay',
+        label: 'Inventory delay',
+        value: nextValue(inventoryDelayDelta),
+        delta: inventoryDelayDelta,
+        type: getCostStageType(inventoryDelayDelta),
       },
       {
         id: 'l3-deviation',
@@ -1133,20 +1169,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         value: nextValue(adjustedL5),
         delta: roundToOne(adjustedL5),
         type: getCostStageType(adjustedL5),
-      },
-      {
-        id: 'inventory-delay',
-        label: 'Inventory delay',
-        value: nextValue(inventoryDelayDelta),
-        delta: inventoryDelayDelta,
-        type: getCostStageType(inventoryDelayDelta),
-      },
-      {
-        id: 'other-factors',
-        label: 'Other factors',
-        value: nextValue(otherFactorsDelta),
-        delta: otherFactorsDelta,
-        type: getCostStageType(otherFactorsDelta),
       },
       {
         id: 'actual-spend',
@@ -1377,7 +1399,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         label: 'Volume / mix change',
         value: nextValue(volMixDelta),
         delta: volMixDelta,
-        type: getCostStageType(volMixDelta),
+        type: 'neutral',
         isClickable: manufacturingClickableIds.has('vol-mix-change'),
       },
       {
@@ -1441,13 +1463,31 @@ export default function BusinessUnitPerformanceByFunctionPage() {
   const manufacturingGroupings = useMemo<FunctionalPerformanceGrouping[]>(
     () => [
       {
-        label: 'Initiative improvement',
+        label: 'Uncontrollable',
+        stageIds: ['vol-mix-change', 'fx-impact', 'labor-rate-impact'],
+      },
+      {
+        label: 'Controllable (Initiative improvement)',
         stageIds: [
           'dl-efficiency',
           'idl-hc-gap',
           'ga-variable-gap',
           'ga-fixed-gap',
         ],
+      },
+    ],
+    []
+  );
+
+  const procurementGroupings = useMemo<FunctionalPerformanceGrouping[]>(
+    () => [
+      {
+        label: 'Uncontrollable',
+        stageIds: ['volume-change', 'fx-impact', 'other-factors', 'inventory-delay'],
+      },
+      {
+        label: 'Controllable (initiative performance)',
+        stageIds: ['l3-deviation', 'l4-deviation', 'l5-deviation'],
       },
     ],
     []
@@ -1591,20 +1631,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     (bucket) => bucket.id === activeBucketId
   );
 
-  const calculateTargetReduction = () => {
-    // Return random number between 7 and 10%
-    return Math.random() * (10 - 7) + 7;
-  }
-
-  const targetReduction = useMemo(() => {
-    return calculateTargetReduction();
-  }, []);
-
-  const calculateActualReduction = (actualSpend: number, targetSpend: number, targetReduction: number) => {
-    return (actualSpend / targetSpend) / (1 - targetReduction) - 1;
-  }
-
-
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50'>
       <div className='max-w-[1920px] mx-auto px-8 py-8 space-y-6'>
@@ -1690,6 +1716,12 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                         FX impact
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Other factors
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
+                        Inventory delay
+                      </th>
+                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         L3 gap vs. target
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
@@ -1697,9 +1729,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         L5 gap vs. target
-                      </th>
-                      <th className='px-4 py-3 text-right font-semibold text-gray-700'>
-                        Other factors
                       </th>
                       <th className='px-4 py-3 text-right font-semibold text-gray-700'>
                         Actual spend
@@ -1777,6 +1806,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                               {formatMn(row.fxImpact)}
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
+                              {row.otherFactors !== undefined
+                                ? formatMn(row.otherFactors)
+                                : '—'}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
+                              {row.inventoryDelay !== undefined
+                                ? formatMn(row.inventoryDelay)
+                                : '—'}
+                            </td>
+                            <td className='px-4 py-3 text-right text-gray-700'>
                               {formatMn(row.l3GapVsTarget)}
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
@@ -1784,11 +1823,6 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                             </td>
                             <td className='px-4 py-3 text-right text-gray-700'>
                               {formatMn(row.l5GapVsTarget)}
-                            </td>
-                            <td className='px-4 py-3 text-right text-gray-700'>
-                              {row.otherFactors !== undefined
-                                ? formatMn(row.otherFactors)
-                                : '—'}
                             </td>
                             <td className='px-4 py-3 text-right font-semibold text-gray-900'>
                               {formatMn(row.actualSpend)}
@@ -1810,6 +1844,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               title='Deviation waterfall of functional performance - Procurement'
               description={`Procurement cost, ${currencyLabel} Mn`}
               brokenAxis={undefined}
+              groupings={procurementGroupings}
               onStageClick={(stage) => {
                 if (
                   stage.id === 'volume-change' ||
@@ -1821,24 +1856,34 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               }}
               footerContent={
                 <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
-                  <span>
-                    Target % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(
-                        procurementFilteredTotals.targetPctReduction ?? targetReduction
-                      )}
+                  <div className='flex flex-col gap-0.5'>
+                    <span>
+                      Target % of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(12)}
+                      </span>
                     </span>
-                  </span>
-                  <span>
-                    Actual % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(
-                        procurementFilteredTotals.actualPctReduction !== undefined
-                          ? procurementFilteredTotals.actualPctReduction
-                          : calculateActualReduction(procurementFilteredTotals.actualSpend, procurementFilteredTotals.targetSpend, targetReduction)
-                      )}
+                    <span>
+                      Target value of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(74)}
+                      </span>
                     </span>
-                  </span>
+                  </div>
+                  <div className='flex flex-col gap-0.5 text-right'>
+                    <span>
+                      Actual % of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(7)}
+                      </span>
+                    </span>
+                    <span>
+                      Actual value of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(42)}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               }
             />
@@ -2041,18 +2086,34 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               }}
               footerContent={
                 <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
-                  <span>
-                    Target % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(9)}
+                  <div className='flex flex-col gap-0.5'>
+                    <span>
+                      Target % of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(9)}
+                      </span>
                     </span>
-                  </span>
-                  <span>
-                    Actual % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(35)}
+                    <span>
+                      Target value of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(231)}
+                      </span>
                     </span>
-                  </span>
+                  </div>
+                  <div className='flex flex-col gap-0.5 text-right'>
+                    <span>
+                      Actual % of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(7)}
+                      </span>
+                    </span>
+                    <span>
+                      Actual value of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(188)}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               }
             />
@@ -2086,18 +2147,34 @@ export default function BusinessUnitPerformanceByFunctionPage() {
               }}
               footerContent={
                 <div className='flex items-center justify-between text-sm text-gray-600 px-2'>
-                  <span>
-                    Target % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(9)}
+                  <div className='flex flex-col gap-0.5'>
+                    <span>
+                      Target % of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(9)}
+                      </span>
                     </span>
-                  </span>
-                  <span>
-                    Actual % reduction:{' '}
-                    <span className='font-semibold text-gray-900'>
-                      {formatPercent(11)}
+                    <span>
+                      Target value of reduction{' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(19)}
+                      </span>
                     </span>
-                  </span>
+                  </div>
+                  <div className='flex flex-col gap-0.5 text-right'>
+                    <span>
+                      Actual % of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatPercent(11)}
+                      </span>
+                    </span>
+                    <span>
+                      Actual value of reduction (Initiatives only){' '}
+                      <span className='font-semibold text-gray-900'>
+                        {formatMn(12)}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               }
             />
