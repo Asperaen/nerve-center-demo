@@ -838,7 +838,7 @@ export default function FinanceReviewPage() {
                         Line item
                       </th>
                       <th className='px-4 py-3 text-left font-semibold text-gray-700'>
-                        Cost rationale
+                        Rationale
                       </th>
                       <th className='px-4 py-3 text-left font-semibold text-gray-700'>
                         Item

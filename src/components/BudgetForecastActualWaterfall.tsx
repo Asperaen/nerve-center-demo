@@ -198,6 +198,7 @@ export default function BudgetForecastActualWaterfall({
   const { formatAmount, currencyLabel } = useCurrency();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [definitionTooltip, setDefinitionTooltip] = useState<{
     text: string;
     left: number;
@@ -219,6 +220,10 @@ export default function BudgetForecastActualWaterfall({
     event: React.MouseEvent<SVGGElement>,
     text: string
   ) => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
     const container = chartContainerRef.current;
     if (!container) {
       return;
@@ -240,7 +245,14 @@ export default function BudgetForecastActualWaterfall({
   };
 
   const hideDefinitionTooltip = () => {
-    setDefinitionTooltip(null);
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    hideTimeoutRef.current = window.setTimeout(() => {
+      hideTimeoutRef.current = null;
+      setDefinitionTooltip(null);
+    }, 100);
   };
 
   // Calculate effective broken axis config (auto-detect or use provided)
@@ -368,6 +380,9 @@ export default function BudgetForecastActualWaterfall({
     return () => {
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
       }
     };
   }, []);
@@ -557,7 +572,14 @@ export default function BudgetForecastActualWaterfall({
               left: definitionTooltip.left,
               top: definitionTooltip.top,
               width: 280,
-            }}>
+            }}
+            onMouseEnter={() => {
+              if (hideTimeoutRef.current) {
+                clearTimeout(hideTimeoutRef.current);
+                hideTimeoutRef.current = null;
+              }
+            }}
+            onMouseLeave={hideDefinitionTooltip}>
             {definitionTooltip.text}
           </div>
         )}
@@ -583,7 +605,7 @@ export default function BudgetForecastActualWaterfall({
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray='3 3' />
-              <XAxis
+            <XAxis
               dataKey='label'
               angle={-15}
               textAnchor='end'
@@ -594,71 +616,78 @@ export default function BudgetForecastActualWaterfall({
                 const isClickable = stage?.isClickable ?? false;
                 const isHighlightedLabel =
                   highlightedStage && stage?.stage === highlightedStage;
-                  const definition =
-                    stage?.stage && labelDefinitions
-                      ? labelDefinitions[stage.stage]
-                      : undefined;
+                const definition =
+                  stage?.stage && labelDefinitions
+                    ? labelDefinitions[stage.stage]
+                    : undefined;
                 return (
-                    <g
-                      transform={`rotate(-15, ${x}, ${y})`}
+                  <g
+                    transform={`rotate(-15, ${x}, ${y})`}
+                    style={{
+                      pointerEvents: 'all',
+                      cursor: definition ? 'help' : 'default',
+                    }}
+                    onMouseEnter={(event) => {
+                      if (definition) {
+                        showDefinitionTooltip(event, definition);
+                      }
+                    }}
+                    onMouseLeave={hideDefinitionTooltip}>
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor='end'
                       style={{
-                        pointerEvents: 'all',
-                        cursor: definition ? 'help' : 'default',
-                      }}
-                      onMouseEnter={(event) => {
-                        if (definition) {
-                          showDefinitionTooltip(event, definition);
-                        }
-                      }}
-                      onMouseLeave={hideDefinitionTooltip}>
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor='end'
-                        style={{
-                          fontSize: isHighlightedLabel ? '13px' : '11px',
-                          fill: isHighlightedLabel
-                            ? '#111827'
-                            : isClickable
-                            ? '#1f2937'
-                            : '#374151',
-                          fontWeight: isHighlightedLabel
-                            ? '800'
-                            : isClickable
-                            ? 'bold'
-                            : 'normal',
-                          cursor: isClickable ? 'pointer' : 'default',
-                        }}>
-                        <tspan x={x} dy={0}>
-                          {payload.value}
-                          {isHighlightedLabel && ' ★'}
-                          {definition && <title>{definition}</title>}
-                        </tspan>
-                      </text>
-                      {definition && (
-                        <>
-                          <circle
-                            cx={(x ?? 0)}
-                            cy={(y ?? 0) + 14}
-                            r={6}
-                            fill='#e5e7eb'
-                            stroke='#6b7280'
-                            strokeWidth={1}
-                            style={{ cursor: 'help' }}>
-                          </circle>
-                          <text
-                            x={(x ?? 0)}
-                            y={(y ?? 0) + 17}
-                            textAnchor='middle'
-                            fontSize={9}
-                            fontWeight={700}
-                            fill='#374151'
-                            style={{ cursor: 'help' }}>
-                            i
-                          </text>
-                        </>
-                      )}
-                    </g>
+                        fontSize: isHighlightedLabel ? '13px' : '11px',
+                        fill: isHighlightedLabel
+                          ? '#111827'
+                          : isClickable
+                          ? '#1f2937'
+                          : '#374151',
+                        fontWeight: isHighlightedLabel
+                          ? '800'
+                          : isClickable
+                          ? 'bold'
+                          : 'normal',
+                        cursor: isClickable ? 'pointer' : 'default',
+                      }}>
+                      <tspan x={x} dy={0}>
+                        {payload.value}
+                        {isHighlightedLabel && ' ★'}
+                      </tspan>
+                    </text>
+                    {definition && (
+                      <>
+                        <circle
+                          cx={(x ?? 0)}
+                          cy={(y ?? 0) + 14}
+                          r={6}
+                          fill='#e5e7eb'
+                          stroke='#6b7280'
+                          strokeWidth={1}
+                          style={{ cursor: 'help', pointerEvents: 'all' }}
+                          onMouseEnter={(event) => {
+                            showDefinitionTooltip(event, definition);
+                          }}
+                          onMouseLeave={hideDefinitionTooltip}
+                        />
+                        <text
+                          x={(x ?? 0)}
+                          y={(y ?? 0) + 17}
+                          textAnchor='middle'
+                          fontSize={9}
+                          fontWeight={700}
+                          fill='#374151'
+                          style={{ cursor: 'help', pointerEvents: 'all' }}
+                          onMouseEnter={(event) => {
+                            showDefinitionTooltip(event, definition);
+                          }}
+                          onMouseLeave={hideDefinitionTooltip}>
+                          i
+                        </text>
+                      </>
+                    )}
+                  </g>
                 );
               }}
             />

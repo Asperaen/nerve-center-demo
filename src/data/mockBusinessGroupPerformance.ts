@@ -78,6 +78,12 @@ const aiInsights: Record<string, Record<string, string>> = {
     op: 'OP growth accelerating as startup costs for new ventures normalize. Break-even achieved in 3 of 5 new units.',
     np: 'NP growth outpacing revenue due to operational maturity in previously loss-making units.',
   },
+  other_subsidiary_intergroup: {
+    rev: 'Other subsidiary & intergroup segment showing strong growth from emerging market expansion and new B2B service offerings.',
+    gp: 'GP benefiting from diversification strategy and higher-margin specialty products.',
+    op: 'OP growth accelerating as startup costs for new ventures normalize. Break-even achieved in 3 of 5 new units.',
+    np: 'NP growth outpacing revenue due to operational maturity in previously loss-making units.',
+  },
   overall: {
     rev: 'Consolidated revenue growth of 3.2% reflects balanced portfolio performance. EV and data center segments leading.',
     gp: 'Overall GP healthy with margin expansion from product mix optimization across all business units.',
@@ -232,15 +238,15 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
     },
   },
   {
-    id: 'others',
-    name: 'Others',
+    id: 'other-subsidiary-intergroup',
+    name: 'Other subsidiary & Intergroup adjustments',
     rev: {
       value: 139,
       baseline: 120.3,
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.1, 'up'),
-      aiInsight: aiInsights.others.rev,
+      aiInsight: aiInsights.other_subsidiary_intergroup.rev,
     },
     gp: {
       value: 139,
@@ -248,7 +254,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.08, 'up'),
-      aiInsight: aiInsights.others.gp,
+      aiInsight: aiInsights.other_subsidiary_intergroup.gp,
     },
     op: {
       value: 139,
@@ -256,7 +262,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.12, 'up'),
-      aiInsight: aiInsights.others.op,
+      aiInsight: aiInsights.other_subsidiary_intergroup.op,
     },
     np: {
       value: 139,
@@ -264,7 +270,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.14, 'up'),
-      aiInsight: aiInsights.others.np,
+      aiInsight: aiInsights.other_subsidiary_intergroup.np,
     },
   },
 ];
@@ -278,6 +284,7 @@ const ytmScaleByGroup: Record<
   fih: { value: 0.78, baseline: 0.77, stly: 0.76 },
   fit: { value: 0.73, baseline: 0.75, stly: 0.72 },
   others: { value: 0.7, baseline: 0.71, stly: 0.69 },
+  'other-subsidiary-intergroup': { value: 0.7, baseline: 0.71, stly: 0.69 },
 };
 
 const roundTo = (value: number, digits: number = 1) => {
