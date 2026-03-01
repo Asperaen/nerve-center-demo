@@ -933,32 +933,22 @@ export default function IdeationProgressPage() {
       }
     }
 
-    // Recompute Total row: keep in-year target (scaled ideation target); L1/L2/L3 derived as ~30% of target; run rate = L3×2.
+    // Total row hardcoded: 309.2, 92.8, 91.7, 90.4, 30.0%, 29.7%, 29.2%, 309.2, 90.4*2
     const totalRowIndex = rows.findIndex((r) => r.isTotal);
     if (totalRowIndex >= 0) {
-      const roundPct = (value: number) => Math.round(value * 10) / 10;
       rows = rows.slice();
       const totalRow = rows[totalRowIndex];
-      const totalTarget = totalRow.total; // scaled ideation target (e.g. 309.2)
-      const l1 = round(totalTarget * 0.30);
-      const l2 = round(totalTarget * 0.297);
-      const l3 = round(totalTarget * 0.292);
-      const pctL1 =
-        totalTarget === 0 ? 0 : roundPct((l1 / totalTarget) * 100);
-      const pctL2 =
-        totalTarget === 0 ? 0 : roundPct((l2 / totalTarget) * 100);
-      const pctL3 =
-        totalTarget === 0 ? 0 : roundPct((l3 / totalTarget) * 100);
       rows[totalRowIndex] = {
         ...totalRow,
-        l1,
-        l2,
-        l3,
-        pctL1,
-        pctL2,
-        pctL3,
-        runRateTarget: round(totalTarget),
-        runRateImpact: round(l3 * 2),
+        total: 309.2,
+        l1: 92.8,
+        l2: 91.7,
+        l3: 90.4,
+        pctL1: 30.0,
+        pctL2: 29.7,
+        pctL3: 29.2,
+        runRateTarget: 309.2,
+        runRateImpact: 90.4 * 2,
       };
     }
 
