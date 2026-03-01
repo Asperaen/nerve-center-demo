@@ -1032,6 +1032,28 @@ export default function MarketIntelligencePage() {
     return overallRow ? [overallRow, ...remainingRows] : tableData;
   }, [tableData, selectedBu]);
 
+  const forecastMarginSummary = useMemo(() => {
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall'),
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return null;
+    }
+    const calcPercent = (numerator: number, denominator: number) =>
+      denominator === 0 ? 0 : (numerator / denominator) * 100;
+    return {
+      lastYear: {
+        gp: calcPercent(overallRow.gp.stly, overallRow.rev.stly),
+        op: calcPercent(overallRow.op.stly, overallRow.rev.stly),
+      },
+      budget: {
+        gp: calcPercent(overallRow.gp.baseline, overallRow.rev.baseline),
+        op: calcPercent(overallRow.op.baseline, overallRow.rev.baseline),
+      },
+    };
+  }, [tableData]);
+
   const allSelectableIdsInView = useMemo(() => {
     if (selectedBu !== 'all') return [];
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
@@ -2254,6 +2276,40 @@ export default function MarketIntelligencePage() {
               </tbody>
             </table>
           </div>
+          {forecastMarginSummary && (
+            <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
+              <div className='flex w-full flex-col gap-4 sm:items-center sm:justify-between'>
+                <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                  <div className='flex flex-col'>
+                    <span>last year actual GP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.lastYear.gp.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className='flex flex-col items-end'>
+                    <span>current year budget GP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.budget.gp.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                  <div className='flex flex-col'>
+                    <span>last year actual OP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.lastYear.op.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className='flex flex-col items-end'>
+                    <span>current year budget OP</span>
+                    <span className='text-3xl font-semibold'>
+                      {forecastMarginSummary.budget.op.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className='space-y-8'>
