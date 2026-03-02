@@ -933,28 +933,40 @@ export default function IdeationProgressPage() {
       }
     }
 
-    // Total row: use 662M in-year target when bg=all, else 309.2
+    // Total row must equal sum of VS group rows (Procurement/BOM, R&D VS, MFG VS, Topline VS)
     const totalRowIndex = rows.findIndex((r) => r.isTotal);
-    if (totalRowIndex >= 0) {
+    const vsGroupRows = rows.filter((r) => r.isGroup && !r.isTotal);
+    if (totalRowIndex >= 0 && vsGroupRows.length > 0) {
+      const sumTotal = round(
+        vsGroupRows.reduce((acc, r) => acc + r.total, 0)
+      );
+      const sumL1 = round(vsGroupRows.reduce((acc, r) => acc + r.l1, 0));
+      const sumL2 = round(vsGroupRows.reduce((acc, r) => acc + r.l2, 0));
+      const sumL3 = round(vsGroupRows.reduce((acc, r) => acc + r.l3, 0));
+      const roundPct = (value: number) => Math.round(value * 10) / 10;
+      const pctL1 =
+        sumTotal === 0 ? 0 : roundPct((sumL1 / sumTotal) * 100);
+      const pctL2 =
+        sumTotal === 0 ? 0 : roundPct((sumL2 / sumTotal) * 100);
+      const pctL3 =
+        sumTotal === 0 ? 0 : roundPct((sumL3 / sumTotal) * 100);
       rows = rows.slice();
-      const totalRow = rows[totalRowIndex];
-      const inYearTarget = selectedBu === 'all' ? 662 : 309.2;
       rows[totalRowIndex] = {
-        ...totalRow,
-        total: inYearTarget,
-        l1: 92.8,
-        l2: 91.7,
-        l3: 90.4,
-        pctL1: 30.0,
-        pctL2: 29.7,
-        pctL3: 29.2,
-        runRateTarget: inYearTarget,
-        runRateImpact: 90.4 * 2,
+        ...rows[totalRowIndex],
+        total: sumTotal,
+        l1: sumL1,
+        l2: sumL2,
+        l3: sumL3,
+        pctL1: Math.min(140, Math.max(0, pctL1)),
+        pctL2: Math.min(140, Math.max(0, pctL2)),
+        pctL3: Math.min(140, Math.max(0, pctL3)),
+        runRateTarget: round(sumTotal * 2),
+        runRateImpact: round(sumL3 * 2),
       };
     }
 
     return rows;
-  }, [monthlyImpactPlanRows, timeframeScale, isDeGroupInSelection, selectedBu]);
+  }, [monthlyImpactPlanRows, timeframeScale, isDeGroupInSelection]);
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
