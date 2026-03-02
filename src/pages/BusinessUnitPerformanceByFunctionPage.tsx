@@ -52,7 +52,7 @@ const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
     l4GapVsTarget: 17,
     l5GapVsTarget: 67,
     actualSpend: 371,
-    actualPctReduction: 7,
+    actualPctReduction: 10,
   },
   {
     category: 'Category A',
@@ -1023,9 +1023,10 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     const useStaticTotals = totals.otherFactors !== undefined;
 
     if (useStaticTotals) {
-      // Use L3, L4, L5, other factors and inventory delay from static data
+      // Use L3, L4, L5; other factors merged into inventory delay
       const otherFactorsDelta = roundToOne(totals.otherFactors ?? 0);
       const inventoryDelayDelta = roundToOne(totals.inventoryDelay ?? 0);
+      const inventoryDelayCombinedDelta = roundToOne(otherFactorsDelta + inventoryDelayDelta);
       return [
         {
           id: 'target-spend',
@@ -1051,18 +1052,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
           type: getCostStageType(totals.fxImpact),
         },
         {
-          id: 'other-factors',
-          label: 'Other factors',
-          value: nextValue(otherFactorsDelta),
-          delta: otherFactorsDelta,
-          type: getCostStageType(otherFactorsDelta),
-        },
-        {
           id: 'inventory-delay',
           label: 'Inventory delay',
-          value: nextValue(inventoryDelayDelta),
-          delta: inventoryDelayDelta,
-          type: getCostStageType(inventoryDelayDelta),
+          value: nextValue(inventoryDelayCombinedDelta),
+          delta: inventoryDelayCombinedDelta,
+          type: getCostStageType(inventoryDelayCombinedDelta),
         },
         {
           id: 'l3-deviation',
@@ -1097,12 +1091,13 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       ];
     }
 
-    // Generated data: invent inventory delay and other factors, then derive L3+L4+L5
+    // Generated data: merge other factors into inventory delay, then derive L3+L4+L5
     const inventoryDelayDelta = roundToOne(Math.abs(targetSpend) * 0.03);
     const otherFactorsDelta = roundToOne(Math.abs(targetSpend) * 0.02);
+    const inventoryDelayCombinedDelta = roundToOne(inventoryDelayDelta + otherFactorsDelta);
 
     const neededGapsSum = roundToOne(
-      actualSpend - targetSpend - totals.volumeChange - totals.fxImpact - inventoryDelayDelta - otherFactorsDelta
+      actualSpend - targetSpend - totals.volumeChange - totals.fxImpact - inventoryDelayCombinedDelta
     );
 
     const adjustedL3 = roundToOne(neededGapsSum * 0.4);
@@ -1134,18 +1129,11 @@ export default function BusinessUnitPerformanceByFunctionPage() {
         type: getCostStageType(totals.fxImpact),
       },
       {
-        id: 'other-factors',
-        label: 'Other factors',
-        value: nextValue(otherFactorsDelta),
-        delta: otherFactorsDelta,
-        type: getCostStageType(otherFactorsDelta),
-      },
-      {
         id: 'inventory-delay',
         label: 'Inventory delay',
-        value: nextValue(inventoryDelayDelta),
-        delta: inventoryDelayDelta,
-        type: getCostStageType(inventoryDelayDelta),
+        value: nextValue(inventoryDelayCombinedDelta),
+        delta: inventoryDelayCombinedDelta,
+        type: getCostStageType(inventoryDelayCombinedDelta),
       },
       {
         id: 'l3-deviation',
@@ -1483,7 +1471,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     () => [
       {
         label: 'Uncontrollable',
-        stageIds: ['volume-change', 'fx-impact', 'other-factors', 'inventory-delay'],
+        stageIds: ['volume-change', 'fx-impact', 'inventory-delay'],
       },
       {
         label: 'Controllable (initiative performance)',
@@ -1874,7 +1862,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <span>
                       Actual % of reduction (Initiatives only){' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatPercent(7)}
+                        {formatPercent(10)}
                       </span>
                     </span>
                     <span>
@@ -2104,7 +2092,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <span>
                       Actual % of reduction (Initiatives only){' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatPercent(7)}
+                        {formatPercent(10.2)}
                       </span>
                     </span>
                     <span>
@@ -2165,7 +2153,7 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <span>
                       Actual % of reduction (Initiatives only){' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatPercent(11)}
+                        {formatPercent(10)}
                       </span>
                     </span>
                     <span>

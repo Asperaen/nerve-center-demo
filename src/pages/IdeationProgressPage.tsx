@@ -933,27 +933,28 @@ export default function IdeationProgressPage() {
       }
     }
 
-    // Total row hardcoded: 309.2, 92.8, 91.7, 90.4, 30.0%, 29.7%, 29.2%, 309.2, 90.4*2
+    // Total row: use 662M in-year target when bg=all, else 309.2
     const totalRowIndex = rows.findIndex((r) => r.isTotal);
     if (totalRowIndex >= 0) {
       rows = rows.slice();
       const totalRow = rows[totalRowIndex];
+      const inYearTarget = selectedBu === 'all' ? 662 : 309.2;
       rows[totalRowIndex] = {
         ...totalRow,
-        total: 309.2,
+        total: inYearTarget,
         l1: 92.8,
         l2: 91.7,
         l3: 90.4,
         pctL1: 30.0,
         pctL2: 29.7,
         pctL3: 29.2,
-        runRateTarget: 309.2,
+        runRateTarget: inYearTarget,
         runRateImpact: 90.4 * 2,
       };
     }
 
     return rows;
-  }, [monthlyImpactPlanRows, timeframeScale, isDeGroupInSelection]);
+  }, [monthlyImpactPlanRows, timeframeScale, isDeGroupInSelection, selectedBu]);
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
