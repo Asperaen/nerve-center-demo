@@ -1054,7 +1054,7 @@ export default function ActualInitiativeImplementationPage() {
                   <tr>
                     <th
                       className='bg-gray-50 text-left px-6 py-3 text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'
-                      colSpan={3}>
+                      colSpan={2}>
                       Mn {currencyLabel}
                     </th>
                     <th
@@ -1094,9 +1094,6 @@ export default function ActualInitiativeImplementationPage() {
                     </th>
                     <th className='px-6 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                       Sponsor
-                    </th>
-                    <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
-                      L3+ Pipeline
                     </th>
                     <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-r border-gray-200 last:border-r-0'>
                       Feb L4 target
@@ -1160,9 +1157,6 @@ export default function ActualInitiativeImplementationPage() {
                           </td>
                           <td className='px-6 py-3 border-r border-gray-200 last:border-r-0'>
                             {row.sponsor ?? '-'}
-                          </td>
-                          <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
-                            {formatMnValue(row.pipeline)}
                           </td>
                           <td className='px-4 py-3 text-center border-r border-gray-200 last:border-r-0'>
                             {formatMnValue(row.l4Target)}

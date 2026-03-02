@@ -3138,7 +3138,9 @@ export default function BusinessGroupPerformancePage() {
           normalizePnlLineItem(row.lineItem) === 'controllable';
         const showDrilldown = Boolean(functionId) && !isRevenueControllable;
         const isTopLevel = level === 0;
-        const isBoldLineItem = ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem);
+        const isBoldLineItem =
+          ['SG&A', 'Share expenses', 'R&D', 'Revenue'].includes(row.lineItem) ||
+          row.lineItem.startsWith('COGS');
         const isOpexToNetPlaceholder = row.lineItem === '(Line items between OP and net)';
         const useBold = (isGroup || isTopLevel || isBoldLineItem) && !isOpexToNetPlaceholder;
         return (
@@ -3202,7 +3204,11 @@ export default function BusinessGroupPerformancePage() {
           <td className='px-4 py-3 text-gray-600' />
           <td className='px-4 py-3 text-gray-600'>
             <span
-              className='font-semibold text-gray-900'
+              className={
+                label === 'Revenue' || label === 'COGS'
+                  ? 'font-bold text-gray-900'
+                  : 'font-semibold text-gray-900'
+              }
               style={{ paddingLeft: `${level * 16}px` }}>
               {label}
             </span>
@@ -4354,7 +4360,8 @@ export default function BusinessGroupPerformancePage() {
                           </td>
                           <td
                             className={
-                              ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem)
+                              ['SG&A', 'Share expenses', 'R&D', 'Revenue'].includes(row.lineItem) ||
+                              row.lineItem.startsWith('COGS')
                                 ? 'px-4 py-3 font-semibold text-gray-900'
                                 : 'px-4 py-3 text-gray-600'
                             }>

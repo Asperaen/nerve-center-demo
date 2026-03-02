@@ -867,7 +867,9 @@ export default function ExecutiveSummaryPage({
           ? row.lastYearYtm
           : row.lastYearFullYear;
         const deviation = (budgetValue ?? 0) - (lastYearValue ?? 0);
-        const isBoldLineItem = ['SG&A', 'Share expenses', 'R&D'].includes(row.lineItem);
+        const isBoldLineItem =
+          ['SG&A', 'Share expenses', 'R&D', 'Revenue'].includes(row.lineItem) ||
+          row.lineItem.startsWith('COGS');
 
         return (
           <tr
@@ -900,7 +902,13 @@ export default function ExecutiveSummaryPage({
         <tr key={`label-${label}-${level}`} className='border-b border-gray-200 last:border-b-0'>
           <td className='px-4 py-3 text-gray-600' />
           <td className='px-4 py-3 text-gray-600'>
-            <span className='font-semibold text-gray-900' style={{ paddingLeft: `${level * 16}px` }}>
+            <span
+              className={
+                label === 'Revenue' || label === 'COGS'
+                  ? 'font-bold text-gray-900'
+                  : 'font-semibold text-gray-900'
+              }
+              style={{ paddingLeft: `${level * 16}px` }}>
               {label}
             </span>
           </td>

@@ -41,10 +41,10 @@ type DeviationDataset = {
 const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
   {
     category: 'Total',
-    baselineSpend: 594,
+    baselineSpend: 567,
     targetSpend: 520,
-    targetPctReduction: 12,
-    volumeChange: -176,
+    targetPctReduction: 8,
+    volumeChange: -185,
     fxImpact: 17,
     otherFactors: -42,
     inventoryDelay: 10,
@@ -52,81 +52,81 @@ const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
     l4GapVsTarget: 17,
     l5GapVsTarget: 67,
     actualSpend: 371,
-    actualPctReduction: 10,
+    actualPctReduction: 7,
   },
   {
     category: 'Category A',
-    baselineSpend: 149,
-    targetSpend: 125,
+    baselineSpend: 142,
+    targetSpend: 119,
     targetPctReduction: 16,
-    volumeChange: -25,
+    volumeChange: -24,
     fxImpact: 17,
     otherFactors: 1,
     inventoryDelay: 2,
     l3GapVsTarget: -10,
     l4GapVsTarget: -2,
     l5GapVsTarget: -1,
-    actualSpend: 106,
+    actualSpend: 101,
     actualPctReduction: -9,
   },
   {
     category: 'Category B',
-    baselineSpend: 143,
-    targetSpend: 125,
+    baselineSpend: 136,
+    targetSpend: 120,
     targetPctReduction: 12,
-    volumeChange: -25,
+    volumeChange: -24,
     fxImpact: 16,
     otherFactors: 26,
     inventoryDelay: 3,
     l3GapVsTarget: -10,
     l4GapVsTarget: -31,
     l5GapVsTarget: -9,
-    actualSpend: 95,
-    actualPctReduction: -35,
+    actualSpend: 91,
+    actualPctReduction: -36,
   },
   {
     category: 'Category C',
-    baselineSpend: 77,
-    targetSpend: 69,
+    baselineSpend: 74,
+    targetSpend: 66,
     targetPctReduction: 10,
-    volumeChange: -14,
+    volumeChange: -13,
     fxImpact: 9,
     otherFactors: -55,
     inventoryDelay: 1,
-    l3GapVsTarget: -6,
+    l3GapVsTarget: -5,
     l4GapVsTarget: 31,
     l5GapVsTarget: 47,
-    actualSpend: 83,
-    actualPctReduction: 94,
+    actualSpend: 80,
+    actualPctReduction: 99,
   },
   {
     category: 'Category D',
-    baselineSpend: 71,
-    targetSpend: 68,
+    baselineSpend: 68,
+    targetSpend: 65,
     targetPctReduction: 5,
-    volumeChange: -14,
+    volumeChange: -13,
     fxImpact: 8,
     otherFactors: -6,
     inventoryDelay: 2,
     l3GapVsTarget: -5,
     l4GapVsTarget: 5,
     l5GapVsTarget: 6,
-    actualSpend: 64,
-    actualPctReduction: 8,
+    actualSpend: 61,
+    actualPctReduction: 9,
   },
   {
     category: 'Category E',
-    baselineSpend: 154,
-    targetSpend: 133,
-    targetPctReduction: 14,
-    volumeChange: -98,
+    baselineSpend: 147,
+    targetSpend: 150,
+    targetPctReduction: -2,
+    volumeChange: -111,
     fxImpact: -33,
     otherFactors: -8,
     inventoryDelay: 2,
-    l3GapVsTarget: -11,
+    l3GapVsTarget: -12,
     l4GapVsTarget: 14,
     l5GapVsTarget: 24,
-    actualSpend: 23,
+    actualSpend: 39,
     actualPctReduction: 18,
   },
 ];
@@ -1848,13 +1848,26 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <span>
                       Target % of reduction{' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatPercent(12)}
+                        {formatPercent(
+                          procurementFilteredTotals.targetPctReduction ??
+                            (procurementFilteredTotals.baselineSpend === 0
+                              ? 0
+                              : (1 -
+                                  procurementFilteredTotals.targetSpend /
+                                    procurementFilteredTotals.baselineSpend) *
+                                100)
+                        )}
                       </span>
                     </span>
                     <span>
                       Target value of reduction{' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatMn(74)}
+                        {formatMn(
+                          roundToOne(
+                            procurementFilteredTotals.baselineSpend -
+                              procurementFilteredTotals.targetSpend
+                          )
+                        )}
                       </span>
                     </span>
                   </div>
@@ -1862,13 +1875,26 @@ export default function BusinessUnitPerformanceByFunctionPage() {
                     <span>
                       Actual % of reduction (Initiatives only){' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatPercent(10)}
+                        {formatPercent(
+                          procurementFilteredTotals.actualPctReduction ??
+                            (procurementFilteredTotals.baselineSpend === 0
+                              ? 0
+                              : (1 -
+                                  procurementFilteredTotals.actualSpend /
+                                    procurementFilteredTotals.baselineSpend) *
+                                100)
+                        )}
                       </span>
                     </span>
                     <span>
                       Actual value of reduction (Initiatives only){' '}
                       <span className='font-semibold text-gray-900'>
-                        {formatMn(42)}
+                        {formatMn(
+                          roundToOne(
+                            procurementFilteredTotals.baselineSpend -
+                              procurementFilteredTotals.actualSpend
+                          )
+                        )}
                       </span>
                     </span>
                   </div>
