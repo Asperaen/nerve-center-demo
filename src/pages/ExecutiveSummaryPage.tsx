@@ -1599,6 +1599,9 @@ export default function ExecutiveSummaryPage({
 
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
+    if (buId === 'all') {
+      setSelectedGroupIds(new Set());
+    }
     setSearchParams(
       (prev) => {
         if (prev.get('bg') === buId) {

@@ -12,7 +12,14 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BudgetForecastActualWaterfall from '../components/BudgetForecastActualWaterfall';
 import HeaderFilters from '../components/HeaderFilters';
@@ -50,7 +57,10 @@ import { setStoredTimeframe } from '../utils/timeframeStorage';
 const toMillions = (value: number) => value / 1_000;
 const roundToOne = (value: number) => Math.round(value * 10) / 10;
 const normalizeGroupId = (groupName: string) => {
-  const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
+  const key = groupName
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\(parent\)\s*$/i, '');
   return key === 'other' ? 'others' : key;
 };
 
@@ -69,7 +79,7 @@ const buildTrend = (
   value: number,
   baseline: number,
   _lastYear: number,
-  seed: number = 0
+  seed: number = 0,
 ): MonthlyTrendPoint[] => {
   const percentVsBudget =
     baseline === 0 ? 0 : ((value - baseline) / baseline) * 100;
@@ -126,8 +136,7 @@ const buildTrend = (
           curveRatio =
             0.4 + ((ratio - plateauStart) / (plateauEnd - plateauStart)) * 0.2;
         } else {
-          curveRatio =
-            0.6 + ((ratio - plateauEnd) / (1 - plateauEnd)) * 0.4;
+          curveRatio = 0.6 + ((ratio - plateauEnd) / (1 - plateauEnd)) * 0.4;
         }
         break;
       }
@@ -167,7 +176,7 @@ const buildMetric = (
   aiInsight: string,
   percentBasis: 'budget' | 'last-year',
   groupName: string,
-  metricName: string
+  metricName: string,
 ): BusinessGroupMetricWithTrend => {
   const seed = hashString(`${groupName}-${metricName}`);
   return {
@@ -176,7 +185,7 @@ const buildMetric = (
     stly: lastYear,
     percent: calcPercent(
       value,
-      percentBasis === 'last-year' ? lastYear : budget
+      percentBasis === 'last-year' ? lastYear : budget,
     ),
     trend: buildTrend(value, budget, lastYear, seed),
     aiInsight,
@@ -190,7 +199,7 @@ const buildGroupRow = (
   groupName: string,
   units: BusinessUnitSource[],
   idOverride?: string,
-  nameOverride?: string
+  nameOverride?: string,
 ): BusinessGroupData => {
   const totals = units.reduce(
     (acc, unit) => {
@@ -221,7 +230,7 @@ const buildGroupRow = (
       lastYearGrossProfit: 0,
       lastYearOperatingProfit: 0,
       lastYearNetProfit: 0,
-    }
+    },
   );
 
   const name = nameOverride ?? groupName;
@@ -250,7 +259,7 @@ const buildGroupRow = (
       `${insightBase} Revenue trends align with group mix.`,
       'budget',
       name,
-      'Revenue'
+      'Revenue',
     ),
     gp: buildMetric(
       grossProfit,
@@ -259,7 +268,7 @@ const buildGroupRow = (
       `${insightBase} Gross profit reflects mix and cost discipline.`,
       'budget',
       name,
-      'Gross Profit'
+      'Gross Profit',
     ),
     op: buildMetric(
       operatingProfit,
@@ -268,7 +277,7 @@ const buildGroupRow = (
       `${insightBase} Operating profit tracks execution momentum.`,
       'budget',
       name,
-      'Operating Profit'
+      'Operating Profit',
     ),
     np: buildMetric(
       netProfit,
@@ -277,14 +286,14 @@ const buildGroupRow = (
       `${insightBase} Net profit reflects margin resilience.`,
       'budget',
       name,
-      'Net Profit'
+      'Net Profit',
     ),
   };
 };
 
 const buildUnitRow = (
   groupId: string,
-  unit: BusinessUnitSource
+  unit: BusinessUnitSource,
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
@@ -313,7 +322,7 @@ const buildUnitRow = (
       `${insightBase} Revenue outlook follows segment demand.`,
       'budget',
       unit.name,
-      'Revenue'
+      'Revenue',
     ),
     gp: buildMetric(
       grossProfit,
@@ -322,7 +331,7 @@ const buildUnitRow = (
       `${insightBase} GP reflects product mix and cost structure.`,
       'budget',
       unit.name,
-      'Gross Profit'
+      'Gross Profit',
     ),
     op: buildMetric(
       operatingProfit,
@@ -331,7 +340,7 @@ const buildUnitRow = (
       `${insightBase} OP tracks execution pace.`,
       'budget',
       unit.name,
-      'Operating Profit'
+      'Operating Profit',
     ),
     np: buildMetric(
       netProfit,
@@ -340,7 +349,7 @@ const buildUnitRow = (
       `${insightBase} NP supported by margin discipline.`,
       'budget',
       unit.name,
-      'Net Profit'
+      'Net Profit',
     ),
   };
 };
@@ -362,15 +371,15 @@ export default function MarketIntelligencePage() {
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>('full-year');
   const [selectedBu, setSelectedBu] = useState<string>(() => {
-    const buParam = searchParams.get('bg') || searchParams.get('bu');
-    return buParam ? normalizeGroupId(buParam) : 'all';
+    const bgParam = searchParams.get('bg');
+    return bgParam ? normalizeGroupId(bgParam) : 'all';
   });
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
-  const [pendingUnitSelection, setPendingUnitSelection] = useState<string | null>(
-    null
-  );
+  const [pendingUnitSelection, setPendingUnitSelection] = useState<
+    string | null
+  >(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const userJustClearedSelectionRef = useRef(false);
   const bgCheckboxRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -378,16 +387,16 @@ export default function MarketIntelligencePage() {
     useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
-    null
+    null,
   );
   const [enabledAssumptionIds, setEnabledAssumptionIds] = useState<Set<string>>(
-    new Set(mockAppliedAssumptions.map((a) => a.id))
+    new Set(mockAppliedAssumptions.map((a) => a.id)),
   );
   const [suggestedAssumptions, setSuggestedAssumptions] = useState(
-    mockSuggestedAssumptions
+    mockSuggestedAssumptions,
   );
   const [appliedAssumptions, setAppliedAssumptions] = useState(
-    mockAppliedAssumptions
+    mockAppliedAssumptions,
   );
   const [_enabledSuggestedAssumptionIds, setEnabledSuggestedAssumptionIds] =
     useState<Set<string>>(new Set());
@@ -397,7 +406,7 @@ export default function MarketIntelligencePage() {
     assumptionName: string;
   } | null>(null);
   const [draggedAssumptionId, setDraggedAssumptionId] = useState<string | null>(
-    null
+    null,
   );
   const [isDragOverApplied, setIsDragOverApplied] = useState(false);
   const [isValueDriverModalOpen, setIsValueDriverModalOpen] = useState(false);
@@ -436,7 +445,7 @@ export default function MarketIntelligencePage() {
       rootCauseAnalysis:
         'Focus on rephasing project changes, tightening FX/price pass-through, and accelerating FTE + non‑FTE initiatives to stabilize delivery against plan.',
     }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -444,9 +453,9 @@ export default function MarketIntelligencePage() {
   }, [selectedTimeframe]);
 
   useEffect(() => {
-    const buParam = searchParams.get('bg') ?? searchParams.get('bu');
-    if (buParam) {
-      setSelectedBu(normalizeGroupId(buParam));
+    const bgParam = searchParams.get('bg');
+    if (bgParam) {
+      setSelectedBu(normalizeGroupId(bgParam));
     }
   }, [searchParams]);
 
@@ -457,16 +466,16 @@ export default function MarketIntelligencePage() {
     }
     return (
       businessGroups.find(
-        (group) => normalizeGroupId(group.group) === selectedBu
+        (group) => normalizeGroupId(group.group) === selectedBu,
       ) ?? null
     );
   }, [businessGroups, selectedBu]);
   const selectedBgName =
     selectedBu === 'all'
       ? 'All BGs'
-      : selectedGroup?.group ??
+      : (selectedGroup?.group ??
         mainBuOptions.find((bu) => bu.id === selectedBu)?.name ??
-        selectedBu.toUpperCase();
+        selectedBu.toUpperCase());
 
   const handleBuChange = (buId: string) => {
     setSelectedBu(buId);
@@ -495,7 +504,10 @@ export default function MarketIntelligencePage() {
     }
     const groupId = normalizeGroupId(selectedGroup.group);
     const overallId = `${groupId}-overall`;
-    if (pendingUnitSelection && pendingUnitSelection.startsWith(`${groupId}-`)) {
+    if (
+      pendingUnitSelection &&
+      pendingUnitSelection.startsWith(`${groupId}-`)
+    ) {
       setSelectedGroupIds(new Set([pendingUnitSelection]));
       setPendingUnitSelection(null);
       return;
@@ -513,8 +525,8 @@ export default function MarketIntelligencePage() {
           .map((unitName) => getUnitId(groupId, unitName))
           .filter((unitId) =>
             selectedGroup.businessUnits.some(
-              (unit) => getUnitId(groupId, unit.name) === unitId
-            )
+              (unit) => getUnitId(groupId, unit.name) === unitId,
+            ),
           );
         if (unitIds.length > 0) {
           setSelectedGroupIds(new Set(unitIds));
@@ -530,24 +542,29 @@ export default function MarketIntelligencePage() {
         .map((s) => s.trim().replace(/\+/g, ' '))
         .filter(Boolean);
       const unitIdsForGroup = selectedGroup.businessUnits.map((u) =>
-        getUnitId(groupId, u.name)
+        getUnitId(groupId, u.name),
       );
-      const groupIds = new Set([
-        overallId,
-        groupId,
-        ...unitIdsForGroup,
-      ]);
+      const groupIds = new Set([overallId, groupId, ...unitIdsForGroup]);
       const idsForGroup = rawIds.filter((id) => {
         if (groupIds.has(id)) return true;
         const normalizedId = id.toLowerCase();
-        if (normalizedId === 'overall' || normalizedId === overallId.toLowerCase()) return true;
-        return Array.from(groupIds).some((gid) => gid.toLowerCase() === normalizedId);
+        if (
+          normalizedId === 'overall' ||
+          normalizedId === overallId.toLowerCase()
+        )
+          return true;
+        return Array.from(groupIds).some(
+          (gid) => gid.toLowerCase() === normalizedId,
+        );
       });
       if (idsForGroup.length > 0) {
         const toCanonical = (id: string) => {
-          if (id === 'overall' || id.toLowerCase() === 'overall') return overallId;
+          if (id === 'overall' || id.toLowerCase() === 'overall')
+            return overallId;
           const normalizedId = id.toLowerCase();
-          const match = Array.from(groupIds).find((gid) => gid.toLowerCase() === normalizedId);
+          const match = Array.from(groupIds).find(
+            (gid) => gid.toLowerCase() === normalizedId,
+          );
           return match ?? id;
         };
         const resolved = idsForGroup.map(toCanonical);
@@ -567,7 +584,7 @@ export default function MarketIntelligencePage() {
       }
     }
     const unitIdsForGroup = selectedGroup.businessUnits.map((u) =>
-      getUnitId(groupId, u.name)
+      getUnitId(groupId, u.name),
     );
     setSelectedGroupIds(new Set([overallId, ...unitIdsForGroup]));
   }, [pendingUnitSelection, searchParams, selectedGroup]);
@@ -579,7 +596,7 @@ export default function MarketIntelligencePage() {
     const groupId = normalizeGroupId(selectedGroup.group);
     const overallId = `${groupId}-overall`;
     const unitIds = selectedGroup.businessUnits.map((u) =>
-      getUnitId(groupId, u.name)
+      getUnitId(groupId, u.name),
     );
     setSelectedGroupIds(new Set([overallId, ...unitIds]));
   }, [selectedBu, selectedGroup, selectedGroupIds.size]);
@@ -590,7 +607,7 @@ export default function MarketIntelligencePage() {
 
   const getExpandedSubGroups = (groupId: string) => {
     const group = businessGroups.find(
-      (item) => normalizeGroupId(item.group) === groupId
+      (item) => normalizeGroupId(item.group) === groupId,
     );
     if (!group) return [];
     return group.businessUnits.map((unit) => buildUnitRow(groupId, unit));
@@ -612,7 +629,7 @@ export default function MarketIntelligencePage() {
     metric: BusinessGroupMetricWithTrend,
     groupName: string,
     metricName: string,
-    isLast: boolean = false
+    isLast: boolean = false,
   ) => {
     const displayValue = metric.value;
     const budgetPercent = calcPercent(metric.value, metric.baseline);
@@ -622,15 +639,15 @@ export default function MarketIntelligencePage() {
       primaryPercent > 0
         ? 'bg-green-100 text-green-700'
         : primaryPercent < 0
-        ? 'bg-red-100 text-red-700'
-        : 'bg-gray-100 text-gray-600';
+          ? 'bg-red-100 text-red-700'
+          : 'bg-gray-100 text-gray-600';
     const percentSign = primaryPercent > 0 ? '+' : '';
     const lastYearPercentColor =
       lastYearPercent > 0
         ? 'bg-green-100 text-green-700'
         : lastYearPercent < 0
-        ? 'bg-red-100 text-red-700'
-        : 'bg-gray-100 text-gray-600';
+          ? 'bg-red-100 text-red-700'
+          : 'bg-gray-100 text-gray-600';
     const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
 
     // Calculate trend line for sparkline
@@ -652,8 +669,8 @@ export default function MarketIntelligencePage() {
       primaryPercent > 0
         ? '#22c55e'
         : primaryPercent < 0
-        ? '#ef4444'
-        : '#6b7280';
+          ? '#ef4444'
+          : '#6b7280';
 
     if (!showComparisonDetails) {
       return (
@@ -728,7 +745,9 @@ export default function MarketIntelligencePage() {
                 12-Month Trend
               </div>
               <div className='bg-gray-50 rounded-lg p-2'>
-                <svg viewBox='0 0 180 50' className='w-full h-12'>
+                <svg
+                  viewBox='0 0 180 50'
+                  className='w-full h-12'>
                   {/* Grid lines */}
                   <line
                     x1='0'
@@ -777,17 +796,17 @@ export default function MarketIntelligencePage() {
     isExpandable: boolean = false,
     isSubGroup: boolean = false,
     isOverallRow: boolean = false,
-    _parentBgId?: string
+    _parentBgId?: string,
   ) => {
     const isExpanded = expandedRows.has(group.id);
     const shouldExpandOnClick = isExpandable && !isSubGroup && !isOverallRow;
     const isClickable = true;
+    const isRowSelected =
+      selectedBu !== 'all' && !!selectedGroup && selectedGroupIds.has(group.id);
 
     const handleRowClick = () => {
       toggleGroupSelection(group.id);
     };
-
-    const indentClass = isOverallRow ? '' : isSubGroup ? 'pl-14' : 'pl-6';
 
     return (
       <tr
@@ -796,48 +815,15 @@ export default function MarketIntelligencePage() {
           isOverallRow
             ? 'bg-primary-50/50'
             : isSubGroup
-            ? 'bg-gray-50 hover:bg-gray-100'
-            : 'hover:bg-indigo-50/60 transition-colors'
-        } ${isClickable ? 'cursor-pointer' : ''}`}
+              ? 'bg-gray-50'
+              : 'hover:bg-gray-50 transition-colors'
+        } ${isClickable ? 'cursor-pointer' : ''} ${
+          isRowSelected ? 'bg-primary-100/60' : ''
+        }`}
         onClick={isClickable ? handleRowClick : undefined}>
-        <td className={`px-6 py-3 border-b border-r border-gray-200 ${isClickable ? 'cursor-pointer' : ''}`}>
-          <div className={`flex items-center gap-2 ${indentClass}`}>
-            {isOverallRow && selectedBu === 'all' ? (
-              <span className='w-4 h-4 shrink-0' aria-hidden />
-            ) : (
-              (() => {
-                const bgState = selectedBu === 'all' && !isSubGroup ? bgCheckboxState[group.id] : undefined;
-                let checked = bgState ? bgState.checked : selectedGroupIds.has(group.id);
-                let indeterminate = bgState ? bgState.indeterminate : false;
-                if (selectedBu !== 'all' && isOverallRow && selectedGroup) {
-                  const gid = normalizeGroupId(selectedGroup.group);
-                  const overallId = `${gid}-overall`;
-                  const unitIds = selectedGroup.businessUnits.map((u) => getUnitId(gid, u.name));
-                  const allSelected = selectedGroupIds.has(overallId) || unitIds.every((id) => selectedGroupIds.has(id));
-                  const someSelected = unitIds.some((id) => selectedGroupIds.has(id));
-                  checked = allSelected;
-                  indeterminate = someSelected && !allSelected;
-                }
-                return (
-                  <input
-                    type='checkbox'
-                    ref={(el) => {
-                      if (group.id && bgCheckboxRefs.current) {
-                        bgCheckboxRefs.current[group.id] = el;
-                        if (el) {
-                          el.indeterminate = indeterminate;
-                        }
-                      }
-                    }}
-                    checked={checked}
-                    onChange={() => toggleGroupSelection(group.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500'
-                    aria-label={`Select ${group.name}`}
-                  />
-                );
-              })()
-            )}
+        <td
+          className={`px-6 py-3 border-b border-r border-gray-200 ${isClickable ? 'cursor-pointer' : ''}`}>
+          <div className='flex items-center gap-2'>
             {shouldExpandOnClick && (
               <button
                 type='button'
@@ -894,38 +880,41 @@ export default function MarketIntelligencePage() {
   type FocusOptionId = (typeof focusOptions)[number]['id'];
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const resolveFocus = useCallback((value: string | null): FocusOptionId => {
-    const match = focusOptions.find((option) => option.id === value);
-    return match?.id ?? 'market-performance';
-  }, [focusOptions]);
+  const resolveFocus = useCallback(
+    (value: string | null): FocusOptionId => {
+      const match = focusOptions.find((option) => option.id === value);
+      return match?.id ?? 'market-performance';
+    },
+    [focusOptions],
+  );
 
   const [selectedFocusStage, setSelectedFocusStage] =
     useState<FocusOptionId | null>(() =>
       searchParams.get('focus')
         ? resolveFocus(searchParams.get('focus'))
-        : null
+        : null,
     );
 
   const assumptionStageFilters = useMemo<
     Partial<Record<BudgetForecastStage['stage'], string[]>>
   >(
-    () =>
-      ({
-        'market-performance': [
-          'AI Data Center Acceleration',
-          'Apple AirPods Launch Delay',
-        ],
-        'l3-vs-target': [
-          'AI Data Center Acceleration',
-          'Apple AirPods Launch Delay',
-        ],
-        'one-off-adjustments': ['Copper Price Surge'],
-      }),
-    []
+    () => ({
+      'market-performance': [
+        'AI Data Center Acceleration',
+        'Apple AirPods Launch Delay',
+      ],
+      'l3-vs-target': [
+        'AI Data Center Acceleration',
+        'Apple AirPods Launch Delay',
+      ],
+      'one-off-adjustments': ['Copper Price Surge'],
+    }),
+    [],
   );
 
-  const activeAssumptionFilterStage =
-    activePerformanceSection as BudgetForecastStage['stage'] | null;
+  const activeAssumptionFilterStage = activePerformanceSection as
+    | BudgetForecastStage['stage']
+    | null;
   const filteredAppliedAssumptions = useMemo(() => {
     if (!activeAssumptionFilterStage) {
       return appliedAssumptions;
@@ -935,7 +924,7 @@ export default function MarketIntelligencePage() {
       return appliedAssumptions;
     }
     return appliedAssumptions.filter((assumption) =>
-      allowedNames.includes(assumption.name)
+      allowedNames.includes(assumption.name),
     );
   }, [activeAssumptionFilterStage, appliedAssumptions, assumptionStageFilters]);
 
@@ -950,7 +939,7 @@ export default function MarketIntelligencePage() {
       }
       // Only "Overall" row checked (no group/unit ids): show all units
       const nonOverallIds = Array.from(selectedGroupIds).filter(
-        (id) => !isOverallRowId(id)
+        (id) => !isOverallRowId(id),
       );
       if (nonOverallIds.length === 0) {
         return businessGroups.flatMap((group) => group.businessUnits);
@@ -962,7 +951,7 @@ export default function MarketIntelligencePage() {
       businessGroups.forEach((group) => {
         const groupId = normalizeGroupId(group.group);
         const unitIdsForGroup = group.businessUnits.map((u) =>
-          getUnitId(groupId, u.name)
+          getUnitId(groupId, u.name),
         );
         const wholeGroupSelected =
           selectedSet.has(groupId) &&
@@ -997,7 +986,7 @@ export default function MarketIntelligencePage() {
     return isAllSelected
       ? selectedGroup.businessUnits
       : selectedGroup.businessUnits.filter((unit) =>
-          selectedGroupIds.has(getUnitId(groupId, unit.name))
+          selectedGroupIds.has(getUnitId(groupId, unit.name)),
         );
   }, [businessGroups, selectedBu, selectedGroup, selectedGroupIds]);
 
@@ -1007,11 +996,11 @@ export default function MarketIntelligencePage() {
         'Overall',
         businessGroups.flatMap((group) => group.businessUnits),
         'overall',
-        'Overall'
+        'Overall',
       );
       return [
         ...businessGroups.map((group) =>
-          buildGroupRow(group.group, group.businessUnits)
+          buildGroupRow(group.group, group.businessUnits),
         ),
         overallRow,
       ];
@@ -1020,20 +1009,19 @@ export default function MarketIntelligencePage() {
       return [];
     }
     const groupId = normalizeGroupId(selectedGroup.group);
-    // Show all BUs of the selected BG in the table; BU filter only affects overall/charts, not row visibility
-    const allUnitsForTable = selectedGroup.businessUnits;
-    const unitRows = allUnitsForTable.map((unit) =>
-      buildUnitRow(groupId, unit)
+    // Filter table to selected BUs only (same as waterfall); overall row reflects selected BUs for consistent UX with Budget page
+    const unitsForTable = selectedUnits;
+    const unitRows = unitsForTable.map((unit) =>
+      buildUnitRow(groupId, unit),
     );
-    // BG row always shows total of all BUs for that BG; checkbox state (checked/indeterminate/unchecked) reflects selection
     const overallRow = buildGroupRow(
       selectedGroup.group,
-      selectedGroup.businessUnits,
+      unitsForTable,
       `${groupId}-overall`,
-      selectedGroup.group
+      `${selectedGroup.group} overall`,
     );
-    return [overallRow, ...unitRows];
-  }, [businessGroups, selectedBu, selectedGroup]);
+    return [...unitRows, overallRow];
+  }, [businessGroups, selectedBu, selectedGroup, selectedUnits]);
 
   const orderedTableData = useMemo(() => {
     if (selectedBu !== 'all') {
@@ -1043,6 +1031,28 @@ export default function MarketIntelligencePage() {
     const remainingRows = tableData.filter((row) => !isOverallRowId(row.id));
     return overallRow ? [overallRow, ...remainingRows] : tableData;
   }, [tableData, selectedBu]);
+
+  const forecastMarginSummary = useMemo(() => {
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall'),
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return null;
+    }
+    const calcPercent = (numerator: number, denominator: number) =>
+      denominator === 0 ? 0 : (numerator / denominator) * 100;
+    return {
+      lastYear: {
+        gp: calcPercent(overallRow.gp.stly, overallRow.rev.stly),
+        op: calcPercent(overallRow.op.stly, overallRow.rev.stly),
+      },
+      budget: {
+        gp: calcPercent(overallRow.gp.baseline, overallRow.rev.baseline),
+        op: calcPercent(overallRow.op.baseline, overallRow.rev.baseline),
+      },
+    };
+  }, [tableData]);
 
   const allSelectableIdsInView = useMemo(() => {
     if (selectedBu !== 'all') return [];
@@ -1062,11 +1072,15 @@ export default function MarketIntelligencePage() {
   // BG checkbox state for "all" view: checked only when all BUs selected; indeterminate when some but not all BUs selected.
   // (We do not use groupSelected for checked so that selecting one BU shows the BG as indeterminate, not checked.)
   const bgCheckboxState = useMemo(() => {
-    if (selectedBu !== 'all') return {} as Record<string, { checked: boolean; indeterminate: boolean }>;
-    const result: Record<string, { checked: boolean; indeterminate: boolean }> = {};
+    if (selectedBu !== 'all')
+      return {} as Record<string, { checked: boolean; indeterminate: boolean }>;
+    const result: Record<string, { checked: boolean; indeterminate: boolean }> =
+      {};
     businessGroups.forEach((group) => {
       const groupId = normalizeGroupId(group.group);
-      const unitIds = group.businessUnits.map((u) => getUnitId(groupId, u.name));
+      const unitIds = group.businessUnits.map((u) =>
+        getUnitId(groupId, u.name),
+      );
       const allUnitsSelected = unitIds.every((id) => selectedGroupIds.has(id));
       const someUnitsSelected = unitIds.some((id) => selectedGroupIds.has(id));
       result[groupId] = {
@@ -1090,8 +1104,12 @@ export default function MarketIntelligencePage() {
     if (selectedGroup) {
       const gid = normalizeGroupId(selectedGroup.group);
       const overallId = `${gid}-overall`;
-      const unitIds = selectedGroup.businessUnits.map((u) => getUnitId(gid, u.name));
-      const allSelected = selectedGroupIds.has(overallId) || unitIds.every((id) => selectedGroupIds.has(id));
+      const unitIds = selectedGroup.businessUnits.map((u) =>
+        getUnitId(gid, u.name),
+      );
+      const allSelected =
+        selectedGroupIds.has(overallId) ||
+        unitIds.every((id) => selectedGroupIds.has(id));
       const someSelected = unitIds.some((id) => selectedGroupIds.has(id));
       const indeterminate = someSelected && !allSelected;
       const el = bgCheckboxRefs.current[overallId];
@@ -1107,7 +1125,7 @@ export default function MarketIntelligencePage() {
 
       const getBuIdsForBg = (bid: string): string[] => {
         const g = businessGroups.find(
-          (gr) => normalizeGroupId(gr.group) === bid
+          (gr) => normalizeGroupId(gr.group) === bid,
         );
         if (!g) return [];
         const gid = normalizeGroupId(g.group);
@@ -1116,9 +1134,7 @@ export default function MarketIntelligencePage() {
       const getParentBgId = (id: string): string | undefined => {
         const g = businessGroups.find((gr) => {
           const gid = normalizeGroupId(gr.group);
-          return gr.businessUnits.some(
-            (u) => getUnitId(gid, u.name) === id
-          );
+          return gr.businessUnits.some((u) => getUnitId(gid, u.name) === id);
         });
         return g ? normalizeGroupId(g.group) : undefined;
       };
@@ -1128,8 +1144,8 @@ export default function MarketIntelligencePage() {
         !isOverallRowId(id) &&
         !businessGroups.some((g) =>
           g.businessUnits.some(
-            (u) => getUnitId(normalizeGroupId(g.group), u.name) === id
-          )
+            (u) => getUnitId(normalizeGroupId(g.group), u.name) === id,
+          ),
         );
 
       const next = new Set(selectedGroupIds);
@@ -1140,7 +1156,7 @@ export default function MarketIntelligencePage() {
           // Single-BG view: when checkbox appears checked (all BUs selected), clicking should unselect overall and all BUs
           const gid = normalizeGroupId(selectedGroup.group);
           const buIdsForCurrentBg = selectedGroup.businessUnits.map((u) =>
-            getUnitId(gid, u.name)
+            getUnitId(gid, u.name),
           );
           const allBUsSelected = buIdsForCurrentBg.every((id) => next.has(id));
           if (allBUsSelected) {
@@ -1158,7 +1174,7 @@ export default function MarketIntelligencePage() {
             const gid = normalizeGroupId(selectedGroup.group);
             next.add(bgId);
             selectedGroup.businessUnits.forEach((u) =>
-              next.add(getUnitId(gid, u.name))
+              next.add(getUnitId(gid, u.name)),
             );
           } else {
             allSelectableIdsInView.forEach((id) => next.add(id));
@@ -1176,10 +1192,9 @@ export default function MarketIntelligencePage() {
               (tableData.some((r) => r.id === id && !isOverallRowId(r.id)) ||
                 businessGroups.some((g) =>
                   g.businessUnits.some(
-                    (u) =>
-                      getUnitId(normalizeGroupId(g.group), u.name) === id
-                  )
-                ))
+                    (u) => getUnitId(normalizeGroupId(g.group), u.name) === id,
+                  ),
+                )),
           );
           if (!anyBgOrBuLeft) skipEmptyFallback = true;
         } else {
@@ -1201,10 +1216,9 @@ export default function MarketIntelligencePage() {
               (tableData.some((r) => r.id === id && !isOverallRowId(r.id)) ||
                 businessGroups.some((g) =>
                   g.businessUnits.some(
-                    (u) =>
-                      getUnitId(normalizeGroupId(g.group), u.name) === id
-                  )
-                ))
+                    (u) => getUnitId(normalizeGroupId(g.group), u.name) === id,
+                  ),
+                )),
           );
           if (!anyBgOrBuLeft && overallId) {
             next.delete(overallId);
@@ -1232,11 +1246,10 @@ export default function MarketIntelligencePage() {
           nextParams.set('bg', gid);
           const overallId = `${gid}-overall`;
           const unitIds = selectedGroup.businessUnits.map((u) =>
-            getUnitId(gid, u.name)
+            getUnitId(gid, u.name),
           );
           const allSelected =
-            next.has(overallId) ||
-            unitIds.every((id) => next.has(id));
+            next.has(overallId) || unitIds.every((id) => next.has(id));
           if (allSelected) {
             nextParams.delete('bu');
             nextParams.delete('units');
@@ -1266,7 +1279,7 @@ export default function MarketIntelligencePage() {
       selectedGroup,
       businessGroups,
       allSelectableIdsInView,
-    ]
+    ],
   );
 
   // When selectedBu === 'all', sync URL selected param to selectedGroupIds
@@ -1300,8 +1313,12 @@ export default function MarketIntelligencePage() {
       .filter((id): id is string => id != null);
     if (validIds.length === 0) return;
     if (selectedGroupIds.size > validIds.length) return;
-    if (selectedGroupIds.size > 0 && selectedGroupIds.size < validIds.length) return;
-    if (validIds.length === 1 && (validIds[0] === 'overall' || validIds[0].endsWith('-overall'))) {
+    if (selectedGroupIds.size > 0 && selectedGroupIds.size < validIds.length)
+      return;
+    if (
+      validIds.length === 1 &&
+      (validIds[0] === 'overall' || validIds[0].endsWith('-overall'))
+    ) {
       setSelectedGroupIds(new Set(allSelectableIdsInView));
       return;
     }
@@ -1313,7 +1330,13 @@ export default function MarketIntelligencePage() {
       return;
     }
     setSelectedGroupIds(new Set(validIds));
-  }, [searchParams, selectedBu, businessGroups, selectedGroupIds.size, allSelectableIdsInView]);
+  }, [
+    searchParams,
+    selectedBu,
+    businessGroups,
+    selectedGroupIds.size,
+    allSelectableIdsInView,
+  ]);
 
   // Default selection to full set when selectedBu === 'all' and selection is empty
   useEffect(() => {
@@ -1345,7 +1368,13 @@ export default function MarketIntelligencePage() {
         });
       }
     }
-  }, [selectedBu, selectedGroupIds.size, tableData, setSearchParams, allSelectableIdsInView]);
+  }, [
+    selectedBu,
+    selectedGroupIds.size,
+    tableData,
+    setSearchParams,
+    allSelectableIdsInView,
+  ]);
 
   // Sync header (Select BG / Select BU) with table checkbox selection: when in "All BGs" view and
   // the user narrows the table selection to a single BG (all or some BUs), update URL so the header reflects it.
@@ -1354,7 +1383,12 @@ export default function MarketIntelligencePage() {
     if (selectedGroupIds.size === 0) return;
     const overallRow = tableData.find((row) => isOverallRowId(row.id));
     const overallId = overallRow?.id;
-    if (overallId && selectedGroupIds.has(overallId) && selectedGroupIds.size === 1) return;
+    if (
+      overallId &&
+      selectedGroupIds.has(overallId) &&
+      selectedGroupIds.size === 1
+    )
+      return;
     if (overallId && selectedGroupIds.has(overallId)) return;
 
     const bgIds = businessGroups.map((g) => normalizeGroupId(g.group));
@@ -1363,7 +1397,7 @@ export default function MarketIntelligencePage() {
       businessGroups.some((g) => {
         const gid = normalizeGroupId(g.group);
         return g.businessUnits.some((u) => getUnitId(gid, u.name) === id);
-      })
+      }),
     );
 
     const unitToBg = new Map<string, string>();
@@ -1373,18 +1407,31 @@ export default function MarketIntelligencePage() {
         unitToBg.set(getUnitId(gid, u.name), gid);
       });
     });
-    const bgsFromUnits = [...new Set(selectedUnitIds.map((id) => unitToBg.get(id)).filter(Boolean))] as string[];
-    const singleBgId = selectedBgIds.length === 1 ? selectedBgIds[0] : bgsFromUnits.length === 1 && selectedBgIds.length === 0 ? bgsFromUnits[0] : null;
+    const bgsFromUnits = [
+      ...new Set(selectedUnitIds.map((id) => unitToBg.get(id)).filter(Boolean)),
+    ] as string[];
+    const singleBgId =
+      selectedBgIds.length === 1
+        ? selectedBgIds[0]
+        : bgsFromUnits.length === 1 && selectedBgIds.length === 0
+          ? bgsFromUnits[0]
+          : null;
     if (singleBgId == null) return;
 
-    const group = businessGroups.find((gr) => normalizeGroupId(gr.group) === singleBgId);
+    const group = businessGroups.find(
+      (gr) => normalizeGroupId(gr.group) === singleBgId,
+    );
     if (!group) return;
     const gid = normalizeGroupId(group.group);
     const unitIds = group.businessUnits.map((u) => getUnitId(gid, u.name));
-    const allUnitsSelected = unitIds.every((id) => selectedGroupIds.has(id)) || selectedGroupIds.has(gid);
+    const allUnitsSelected =
+      unitIds.every((id) => selectedGroupIds.has(id)) ||
+      selectedGroupIds.has(gid);
     const unitNames = allUnitsSelected
       ? []
-      : group.businessUnits.filter((u) => selectedGroupIds.has(getUnitId(gid, u.name))).map((u) => u.name);
+      : group.businessUnits
+          .filter((u) => selectedGroupIds.has(getUnitId(gid, u.name)))
+          .map((u) => u.name);
 
     // Sync selectedGroupIds so table and Select BU pills reflect the single-BG selection immediately
     const singleBgOverallId = `${gid}-overall`;
@@ -1406,7 +1453,13 @@ export default function MarketIntelligencePage() {
       return next;
     });
     setSelectedBu(gid);
-  }, [selectedBu, selectedGroupIds, businessGroups, tableData, setSearchParams]);
+  }, [
+    selectedBu,
+    selectedGroupIds,
+    businessGroups,
+    tableData,
+    setSearchParams,
+  ]);
 
   const selectedUnitIds = useMemo(() => {
     if (selectedBu === 'all' || !selectedGroup) {
@@ -1501,7 +1554,7 @@ export default function MarketIntelligencePage() {
         acc.np += unit.netProfitBudget;
         return acc;
       },
-      { revenue: 0, gp: 0, op: 0, np: 0 }
+      { revenue: 0, gp: 0, op: 0, np: 0 },
     );
     return {
       revenue: roundToOne(toMillions(totals.revenue)),
@@ -1528,7 +1581,9 @@ export default function MarketIntelligencePage() {
     // Use current selection so waterfall updates when BGs are unchecked; fallback to all units only when selection is empty so chart never goes blank
     const unitsForTotals =
       selectedBu === 'all'
-        ? (selectedUnits.length > 0 ? selectedUnits : allUnits)
+        ? selectedUnits.length > 0
+          ? selectedUnits
+          : allUnits
         : selectedUnits;
     const totals = unitsForTotals.reduce(
       (acc, unit) => {
@@ -1537,7 +1592,7 @@ export default function MarketIntelligencePage() {
         acc.actualOp += unit.operatingProfit;
         return acc;
       },
-      { budgetOp: 0, forecastOp: 0, actualOp: 0 }
+      { budgetOp: 0, forecastOp: 0, actualOp: 0 },
     );
 
     return {
@@ -1563,36 +1618,38 @@ export default function MarketIntelligencePage() {
     // Calculate total early signals impact from ALL assumptions (not just enabled)
     const allEarlySignalsImpact = appliedAssumptions.reduce(
       (sum, assumption) => sum + assumption.impact,
-      0
+      0,
     );
 
     // Base forecast value (constant - not affected by which assumptions are enabled)
-    const baseForecastValue = roundToOne(forecastTargetValue - allEarlySignalsImpact);
+    const baseForecastValue = roundToOne(
+      forecastTargetValue - allEarlySignalsImpact,
+    );
     const totalDelta = roundToOne(baseForecastValue - budgetStageValue);
 
     // Calculate early signals from ENABLED applied assumptions only
     const enabledApplied = appliedAssumptions.filter((assumption) =>
-      enabledAssumptionIds.has(assumption.id)
+      enabledAssumptionIds.has(assumption.id),
     );
     const rawEarlySignals = enabledApplied.reduce(
       (sum, assumption) => sum + assumption.impact,
-      0
+      0,
     );
     const earlySignalsDelta = roundToOne(rawEarlySignals);
 
-  const split = [0.3, 0.2, 0.1, 0.25, 0.15];
-  const deltas = split.map((ratio) => roundToOne(totalDelta * ratio));
-  const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
-  deltas[deltas.length - 1] = roundToOne(
-    totalDelta - (roundedDelta - deltas[deltas.length - 1])
-  );
-  const [
-    marketDelta,
-    headwindTailwindDelta,
-    oneOffItemsDelta,
-    initiativePerformanceDelta,
-    otherFactorsDelta,
-  ] = deltas;
+    const split = [0.3, 0.2, 0.1, 0.25, 0.15];
+    const deltas = split.map((ratio) => roundToOne(totalDelta * ratio));
+    const roundedDelta = deltas.reduce((sum, value) => sum + value, 0);
+    deltas[deltas.length - 1] = roundToOne(
+      totalDelta - (roundedDelta - deltas[deltas.length - 1]),
+    );
+    const [
+      marketDelta,
+      headwindTailwindDelta,
+      oneOffItemsDelta,
+      initiativePerformanceDelta,
+      otherFactorsDelta,
+    ] = deltas;
 
     let running = budgetStageValue;
     const stages: BudgetForecastStage[] = [];
@@ -1607,14 +1664,14 @@ export default function MarketIntelligencePage() {
       isClickable: false,
     });
 
-  const addStage = (
+    const addStage = (
       stage: BudgetForecastStage['stage'],
       label: string,
       delta: number,
       description: string,
       typeOverride?: BudgetForecastStage['type'],
-    isClickable = true,
-    forecastSplit?: number
+      isClickable = true,
+      forecastSplit?: number,
     ) => {
       running += delta;
       stages.push({
@@ -1622,11 +1679,10 @@ export default function MarketIntelligencePage() {
         label,
         value: running,
         delta,
-        type:
-          typeOverride ?? (delta >= 0 ? 'positive' : 'negative'),
+        type: typeOverride ?? (delta >= 0 ? 'positive' : 'negative'),
         description,
         isClickable,
-      forecastSplit,
+        forecastSplit,
       });
     };
 
@@ -1637,7 +1693,7 @@ export default function MarketIntelligencePage() {
       'Volume/mix change due to customer forecast update',
       undefined,
       true,
-      0.6
+      0.6,
     );
     addStage(
       'headwinds-tailwinds',
@@ -1646,7 +1702,7 @@ export default function MarketIntelligencePage() {
       'Headwind/tailwind change',
       undefined,
       false,
-      0.5
+      0.5,
     );
     addStage(
       'one-off-items',
@@ -1655,7 +1711,7 @@ export default function MarketIntelligencePage() {
       'One-off items change',
       undefined,
       false,
-      0.3
+      0.3,
     );
     addStage(
       'l3-vs-target',
@@ -1664,7 +1720,7 @@ export default function MarketIntelligencePage() {
       'Initiative implementation',
       undefined,
       false,
-      0.7
+      0.7,
     );
     addStage(
       'one-off-adjustments',
@@ -1673,7 +1729,7 @@ export default function MarketIntelligencePage() {
       'Other factors',
       undefined,
       true,
-      0.4
+      0.4,
     );
 
     stages.push({
@@ -1692,7 +1748,7 @@ export default function MarketIntelligencePage() {
       earlySignalsDelta,
       'Preliminary signals with high uncertainty',
       'preliminary',
-      true
+      true,
     );
 
     stages.push({
@@ -1706,11 +1762,7 @@ export default function MarketIntelligencePage() {
     });
 
     return stages;
-  }, [
-    appliedAssumptions,
-    enabledAssumptionIds,
-    selectedForecastTotals,
-  ]);
+  }, [appliedAssumptions, enabledAssumptionIds, selectedForecastTotals]);
 
   const handleToggleAssumption = (assumptionId: string) => {
     setEnabledAssumptionIds((prev) => {
@@ -1737,7 +1789,7 @@ export default function MarketIntelligencePage() {
 
     // Remove from suggested
     setSuggestedAssumptions((prev) =>
-      prev.filter((a) => a.id !== assumptionId)
+      prev.filter((a) => a.id !== assumptionId),
     );
 
     // Add to applied
@@ -1817,7 +1869,7 @@ export default function MarketIntelligencePage() {
 
   const handleDeleteAssumption = (
     assumptionId: string,
-    isSuggested: boolean
+    isSuggested: boolean,
   ) => {
     // Find the assumption to get its name
     const assumption = isSuggested
@@ -1841,7 +1893,7 @@ export default function MarketIntelligencePage() {
     if (isSuggested) {
       // Remove from suggested
       setSuggestedAssumptions((prev) =>
-        prev.filter((a) => a.id !== assumptionId)
+        prev.filter((a) => a.id !== assumptionId),
       );
       // Remove from enabled suggested
       setEnabledSuggestedAssumptionIds((prev) => {
@@ -1852,7 +1904,7 @@ export default function MarketIntelligencePage() {
     } else {
       // Remove from applied
       setAppliedAssumptions((prev) =>
-        prev.filter((a) => a.id !== assumptionId)
+        prev.filter((a) => a.id !== assumptionId),
       );
       // Remove from enabled applied
       setEnabledAssumptionIds((prev) => {
@@ -1971,16 +2023,16 @@ export default function MarketIntelligencePage() {
             </div>
             <div className='py-4'>
               <button
-              onClick={() => setIsReviseBudgetModalOpen(true)}
-              disabled={!isSpecificBuSelected}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isSpecificBuSelected
-                  ? 'text-white bg-primary-600 hover:bg-primary-700'
-                  : 'text-gray-400 bg-gray-200 cursor-not-allowed'
-              }`}>
-              <PlusIcon className='w-5 h-5' />
-              Revise budget target
-            </button>
+                onClick={() => setIsReviseBudgetModalOpen(true)}
+                disabled={!isSpecificBuSelected}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isSpecificBuSelected
+                    ? 'text-white bg-primary-600 hover:bg-primary-700'
+                    : 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                }`}>
+                <PlusIcon className='w-5 h-5' />
+                Revise budget target
+              </button>
             </div>
           </div>
         </div>
@@ -2017,7 +2069,7 @@ export default function MarketIntelligencePage() {
                       next.clear();
                       next.add(overallId);
                       selectedGroup.businessUnits.forEach((u) =>
-                        next.add(getUnitId(groupId, u.name))
+                        next.add(getUnitId(groupId, u.name)),
                       );
                       setSearchParams((prevParams) => {
                         const params = new URLSearchParams(prevParams);
@@ -2039,7 +2091,7 @@ export default function MarketIntelligencePage() {
                     setSearchParams((prevParams) => {
                       const params = new URLSearchParams(prevParams);
                       const selectedUnitIds = Array.from(next).filter(
-                        (id) => id !== overallId
+                        (id) => id !== overallId,
                       );
                       if (selectedUnitIds.length === 0) {
                         params.delete('bu');
@@ -2049,8 +2101,8 @@ export default function MarketIntelligencePage() {
                       const unitNames = selectedGroup.businessUnits
                         .filter((unit) =>
                           selectedUnitIds.includes(
-                            getUnitId(groupId, unit.name)
-                          )
+                            getUnitId(groupId, unit.name),
+                          ),
                         )
                         .map((unit) => unit.name);
                       if (unitNames.length === 0) {
@@ -2117,7 +2169,9 @@ export default function MarketIntelligencePage() {
             <div className='space-y-3'>
               <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
                 {keyCallOut.bulletPoints.map((point, index) => (
-                  <li key={index} className='text-sm'>
+                  <li
+                    key={index}
+                    className='text-sm'>
                     {point}
                   </li>
                 ))}
@@ -2138,24 +2192,18 @@ export default function MarketIntelligencePage() {
               <h2 className='text-2xl font-bold text-gray-900'>
                 Forecast by Business Group
               </h2>
-              <p className='text-sm text-gray-600 mt-1'>
-                Mn, {currencyLabel}
-              </p>
+              <p className='text-sm text-gray-600 mt-1'>Mn, {currencyLabel}</p>
             </div>
             <div className='flex items-center gap-2'>
               <span className='text-sm text-gray-600'>Show Details</span>
               <button
-                onClick={() =>
-                  setShowComparisonDetails(!showComparisonDetails)
-                }
+                onClick={() => setShowComparisonDetails(!showComparisonDetails)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                   showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
                 }`}>
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    showComparisonDetails
-                      ? 'translate-x-6'
-                      : 'translate-x-1'
+                    showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -2200,7 +2248,7 @@ export default function MarketIntelligencePage() {
                     selectedBu === 'all' &&
                     group.id !== 'overall' &&
                     businessGroups.some(
-                      (g) => normalizeGroupId(g.group) === group.id
+                      (g) => normalizeGroupId(g.group) === group.id,
                     );
                   const isExpanded = expandedRows.has(group.id);
 
@@ -2210,11 +2258,17 @@ export default function MarketIntelligencePage() {
                         group,
                         !!isExpandable,
                         false,
-                        isOverallRow
+                        isOverallRow,
                       )}
                       {isExpanded &&
                         getExpandedSubGroups(group.id).map((subGroup) =>
-                          renderTableRow(subGroup, false, true, false, group.id)
+                          renderTableRow(
+                            subGroup,
+                            false,
+                            true,
+                            false,
+                            group.id,
+                          ),
                         )}
                     </Fragment>
                   );
@@ -2222,6 +2276,40 @@ export default function MarketIntelligencePage() {
               </tbody>
             </table>
           </div>
+          {forecastMarginSummary && (
+            <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
+              <div className='flex w-full flex-col gap-4 sm:items-center sm:justify-between'>
+                <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                  <div className='flex flex-col'>
+                    <span>last year actual GP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.lastYear.gp.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className='flex flex-col items-end'>
+                    <span>current year budget GP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.budget.gp.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                <div className='flex w-full items-center justify-between gap-6 text-gray-700'>
+                  <div className='flex flex-col'>
+                    <span>last year actual OP</span>
+                    <span className='text-3xl  font-semibold'>
+                      {forecastMarginSummary.lastYear.op.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className='flex flex-col items-end'>
+                    <span>current year budget OP</span>
+                    <span className='text-3xl font-semibold'>
+                      {forecastMarginSummary.budget.op.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className='space-y-8'>
@@ -2236,28 +2324,28 @@ export default function MarketIntelligencePage() {
                   {selectedBgName} - {selectedBuLabel}
                 </p>
               </div>
-            <div className='flex flex-wrap items-center gap-4 text-sm text-gray-700'>
-              <div className='flex items-center gap-2'>
-                <span className='h-3 w-3 rounded-sm bg-[#bbf7d0]' />
-                <span>Positive Impact (forecast)</span>
+              <div className='flex flex-wrap items-center gap-4 text-sm text-gray-700'>
+                <div className='flex items-center gap-2'>
+                  <span className='h-3 w-3 rounded-sm bg-[#bbf7d0]' />
+                  <span>Positive Impact (forecast)</span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <span className='h-3 w-3 rounded-sm bg-[#16a34a]' />
+                  <span>Positive Impact (realized)</span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <span className='h-3 w-3 rounded-sm bg-[#fecaca]' />
+                  <span>Negative Impact (forecast)</span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <span className='h-3 w-3 rounded-sm bg-[#dc2626]' />
+                  <span>Negative Impact (realized)</span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <span className='h-3 w-3 rounded border border-gray-900 border-dashed bg-transparent' />
+                  <span>Early signals</span>
+                </div>
               </div>
-              <div className='flex items-center gap-2'>
-                <span className='h-3 w-3 rounded-sm bg-[#16a34a]' />
-                <span>Positive Impact (realized)</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='h-3 w-3 rounded-sm bg-[#fecaca]' />
-                <span>Negative Impact (forecast)</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='h-3 w-3 rounded-sm bg-[#dc2626]' />
-                <span>Negative Impact (realized)</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='h-3 w-3 rounded border border-gray-900 border-dashed bg-transparent' />
-                <span>Early signals</span>
-              </div>
-            </div>
             </div>
             <BudgetForecastActualWaterfall
               stages={forecastWaterfallStages}
@@ -2279,126 +2367,126 @@ export default function MarketIntelligencePage() {
           {/* Assumptions Section - Side by Side Layout */}
           {activePerformanceSection === 'early-signals' && (
             <div className='flex items-start justify-center gap-8'>
-            {/* Applied Assumptions Panel */}
-            <div
-              className={`flex-1 bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-all duration-300 ${
-                isDragOverApplied
-                  ? 'border-primary-400 bg-primary-50/30'
-                  : 'border-gray-200'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}>
-              <div className='flex items-center justify-between mb-6'>
-                <div>
-                  <h2 className='text-2xl font-bold text-gray-900 mb-1'>
-                    Applied Assumptions
-                  </h2>
+              {/* Applied Assumptions Panel */}
+              <div
+                className={`flex-1 bg-white rounded-xl border-2 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-all duration-300 ${
+                  isDragOverApplied
+                    ? 'border-primary-400 bg-primary-50/30'
+                    : 'border-gray-200'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}>
+                <div className='flex items-center justify-between mb-6'>
+                  <div>
+                    <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+                      Applied Assumptions
+                    </h2>
+                  </div>
+                  <button
+                    onClick={handleViewOverallValueDrivers}
+                    className='px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 flex items-center'>
+                    <ChartBarIcon className='w-4 h-4 mr-2' />
+                    Value Drivers
+                  </button>
                 </div>
-                <button
-                  onClick={handleViewOverallValueDrivers}
-                  className='px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 flex items-center'>
-                  <ChartBarIcon className='w-4 h-4 mr-2' />
-                  Value Drivers
-                </button>
-              </div>
 
-              <div className='space-y-4'>
-                {filteredAppliedAssumptions.map((assumption) => {
-                  const isEnabled = enabledAssumptionIds.has(assumption.id);
-                  const stageLabel =
-                    mockOPWaterfallStages.find(
-                      (s) => s.stage === assumption.targetStage
-                    )?.label || assumption.targetStage;
-                  const displayLabel =
-                    assumption.targetStage === 'early-signals'
-                      ? 'early signal'
-                      : stageLabel;
+                <div className='space-y-4'>
+                  {filteredAppliedAssumptions.map((assumption) => {
+                    const isEnabled = enabledAssumptionIds.has(assumption.id);
+                    const stageLabel =
+                      mockOPWaterfallStages.find(
+                        (s) => s.stage === assumption.targetStage,
+                      )?.label || assumption.targetStage;
+                    const displayLabel =
+                      assumption.targetStage === 'early-signals'
+                        ? 'early signal'
+                        : stageLabel;
 
-                  return (
-                    <div
-                      key={assumption.id}
-                      className={`flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 ${
-                        assumption.valueDriverChanges &&
-                        assumption.valueDriverChanges.length > 0
-                          ? 'cursor-pointer'
-                          : ''
-                      }`}
-                      onClick={() => {
-                        if (
+                    return (
+                      <div
+                        key={assumption.id}
+                        className={`flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 ${
                           assumption.valueDriverChanges &&
                           assumption.valueDriverChanges.length > 0
-                        ) {
-                          handleViewAssumptionValueDrivers(assumption);
-                        }
-                      }}>
-                      <div className='flex-1 pr-4'>
-                        <div className='flex items-center gap-3 mb-2'>
-                          <div
-                            className='w-4 h-4 rounded border-2 border-white shadow-sm'
-                            style={{ backgroundColor: assumption.color }}
-                          />
-                          <h3 className='text-base font-semibold text-gray-900'>
-                            {assumption.name}
-                          </h3>
-                          <span
-                            className={`text-xs px-2 py-1 rounded font-semibold ${
-                              assumption.impactType === 'positive'
-                                ? 'bg-opportunity-100 text-opportunity-700'
-                                : 'bg-risk-100 text-risk-700'
-                            }`}>
-                            {assumption.impactType === 'positive'
-                              ? 'Tailwind'
-                              : 'Headwind'}
-                          </span>
-                        </div>
-                        <p className='text-sm text-gray-600 mb-2'>
-                          {assumption.description}
-                        </p>
-                        <div className='flex items-center gap-4 text-xs text-gray-500'>
-                          <span>
-                            Impact:{' '}
+                            ? 'cursor-pointer'
+                            : ''
+                        }`}
+                        onClick={() => {
+                          if (
+                            assumption.valueDriverChanges &&
+                            assumption.valueDriverChanges.length > 0
+                          ) {
+                            handleViewAssumptionValueDrivers(assumption);
+                          }
+                        }}>
+                        <div className='flex-1 pr-4'>
+                          <div className='flex items-center gap-3 mb-2'>
+                            <div
+                              className='w-4 h-4 rounded border-2 border-white shadow-sm'
+                              style={{ backgroundColor: assumption.color }}
+                            />
+                            <h3 className='text-base font-semibold text-gray-900'>
+                              {assumption.name}
+                            </h3>
                             <span
-                              className={`font-semibold ${
-                                assumption.impact >= 0
-                                  ? 'text-opportunity-600'
-                                  : 'text-risk-600'
+                              className={`text-xs px-2 py-1 rounded font-semibold ${
+                                assumption.impactType === 'positive'
+                                  ? 'bg-opportunity-100 text-opportunity-700'
+                                  : 'bg-risk-100 text-risk-700'
                               }`}>
-                              {assumption.impact > 0 ? '+' : ''}
-                              {assumption.impact.toFixed(1)}M
+                              {assumption.impactType === 'positive'
+                                ? 'Tailwind'
+                                : 'Headwind'}
                             </span>
-                          </span>
-                          <span>•</span>
-                          <span>Affects: {displayLabel}</span>
+                          </div>
+                          <p className='text-sm text-gray-600 mb-2'>
+                            {assumption.description}
+                          </p>
+                          <div className='flex items-center gap-4 text-xs text-gray-500'>
+                            <span>
+                              Impact:{' '}
+                              <span
+                                className={`font-semibold ${
+                                  assumption.impact >= 0
+                                    ? 'text-opportunity-600'
+                                    : 'text-risk-600'
+                                }`}>
+                                {assumption.impact > 0 ? '+' : ''}
+                                {assumption.impact.toFixed(1)}M
+                              </span>
+                            </span>
+                            <span>•</span>
+                            <span>Affects: {displayLabel}</span>
+                          </div>
+                        </div>
+                        <div className='flex items-center gap-3'>
+                          <input
+                            type='checkbox'
+                            checked={isEnabled}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggleAssumption(assumption.id);
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className='w-5 h-5 text-primary-600 rounded focus:ring-primary-500 cursor-pointer'
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteAssumption(assumption.id, false);
+                            }}
+                            className='p-1 text-gray-400 hover:text-red-600 transition-colors'>
+                            <TrashIcon className='w-5 h-5' />
+                          </button>
                         </div>
                       </div>
-                      <div className='flex items-center gap-3'>
-                        <input
-                          type='checkbox'
-                          checked={isEnabled}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleToggleAssumption(assumption.id);
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className='w-5 h-5 text-primary-600 rounded focus:ring-primary-500 cursor-pointer'
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteAssumption(assumption.id, false);
-                          }}
-                          className='p-1 text-gray-400 hover:text-red-600 transition-colors'>
-                          <TrashIcon className='w-5 h-5' />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
             </div>
           )}
 
@@ -2484,210 +2572,211 @@ export default function MarketIntelligencePage() {
           {/* Initiative Proposals - hidden for now */}
           {false && (
             <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-8 hover:shadow-xl transition-shadow duration-300'>
-            <div className='flex items-center justify-between mb-8'>
-              <div>
-                <h2 className='text-2xl font-bold text-gray-900 mb-1'>
-                  Initiative Proposals
-                </h2>
-                <p className='text-sm text-gray-500'>
-                  Proposals and initiatives to recover risks or boost tailwinds
-                  from applied assumptions
-                </p>
+              <div className='flex items-center justify-between mb-8'>
+                <div>
+                  <h2 className='text-2xl font-bold text-gray-900 mb-1'>
+                    Initiative Proposals
+                  </h2>
+                  <p className='text-sm text-gray-500'>
+                    Proposals and initiatives to recover risks or boost
+                    tailwinds from applied assumptions
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className='space-y-6'>
-              {appliedAssumptions.map((assumption) => {
-                const proposal = proposals.get(assumption.id);
-                const isPositive = assumption.impactType === 'positive';
+              <div className='space-y-6'>
+                {appliedAssumptions.map((assumption) => {
+                  const proposal = proposals.get(assumption.id);
+                  const isPositive = assumption.impactType === 'positive';
 
-                return (
-                  <div
-                    key={assumption.id}
-                    className={`p-6 rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 ${
-                      isPositive
-                        ? 'bg-gradient-to-br from-opportunity-50 to-opportunity-100/50 border-opportunity-300'
-                        : 'bg-gradient-to-br from-risk-50 to-risk-100/50 border-risk-300'
-                    }`}>
-                    <div className='flex items-start justify-between mb-3'>
-                      <div className='flex items-center space-x-3'>
-                        <div
-                          className={`p-2 rounded-full ${
-                            isPositive ? 'bg-opportunity-100' : 'bg-risk-100'
-                          }`}>
-                          {isPositive ? (
-                            <ArrowTrendingUpIcon className='w-5 h-5 text-opportunity-600' />
-                          ) : (
-                            <ArrowTrendingDownIcon className='w-5 h-5 text-risk-600' />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className='text-lg font-semibold text-gray-900'>
-                            {assumption.name}
-                          </h3>
-                          <p
-                            className={`text-sm font-bold ${
-                              isPositive
-                                ? 'text-opportunity-700'
-                                : 'text-risk-700'
+                  return (
+                    <div
+                      key={assumption.id}
+                      className={`p-6 rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-200 ${
+                        isPositive
+                          ? 'bg-gradient-to-br from-opportunity-50 to-opportunity-100/50 border-opportunity-300'
+                          : 'bg-gradient-to-br from-risk-50 to-risk-100/50 border-risk-300'
+                      }`}>
+                      <div className='flex items-start justify-between mb-3'>
+                        <div className='flex items-center space-x-3'>
+                          <div
+                            className={`p-2 rounded-full ${
+                              isPositive ? 'bg-opportunity-100' : 'bg-risk-100'
                             }`}>
-                            Impact: {assumption.impact > 0 ? '+' : ''}
-                            {formatAmountM(assumption.impact)} {currencyLabel}
-                          </p>
+                            {isPositive ? (
+                              <ArrowTrendingUpIcon className='w-5 h-5 text-opportunity-600' />
+                            ) : (
+                              <ArrowTrendingDownIcon className='w-5 h-5 text-risk-600' />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className='text-lg font-semibold text-gray-900'>
+                              {assumption.name}
+                            </h3>
+                            <p
+                              className={`text-sm font-bold ${
+                                isPositive
+                                  ? 'text-opportunity-700'
+                                  : 'text-risk-700'
+                              }`}>
+                              Impact: {assumption.impact > 0 ? '+' : ''}
+                              {formatAmountM(assumption.impact)} {currencyLabel}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Assumption Description */}
-                    <div className='mb-3'>
-                      <p className='text-sm text-gray-600'>
-                        {assumption.description}
-                      </p>
-                    </div>
+                      {/* Assumption Description */}
+                      <div className='mb-3'>
+                        <p className='text-sm text-gray-600'>
+                          {assumption.description}
+                        </p>
+                      </div>
 
-                    {/* Proposal Section */}
-                    {proposal ? (
-                      <div className='mt-5 p-5 bg-white rounded-xl border border-gray-200 shadow-sm'>
-                        {proposal.description && (
-                          <p className='text-sm font-medium text-gray-900 mb-3'>
-                            {proposal.description}
-                          </p>
-                        )}
-                        <div className='flex items-center justify-between mb-3'>
-                          <p className='text-sm font-medium text-gray-700'>
-                            Initiatives ({proposal.actions.length}):
-                          </p>
-                          <button
-                            onClick={() => handleCreateAction(proposal)}
-                            className='px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors flex items-center'>
-                            <PlusIcon className='w-3 h-3 mr-1' />
-                            Add Initiative
-                          </button>
-                        </div>
-                        <div className='space-y-2'>
-                          {proposal.actions.map((action: ActionProposal) => {
-                            const isReadyInWave = action.stage !== undefined;
+                      {/* Proposal Section */}
+                      {proposal ? (
+                        <div className='mt-5 p-5 bg-white rounded-xl border border-gray-200 shadow-sm'>
+                          {proposal.description && (
+                            <p className='text-sm font-medium text-gray-900 mb-3'>
+                              {proposal.description}
+                            </p>
+                          )}
+                          <div className='flex items-center justify-between mb-3'>
+                            <p className='text-sm font-medium text-gray-700'>
+                              Initiatives ({proposal.actions.length}):
+                            </p>
+                            <button
+                              onClick={() => handleCreateAction(proposal)}
+                              className='px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors flex items-center'>
+                              <PlusIcon className='w-3 h-3 mr-1' />
+                              Add Initiative
+                            </button>
+                          </div>
+                          <div className='space-y-2'>
+                            {proposal.actions.map((action: ActionProposal) => {
+                              const isReadyInWave = action.stage !== undefined;
 
-                            // Get L-gate stage color
-                            const getStageColor = (stage?: string) => {
-                              switch (stage) {
-                                case 'L0':
-                                  return 'bg-gray-500 text-white';
-                                case 'L1':
-                                  return 'bg-blue-500 text-white';
-                                case 'L2':
-                                  return 'bg-green-500 text-white';
-                                case 'L3':
-                                  return 'bg-yellow-500 text-white';
-                                case 'L4':
-                                  return 'bg-orange-500 text-white';
-                                case 'L5':
-                                  return 'bg-red-500 text-white';
-                                default:
-                                  return 'bg-gray-400 text-white';
-                              }
-                            };
+                              // Get L-gate stage color
+                              const getStageColor = (stage?: string) => {
+                                switch (stage) {
+                                  case 'L0':
+                                    return 'bg-gray-500 text-white';
+                                  case 'L1':
+                                    return 'bg-blue-500 text-white';
+                                  case 'L2':
+                                    return 'bg-green-500 text-white';
+                                  case 'L3':
+                                    return 'bg-yellow-500 text-white';
+                                  case 'L4':
+                                    return 'bg-orange-500 text-white';
+                                  case 'L5':
+                                    return 'bg-red-500 text-white';
+                                  default:
+                                    return 'bg-gray-400 text-white';
+                                }
+                              };
 
-                            return (
-                              <div
-                                key={action.id}
-                                className={`flex items-start justify-between p-4 rounded-lg transition-all duration-200 ${
-                                  isReadyInWave
-                                    ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 shadow-sm'
-                                    : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                                }`}>
-                                <div className='flex-1'>
-                                  <div className='flex items-center gap-2 mb-1'>
-                                    <p className='text-sm font-medium text-gray-900'>
-                                      {action.description}
-                                    </p>
-                                    {action.isAIGenerated && !action.stage && (
-                                      <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
-                                        <span className='text-sm'>✨</span>
-                                        <span>AI</span>
+                              return (
+                                <div
+                                  key={action.id}
+                                  className={`flex items-start justify-between p-4 rounded-lg transition-all duration-200 ${
+                                    isReadyInWave
+                                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 shadow-sm'
+                                      : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                                  }`}>
+                                  <div className='flex-1'>
+                                    <div className='flex items-center gap-2 mb-1'>
+                                      <p className='text-sm font-medium text-gray-900'>
+                                        {action.description}
+                                      </p>
+                                      {action.isAIGenerated &&
+                                        !action.stage && (
+                                          <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                                            <span className='text-sm'>✨</span>
+                                            <span>AI</span>
+                                          </span>
+                                        )}
+                                    </div>
+                                    <div className='mt-2 flex items-center flex-wrap gap-2'>
+                                      <span className='text-xs text-gray-500'>
+                                        Expected Impact:{' '}
+                                        {formatAmountM(action.expectedImpact)}{' '}
+                                        {currencyLabel}
                                       </span>
-                                    )}
+                                      <span className='text-xs text-gray-400'>
+                                        •
+                                      </span>
+                                      {action.feasibility === 'high' ? (
+                                        <span className='px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded-full border border-green-300'>
+                                          High Feasibility
+                                        </span>
+                                      ) : (
+                                        <span className='text-xs text-gray-500 capitalize'>
+                                          Feasibility: {action.feasibility}
+                                        </span>
+                                      )}
+                                      <span className='text-xs text-gray-400'>
+                                        •
+                                      </span>
+                                      {action.priority === 'high' ? (
+                                        <span className='px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full border border-red-300'>
+                                          High Priority
+                                        </span>
+                                      ) : (
+                                        <span className='text-xs text-gray-500 capitalize'>
+                                          Priority: {action.priority}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className='mt-2 flex items-center flex-wrap gap-2'>
-                                    <span className='text-xs text-gray-500'>
-                                      Expected Impact:{' '}
-                                      {formatAmountM(action.expectedImpact)}{' '}
-                                      {currencyLabel}
-                                    </span>
-                                    <span className='text-xs text-gray-400'>
-                                      •
-                                    </span>
-                                    {action.feasibility === 'high' ? (
-                                      <span className='px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded-full border border-green-300'>
-                                        High Feasibility
-                                      </span>
-                                    ) : (
-                                      <span className='text-xs text-gray-500 capitalize'>
-                                        Feasibility: {action.feasibility}
-                                      </span>
-                                    )}
-                                    <span className='text-xs text-gray-400'>
-                                      •
-                                    </span>
-                                    {action.priority === 'high' ? (
-                                      <span className='px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full border border-red-300'>
-                                        High Priority
-                                      </span>
-                                    ) : (
-                                      <span className='text-xs text-gray-500 capitalize'>
-                                        Priority: {action.priority}
-                                      </span>
+                                  <div className='ml-4 flex flex-col items-end gap-2'>
+                                    {isReadyInWave && action.stage ? (
+                                      <div
+                                        className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${getStageColor(
+                                          action.stage,
+                                        )}`}>
+                                        {action.stage}
+                                      </div>
+                                    ) : isReadyInWave ? (
+                                      <div className='px-3 py-1 text-xs font-medium text-yellow-800 bg-gradient-to-r from-yellow-200 to-yellow-300 rounded-full border border-yellow-400 shadow-sm'>
+                                        ✨ Ready in Wave
+                                      </div>
+                                    ) : null}
+                                    {!isReadyInWave && (
+                                      <button
+                                        onClick={() => {
+                                          setSelectedAction(action);
+                                          setIsModalOpen(true);
+                                        }}
+                                        className='px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 rounded-lg shadow-lg hover:shadow-xl hover:from-orange-600 hover:via-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-200 flex items-center gap-1.5 border-2 border-orange-400'>
+                                        <span>✨</span>
+                                        <span>Wave It!</span>
+                                      </button>
                                     )}
                                   </div>
                                 </div>
-                                <div className='ml-4 flex flex-col items-end gap-2'>
-                                  {isReadyInWave && action.stage ? (
-                                    <div
-                                      className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${getStageColor(
-                                        action.stage
-                                      )}`}>
-                                      {action.stage}
-                                    </div>
-                                  ) : isReadyInWave ? (
-                                    <div className='px-3 py-1 text-xs font-medium text-yellow-800 bg-gradient-to-r from-yellow-200 to-yellow-300 rounded-full border border-yellow-400 shadow-sm'>
-                                      ✨ Ready in Wave
-                                    </div>
-                                  ) : null}
-                                  {!isReadyInWave && (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedAction(action);
-                                        setIsModalOpen(true);
-                                      }}
-                                      className='px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 rounded-lg shadow-lg hover:shadow-xl hover:from-orange-600 hover:via-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-200 flex items-center gap-1.5 border-2 border-orange-400'>
-                                      <span>✨</span>
-                                      <span>Wave It!</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className='mt-5 p-5 bg-white rounded-xl border border-gray-200 shadow-sm'>
-                        <div className='flex items-center justify-between'>
-                          <p className='text-sm text-gray-600'>
-                            No proposal created yet for this assumption
-                          </p>
-                          <button
-                            onClick={() => handleCreateProposal(assumption)}
-                            className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors flex items-center'>
-                            <PlusIcon className='w-4 h-4 mr-2' />
-                            Create Proposal
-                          </button>
+                      ) : (
+                        <div className='mt-5 p-5 bg-white rounded-xl border border-gray-200 shadow-sm'>
+                          <div className='flex items-center justify-between'>
+                            <p className='text-sm text-gray-600'>
+                              No proposal created yet for this assumption
+                            </p>
+                            <button
+                              onClick={() => handleCreateProposal(assumption)}
+                              className='px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors flex items-center'>
+                              <PlusIcon className='w-4 h-4 mr-2' />
+                              Create Proposal
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -2708,7 +2797,7 @@ export default function MarketIntelligencePage() {
                 const next = new Map(prev);
                 for (const [proposalId, proposal] of next.entries()) {
                   const actionIndex = proposal.actions.findIndex(
-                    (a) => a.id === selectedAction.id
+                    (a) => a.id === selectedAction.id,
                   );
                   if (actionIndex !== -1) {
                     const updatedActions = [...proposal.actions];
@@ -2763,19 +2852,19 @@ export default function MarketIntelligencePage() {
             if (selectedAssumption?.isSuggested) {
               setSuggestedAssumptions((prev) =>
                 prev.map((a) =>
-                  a.id === assumptionId ? { ...a, valueDriverChanges } : a
-                )
+                  a.id === assumptionId ? { ...a, valueDriverChanges } : a,
+                ),
               );
             } else {
               setAppliedAssumptions((prev) =>
                 prev.map((a) =>
-                  a.id === assumptionId ? { ...a, valueDriverChanges } : a
-                )
+                  a.id === assumptionId ? { ...a, valueDriverChanges } : a,
+                ),
               );
             }
             // Update selected assumption to reflect changes
             setSelectedAssumption((prev) =>
-              prev ? { ...prev, valueDriverChanges } : null
+              prev ? { ...prev, valueDriverChanges } : null,
             );
           }}
         />
@@ -2806,7 +2895,7 @@ export default function MarketIntelligencePage() {
       )}
 
       {/* Revise Budget Target Modal */}
-        <ReviseBudgetModal
+      <ReviseBudgetModal
         isOpen={isReviseBudgetModalOpen}
         onClose={() => setIsReviseBudgetModalOpen(false)}
         selectedBgId={selectedBu}
@@ -2815,18 +2904,18 @@ export default function MarketIntelligencePage() {
         selectedBuLabel={selectedBuLabel}
         budgetTotals={selectedBudgetTotals}
         bgOptions={mainBuOptions}
-          budgetChanges={budgetChanges}
-          bgUnitOptions={bgUnitOptions}
-          onSave={(payload) =>
-            updateBudgets({
-              groupId: payload.bgId,
-              unitIds: payload.unitIds,
-              updates: payload.updates,
-              note: payload.note,
-              source: 'MarketIntelligencePage',
-            })
-          }
-          defaultUnitIds={selectedUnitIds}
+        budgetChanges={budgetChanges}
+        bgUnitOptions={bgUnitOptions}
+        onSave={(payload) =>
+          updateBudgets({
+            groupId: payload.bgId,
+            unitIds: payload.unitIds,
+            updates: payload.updates,
+            note: payload.note,
+            source: 'MarketIntelligencePage',
+          })
+        }
+        defaultUnitIds={selectedUnitIds}
       />
     </div>
   );
@@ -2964,7 +3053,7 @@ interface ValueDriverModalProps {
   >;
   onUpdateAssumption?: (
     assumptionId: string,
-    valueDriverChanges: ValueDriverChange[]
+    valueDriverChanges: ValueDriverChange[],
   ) => void;
 }
 
@@ -3090,14 +3179,14 @@ function ValueDriverModal({
 
   const availableDrivers = getAllValueDrivers();
   const unusedDrivers = availableDrivers.filter(
-    (d) => !editingChanges.has(d.id)
+    (d) => !editingChanges.has(d.id),
   );
 
   const handleSaveChanges = () => {
     if (!selectedAssumption || !onUpdateAssumption) return;
 
     const changes: ValueDriverChange[] = Array.from(
-      editingChanges.entries()
+      editingChanges.entries(),
     ).map(([valueDriverId, change]) => ({
       valueDriverId,
       change: change.change,
@@ -3207,7 +3296,7 @@ function ValueDriverModal({
   const handleUpdateChange = (
     driverId: string,
     field: 'change' | 'unit' | 'changePercent',
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setEditingChanges((prev) => {
       const next = new Map(prev);
@@ -3478,7 +3567,7 @@ function ValueDriverModal({
                       {financial.metrics.map((metric) => {
                         // Filter value drivers that have changes
                         const driversWithChanges = metric.valueDrivers.filter(
-                          (driver) => valueDriverChanges.has(driver.id)
+                          (driver) => valueDriverChanges.has(driver.id),
                         );
 
                         if (driversWithChanges.length === 0) return null;
@@ -3498,7 +3587,7 @@ function ValueDriverModal({
                             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4'>
                               {driversWithChanges.map((driver) => {
                                 const change = valueDriverChanges.get(
-                                  driver.id
+                                  driver.id,
                                 );
                                 const baseValue = driver.value || 0;
                                 const changeValue = change?.change || 0;
@@ -3560,7 +3649,7 @@ function ValueDriverModal({
                                               handleUpdateChange(
                                                 driver.id,
                                                 'change',
-                                                parseFloat(e.target.value) || 0
+                                                parseFloat(e.target.value) || 0,
                                               )
                                             }
                                             className='w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500'
@@ -3578,7 +3667,7 @@ function ValueDriverModal({
                                               handleUpdateChange(
                                                 driver.id,
                                                 'unit',
-                                                e.target.value
+                                                e.target.value,
                                               )
                                             }
                                             className='w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500'
@@ -3593,9 +3682,9 @@ function ValueDriverModal({
                                                 ? editingChanges.get(driver.id)
                                                     ?.changePercent
                                                 : change?.changePercent !==
-                                                  undefined
-                                                ? change.changePercent
-                                                : ''
+                                                    undefined
+                                                  ? change.changePercent
+                                                  : ''
                                             }
                                             onChange={(e) =>
                                               handleUpdateChange(
@@ -3603,7 +3692,7 @@ function ValueDriverModal({
                                                 'changePercent',
                                                 e.target.value
                                                   ? parseFloat(e.target.value)
-                                                  : undefined
+                                                  : undefined,
                                               )
                                             }
                                             className='w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500'
@@ -3665,7 +3754,7 @@ function ValueDriverModal({
                                             {formatAmount(
                                               baseValue +
                                                 (editingChanges.get(driver.id)
-                                                  ?.change || changeValue)
+                                                  ?.change || changeValue),
                                             )}
                                             {editingChanges.get(driver.id)
                                               ?.unit ||
@@ -3891,7 +3980,7 @@ function CreateActionModal({
   const [description, setDescription] = useState('');
   const [expectedImpact, setExpectedImpact] = useState('');
   const [feasibility, setFeasibility] = useState<'high' | 'medium' | 'low'>(
-    'medium'
+    'medium',
   );
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
 
@@ -4096,8 +4185,8 @@ function ReviseBudgetModal({
   }, [isOpen, selectedBgId, selectedBuId, budgetTotals]);
 
   const availableBuOptions = useMemo(
-    () => (bgId ? bgUnitOptions[bgId] ?? [] : []),
-    [bgId, bgUnitOptions]
+    () => (bgId ? (bgUnitOptions[bgId] ?? []) : []),
+    [bgId, bgUnitOptions],
   );
 
   useEffect(() => {
@@ -4155,8 +4244,7 @@ function ReviseBudgetModal({
   };
 
   const hasSelectedBg = Boolean(bgId) && bgId !== 'all';
-  const hasSelectedBu =
-    Boolean(buId) && buId !== 'all' && buId !== 'multiple';
+  const hasSelectedBu = Boolean(buId) && buId !== 'all' && buId !== 'multiple';
   const pendingUpdates = buildUpdates();
   const canUpdate =
     hasSelectedBg && hasSelectedBu && Object.keys(pendingUpdates).length > 0;
@@ -4167,11 +4255,7 @@ function ReviseBudgetModal({
       return;
     }
     const unitIds =
-      buId === 'all'
-        ? 'all'
-        : buId === 'multiple'
-        ? defaultUnitIds
-        : [buId];
+      buId === 'all' ? 'all' : buId === 'multiple' ? defaultUnitIds : [buId];
 
     onSave({
       bgId,
@@ -4220,7 +4304,9 @@ function ReviseBudgetModal({
                   className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500'>
                   <option value='all'>All BGs</option>
                   {bgOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
+                    <option
+                      key={option.id}
+                      value={option.id}>
                       {option.name}
                     </option>
                   ))}
@@ -4234,14 +4320,18 @@ function ReviseBudgetModal({
                   value={buId}
                   onChange={(e) => setBuId(e.target.value)}
                   className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500'>
-                  <option value='all' disabled>
+                  <option
+                    value='all'
+                    disabled>
                     All BUs
                   </option>
                   {selectedBuId === 'multiple' && bgId === selectedBgId && (
                     <option value='multiple'>Multiple BUs selected</option>
                   )}
                   {availableBuOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
+                    <option
+                      key={option.id}
+                      value={option.id}>
                       {option.name}
                     </option>
                   ))}
@@ -4345,7 +4435,9 @@ function ReviseBudgetModal({
                 ) : (
                   <ul className='divide-y divide-gray-200 text-sm text-gray-700'>
                     {recentChanges.map((change) => (
-                      <li key={change.id} className='px-4 py-3'>
+                      <li
+                        key={change.id}
+                        className='px-4 py-3'>
                         <div className='flex items-center justify-between'>
                           <span className='font-medium text-gray-900'>
                             {change.group} - {change.unit}
@@ -4360,7 +4452,7 @@ function ReviseBudgetModal({
                               (item) =>
                                 `${item.field.replace('Budget', '')}: ${
                                   item.before
-                                } → ${item.after}`
+                                } → ${item.after}`,
                             )
                             .join(', ')}
                         </div>
