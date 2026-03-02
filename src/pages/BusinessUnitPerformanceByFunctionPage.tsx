@@ -51,8 +51,8 @@ const PROCUREMENT_DEVIATION_BY_CATEGORY: DeviationDataset[] = [
     l3GapVsTarget: -42,
     l4GapVsTarget: 17,
     l5GapVsTarget: 67,
-    actualSpend: 371,
-    actualPctReduction: 7,
+    actualSpend: 525,
+    actualPctReduction: 10,
   },
   {
     category: 'Category A',

@@ -385,6 +385,7 @@ export default function MarketIntelligencePage() {
   const bgCheckboxRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [showComparisonDetails, setShowComparisonDetails] =
     useState<boolean>(true);
+  const [isPercentView, setIsPercentView] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<ActionProposal | null>(
     null,
@@ -630,10 +631,24 @@ export default function MarketIntelligencePage() {
     groupName: string,
     metricName: string,
     isLast: boolean = false,
+    revenueMetric?: BusinessGroupMetricWithTrend,
   ) => {
+    const displayRevenue = revenueMetric?.value ?? 0;
+    const baselineRevenue = revenueMetric?.baseline ?? 0;
+    const lastYearRevenue = revenueMetric?.stly ?? 0;
+    const calcMargin = (value: number, revenue: number) =>
+      revenue === 0 ? 0 : (value / revenue) * 100;
+    const displayMargin = calcMargin(metric.value, displayRevenue);
+    const baselineMargin = calcMargin(metric.baseline, baselineRevenue);
+    const lastYearMargin = calcMargin(metric.stly, lastYearRevenue);
+    const usePercentView = isPercentView && !!revenueMetric;
     const displayValue = metric.value;
-    const budgetPercent = calcPercent(metric.value, metric.baseline);
-    const lastYearPercent = calcPercent(metric.value, metric.stly);
+    const budgetPercent = usePercentView
+      ? displayMargin - baselineMargin // percentage points
+      : calcPercent(metric.value, metric.baseline);
+    const lastYearPercent = usePercentView
+      ? displayMargin - lastYearMargin // percentage points
+      : calcPercent(metric.value, metric.stly);
     const primaryPercent = budgetPercent;
     const percentColor =
       primaryPercent > 0
@@ -649,18 +664,30 @@ export default function MarketIntelligencePage() {
           ? 'bg-red-100 text-red-700'
           : 'bg-gray-100 text-gray-600';
     const lastYearPercentSign = lastYearPercent > 0 ? '+' : '';
+    const deltaUnit = usePercentView ? ' p.p.' : '%';
+    const formatCellValue = (value: number) =>
+      usePercentView ? `${value.toFixed(1)}%` : formatMnWhole(value);
+    const comparisonValue = usePercentView ? displayMargin : displayValue;
+    const comparisonBaseline = usePercentView ? baselineMargin : metric.baseline;
+    const comparisonLastYear = usePercentView ? lastYearMargin : metric.stly;
 
     // Calculate trend line for sparkline
-    const trendValues = metric.trend.map((t) => t.value);
+    const trendValues =
+      usePercentView && revenueMetric
+        ? metric.trend.map((t, index) => {
+            const revenueValue = revenueMetric.trend[index]?.value ?? 0;
+            return calcMargin(t.value, revenueValue);
+          })
+        : metric.trend.map((t) => t.value);
     const minVal = Math.min(...trendValues);
     const maxVal = Math.max(...trendValues);
     const range = maxVal - minVal || 1;
 
     // Generate SVG path for trend line
     const pathPoints = metric.trend
-      .map((t, i) => {
+      .map((_, i) => {
         const x = (i / (metric.trend.length - 1)) * 180;
-        const y = 40 - ((t.value - minVal) / range) * 35;
+        const y = 40 - ((trendValues[i] - minVal) / range) * 35;
         return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
       })
       .join(' ');
@@ -676,12 +703,12 @@ export default function MarketIntelligencePage() {
       return (
         <td
           key={metricName}
-          className={`px-4 py-3 border-b border-gray-200 ${
+          className={`px-4 py-3 border-b border-gray-200 text-center ${
             !isLast ? 'border-r' : ''
           } relative group`}>
-          <div className='text-left'>
+          <div className='min-w-0'>
             <div className='text-base font-bold text-gray-900'>
-              {formatMnWhole(displayValue)}
+              {formatCellValue(comparisonValue)}
             </div>
           </div>
         </td>
@@ -691,35 +718,37 @@ export default function MarketIntelligencePage() {
     return (
       <td
         key={metricName}
-        className={`px-4 py-3 border-b border-gray-200 ${
+        className={`px-4 py-3 border-b border-gray-200 text-center ${
           !isLast ? 'border-r' : ''
         } relative group`}>
-        <div className='flex items-center justify-center gap-4'>
-          <div className='text-left'>
+        <div className='flex items-center justify-center gap-4 min-w-0'>
+          <div className='min-w-0'>
             <div className='text-base font-bold text-gray-900'>
-              {formatMnWhole(displayValue)}
+              {formatCellValue(comparisonValue)}
             </div>
           </div>
           <div className='text-center'>
             <div className='text-xs text-gray-500 mb-0.5 flex flex-col items-center'>
               <span>vs budget</span>
-              <span>{formatMnWhole(metric.baseline)}</span>
+              <span>{formatCellValue(comparisonBaseline)}</span>
             </div>
             <div className='text-xs text-gray-500 flex flex-col items-center'>
               <span>vs Last Year</span>
-              <span>{formatMnWhole(metric.stly)}</span>
+              <span>{formatCellValue(comparisonLastYear)}</span>
             </div>
           </div>
           <div className='flex flex-col gap-0.5'>
             <span
               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
               {percentSign}
-              {primaryPercent.toFixed(1)}%
+              {primaryPercent.toFixed(1)}
+              {deltaUnit}
             </span>
             <span
               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${lastYearPercentColor}`}>
               {lastYearPercentSign}
-              {lastYearPercent.toFixed(1)}%
+              {lastYearPercent.toFixed(1)}
+              {deltaUnit}
             </span>
           </div>
         </div>
@@ -735,7 +764,8 @@ export default function MarketIntelligencePage() {
               <span
                 className={`px-2 py-0.5 rounded text-xs font-semibold ${percentColor}`}>
                 {percentSign}
-                {primaryPercent.toFixed(1)}%
+                {primaryPercent.toFixed(1)}
+                {deltaUnit}
               </span>
             </div>
 
@@ -848,10 +878,28 @@ export default function MarketIntelligencePage() {
             </span>
           </div>
         </td>
-        {renderMetricCell(group.rev, group.name, 'Revenue')}
-        {renderMetricCell(group.gp, group.name, 'Gross Profit')}
-        {renderMetricCell(group.op, group.name, 'Operating Profit')}
-        {renderMetricCell(group.np, group.name, 'Net Profit', true)}
+        {renderMetricCell(group.rev, group.name, 'Revenue', false)}
+        {renderMetricCell(
+          group.gp,
+          group.name,
+          isPercentView ? 'Gross Profit Margin' : 'Gross Profit',
+          false,
+          group.rev,
+        )}
+        {renderMetricCell(
+          group.op,
+          group.name,
+          isPercentView ? 'Operating Profit Margin' : 'Operating Profit',
+          false,
+          group.rev,
+        )}
+        {renderMetricCell(
+          group.np,
+          group.name,
+          isPercentView ? 'Net Profit Margin' : 'Net Profit',
+          true,
+          group.rev,
+        )}
       </tr>
     );
   };
@@ -2011,6 +2059,7 @@ export default function MarketIntelligencePage() {
   };
 
   return (
+    <>
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-50 relative'>
       <div className='p-8 max-w-[1920px] mx-auto'>
         {/* Page Title */}
@@ -2187,30 +2236,68 @@ export default function MarketIntelligencePage() {
 
         {/* Forecast Performance Table */}
         <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h2 className='text-2xl font-bold text-gray-900'>
-                Forecast by Business Group
-              </h2>
-              <p className='text-sm text-gray-600 mt-1'>Mn, {currencyLabel}</p>
-            </div>
-            <div className='flex items-center gap-2'>
-              <span className='text-sm text-gray-600'>Show Details</span>
-              <button
-                onClick={() => setShowComparisonDetails(!showComparisonDetails)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                  showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
-                }`}>
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
           <div className='bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-visible'>
-            <table className='w-full'>
+            <div className='px-6 pt-6'>
+              <div className='flex items-center justify-between mb-2'>
+                <div className='flex items-center gap-2'>
+                  <ChartBarIcon className='w-5 h-5 text-primary-600' />
+                  <h2 className='text-2xl font-bold text-gray-900'>
+                    Forecast by Business Group
+                  </h2>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-gray-600'>View:</span>
+                    <span
+                      className={`text-sm ${
+                        !isPercentView
+                          ? 'font-semibold text-gray-900'
+                          : 'text-gray-500'
+                      }`}>
+                      Absolute
+                    </span>
+                    <button
+                      onClick={() => setIsPercentView(!isPercentView)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                        isPercentView ? 'bg-primary-600' : 'bg-gray-200'
+                      }`}>
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isPercentView ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span
+                      className={`text-sm ${
+                        isPercentView
+                          ? 'font-semibold text-gray-900'
+                          : 'text-gray-500'
+                      }`}>
+                      % of revenue
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-gray-600'>Show Details</span>
+                    <button
+                      onClick={() => setShowComparisonDetails(!showComparisonDetails)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                        showComparisonDetails ? 'bg-primary-600' : 'bg-gray-200'
+                      }`}>
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          showComparisonDetails ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className='text-sm text-gray-600 mt-1'>
+                {isPercentView ? '% of revenue' : `Mn, ${currencyLabel}`}
+              </p>
+            </div>
+            <div className='px-4 pb-4 pt-2'>
+              <table className='w-full'>
               <thead>
                 <tr className='bg-gray-50'>
                   <th className='text-left px-6 py-3 border-b border-r border-gray-200'>
@@ -2225,17 +2312,19 @@ export default function MarketIntelligencePage() {
                   </th>
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Gross Profit
+                      {isPercentView ? 'Gross Profit Margin' : 'Gross Profit'}
                     </span>
                   </th>
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Operating Profit
+                      {isPercentView
+                        ? 'Operating Profit Margin'
+                        : 'Operating Profit'}
                     </span>
                   </th>
                   <th className='text-center px-4 py-3 border-b border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      Net Profit
+                      {isPercentView ? 'Net Profit Margin' : 'Net Profit'}
                     </span>
                   </th>
                 </tr>
@@ -2275,6 +2364,7 @@ export default function MarketIntelligencePage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
           {forecastMarginSummary && (
             <div className='mt-6 w-full rounded-lg border border-gray-200 bg-gray-50 px-6 py-4'>
@@ -2913,11 +3003,11 @@ export default function MarketIntelligencePage() {
             updates: payload.updates,
             note: payload.note,
             source: 'MarketIntelligencePage',
-          })
-        }
+          })}
         defaultUnitIds={selectedUnitIds}
       />
     </div>
+    </>
   );
 }
 
