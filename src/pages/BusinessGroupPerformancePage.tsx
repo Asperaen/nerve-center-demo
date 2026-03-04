@@ -471,6 +471,12 @@ export default function BusinessGroupPerformancePage() {
   // Filter states
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<TimeframeOption>(() => 'ytm');
+  
+  // Year selection state
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+  const availableYears = [2026, 2025];
   const initialMonths = (() => {
     const monthsParam = searchParams.get('months');
     if (!monthsParam) {
@@ -2967,9 +2973,34 @@ export default function BusinessGroupPerformancePage() {
             timeframeContent={
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-4'>
-                  <span className='text-sm font-medium text-gray-600 w-32'>
-                    Timeframe <span className='text-gray-400'>(2026)</span>
-                  </span>
+                  <div className='flex items-center gap-1 w-32'>
+                    <span className='text-sm font-medium text-gray-600'>Timeframe</span>
+                    <div className='relative'>
+                      <button
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        className='text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-primary-50 transition-colors'>
+                        ({selectedYear})
+                        <ChevronDownIcon className={`w-3 h-3 transition-transform ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isYearDropdownOpen && (
+                        <>
+                          <div className='fixed inset-0 z-10' onClick={() => setIsYearDropdownOpen(false)} />
+                          <div className='absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[80px]'>
+                            {availableYears.map((year) => (
+                              <button
+                                key={year}
+                                onClick={() => { setSelectedYear(year); setIsYearDropdownOpen(false); }}
+                                className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                                  selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
+                                }`}>
+                                {year}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                   <div className='flex bg-gray-100 rounded-lg p-1'>
                     {(
                       [
@@ -3001,7 +3032,7 @@ export default function BusinessGroupPerformancePage() {
                 </div>
                 <div className='flex items-center gap-4'>
                   <span className='text-sm font-medium text-gray-600 w-32'>
-                    Months <span className='text-gray-400'>(2026)</span>
+                    Months <span className='text-gray-400'>({selectedYear})</span>
                   </span>
                   <div className='flex flex-wrap gap-1'>
                     {MONTHS.map((month, index) => {

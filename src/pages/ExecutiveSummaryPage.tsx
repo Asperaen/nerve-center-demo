@@ -560,6 +560,17 @@ export default function ExecutiveSummaryPage({
   // Modal state
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+  
+  // AI Streaming state
+  const [isAIStreaming, setIsAIStreaming] = useState(false);
+  const [aiStreamedText, setAiStreamedText] = useState('');
+  const [aiStreamComplete, setAiStreamComplete] = useState(false);
+
+  // Year selection state
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+  const availableYears = [2026, 2025]; // Current year and previous year
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
@@ -1684,6 +1695,9 @@ export default function ExecutiveSummaryPage({
       selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
     const lastYearMode =
       selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
+    
+    let rawData: BusinessGroupData[] = [];
+    
     if (selectedBu === 'all') {
       const groupRows = businessGroups.map((group) =>
         buildGroupRow(
@@ -1707,39 +1721,66 @@ export default function ExecutiveSummaryPage({
         'overall',
         'Overall'
       );
-      return [...groupRows, overallRow];
-    }
-
-    if (!selectedGroup) {
-      return [];
-    }
-    const groupId = normalizeGroupId(selectedGroup.group);
-    const unitsForTable = isBudgetView
-      ? selectedUnits
-      : selectedGroup.businessUnits;
-    const unitRows = unitsForTable.map((unit) =>
-      buildUnitRow(
-        groupId,
-        unit,
+      rawData = [...groupRows, overallRow];
+    } else if (selectedGroup) {
+      const groupId = normalizeGroupId(selectedGroup.group);
+      const unitsForTable = isBudgetView
+        ? selectedUnits
+        : selectedGroup.businessUnits;
+      const unitRows = unitsForTable.map((unit) =>
+        buildUnitRow(
+          groupId,
+          unit,
+          fullYearScale,
+          ytmScale,
+          valueMode,
+          budgetMode,
+          lastYearMode
+        )
+      );
+      const overallRow = buildGroupRow(
+        selectedGroup.group,
+        unitsForTable,
         fullYearScale,
         ytmScale,
         valueMode,
         budgetMode,
-        lastYearMode
-      )
-    );
-    const overallRow = buildGroupRow(
-      selectedGroup.group,
-      unitsForTable,
-      fullYearScale,
-      ytmScale,
-      valueMode,
-      budgetMode,
-      lastYearMode,
-      `${groupId}-overall`,
-      `${selectedGroup.group} overall`
-    );
-    return [...unitRows, overallRow];
+        lastYearMode,
+        `${groupId}-overall`,
+        `${selectedGroup.group} overall`
+      );
+      rawData = [...unitRows, overallRow];
+    }
+
+    // Apply year transformation for demo purposes
+    // When 2025 is selected: show 2024 data as current, no "last year" comparison (N/A)
+    if (selectedYear === 2025) {
+      return rawData.map((row) => ({
+        ...row,
+        rev: {
+          ...row.rev,
+          value: row.rev.stly, // 2024 data becomes current
+          stly: 0, // No 2023 data available
+        },
+        gp: {
+          ...row.gp,
+          value: row.gp.stly,
+          stly: 0,
+        },
+        op: {
+          ...row.op,
+          value: row.op.stly,
+          stly: 0,
+        },
+        np: {
+          ...row.np,
+          value: row.np.stly,
+          stly: 0,
+        },
+      }));
+    }
+    
+    return rawData;
   }, [
     businessGroups,
     selectedBu,
@@ -1749,6 +1790,7 @@ export default function ExecutiveSummaryPage({
     monthRange,
     selectedVersion,
     isBudgetView,
+    selectedYear,
   ]);
 
   const budgetWaterfallStages = useMemo(() => {
@@ -2089,6 +2131,95 @@ export default function ExecutiveSummaryPage({
     formatMn,
     isDeGroupSelected,
   ]);
+
+  // AI Analysis content based on Compal data
+  const aiAnalysisContent = useMemo(() => {
+    if (!isBudgetView || !keyCallOut) {
+      return '';
+    }
+    const overallRow =
+      tableData.find(
+        (row) => row.id === 'overall' || row.id.endsWith('-overall')
+      ) ?? tableData[tableData.length - 1];
+    if (!overallRow) {
+      return '';
+    }
+
+    const revBudget = overallRow.rev.value;
+    const revLastYear = overallRow.rev.stly;
+    const revGrowth = revLastYear > 0 ? ((revBudget - revLastYear) / revLastYear * 100).toFixed(1) : '0';
+    
+    const gpBudget = overallRow.gp.value;
+    const gpMargin = revBudget > 0 ? (gpBudget / revBudget * 100).toFixed(2) : '0';
+    
+    const opBudget = overallRow.op.value;
+    const opMargin = revBudget > 0 ? (opBudget / revBudget * 100).toFixed(2) : '0';
+
+    return `## AI-Powered Budget Analysis
+
+### Executive Summary
+Based on the selected timeframe and business unit data, here's a comprehensive analysis of Compal's budget performance:
+
+### Revenue Analysis
+- **Budget Revenue**: ${formatMn(revBudget)} Mn ${currencyLabel}
+- **YoY Growth**: ${revGrowth}% compared to last year (${formatMn(revLastYear)} Mn)
+- **Key Driver**: PCBG notebook segment continues to drive growth, supported by AI PC demand surge
+
+### Profitability Metrics
+- **Gross Profit Margin**: ${gpMargin}% (Target: 5.5%)
+- **Operating Profit Margin**: ${opMargin}% (Target: 2.8%)
+- **Margin pressure** from component cost increases partially offset by operational efficiency gains
+
+### Business Unit Highlights
+1. **AEBU (Notebook)**: Strong performance driven by commercial notebook refresh cycle and AI PC transition
+2. **APBU (Server)**: Significant growth from AI server demand, particularly NVIDIA GPU-based systems
+3. **SDBG (Smart Devices)**: Mixed performance with IoT segment showing improvement
+
+### Risk Factors
+- Currency headwinds from TWD appreciation
+- Component supply constraints for advanced packaging
+- Customer concentration risk with top 3 OEMs
+
+### Recommended Actions
+1. Accelerate AI PC capability development
+2. Diversify server customer base beyond hyperscalers
+3. Optimize manufacturing footprint for cost efficiency
+
+---
+*Analysis generated based on YTM ${new Date().getFullYear()} budget data and historical trends.*`;
+  }, [isBudgetView, keyCallOut, tableData, formatMn, currencyLabel]);
+
+  // AI Streaming function
+  const startAIStreaming = useCallback(() => {
+    if (isAIStreaming) return;
+    
+    setIsAIStreaming(true);
+    setAiStreamedText('');
+    setAiStreamComplete(false);
+    
+    let currentIndex = 0;
+    const content = aiAnalysisContent;
+    const chunkSize = 3; // Characters per chunk
+    const delay = 15; // ms between chunks
+    
+    const streamInterval = setInterval(() => {
+      if (currentIndex < content.length) {
+        const nextChunk = content.slice(currentIndex, currentIndex + chunkSize);
+        setAiStreamedText(prev => prev + nextChunk);
+        currentIndex += chunkSize;
+      } else {
+        clearInterval(streamInterval);
+        setIsAIStreaming(false);
+        setAiStreamComplete(true);
+      }
+    }, delay);
+  }, [isAIStreaming, aiAnalysisContent]);
+
+  // Reset AI streaming when filters change
+  useEffect(() => {
+    setAiStreamedText('');
+    setAiStreamComplete(false);
+  }, [selectedBu, monthRange]);
 
   const budgetMarginSummary = useMemo(() => {
     if (!isBudgetView) {
@@ -2744,9 +2875,40 @@ export default function ExecutiveSummaryPage({
                     </div>
                   </div>
                   <div className='flex items-center gap-4'>
-                    <span className='text-sm font-medium text-gray-600 w-32'>
-                      Timeframe <span className='text-gray-400'>(2026)</span>
-                    </span>
+                    <div className='flex items-center gap-1 w-32'>
+                      <span className='text-sm font-medium text-gray-600'>Timeframe</span>
+                      <div className='relative'>
+                        <button
+                          onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                          className='text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-primary-50 transition-colors'>
+                          ({selectedYear})
+                          <ChevronDownIcon className={`w-3 h-3 transition-transform ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isYearDropdownOpen && (
+                          <>
+                            <div 
+                              className='fixed inset-0 z-10' 
+                              onClick={() => setIsYearDropdownOpen(false)} 
+                            />
+                            <div className='absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[80px]'>
+                              {availableYears.map((year) => (
+                                <button
+                                  key={year}
+                                  onClick={() => {
+                                    setSelectedYear(year);
+                                    setIsYearDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                                    selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
+                                  }`}>
+                                  {year}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                     <div className='flex bg-gray-100 rounded-lg p-1'>
                       {(
                         [
@@ -2779,7 +2941,7 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Months <span className='text-gray-400'>(2026)</span>
+                      Months <span className='text-gray-400'>({selectedYear})</span>
                     </span>
                     <div className='flex flex-wrap gap-1'>
                       {MONTHS.map((month, index) => {
@@ -2836,9 +2998,40 @@ export default function ExecutiveSummaryPage({
                     </div>
                   </div>
                   <div className='flex items-center gap-4'>
-                    <span className='text-sm font-medium text-gray-600 w-32'>
-                      Timeframe <span className='text-gray-400'>(2026)</span>
-                    </span>
+                    <div className='flex items-center gap-1 w-32'>
+                      <span className='text-sm font-medium text-gray-600'>Timeframe</span>
+                      <div className='relative'>
+                        <button
+                          onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                          className='text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-primary-50 transition-colors'>
+                          ({selectedYear})
+                          <ChevronDownIcon className={`w-3 h-3 transition-transform ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isYearDropdownOpen && (
+                          <>
+                            <div 
+                              className='fixed inset-0 z-10' 
+                              onClick={() => setIsYearDropdownOpen(false)} 
+                            />
+                            <div className='absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[80px]'>
+                              {availableYears.map((year) => (
+                                <button
+                                  key={year}
+                                  onClick={() => {
+                                    setSelectedYear(year);
+                                    setIsYearDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                                    selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
+                                  }`}>
+                                  {year}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                     <div
                       className={`flex bg-gray-100 rounded-lg p-1`}>
                       {(
@@ -2872,7 +3065,7 @@ export default function ExecutiveSummaryPage({
                   </div>
                   <div className='flex items-center gap-4'>
                     <span className='text-sm font-medium text-gray-600 w-32'>
-                      Months <span className='text-gray-400'>(2026)</span>
+                      Months <span className='text-gray-400'>({selectedYear})</span>
                     </span>
                     <div className='flex flex-wrap gap-1'>
                       {MONTHS.map((month, index) => {
@@ -2972,10 +3165,15 @@ export default function ExecutiveSummaryPage({
             <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
               <div className='flex items-center justify-between mb-4'>
                 <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
-                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <button
+                  onClick={startAIStreaming}
+                  disabled={isAIStreaming}
+                  className={`px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-lg hover:from-purple-300 hover:to-indigo-400 cursor-pointer ${
+                    isAIStreaming ? 'animate-pulse' : ''
+                  }`}>
                   <span className='text-sm'>✨</span>
-                  <span>AI</span>
-                </span>
+                  <span>{isAIStreaming ? 'Analyzing...' : 'AI'}</span>
+                </button>
               </div>
               <div className='space-y-3'>
                 <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
@@ -3001,6 +3199,56 @@ export default function ExecutiveSummaryPage({
                   </div>
                 )}
               </div>
+
+              {/* AI Streaming Analysis */}
+              {(isAIStreaming || aiStreamComplete) && (
+                <div className='mt-6 pt-6 border-t border-purple-200'>
+                  <div className='bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-xl p-5 border border-purple-200'>
+                    <div className='flex items-center gap-2 mb-4'>
+                      <div className={`w-2 h-2 rounded-full ${isAIStreaming ? 'bg-purple-500 animate-pulse' : 'bg-green-500'}`} />
+                      <span className='text-sm font-semibold text-purple-700'>
+                        {isAIStreaming ? 'AI Analysis in Progress...' : 'AI Analysis Complete'}
+                      </span>
+                    </div>
+                    <div className='prose prose-sm max-w-none text-gray-700'>
+                      {aiStreamedText.split('\n').map((line, idx) => {
+                        if (line.startsWith('## ')) {
+                          return <h2 key={idx} className='text-lg font-bold text-purple-800 mt-4 mb-2'>{line.slice(3)}</h2>;
+                        }
+                        if (line.startsWith('### ')) {
+                          return <h3 key={idx} className='text-base font-semibold text-purple-700 mt-3 mb-1'>{line.slice(4)}</h3>;
+                        }
+                        if (line.startsWith('- **')) {
+                          const match = line.match(/- \*\*(.+?)\*\*: (.+)/);
+                          if (match) {
+                            return (
+                              <p key={idx} className='ml-4 my-1'>
+                                <span className='font-semibold text-gray-800'>{match[1]}:</span> {match[2]}
+                              </p>
+                            );
+                          }
+                        }
+                        if (line.startsWith('1. ') || line.startsWith('2. ') || line.startsWith('3. ')) {
+                          return <p key={idx} className='ml-4 my-1'>{line}</p>;
+                        }
+                        if (line.startsWith('---')) {
+                          return <hr key={idx} className='my-3 border-purple-200' />;
+                        }
+                        if (line.startsWith('*') && line.endsWith('*')) {
+                          return <p key={idx} className='text-xs text-gray-500 italic mt-2'>{line.slice(1, -1)}</p>;
+                        }
+                        if (line.trim()) {
+                          return <p key={idx} className='my-1'>{line}</p>;
+                        }
+                        return null;
+                      })}
+                      {isAIStreaming && (
+                        <span className='inline-block w-2 h-4 bg-purple-500 animate-pulse ml-0.5' />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
