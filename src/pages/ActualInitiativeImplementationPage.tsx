@@ -332,7 +332,7 @@ export default function ActualInitiativeImplementationPage() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-  const availableYears = [2026, 2025];
+  const availableYears = [2026, 2025, 2024];
 
   const [monthRange, setMonthRange] = useState<[number, number]>([0, 1]);
   const [monthAnchor, setMonthAnchor] = useState<number | null>(null);

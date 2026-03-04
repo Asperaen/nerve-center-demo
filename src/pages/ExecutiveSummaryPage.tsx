@@ -570,7 +570,7 @@ export default function ExecutiveSummaryPage({
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-  const availableYears = [2026, 2025]; // Current year and previous year
+  const availableYears = [2026, 2025, 2024]; // Current year and previous year
 
   const [selectedBu, setSelectedBu] = useState<string>('all');
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
@@ -1753,7 +1753,9 @@ export default function ExecutiveSummaryPage({
     }
 
     // Apply year transformation for demo purposes
-    // When 2025 is selected: show 2024 data as current, no "last year" comparison (N/A)
+    // 2026: show 2025 data as current, 2024 as last year (original data)
+    // 2025: show 2024 data as current, no "last year" comparison
+    // 2024: show simulated 2023 data as current (based on 2024 * 0.92), no "last year" comparison
     if (selectedYear === 2025) {
       return rawData.map((row) => ({
         ...row,
@@ -1775,6 +1777,32 @@ export default function ExecutiveSummaryPage({
         np: {
           ...row.np,
           value: row.np.stly,
+          stly: 0,
+        },
+      }));
+    }
+
+    if (selectedYear === 2024) {
+      return rawData.map((row) => ({
+        ...row,
+        rev: {
+          ...row.rev,
+          value: row.rev.stly * 0.92, // Simulated 2023 data
+          stly: 0, // No 2022 data available
+        },
+        gp: {
+          ...row.gp,
+          value: row.gp.stly * 0.90,
+          stly: 0,
+        },
+        op: {
+          ...row.op,
+          value: row.op.stly * 0.88,
+          stly: 0,
+        },
+        np: {
+          ...row.np,
+          value: row.np.stly * 0.85,
           stly: 0,
         },
       }));
