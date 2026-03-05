@@ -560,11 +560,6 @@ export default function ExecutiveSummaryPage({
   // Modal state
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
-  
-  // AI Streaming state
-  const [isAIStreaming, setIsAIStreaming] = useState(false);
-  const [aiStreamedText, setAiStreamedText] = useState('');
-  const [aiStreamComplete, setAiStreamComplete] = useState(false);
 
   // Year selection state
   const currentYear = new Date().getFullYear();
@@ -2160,95 +2155,6 @@ export default function ExecutiveSummaryPage({
     isDeGroupSelected,
   ]);
 
-  // AI Analysis content based on Compal data
-  const aiAnalysisContent = useMemo(() => {
-    if (!isBudgetView || !keyCallOut) {
-      return '';
-    }
-    const overallRow =
-      tableData.find(
-        (row) => row.id === 'overall' || row.id.endsWith('-overall')
-      ) ?? tableData[tableData.length - 1];
-    if (!overallRow) {
-      return '';
-    }
-
-    const revBudget = overallRow.rev.value;
-    const revLastYear = overallRow.rev.stly;
-    const revGrowth = revLastYear > 0 ? ((revBudget - revLastYear) / revLastYear * 100).toFixed(1) : '0';
-    
-    const gpBudget = overallRow.gp.value;
-    const gpMargin = revBudget > 0 ? (gpBudget / revBudget * 100).toFixed(2) : '0';
-    
-    const opBudget = overallRow.op.value;
-    const opMargin = revBudget > 0 ? (opBudget / revBudget * 100).toFixed(2) : '0';
-
-    return `## AI-Powered Budget Analysis
-
-### Executive Summary
-Based on the selected timeframe and business unit data, here's a comprehensive analysis of Compal's budget performance:
-
-### Revenue Analysis
-- **Budget Revenue**: ${formatMn(revBudget)} Mn ${currencyLabel}
-- **YoY Growth**: ${revGrowth}% compared to last year (${formatMn(revLastYear)} Mn)
-- **Key Driver**: PCBG notebook segment continues to drive growth, supported by AI PC demand surge
-
-### Profitability Metrics
-- **Gross Profit Margin**: ${gpMargin}% (Target: 5.5%)
-- **Operating Profit Margin**: ${opMargin}% (Target: 2.8%)
-- **Margin pressure** from component cost increases partially offset by operational efficiency gains
-
-### Business Unit Highlights
-1. **AEBU (Notebook)**: Strong performance driven by commercial notebook refresh cycle and AI PC transition
-2. **APBU (Server)**: Significant growth from AI server demand, particularly NVIDIA GPU-based systems
-3. **SDBG (Smart Devices)**: Mixed performance with IoT segment showing improvement
-
-### Risk Factors
-- Currency headwinds from TWD appreciation
-- Component supply constraints for advanced packaging
-- Customer concentration risk with top 3 OEMs
-
-### Recommended Actions
-1. Accelerate AI PC capability development
-2. Diversify server customer base beyond hyperscalers
-3. Optimize manufacturing footprint for cost efficiency
-
----
-*Analysis generated based on YTM ${new Date().getFullYear()} budget data and historical trends.*`;
-  }, [isBudgetView, keyCallOut, tableData, formatMn, currencyLabel]);
-
-  // AI Streaming function
-  const startAIStreaming = useCallback(() => {
-    if (isAIStreaming) return;
-    
-    setIsAIStreaming(true);
-    setAiStreamedText('');
-    setAiStreamComplete(false);
-    
-    let currentIndex = 0;
-    const content = aiAnalysisContent;
-    const chunkSize = 3; // Characters per chunk
-    const delay = 15; // ms between chunks
-    
-    const streamInterval = setInterval(() => {
-      if (currentIndex < content.length) {
-        const nextChunk = content.slice(currentIndex, currentIndex + chunkSize);
-        setAiStreamedText(prev => prev + nextChunk);
-        currentIndex += chunkSize;
-      } else {
-        clearInterval(streamInterval);
-        setIsAIStreaming(false);
-        setAiStreamComplete(true);
-      }
-    }, delay);
-  }, [isAIStreaming, aiAnalysisContent]);
-
-  // Reset AI streaming when filters change
-  useEffect(() => {
-    setAiStreamedText('');
-    setAiStreamComplete(false);
-  }, [selectedBu, monthRange]);
-
   const budgetMarginSummary = useMemo(() => {
     if (!isBudgetView) {
       return null;
@@ -3193,15 +3099,10 @@ Based on the selected timeframe and business unit data, here's a comprehensive a
             <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
               <div className='flex items-center justify-between mb-4'>
                 <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
-                <button
-                  onClick={startAIStreaming}
-                  disabled={isAIStreaming}
-                  className={`px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-lg hover:from-purple-300 hover:to-indigo-400 cursor-pointer ${
-                    isAIStreaming ? 'animate-pulse' : ''
-                  }`}>
+                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
                   <span className='text-sm'>✨</span>
-                  <span>{isAIStreaming ? 'Analyzing...' : 'AI'}</span>
-                </button>
+                  <span>AI</span>
+                </span>
               </div>
               <div className='space-y-3'>
                 <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
@@ -3228,55 +3129,6 @@ Based on the selected timeframe and business unit data, here's a comprehensive a
                 )}
               </div>
 
-              {/* AI Streaming Analysis */}
-              {(isAIStreaming || aiStreamComplete) && (
-                <div className='mt-6 pt-6 border-t border-purple-200'>
-                  <div className='bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-xl p-5 border border-purple-200'>
-                    <div className='flex items-center gap-2 mb-4'>
-                      <div className={`w-2 h-2 rounded-full ${isAIStreaming ? 'bg-purple-500 animate-pulse' : 'bg-green-500'}`} />
-                      <span className='text-sm font-semibold text-purple-700'>
-                        {isAIStreaming ? 'AI Analysis in Progress...' : 'AI Analysis Complete'}
-                      </span>
-                    </div>
-                    <div className='prose prose-sm max-w-none text-gray-700'>
-                      {aiStreamedText.split('\n').map((line, idx) => {
-                        if (line.startsWith('## ')) {
-                          return <h2 key={idx} className='text-lg font-bold text-purple-800 mt-4 mb-2'>{line.slice(3)}</h2>;
-                        }
-                        if (line.startsWith('### ')) {
-                          return <h3 key={idx} className='text-base font-semibold text-purple-700 mt-3 mb-1'>{line.slice(4)}</h3>;
-                        }
-                        if (line.startsWith('- **')) {
-                          const match = line.match(/- \*\*(.+?)\*\*: (.+)/);
-                          if (match) {
-                            return (
-                              <p key={idx} className='ml-4 my-1'>
-                                <span className='font-semibold text-gray-800'>{match[1]}:</span> {match[2]}
-                              </p>
-                            );
-                          }
-                        }
-                        if (line.startsWith('1. ') || line.startsWith('2. ') || line.startsWith('3. ')) {
-                          return <p key={idx} className='ml-4 my-1'>{line}</p>;
-                        }
-                        if (line.startsWith('---')) {
-                          return <hr key={idx} className='my-3 border-purple-200' />;
-                        }
-                        if (line.startsWith('*') && line.endsWith('*')) {
-                          return <p key={idx} className='text-xs text-gray-500 italic mt-2'>{line.slice(1, -1)}</p>;
-                        }
-                        if (line.trim()) {
-                          return <p key={idx} className='my-1'>{line}</p>;
-                        }
-                        return null;
-                      })}
-                      {isAIStreaming && (
-                        <span className='inline-block w-2 h-4 bg-purple-500 animate-pulse ml-0.5' />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
