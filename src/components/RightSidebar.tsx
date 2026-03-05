@@ -1,14 +1,17 @@
 import {
+  ArrowTopRightOnSquareIcon,
   BuildingOffice2Icon,
   ChartBarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardDocumentListIcon,
+  ComputerDesktopIcon,
   CurrencyDollarIcon,
   DocumentCheckIcon,
   HomeIcon,
   SparklesIcon,
   UserCircleIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -79,6 +82,20 @@ export default function RightSidebar({
       label: 'Quarterly Actuals Review',
       path: '/finance-review',
       icon: DocumentCheckIcon,
+    },
+    {
+      id: 'hc-dashboard',
+      label: 'HC Dashboard',
+      path: 'external:hc-dashboard',
+      icon: UsersIcon,
+      isExternal: true,
+    },
+    {
+      id: 'ict',
+      label: 'ICT',
+      path: 'external:ict',
+      icon: ComputerDesktopIcon,
+      isExternal: true,
     },
   ];
 
@@ -166,7 +183,29 @@ export default function RightSidebar({
           <div className='space-y-1'>
             {toolsTabs.map((tab) => {
               const Icon = tab.icon;
-              const active = isActive(tab.path);
+              const active = !tab.isExternal && isActive(tab.path);
+              
+              if (tab.isExternal) {
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      alert(`Opening ${tab.label}...\n\nThis will launch an external application.`);
+                    }}
+                    className='flex items-center px-4 py-3 mx-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-50 w-full text-left'>
+                    <Icon className='w-6 h-6 flex-shrink-0 text-gray-600' />
+                    {!isCollapsed && (
+                      <>
+                        <span className='ml-3 font-medium text-sm'>
+                          {tab.label}
+                        </span>
+                        <ArrowTopRightOnSquareIcon className='w-4 h-4 ml-auto text-gray-400' />
+                      </>
+                    )}
+                  </button>
+                );
+              }
+              
               return (
                 <Link
                   key={tab.id}
