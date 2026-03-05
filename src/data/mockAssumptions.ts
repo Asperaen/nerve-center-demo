@@ -23,7 +23,7 @@ export const mockAssumptions: BusinessAssumption[] = [
         date: subMonths(new Date(), 1),
         value: 90,
         changedBy: 'David Park',
-        reason: 'Tesla order timing adjusted',
+        reason: 'Major EV OEM order timing adjusted',
       },
       {
         date: new Date(),
@@ -166,7 +166,7 @@ export const mockAssumptions: BusinessAssumption[] = [
   {
     id: 'assum-7',
     category: 'volume',
-    description: 'Tesla volume growth H2 2025',
+    description: 'Major EV OEM volume growth H2 2025',
     value: 85,
     unit: '% increase',
     source: 'predictions',
@@ -178,7 +178,7 @@ export const mockAssumptions: BusinessAssumption[] = [
         date: subDays(new Date(), 1),
         value: 85,
         changedBy: 'David Park',
-        reason: 'Based on Tesla announcement to double production by 2026',
+        reason: 'Based on major EV OEM announcement to double production by 2026',
       },
     ],
     annotations: [],
@@ -239,7 +239,7 @@ export const mockAssumptions: BusinessAssumption[] = [
   {
     id: 'assum-10',
     category: 'revenue',
-    description: 'Apple TWS revenue shift from Q1 to Q2 2026',
+    description: 'Consumer electronics revenue shift from Q1 to Q2 2026',
     value: -8,
     unit: 'M USD in Q1',
     source: 'actuals',
@@ -251,7 +251,7 @@ export const mockAssumptions: BusinessAssumption[] = [
         date: subDays(new Date(), 1),
         value: -8,
         changedBy: 'David Park',
-        reason: 'Apple AirPods Pro launch delayed',
+        reason: 'Major customer product launch delayed',
       },
     ],
     annotations: [],
@@ -279,7 +279,7 @@ export const mockAssumptions: BusinessAssumption[] = [
         value: 42,
         changedBy: 'David Park',
         reason:
-          'Updated based on Nvidia GB300 program and Amphenol market data',
+          'Updated based on AI server program and market data',
       },
     ],
     annotations: [],
@@ -315,10 +315,10 @@ export const mockConflicts: Conflict[] = [
     type: 'inconsistent_insight',
     severity: 'critical',
     description:
-      'EV connector revenue forecast shows $85M with -20% volume impact, but Tesla volume growth assumption shows +85% increase. These assumptions appear contradictory.',
+      'EV connector revenue forecast shows $85M with -20% volume impact, but EV OEM volume growth assumption shows +85% increase. These assumptions appear contradictory.',
     affectedAssumptions: ['assum-1', 'assum-7'],
     suggestedResolution:
-      'Clarify: Is Tesla growth offset by other customer declines due to tariffs? Or should Tesla growth assumption be reduced to account for tariff impact?',
+      'Clarify: Is EV OEM growth offset by other customer declines due to tariffs? Or should EV OEM growth assumption be reduced to account for tariff impact?',
     stakeholders: ['David Park - VP Sales', 'Jennifer Wu - VP Operations'],
     status: 'open',
   },

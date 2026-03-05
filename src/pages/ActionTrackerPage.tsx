@@ -84,7 +84,7 @@ export default function ActionTrackerPage() {
           {urgentActions.length} urgent high-priority actions requiring
           immediate attention, including Vietnam production shift for EV
           connectors, securing alternative rare earth suppliers, and
-          accelerating Nvidia GB300 program engagement to capture data center
+          accelerating AI server program engagement to capture data center
           growth.
         </p>
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>

@@ -42,9 +42,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-3',
-    title: 'Strategic account review with Tesla procurement',
+    title: 'Strategic account review with major EV OEM',
     description:
-      'Schedule and prepare for strategic account meeting with Tesla to discuss capacity expansion opportunities. Tesla plans to double EV production by 2026.',
+      'Schedule and prepare for strategic account meeting with major EV OEM to discuss capacity expansion opportunities. Customer plans to double EV production by 2026.',
     owner: 'David Park - VP Sales',
     status: 'todo',
     priority: 'high',
@@ -54,9 +54,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-4',
-    title: 'Accelerate optical connector roadmap',
+    title: 'Accelerate optical product roadmap',
     description:
-      'Respond to TE Connectivity acquisition of optical startup. Review and accelerate our optical connector development timeline by 6 months.',
+      'Respond to competitor acquisition of optical startup. Review and accelerate our optical product development timeline by 6 months.',
     owner: 'Dr. Lisa Zhang - CTO',
     status: 'ready-for-review',
     priority: 'medium',
@@ -78,9 +78,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-6',
-    title: 'Adjust Q1 2026 production plan for Apple AirPods delay',
+    title: 'Adjust Q1 2026 production plan for consumer electronics delay',
     description:
-      "Revise production schedule following Apple's AirPods Pro launch delay. Reallocate capacity to other TWS customers to maintain utilization.",
+      "Revise production schedule following major customer's product launch delay. Reallocate capacity to other customers to maintain utilization.",
     owner: 'Jennifer Wu - VP Operations',
     status: 'in-progress',
     priority: 'medium',
@@ -90,9 +90,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-7',
-    title: 'Accelerate Nvidia GB300 program engagement',
+    title: 'Accelerate AI server program engagement',
     description:
-      "Following Amphenol's strong data center results, accelerate our engagement with Nvidia GB300 server program. Target: design-in confirmation by Q1 2026.",
+      "Following competitor's strong data center results, accelerate our engagement with major AI server program. Target: design-in confirmation by Q1 2026.",
     owner: 'David Park - VP Sales',
     status: 'in-progress',
     priority: 'high',
@@ -133,9 +133,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-10',
-    title: 'Schedule BYD Europe expansion discussion',
+    title: 'Schedule EV manufacturer Europe expansion discussion',
     description:
-      'Meet with BYD Europe procurement team regarding their Hungary plant. Explore opportunity for local connector supply partnership.',
+      'Meet with EV manufacturer Europe procurement team regarding their Hungary plant. Explore opportunity for local supply partnership.',
     owner: 'David Park - VP Sales',
     status: 'completed',
     priority: 'low',
@@ -166,7 +166,7 @@ export const mockActions: Action[] = [
     id: 'action-12',
     title: 'Reduce open customer complaint cases below 35',
     description:
-      'Currently at 47 cases vs target of 35. Focus on top 3 customers (Tesla, Apple, Amazon) and resolve their issues within 2 weeks.',
+      'Currently at 47 cases vs target of 35. Focus on top 3 customers and resolve their issues within 2 weeks.',
     owner: 'Sarah Johnson - VP Quality',
     status: 'reopen',
     priority: 'high',
@@ -232,9 +232,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-17',
-    title: 'Follow up with Jack - CEO of Vortext',
+    title: 'Follow up with technology partner CEO',
     description:
-      'Follow up on strategic partnership discussion with Vortext regarding joint development of next-gen optical connectors for data centers.',
+      'Follow up on strategic partnership discussion with technology partner regarding joint development of next-gen solutions for data centers.',
     owner: 'CEO',
     status: 'todo',
     priority: 'high',
@@ -268,9 +268,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-20',
-    title: 'Follow up with Tesla CEO on strategic partnership',
+    title: 'Follow up with major EV OEM on strategic partnership',
     description:
-      'Follow up on high-level strategic partnership discussion with Tesla CEO regarding long-term supply agreements and joint innovation initiatives.',
+      'Follow up on high-level strategic partnership discussion with major EV OEM regarding long-term supply agreements and joint innovation initiatives.',
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
@@ -304,9 +304,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-23',
-    title: 'Follow up with Apple VP of Supply Chain',
+    title: 'Follow up with major OEM VP of Supply Chain',
     description:
-      'Follow up on AirPods delay impact discussion and explore opportunities for increased connector supply for upcoming product launches.',
+      'Follow up on product delay impact discussion and explore opportunities for increased supply for upcoming product launches.',
     owner: 'CEO',
     status: 'todo',
     priority: 'medium',
@@ -328,9 +328,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-25',
-    title: 'Follow up with Nvidia CEO on data center partnership',
+    title: 'Follow up with data center partner on partnership',
     description:
-      'Follow up on strategic discussion regarding deeper partnership in AI data center connector solutions and potential joint R&D initiatives.',
+      'Follow up on strategic discussion regarding deeper partnership in AI data center solutions and potential joint R&D initiatives.',
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
@@ -352,9 +352,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-27',
-    title: 'Follow up with Samsung Electronics CEO',
+    title: 'Follow up with major electronics partner',
     description:
-      'Follow up on strategic partnership discussion for 5G infrastructure connectors and explore opportunities in consumer electronics segment.',
+      'Follow up on strategic partnership discussion for 5G infrastructure and explore opportunities in consumer electronics segment.',
     owner: 'CEO',
     status: 'completed',
     priority: 'medium',
@@ -376,9 +376,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-29',
-    title: 'Follow up with Qualcomm CTO on 5G collaboration',
+    title: 'Follow up with technology partner on 5G collaboration',
     description:
-      'Follow up on technical collaboration discussion for next-generation 5G antenna connector solutions and joint development opportunities.',
+      'Follow up on technical collaboration discussion for next-generation 5G solutions and joint development opportunities.',
     owner: 'CEO',
     status: 'todo',
     priority: 'medium',
@@ -388,9 +388,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-30',
-    title: 'Approval on strategic alliance with Amphenol',
+    title: 'Approval on strategic alliance with industry partner',
     description:
-      'Review strategic alliance proposal with Amphenol for cross-licensing agreements and joint market development in high-speed data connectors.',
+      'Review strategic alliance proposal with industry partner for cross-licensing agreements and joint market development in high-speed solutions.',
     owner: 'CEO',
     status: 'ready-for-review',
     priority: 'high',
@@ -400,9 +400,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-31',
-    title: 'Follow up with Microsoft Azure team on cloud infrastructure',
+    title: 'Follow up with cloud partner on infrastructure',
     description:
-      'Follow up on discussion regarding connector solutions for Microsoft Azure data centers and explore partnership opportunities.',
+      'Follow up on discussion regarding solutions for cloud partner data centers and explore partnership opportunities.',
     owner: 'CEO',
     status: 'reopen',
     priority: 'medium',

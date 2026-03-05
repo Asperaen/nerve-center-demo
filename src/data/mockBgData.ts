@@ -6280,7 +6280,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
     group: "PCBG",
     businessUnits: [
       {
-        // AEBU1 - Compal's largest NB ODM unit (Dell, HP commercial notebooks)
+        // AEBU1 - Compal's largest NB ODM unit (major OEM commercial notebooks)
         // Data from Excel: Ambitious Target-2025 new & Historical-2024
         name: "AEBU1",
         revenue: 868051.0, // YTM Actual (Jan 2025)
@@ -6326,7 +6326,7 @@ const BUSINESS_GROUP_DATA: BusinessGroup[] = [
         ),
       },
       {
-        // AEBU2 - Compal consumer notebook unit (HP, Lenovo consumer)
+        // AEBU2 - Compal consumer notebook unit (major OEM consumer)
         name: "AEBU2",
         revenue: 101852.0, // YTM Actual (Jan 2025)
         grossProfit: 2542.0,
@@ -7056,7 +7056,7 @@ export const KEY_CALLOUTS_BY_BG: Record<string, Record<string, KeyCalloutSet>> =
     AEBU1: {
       budget: [
         'AEBU1 OP budget targets 317M USD with 25% YoY growth, driven by AI server and commercial NB demand.',
-        'Budget delivery depends on Dell/HP order fulfillment and DRAM/NAND cost management.',
+        'Budget delivery depends on OEM order fulfillment and DRAM/NAND cost management.',
         'Execution risk centers on component supply constraints and ODM margin pressure.',
       ],
       initiative: [

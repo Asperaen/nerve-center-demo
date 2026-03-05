@@ -398,7 +398,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-8",
-    name: "Apple TWS Revenue (Q1 Impact)",
+    name: "Consumer Electronics Revenue (Q1 Impact)",
     category: "volume",
     latestActual: 24.0,
     forecastValue: 16.0,
@@ -458,7 +458,7 @@ export const baselineIncomeStatement: IncomeStatement = {
   breakdown: {
     momentum: 2350.0, // Baseline forecast
     pipeline: 420.0, // New opportunities (5G: 150, Data Center: 220, L4 Initiative: 50)
-    risk: -381.0, // Tariffs: -120, Copper: -85, Apple: -95, Rare Earth: -60, Vietnam Labor: -21
+    risk: -381.0, // Tariffs: -120, Copper: -85, Consumer Electronics: -95, Rare Earth: -60, Vietnam Labor: -21
     opportunity: 0, // Not yet realized
   },
 };
@@ -520,14 +520,14 @@ export const mockBusinessEvents: BusinessEvent[] = [
     impact: 220.0,
     type: "opportunity",
     implications: [
-      "Nvidia GB300 program ramping faster than expected",
+      "AI server program ramping faster than expected",
       "42% YoY growth in data center connector demand",
       "Strong pricing environment with limited competition",
     ],
     actionProposals: [
       {
         id: "ap-2",
-        description: "Accelerate Nvidia GB300 engagement and secure design-in",
+        description: "Accelerate AI server program engagement and secure design-in",
         expectedImpact: 8.5,
         feasibility: "high",
         priority: "high",
@@ -589,8 +589,8 @@ export const mockBusinessEvents: BusinessEvent[] = [
     ],
   },
   {
-    id: "event-apple-delay",
-    name: "Apple AirPods Launch Delay",
+    id: "event-product-delay",
+    name: "Major Customer Product Launch Delay",
     impact: -95.0,
     type: "risk",
     implications: [
@@ -759,7 +759,7 @@ export const mockOPWaterfallStages: OPWaterfallStage[] = [
     delta: 45.0, // Existing initiative pipeline boost
     type: "positive",
     description:
-      "Existing initiative pipeline that boosts OP: NVIDIA GB300 server connectors, 5G expansion, EV connector production ramp",
+      "Existing initiative pipeline that boosts OP: AI server program, 5G expansion, production ramp",
   },
   {
     stage: "headwinds-tailwinds",
@@ -768,7 +768,7 @@ export const mockOPWaterfallStages: OPWaterfallStage[] = [
     delta: -25.0, // Mixed risks/opportunities
     type: "negative",
     description:
-      "Volume/Price/Mix related impacts: US tariff on EV connectors, Apple AirPods launch delay, market demand shifts",
+      "Volume/Price/Mix related impacts: US tariff impacts, major customer product delay, market demand shifts",
   },
   {
     stage: "additional-risk",
@@ -1945,7 +1945,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 1500,
       actualImpact: 600, // 40% realized due to delay
-      owner: "Chen Wei",
+      owner: "Manufacturing Manager",
     },
     {
       id: "sz-2",
@@ -2478,13 +2478,13 @@ export const mockMVABreakdownKeyCallOut: KeyCallOut = {
 };
 
 // Compal-specific Applied Assumptions - CEO Perspective
-// Based on Compal's business: #3 global ODM, major customers Dell/HP/Lenovo/Apple
+// Based on company's business: global ODM, serving major OEM customers
 export const mockAppliedAssumptions: AppliedAssumption[] = [
   {
     id: "assum-applied-1",
-    name: "Dell AI Server Order Upside",
+    name: "AI Server Order Upside",
     description:
-      "Dell accelerating AI server orders for enterprise customers, requesting 15% volume increase in Q2-Q3",
+      "Major OEM accelerating AI server orders for enterprise customers, requesting 15% volume increase in Q2-Q3",
     impact: 35.0, // +35M NP impact (tailwind)
     targetStage: "headwinds-tailwinds",
     impactType: "positive",
@@ -2508,7 +2508,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     proposal: {
       id: "proposal-1",
       assumptionId: "assum-applied-1",
-      description: "Proposal to capture Dell AI server upside opportunity",
+      description: "Proposal to capture AI server upside opportunity",
       actions: [
         {
           id: "action-1-1",
@@ -2522,7 +2522,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-1-2",
           description:
-            "Secure additional GPU and HBM memory allocation from NVIDIA/Samsung for AI server builds",
+            "Secure additional GPU and HBM memory allocation from key suppliers for AI server builds",
           expectedImpact: 8.5,
           feasibility: "medium",
           priority: "high",
@@ -2531,7 +2531,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-1-3",
           description:
-            "Negotiate premium pricing for expedited delivery with Dell procurement team",
+            "Negotiate premium pricing for expedited delivery with OEM procurement team",
           expectedImpact: 5.0,
           feasibility: "medium",
           priority: "medium",
@@ -2543,9 +2543,9 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
   },
   {
     id: "assum-applied-2",
-    name: "HP Consumer NB Order Reduction",
+    name: "Consumer NB Order Reduction",
     description:
-      "HP reducing consumer notebook orders by 8% due to weak retail demand in North America/Europe",
+      "Major OEM reducing consumer notebook orders by 8% due to weak retail demand in North America/Europe",
     impact: -12.0, // -12M NP impact (headwind)
     targetStage: "additional-risk",
     impactType: "negative",
@@ -2569,12 +2569,12 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
     proposal: {
       id: "proposal-2",
       assumptionId: "assum-applied-2",
-      description: "Proposal to mitigate HP consumer NB order reduction impact",
+      description: "Proposal to mitigate consumer NB order reduction impact",
       actions: [
         {
           id: "action-2-1",
           description:
-            "Redirect freed capacity to Lenovo commercial NB orders which have upside potential",
+            "Redirect freed capacity to commercial NB orders which have upside potential",
           expectedImpact: 6.0,
           feasibility: "high",
           priority: "high",
@@ -2582,7 +2582,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-2-2",
           description:
-            "Negotiate partial payment or milestone payments from Apple for work completed",
+            "Negotiate partial payment or milestone payments from major OEM for work completed",
           expectedImpact: 1.5,
           feasibility: "medium",
           priority: "high",
@@ -2590,7 +2590,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-2-3",
           description:
-            "Repurpose AirPods production capacity for other audio product lines",
+            "Repurpose production capacity for other product lines",
           expectedImpact: 1.0,
           feasibility: "high",
           priority: "medium",
@@ -2634,7 +2634,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-3-1",
           description:
-            "Execute strategic inventory build with Samsung/SK Hynix before Q2 price hike takes effect",
+            "Execute strategic inventory build with key memory suppliers before Q2 price hike takes effect",
           expectedImpact: 4.5,
           feasibility: "high",
           priority: "high",
@@ -2642,7 +2642,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-3-2",
           description:
-            "Negotiate BOM cost pass-through with Dell/HP for new NB models launching in H2",
+            "Negotiate BOM cost pass-through with OEM customers for new NB models launching in H2",
           expectedImpact: 2.5,
           feasibility: "medium",
           priority: "high",
@@ -2651,7 +2651,7 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
         {
           id: "action-3-3",
           description:
-            "Qualify alternative memory suppliers (Micron, Kioxia) to diversify sourcing and improve negotiating position",
+            "Qualify alternative memory suppliers to diversify sourcing and improve negotiating position",
           expectedImpact: 1.5,
           feasibility: "medium",
           priority: "medium",
@@ -2703,7 +2703,7 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
     impactType: "negative",
     isApplied: false,
     isSuggested: true,
-    sourceNewsIds: ["news-1", "news-10", "news-3"], // Related news: US tariffs, BYD Europe, Tesla EV demand
+    sourceNewsIds: ["news-1", "news-10", "news-3"], // Related news: US tariffs, EV demand
     color: "#dc2626", // red-600 for suggested negative/headwind
     valueDriverChanges: [
       {
@@ -2764,9 +2764,9 @@ export const mockInitiatives: Initiative[] = [
   },
   {
     id: "init-2",
-    title: "Nvidia GB300 Program Acceleration",
+    title: "AI Server Program Acceleration",
     description:
-      "Allocate dedicated engineering resources to accelerate Nvidia GB300 server connector program. Target: design-in confirmation by Q1 2026 and revenue start in Q2 2026.",
+      "Allocate dedicated engineering resources to accelerate AI server program. Target: design-in confirmation by Q1 2026 and revenue start in Q2 2026.",
     estimatedImpact: 8.5,
     owner: "Dr. Lisa Zhang - CTO",
     status: "in-progress",
@@ -2833,7 +2833,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-2",
       description:
-        "Forecast-volume spike unaligned with manpower planning.\n\nActions:\n• Implement dynamic labor deployment across 3 lines.\n• Launch pilot AI-based production planning module in Nerve Center to predict load and shift pattern.\n\nType: DL – Overtime overrun\nSite: Kunshan\nOwner: Planning Mgr – Chen Wei\nImpact: Reduce OT hours ~15% by Q1 FY26; US$ 0.6 M saving",
+        "Forecast-volume spike unaligned with manpower planning.\n\nActions:\n• Implement dynamic labor deployment across 3 lines.\n• Launch pilot AI-based production planning module in Nerve Center to predict load and shift pattern.\n\nType: DL – Overtime overrun\nSite: Kunshan\nOwner: Planning Mgr – Manufacturing Manager\nImpact: Reduce OT hours ~15% by Q1 FY26; US$ 0.6 M saving",
       expectedImpact: 0.6,
       feasibility: "high",
       priority: "high",

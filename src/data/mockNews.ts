@@ -51,11 +51,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-3',
     category: 'Customer & End-market',
-    title: 'Tesla Q3 Earnings Beat Expectations, Plans to Double EV Production',
+    title: 'Major EV OEM Q3 Earnings Beat Expectations, Plans to Double EV Production',
     summary:
-      'Tesla production doubling by 2026 creates $25M revenue opportunity for high-voltage connectors. Current Tesla volume: $45M annually (#2 customer).',
+      'Major EV OEM production doubling by 2026 creates $25M revenue opportunity. Current volume: $45M annually (#2 customer).',
     reasoning:
-      'Tesla reported stronger-than-expected Q3 earnings and announced plans to double electric vehicle production by 2026. Potential to increase Tesla business by 80-100% over next 2 years. Will require capacity expansion at our Shenzhen and Vietnam facilities. Recommended actions: Schedule strategic account review with Tesla procurement within 2 weeks.',
+      'Major EV OEM reported stronger-than-expected Q3 earnings and announced plans to double electric vehicle production by 2026. Potential to increase EV business by 80-100% over next 2 years. Will require capacity expansion at our facilities. Recommended actions: Schedule strategic account review with EV OEM procurement within 2 weeks.',
     riskOrOpportunity: 'opportunity',
     priority: 'high',
     urgency: 'mid_term',
@@ -96,11 +96,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-6',
     category: 'Customer & End-market',
-    title: 'Apple Delays New AirPods Pro Launch to Q2 2026',
+    title: 'Major OEM Delays Consumer Electronics Launch to Q2 2026',
     summary:
-      'Apple AirPods Pro delay shifts $8M revenue from Q1 to Q2 2026. Production planning adjustment needed to avoid excess inventory. Apple TWS business: $95M annually (23% of audio segment).',
+      'Major OEM product delay shifts $8M revenue from Q1 to Q2 2026. Production planning adjustment needed to avoid excess inventory. Consumer electronics business: $95M annually (23% of audio segment).',
     reasoning:
-      'Apple has postponed the launch of its next-generation AirPods Pro from Q1 to Q2 2026, citing supply chain optimization and feature enhancements. Recommended actions: Confirm revised schedule with Apple directly, adjust Q1 production plan by 15%, and explore opportunity to accelerate other TWS customer projects.',
+      'Major OEM has postponed the launch of next-generation consumer electronics from Q1 to Q2 2026, citing supply chain optimization and feature enhancements. Recommended actions: Confirm revised schedule with customer directly, adjust Q1 production plan by 15%, and explore opportunity to accelerate other customer projects.',
     riskOrOpportunity: 'risk',
     priority: 'medium',
     urgency: 'long_term',
@@ -115,7 +115,7 @@ export const mockNews: NewsItem[] = [
     summary:
       'Amphenol 18% YoY data center growth validates AI connector market opportunity. Our data center business: $354M in H1 2025 (+35.7% YoY) - outpacing key competitor.',
     reasoning:
-      "Amphenol, the world's second-largest connector manufacturer, reported 18% YoY revenue growth in Q3, primarily driven by AI data center applications. This validates our strategic focus on Nvidia/Amazon supply chain. Recommended actions: Benchmark our growth rate vs Amphenol, accelerate engagement with Nvidia GB300 program, and ensure competitive pricing remains intact.",
+      "Amphenol, the world's second-largest connector manufacturer, reported 18% YoY revenue growth in Q3, primarily driven by AI data center applications. This validates our strategic focus on data center supply chain. Recommended actions: Benchmark our growth rate vs Amphenol, accelerate engagement with AI server programs, and ensure competitive pricing remains intact.",
     riskOrOpportunity: 'opportunity',
     priority: 'low',
     urgency: 'long_term',
@@ -156,11 +156,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-10',
     category: 'Customer & End-market',
-    title: 'BYD Expands European EV Production with New Hungary Plant',
+    title: 'Major EV OEM Expands European Production with New Hungary Plant',
     summary:
-      'BYD €800M Hungary plant (200K vehicles/year by 2027) creates European connector supply opportunity. Current BYD volume: $38M annually (#3 EV customer).',
+      'Major EV OEM €800M Hungary plant (200K vehicles/year by 2027) creates European supply opportunity. Current volume: $38M annually (#3 EV customer).',
     reasoning:
-      'Chinese EV giant BYD announces €800M investment in new Hungarian manufacturing facility, expected to produce 200,000 vehicles annually by 2027. European expansion creates opportunity for local connector supply. May require establishing local inventory or production presence. Recommended actions: Schedule meeting with BYD Europe procurement team and assess feasibility of European distribution hub.',
+      'Major Chinese EV OEM announces €800M investment in new Hungarian manufacturing facility, expected to produce 200,000 vehicles annually by 2027. European expansion creates opportunity for local supply. May require establishing local inventory or production presence. Recommended actions: Schedule meeting with EV OEM Europe procurement team and assess feasibility of European distribution hub.',
     riskOrOpportunity: 'opportunity',
     priority: 'low',
     urgency: 'long_term',
@@ -171,11 +171,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-12',
     category: 'Customer & End-market',
-    title: 'Nvidia Reports Record AI Chip Demand, Data Center Revenue Up 122%',
+    title: 'AI Chip Maker Reports Record Demand, Data Center Revenue Up 122%',
     summary:
-      'Nvidia AI chip demand surge drives 122% YoY data center revenue growth. Our high-speed connector business positioned to benefit from hyperscaler capex acceleration.',
+      'AI chip demand surge drives 122% YoY data center revenue growth. Our high-speed connector business positioned to benefit from hyperscaler capex acceleration.',
     reasoning:
-      'Nvidia reported record quarterly earnings with data center revenue up 122% YoY, driven by unprecedented AI infrastructure demand. Major cloud providers are accelerating capex to meet AI compute needs. This validates our strategic investment in high-speed data center connectors. Recommended actions: Accelerate capacity expansion for 800G/1.6T connectors and strengthen Nvidia partnership.',
+      'Major AI chip maker reported record quarterly earnings with data center revenue up 122% YoY, driven by unprecedented AI infrastructure demand. Major cloud providers are accelerating capex to meet AI compute needs. This validates our strategic investment in high-speed data center connectors. Recommended actions: Accelerate capacity expansion for 800G/1.6T connectors and strengthen partnerships.',
     riskOrOpportunity: 'opportunity',
     priority: 'high',
     urgency: 'short_term',
@@ -188,7 +188,7 @@ export const mockNews: NewsItem[] = [
     category: 'Customer & End-market',
     title: 'Consumer Electronics Demand Softens in Q4 Amid Economic Uncertainty',
     summary:
-      'Global consumer electronics demand down 8% QoQ. TWS headphone shipments declined 12% affecting our $95M Apple audio business and $45M Samsung audio segment.',
+      'Global consumer electronics demand down 8% QoQ. TWS headphone shipments declined 12% affecting our $95M audio business and $45M consumer electronics segment.',
     reasoning:
       'Consumer spending on electronics has softened due to macroeconomic headwinds and inflation concerns. Premium audio segment particularly affected with TWS shipments down 12%. May see continued weakness into Q1 2026. Recommended actions: Diversify customer base, accelerate cost reduction initiatives, and explore value segment opportunities.',
     riskOrOpportunity: 'risk',
@@ -201,11 +201,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-14',
     category: 'Customer & End-market',
-    title: 'Apple Revises Q1 Guidance Citing Component Shortages',
+    title: 'Major OEM Revises Q1 Guidance Citing Component Shortages',
     summary:
-      'Apple lowers Q1 revenue guidance by 5-7% due to component supply constraints. Multiple product launches pushed to Q2 affecting supplier revenue timing.',
+      'Major OEM lowers Q1 revenue guidance by 5-7% due to component supply constraints. Multiple product launches pushed to Q2 affecting supplier revenue timing.',
     reasoning:
-      'Apple announced revised Q1 guidance citing ongoing component shortages and production optimization for new products. AirPods Pro and iPad Mini launches delayed by 4-6 weeks. This follows broader industry trend of product launch delays. Recommended actions: Adjust production schedules, manage inventory levels carefully, and confirm revised delivery schedules with Apple.',
+      'Major OEM announced revised Q1 guidance citing ongoing component shortages and production optimization for new products. Consumer electronics launches delayed by 4-6 weeks. This follows broader industry trend of product launch delays. Recommended actions: Adjust production schedules, manage inventory levels carefully, and confirm revised delivery schedules with customer.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',

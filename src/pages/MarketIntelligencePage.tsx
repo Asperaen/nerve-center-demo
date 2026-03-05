@@ -870,11 +870,11 @@ export default function MarketIntelligencePage() {
       ({
         'market-performance': [
           'AI Data Center Acceleration',
-          'Apple AirPods Launch Delay',
+          'Consumer Electronics Launch Delay',
         ],
         'l3-vs-target': [
           'AI Data Center Acceleration',
-          'Apple AirPods Launch Delay',
+          'Consumer Electronics Launch Delay',
         ],
         'one-off-adjustments': ['Copper Price Surge'],
       }),

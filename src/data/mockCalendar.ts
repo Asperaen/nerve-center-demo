@@ -535,7 +535,7 @@ export const mockCalendarEvents: Meeting[] = [
       {
         id: 'material-nerve-2',
         type: 'external-pulse',
-        itemId: 'news-3', // Tesla Q3 Earnings Beat Expectations
+        itemId: 'news-3', // EV OEM Q3 Earnings Beat Expectations
         addedAt: new Date('2025-11-19T16:35:00+08:00'),
       },
       {
@@ -652,14 +652,14 @@ export const mockCalendarEvents: Meeting[] = [
         isRequired: true,
       },
       {
-        name: 'Jack Chen',
-        email: 'michael.chen@gmfg.com',
+        name: 'Customer CEO',
+        email: 'ceo@customer.com',
         role: 'Customer CEO',
         isRequired: true,
       },
       {
-        name: 'Lisa Wang',
-        email: 'lisa.wang@gmfg.com',
+        name: 'Customer COO',
+        email: 'coo@customer.com',
         role: 'Customer COO',
         isRequired: true,
       },
@@ -678,10 +678,10 @@ export const mockCalendarEvents: Meeting[] = [
   },
   {
     id: 'meeting-14',
-    title: 'Executive Meeting - Vortex Technologies',
+    title: 'Executive Meeting - Strategic Partner',
     startTime: new Date('2025-11-19T14:00:00+08:00'), // 2 PM GMT+8
     endTime: new Date('2025-11-19T15:00:00+08:00'), // 3:30 PM GMT+8
-    location: 'Vortext Headquarters, Round Rock, TX',
+    location: 'Partner Headquarters',
     organizer: 'CEO',
     attendees: [
       {
@@ -691,14 +691,14 @@ export const mockCalendarEvents: Meeting[] = [
         isRequired: true,
       },
       {
-        name: 'Michael Dell',
-        email: 'michael.dell@vortext.com',
+        name: 'Partner CEO',
+        email: 'ceo@partner.com',
         role: 'Customer CEO',
         isRequired: true,
       },
       {
-        name: 'Jeff Clarke',
-        email: 'jeff.clarke@vortext.com',
+        name: 'Partner COO',
+        email: 'coo@partner.com',
         role: 'Customer COO',
         isRequired: true,
       },
@@ -716,7 +716,7 @@ export const mockCalendarEvents: Meeting[] = [
       },
     ],
     description:
-      'Strategic partnership discussion with Dell leadership on data center solutions, supply chain collaboration, and joint go-to-market initiatives. Need to bring the Q4 partnership deck and product roadmap presentation.',
+      'Strategic partnership discussion with partner leadership on data center solutions, supply chain collaboration, and joint go-to-market initiatives. Need to bring the Q4 partnership deck and product roadmap presentation.',
     meetingType: 'general',
     materials: [],
     isCritical: true,
