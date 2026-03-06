@@ -232,9 +232,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-17',
-    title: 'Follow up with technology partner CEO',
+    title: 'Follow up with PC customer CEO',
     description:
-      'Follow up on strategic partnership discussion with technology partner regarding joint development of next-gen solutions for PC markets.',
+      'Follow up on strategic partnership discussion with PC customer regarding joint development of next-gen solutions for PC markets.',
     owner: 'CEO',
     status: 'todo',
     priority: 'high',
@@ -364,9 +364,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-29',
-    title: 'Follow up with technology partner on 5G collaboration',
+    title: 'Follow up with PC customer on PC collaboration',
     description:
-      'Follow up on technical collaboration discussion for next-generation 5G solutions and joint development opportunities.',
+      'Follow up on technical collaboration discussion for next-generation PC solutions and joint development opportunities.',
     owner: 'CEO',
     status: 'todo',
     priority: 'medium',
@@ -388,7 +388,7 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-31',
-    title: 'Follow up with cloud partner on infrastructure',
+    title: 'Follow up with enterprise team on PC solution',
     description:
       'Follow up on discussion regarding solutions for cloud partner PC markets and explore partnership opportunities.',
     owner: 'CEO',
