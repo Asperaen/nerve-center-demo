@@ -378,7 +378,7 @@ const buildGroupRow = (
       `${insightBase} Operating profit tracks execution momentum.`,
       percentBasis,
       name,
-      'Operating Profit'
+      'Operating Profit Before Sharing'
     ),
     np: buildMetric(
       netProfit,
@@ -387,7 +387,7 @@ const buildGroupRow = (
       `${insightBase} Net profit reflects margin resilience.`,
       percentBasis,
       name,
-      'Net Profit'
+      'Operating Profit After Sharing'
     ),
   };
 };
@@ -505,7 +505,7 @@ const buildUnitRow = (
       `${insightBase} OP tracks execution pace.`,
       percentBasis,
       unit.name,
-      'Operating Profit'
+      'Operating Profit Before Sharing'
     ),
     np: buildMetric(
       netProfit,
@@ -514,7 +514,7 @@ const buildUnitRow = (
       `${insightBase} NP supported by margin discipline.`,
       percentBasis,
       unit.name,
-      'Net Profit'
+      'Operating Profit After Sharing'
     ),
   };
 };
@@ -1380,7 +1380,9 @@ export default function ExecutiveSummaryPage({
   };
 
   const handleMonthClick = (monthIndex: number) => {
-    if (isActualsView || selectedTimeframeScope === 'ytm') {
+    // Allow month selection for historical years (2025, 2024) even in YTM mode
+    const isHistoricalYear = selectedYear !== 2026;
+    if (isActualsView || (selectedTimeframeScope === 'ytm' && !isHistoricalYear)) {
       return;
     }
     if (monthAnchor === null || !isMonthRangeCustom) {
@@ -2773,7 +2775,7 @@ export default function ExecutiveSummaryPage({
         {renderMetricCell(
           group.op,
           group.name,
-          isPercentView ? 'Operating Profit Margin' : 'Operating Profit',
+          isPercentView ? 'OP Before Sharing Margin' : 'Operating Profit Before Sharing',
           false,
           group.id,
           isMetricNavigable,
@@ -2784,7 +2786,7 @@ export default function ExecutiveSummaryPage({
         {renderMetricCell(
           group.np,
           group.name,
-          isPercentView ? 'Net Profit Margin' : 'Net Profit',
+          isPercentView ? 'OP After Sharing Margin' : 'Operating Profit After Sharing',
           true,
           group.id,
           isMetricNavigable,
@@ -2943,8 +2945,10 @@ export default function ExecutiveSummaryPage({
                       {MONTHS.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
+                        // Allow month selection for historical years (2025, 2024) even in YTM mode
+                        const isHistoricalYear = selectedYear !== 2026;
                         const isDisabled =
-                          isActualsView || selectedTimeframeScope === 'ytm';
+                          isActualsView || (selectedTimeframeScope === 'ytm' && !isHistoricalYear);
                         return (
                           <button
                             key={month}
@@ -3067,8 +3071,10 @@ export default function ExecutiveSummaryPage({
                       {MONTHS.map((month, index) => {
                         const [start, end] = monthRange;
                         const isSelected = index >= start && index <= end;
+                        // Allow month selection for historical years (2025, 2024) even in YTM mode
+                        const isHistoricalYear = selectedYear !== 2026;
                         const isDisabled =
-                          isActualsView || selectedTimeframeScope === 'ytm';
+                          isActualsView || (selectedTimeframeScope === 'ytm' && !isHistoricalYear);
                         return (
                           <button
                             key={month}
@@ -3293,13 +3299,13 @@ export default function ExecutiveSummaryPage({
                   <th className='text-center px-4 py-3 border-b border-r border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
                       {isPercentView
-                        ? 'Operating Profit Margin'
-                        : 'Operating Profit'}
+                        ? 'OP Before Sharing Margin'
+                        : 'Operating Profit Before Sharing'}
                     </span>
                   </th>
                   <th className='text-center px-4 py-3 border-b border-gray-200'>
                     <span className='text-sm font-bold text-gray-900'>
-                      {isPercentView ? 'Net Profit Margin' : 'Net Profit'}
+                      {isPercentView ? 'OP After Sharing Margin' : 'Operating Profit After Sharing'}
                     </span>
                   </th>
                 </tr>
