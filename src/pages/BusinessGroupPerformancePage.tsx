@@ -3284,8 +3284,11 @@ export default function BusinessGroupPerformancePage() {
             <button
               onClick={handleAIRegenerate}
               disabled={isAIRegenerating}
-              className={`px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-lg hover:from-purple-300 hover:to-indigo-400 cursor-pointer ${
-                isAIRegenerating ? 'animate-pulse' : ''
+              type="button"
+              className={`px-4 py-1.5 text-sm font-bold rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${
+                isAIRegenerating 
+                  ? 'bg-purple-100 text-purple-600 animate-pulse' 
+                  : 'bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-purple-300/50 hover:scale-105 hover:shadow-xl hover:from-purple-600 hover:to-indigo-700'
               }`}>
               <span className='text-sm'>✨</span>
               <span>{isAIRegenerating ? 'Generating...' : 'AI'}</span>
