@@ -133,9 +133,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-10',
-    title: 'Schedule EV manufacturer Europe expansion discussion',
+    title: 'Schedule PC customer Europe expansion discussion',
     description:
-      'Meet with EV manufacturer Europe procurement team regarding their Hungary plant. Explore opportunity for local supply partnership.',
+      'Meet with PC customer Europe procurement team regarding their Hungary plant. Explore opportunity for local supply partnership.',
     owner: 'Douglass Chen - CTO',
     status: 'completed',
     priority: 'low',

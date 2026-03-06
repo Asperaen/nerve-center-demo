@@ -134,7 +134,7 @@ export default function RootCauseAnalysisSidebar({
             'Revenue may decrease due to reduced volume if production cannot be shifted quickly',
         });
         analysis.summary +=
-          'US Tariff Impact: May reduce EV connector volume by ~20% for US market, leading to $10M revenue impact. ';
+          'US Tariff Impact: May reduce PC component volume by ~20% for US market, leading to $10M revenue impact. ';
       }
 
       if (

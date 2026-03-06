@@ -529,13 +529,13 @@ export const mockCalendarEvents: Meeting[] = [
       {
         id: 'material-nerve-1',
         type: 'external-pulse',
-        itemId: 'news-1', // US Announces 25% Tariff on Chinese-Made EV Connectors
+        itemId: 'news-1', // US Announces 25% Tariff on PC Products
         addedAt: new Date('2025-11-19T16:30:00+08:00'),
       },
       {
         id: 'material-nerve-2',
         type: 'external-pulse',
-        itemId: 'news-3', // EV OEM Q3 Earnings Beat Expectations
+        itemId: 'news-3', // Major Company A Q3 Earnings Beat Expectations
         addedAt: new Date('2025-11-19T16:35:00+08:00'),
       },
       {

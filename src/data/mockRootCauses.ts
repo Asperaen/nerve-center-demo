@@ -17,7 +17,7 @@ export const mockRootCauses: RootCause[] = [
   },
   {
     id: 'rc-3',
-    title: 'Volume Decline from US Tariff Impact on EV Connectors',
+    title: 'Volume Decline from US Tariff Impact on PC Components',
     impact: -10.0,
     tags: ['Revenue', 'Volume'],
     waveTicketNumber: 'nc-103',

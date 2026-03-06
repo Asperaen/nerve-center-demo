@@ -51,7 +51,7 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-3',
     category: 'Customer & End-market',
-    title: 'Major Company A Q3 Earnings Beat Expectations, Plans to Double EV Production',
+    title: 'Major Company A Q3 Earnings Beat Expectations, Plans to Double PC Production',
     summary:
       'Major Company A production doubling by 2026 creates $25M revenue opportunity. Current volume: $45M annually (#2 customer).',
     reasoning:

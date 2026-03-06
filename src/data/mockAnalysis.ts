@@ -288,5 +288,5 @@ export const examplePrompts = [
   'Show me revenue variance by customer',
   'What is driving the gross profit variance?',
   'Analyze the UPPH performance by facility',
-  'Break down the EV business unit performance by product line',
+  'Break down the PC business unit performance by product line',
 ];

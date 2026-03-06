@@ -305,7 +305,7 @@ const rawExternalPulseResponse = {
       url: "https://www.scmp.com/tech/tech-trends/article/3341953/chinese-suppliers-robotics-initiative?utm_source=rss_feed",
       category: ["Competitors & Industry", "Customer & End-market"],
       summary:
-        "EV maker plans US production of humanoid robot，其供應鏈仍高度依賴中國廠商提供執行器、感測器、電機、PCB與連接器等關鍵零組件，顯示零組件供應重心仍在中國並帶來採購與合規風險。",
+        "PC maker plans US production of humanoid robot，其供應鏈仍高度依賴中國廠商提供執行器、感測器、電機、PCB與連接器等關鍵零組件，顯示零組件供應重心仍在中國並帶來採購與合規風險。",
       is_first_seen: true,
     },
     {
@@ -347,22 +347,22 @@ const rawExternalPulseResponse = {
       is_first_seen: true,
     },
     {
-      title: "Legacy EV Model Soon to Be History Changed the Auto Industry",
+      title: "Legacy PC Model Soon to Be History Changed the Industry",
       importance_label: "medium",
       urgency_label: "mid_term",
       opportunity_risk: "mixed",
       scoring_confidence: "medium",
       suggested_next_steps: [
         "Assess the impact of Model S/X discontinuation on spare-parts and long-tail demand and adjust service part planning accordingly.",
-        "Engage EV OEM contacts to understand roadmap timing for robotics/AI initiatives and potential new component requirements.",
-        "Reallocate sales and engineering resources to pursue opportunities in EV OEM emerging AI/robotics programs where company can compete.",
+        "Engage PC OEM contacts to understand roadmap timing for robotics/AI initiatives and potential new component requirements.",
+        "Reallocate sales and engineering resources to pursue opportunities in PC OEM emerging AI/robotics programs where company can compete.",
       ],
       date: "2026-01-30",
       source: "The New York Times",
       url: "https://www.nytimes.com/2026/01/30/business/ev-model-history.html",
       category: ["Customer & End-market"],
       summary:
-        "Major EV OEM will discontinue legacy models and Model X as it pivots toward AI and robotics, a strategic shift that is likely to reshape component demand and supplier roadmaps across the automotive supply chain.",
+        "Major PC OEM will discontinue legacy models and Model X as it pivots toward AI and robotics, a strategic shift that is likely to reshape component demand and supplier roadmaps across the PC supply chain.",
       is_first_seen: true,
     },
     {
@@ -436,16 +436,16 @@ const rawExternalPulseResponse = {
       opportunity_risk: "opportunity",
       scoring_confidence: "medium",
       suggested_next_steps: [
-        "Explore engagement with Chinese OEMs active in Thailand to position Compal as a regional supplier for EV components.",
+        "Explore engagement with Chinese OEMs active in Thailand to position Compal as a regional supplier for PC components.",
         "Evaluate capacity and logistics options to serve increased ASEAN BEV production, including local inventory or distribution centers.",
-        "Track Thailand OEM programmes and timing to prioritise product qualifications for EV-specific connectors and high-voltage components.",
+        "Track Thailand OEM programmes and timing to prioritise product qualifications for PC-specific components and high-voltage components.",
       ],
       date: "2026-01-21",
       source: "DIGITIMES",
       url: "https://www.digitimes.com.tw/tech/rpt/rpt_show.asp?v=20260121-22",
       category: ["Customer & End-market"],
       summary:
-        "DIGITIMES finds Thailand’s BEV sales reached 97,416 units through October 2025 (19.7% penetration) with Chinese automakers capturing over 70% market share, indicating accelerating EV adoption in Southeast Asia.",
+        "DIGITIMES finds Thailand’s BEV sales reached 97,416 units through October 2025 (19.7% penetration) with Chinese automakers capturing over 70% market share, indicating accelerating PC adoption in Southeast Asia.",
       is_first_seen: false,
     },
     {
@@ -568,7 +568,7 @@ const rawExternalPulseResponse = {
       is_first_seen: true,
     },
     {
-      title: "EV Maker Shifts Production to Humanoid Robots　中國仍成主力供應鏈",
+      title: "PC Maker Shifts Production to Humanoid Robots　中國仍成主力供應鏈",
       importance_label: "low",
       urgency_label: "mid_term",
       opportunity_risk: "mixed",
@@ -583,7 +583,7 @@ const rawExternalPulseResponse = {
       url: "https://www.digitimes.com.tw/tech/dt/n/shwnws.asp?id=0000745340_8QH4GWZ43H9WV310ZOVJ5",
       category: ["Suppliers & Supply Chain"],
       summary:
-        "EV maker plans to shift production lines轉向生產Optimus人形機器人，但短中期仍高度倚賴中國供應商供應關鍵零組件與模組，儘管最終組裝欲回流美國，供應鏈仍以中國為主力。",
+        "PC maker plans to shift production lines轉向生產Optimus人形機器人，但短中期仍高度倚賴中國供應商供應關鍵零組件與模組，儘管最終組裝欲回流美國，供應鏈仍以中國為主力。",
       is_first_seen: true,
     },
     {

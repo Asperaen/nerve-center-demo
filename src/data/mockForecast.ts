@@ -2703,7 +2703,7 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
     impactType: "negative",
     isApplied: false,
     isSuggested: true,
-    sourceNewsIds: ["news-1", "news-10", "news-3"], // Related news: US tariffs, EV demand
+    sourceNewsIds: ["news-1", "news-10", "news-3"], // Related news: US tariffs, PC demand
     color: "#dc2626", // red-600 for suggested negative/headwind
     valueDriverChanges: [
       {
