@@ -10,7 +10,7 @@ export const mockRootCauses: RootCause[] = [
   },
   {
     id: 'rc-2',
-    title: 'Material Cost Surge from Rare Earth Supply Disruption',
+    title: 'Material Cost Surge from Supply Disruption',
     impact: -5.0,
     tags: ['COGS', 'Material'],
     waveTicketNumber: 'nc-102',

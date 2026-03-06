@@ -321,7 +321,7 @@ export const mockValueDriverHierarchy: FinancialCategoryGroup[] = [
 export const mockForecastDrivers: ForecastDriver[] = [
   {
     id: "driver-1",
-    name: "EV Connector Volume (H2 2025)",
+    name: "PC Volume (H2 2025)",
     category: "volume",
     latestActual: 2.3,
     forecastValue: 1.84,
@@ -332,7 +332,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-2",
-    name: "Data Center Connector Volume",
+    name: "PC Volume",
     category: "volume",
     latestActual: 1.8,
     forecastValue: 2.56,
@@ -354,7 +354,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-4",
-    name: "Rare Earth Material Cost",
+    name: "Raw Material Material Cost",
     category: "cost",
     latestActual: 45.2,
     forecastValue: 61.0,
@@ -365,7 +365,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-5",
-    name: "Copper Price",
+    name: "Component Price",
     category: "cost",
     latestActual: 8.5,
     forecastValue: 9.78,
@@ -376,7 +376,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-6",
-    name: "Vietnam Labor Rate",
+    name: "all sites Labor Rate",
     category: "cost",
     latestActual: 4.2,
     forecastValue: 4.54,
@@ -387,7 +387,7 @@ export const mockForecastDrivers: ForecastDriver[] = [
   },
   {
     id: "driver-7",
-    name: "5G Connector Volume",
+    name: "PC Volume",
     category: "volume",
     latestActual: 3.2,
     forecastValue: 4.16,
@@ -435,7 +435,7 @@ export const mockOperationalKPIs: OperationalKPI[] = [
     forecast: 14.2,
     unit: "USD/unit",
     impactDescription:
-      "Copper and rare earth price increases partially offset by procurement negotiations",
+      "Component and raw material price increases partially offset by procurement negotiations",
   },
   {
     id: "opkpi-4",
@@ -458,7 +458,7 @@ export const baselineIncomeStatement: IncomeStatement = {
   breakdown: {
     momentum: 2350.0, // Baseline forecast
     pipeline: 420.0, // New opportunities (5G: 150, Data Center: 220, L4 Initiative: 50)
-    risk: -381.0, // Tariffs: -120, Copper: -85, Consumer Electronics: -95, Rare Earth: -60, Vietnam Labor: -21
+    risk: -381.0, // Tariffs: -120, Component: -85, Consumer Electronics: -95, Raw Material: -60, all sites Labor: -21
     opportunity: 0, // Not yet realized
   },
 };
@@ -493,18 +493,18 @@ export const mockBusinessEvents: BusinessEvent[] = [
   },
   {
     id: "event-5g-growth",
-    name: "5G Infrastructure Growth",
+    name: "PC Growth",
     impact: 150.0,
     type: "opportunity",
     implications: [
       "Global 5G investment reached $200B creating strong demand",
-      "30% YoY growth in 5G connector volume",
+      "30% YoY growth in PC volume",
       "Opportunity to increase market share in Asia-Pacific region",
     ],
     actionProposals: [
       {
         id: "ap-1",
-        description: "Increase 5G antenna connector production capacity by 25%",
+        description: "Increase PC production capacity by 25%",
         expectedImpact: 3.2,
         feasibility: "high",
         priority: "medium",
@@ -521,7 +521,7 @@ export const mockBusinessEvents: BusinessEvent[] = [
     type: "opportunity",
     implications: [
       "AI server program ramping faster than expected",
-      "42% YoY growth in data center connector demand",
+      "42% YoY growth in PC demand",
       "Strong pricing environment with limited competition",
     ],
     actionProposals: [
@@ -536,18 +536,18 @@ export const mockBusinessEvents: BusinessEvent[] = [
   },
   {
     id: "event-us-tariff",
-    name: "US Tariff on EV Connectors",
+    name: "US Tariff on PCs",
     impact: -120.0,
     type: "risk",
     implications: [
-      "25% tariff on Chinese-made EV connectors for US market",
-      "20% of EV connector volume affected",
+      "25% tariff on Chinese-made PCs for US market",
+      "20% of PC volume affected",
       "Customers may switch to competitors with non-China production",
     ],
     actionProposals: [
       {
         id: "ap-3",
-        description: "Shift production to Vietnam facility within 6 months",
+        description: "Shift production to all sites facility within 6 months",
         expectedImpact: 7.0,
         feasibility: "medium",
         priority: "high",
@@ -562,19 +562,19 @@ export const mockBusinessEvents: BusinessEvent[] = [
     ],
   },
   {
-    id: "event-copper-price",
-    name: "Copper Price Surge",
+    id: "event-component-price",
+    name: "Component Price Surge",
     impact: -85.0,
     type: "risk",
     implications: [
-      "15% increase in copper prices due to supply disruptions",
-      "Copper accounts for 28% of material costs",
-      "Affects copper cable products (40% of revenue)",
+      "15% increase in component prices due to supply disruptions",
+      "Component accounts for 28% of material costs",
+      "Affects component cable products (40% of revenue)",
     ],
     actionProposals: [
       {
         id: "ap-5",
-        description: "Implement copper hedging strategy for next 12 months",
+        description: "Implement component hedging strategy for next 12 months",
         expectedImpact: 3.5,
         feasibility: "high",
         priority: "medium",
@@ -610,11 +610,11 @@ export const mockBusinessEvents: BusinessEvent[] = [
   },
   {
     id: "event-rare-earth",
-    name: "Rare Earth Supply Disruption",
+    name: "Raw Material Supply Disruption",
     impact: -60.0,
     type: "risk",
     implications: [
-      "China export restrictions on rare earth materials",
+      "China export restrictions on raw material materials",
       "35% cost increase for affected materials",
       "Current inventory covers only 45 days",
     ],
@@ -637,12 +637,12 @@ export const mockBusinessEvents: BusinessEvent[] = [
   },
   {
     id: "event-vietnam-labor",
-    name: "Vietnam Labor Rate Increase",
+    name: "all sites Labor Rate Increase",
     impact: -21.0,
     type: "risk",
     implications: [
-      "8% increase in Vietnam labor rates due to inflation",
-      "Affects 30% of production capacity in Vietnam",
+      "8% increase in all sites labor rates due to inflation",
+      "Affects 30% of production capacity in all sites",
       "Labor cost per unit increases despite productivity gains",
     ],
     actionProposals: [
@@ -700,7 +700,7 @@ export const mockScenarios: Scenario[] = [
     id: "scenario-aggressive",
     name: "Aggressive Growth Scenario",
     createdDate: subDays(new Date(), 5),
-    createdBy: "David Park - VP Sales",
+    createdBy: "Douglass Chen - CTO",
     drivers: [
       ...mockForecastDrivers.map((d) => {
         if (d.id === "driver-2")
@@ -774,10 +774,10 @@ export const mockOPWaterfallStages: OPWaterfallStage[] = [
     stage: "additional-risk",
     label: "Additional pressure / risk",
     value: 240.0, // After additional risks
-    delta: -15.0, // Additional risks: copper price, rare earth, Vietnam labor
+    delta: -15.0, // Additional risks: component price, raw material, all sites labor
     type: "negative",
     description:
-      "Additional risks: Copper price surge (+15%), Rare earth supply disruption (+35% cost), Vietnam labor rate increase (+8%)",
+      "Additional risks: Component price surge (+15%), Supply disruption (+35% cost), all sites labor rate increase (+8%)",
   },
   {
     stage: "assumed-leakage",
@@ -1041,7 +1041,7 @@ export const mockFunctionDeviationRows: FunctionDeviationRow[] = [
     label: "MVA",
     ytmBudget: -91.0,
     ytmActuals: -88.4,
-    aiInsight: "Vietnam factory efficiency gains offset China labor cost.",
+    aiInsight: "all sites factory efficiency gains offset China labor cost.",
     indentLevel: 1,
   },
   {
@@ -1955,7 +1955,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 800,
       actualImpact: 320, // 40% realized due to delay
-      owner: "Li Ming",
+      owner: "Manufacturing Manager",
     },
     {
       id: "sz-3",
@@ -1965,7 +1965,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 650,
       actualImpact: 195, // 30% realized due to delay
-      owner: "Wang Fang",
+      owner: "Operations Lead",
     },
     {
       id: "sz-4",
@@ -1975,7 +1975,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 420,
       actualImpact: 420, // 100% realized
-      owner: "Zhang Lei",
+      owner: "Production Manager",
     },
     {
       id: "sz-5",
@@ -1985,7 +1985,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 300,
       actualImpact: 300, // 100% realized
-      owner: "Liu Yan",
+      owner: "Plant Manager",
     },
   ],
   "Dongguan Plant": [
@@ -1997,7 +1997,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 450,
       actualImpact: 450, // 100% realized
-      owner: "Huang Wei",
+      owner: "Manufacturing Manager",
     },
     {
       id: "dg-2",
@@ -2007,7 +2007,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 280,
       actualImpact: 140, // 50% realized due to delay
-      owner: "Lin Mei",
+      owner: "Quality Manager",
     },
     {
       id: "dg-3",
@@ -2017,7 +2017,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 190,
       actualImpact: 190, // 100% realized
-      owner: "Chen Jie",
+      owner: "Operations Lead",
     },
   ],
   "Shenzhen Plant": [
@@ -2029,7 +2029,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 520,
       actualImpact: 520, // 100% realized
-      owner: "Wu Tao",
+      owner: "Plant Manager",
     },
     {
       id: "shz-2",
@@ -2039,7 +2039,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 380,
       actualImpact: 190, // 50% realized due to delay
-      owner: "Yang Ling",
+      owner: "Production Manager",
     },
     {
       id: "shz-3",
@@ -2049,7 +2049,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 210,
       actualImpact: 210, // 100% realized
-      owner: "Zhao Min",
+      owner: "Warehouse Manager",
     },
     {
       id: "shz-4",
@@ -2059,7 +2059,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 150,
       actualImpact: 150, // 100% realized
-      owner: "Sun Qiang",
+      owner: "Quality Manager",
     },
   ],
   "Kunshan Plant": [
@@ -2071,7 +2071,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 340,
       actualImpact: 136, // 40% realized due to delay
-      owner: "Xu Feng",
+      owner: "Manufacturing Manager",
     },
     {
       id: "ks-2",
@@ -2081,7 +2081,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 180,
       actualImpact: 180, // 100% realized
-      owner: "Ma Li",
+      owner: "Training Manager",
     },
   ],
   "Wuxi Plant": [
@@ -2093,7 +2093,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 290,
       actualImpact: 290, // 100% realized
-      owner: "Guo Hua",
+      owner: "Operations Lead",
     },
     {
       id: "wx-2",
@@ -2103,7 +2103,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 220,
       actualImpact: 88, // 40% realized due to delay
-      owner: "He Xin",
+      owner: "IT Manager",
     },
     {
       id: "wx-3",
@@ -2113,7 +2113,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 130,
       actualImpact: 130, // 100% realized
-      owner: "Jiang Bo",
+      owner: "Maintenance Manager",
     },
   ],
   "Tianjin Plant": [
@@ -2125,7 +2125,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 410,
       actualImpact: 205, // 50% realized due to delay
-      owner: "Liang Yu",
+      owner: "Logistics Manager",
     },
     {
       id: "tj-2",
@@ -2135,7 +2135,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 160,
       actualImpact: 160, // 100% realized
-      owner: "Deng Wei",
+      owner: "Packaging Manager",
     },
   ],
   "Chengdu Plant": [
@@ -2147,7 +2147,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 380,
       actualImpact: 380, // 100% realized
-      owner: "Xiao Ming",
+      owner: "Plant Manager",
     },
     {
       id: "cd-2",
@@ -2157,7 +2157,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 250,
       actualImpact: 100, // 40% realized due to delay
-      owner: "Tang Jing",
+      owner: "Procurement Manager",
     },
     {
       id: "cd-3",
@@ -2167,7 +2167,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 120,
       actualImpact: 120, // 100% realized
-      owner: "Zeng Rui",
+      owner: "Facility Manager",
     },
   ],
   "Zhongshan Plant": [
@@ -2179,7 +2179,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 320,
       actualImpact: 320, // 100% realized
-      owner: "Pan Lei",
+      owner: "Manufacturing Manager",
     },
     {
       id: "zs-2",
@@ -2189,7 +2189,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 270,
       actualImpact: 135, // 50% realized due to delay
-      owner: "Cao Jun",
+      owner: "Quality Manager",
     },
     {
       id: "zs-3",
@@ -2199,7 +2199,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 90,
       actualImpact: 90, // 100% realized
-      owner: "Feng Lan",
+      owner: "Training Manager",
     },
     {
       id: "zs-4",
@@ -2209,7 +2209,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 180,
       actualImpact: 180, // 100% realized
-      owner: "Ye Hao",
+      owner: "Automation Manager",
     },
   ],
   "Xiamen Plant": [
@@ -2221,7 +2221,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 350,
       actualImpact: 350, // 100% realized
-      owner: "Shi Wen",
+      owner: "Logistics Manager",
     },
     {
       id: "xm-2",
@@ -2231,7 +2231,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 200,
       actualImpact: 200, // 100% realized
-      owner: "Qiu Yang",
+      owner: "Quality Manager",
     },
     {
       id: "xm-3",
@@ -2241,7 +2241,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 440,
       actualImpact: 176, // 40% realized due to delay
-      owner: "Ren Xia",
+      owner: "Procurement Manager",
     },
   ],
   "Ningbo Plant": [
@@ -2253,7 +2253,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: false,
       expectedImpact: 280,
       actualImpact: 280, // 100% realized
-      owner: "Tian Chen",
+      owner: "Operations Lead",
     },
     {
       id: "nb-2",
@@ -2263,7 +2263,7 @@ export const mockFactoryInitiatives: FactoryInitiativesMap = {
       isDelayed: true,
       expectedImpact: 190,
       actualImpact: 95, // 50% realized due to delay
-      owner: "Bai Xue",
+      owner: "Logistics Manager",
     },
   ],
 };
@@ -2668,9 +2668,9 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
 export const mockSuggestedAssumptions: AppliedAssumption[] = [
   {
     id: "assum-suggested-1",
-    name: "Vietnam Factory Expansion Benefits",
+    name: "all sites Factory Expansion Benefits",
     description:
-      "Vietnam Phase 2 expansion completing ahead of schedule. Expected $3-4M annual savings from lower labor costs and Vietnam-US trade benefits. May improve gross margins by 0.2-0.3% for Vietnam-sourced NB products.",
+      "all sites Phase 2 expansion completing ahead of schedule. Expected $3-4M annual savings from lower labor costs and all sites-US trade benefits. May improve gross margins by 0.2-0.3% for all sites-sourced NB products.",
     impact: 3.5, // +3.5M impact (tailwind)
     targetStage: "headwinds-tailwinds",
     impactType: "positive",
@@ -2695,9 +2695,9 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
   },
   {
     id: "assum-suggested-2",
-    name: "US Tariff on EV Connectors",
+    name: "US Tariff on PCs",
     description:
-      "US announces 25% tariff on Chinese-made EV connectors. 20% of EV connector volume affected. Estimated $10M revenue impact if production cannot be shifted to Vietnam within 6 months.",
+      "US announces 25% tariff on Chinese-made PCs. 20% of PC volume affected. Estimated $10M revenue impact if production cannot be shifted to all sites within 6 months.",
     impact: -10.0, // -10M impact (headwind)
     targetStage: "headwinds-tailwinds",
     impactType: "negative",
@@ -2722,15 +2722,15 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
   },
   {
     id: "assum-suggested-3",
-    name: "China Rare Earth Export Restrictions",
+    name: "China Raw Material Export Restrictions",
     description:
-      "China limits rare earth exports affecting connector materials. Material costs may increase by 30-40% without alternative suppliers. Estimated $5M cost increase in H2. Current inventory covers 45 days.",
+      "China limits raw material exports affecting connector materials. Material costs may increase by 30-40% without alternative suppliers. Estimated $5M cost increase in H2. Current inventory covers 45 days.",
     impact: -5.0, // -5M impact (headwind)
     targetStage: "additional-risk",
     impactType: "negative",
     isApplied: false,
     isSuggested: true,
-    sourceNewsIds: ["news-2", "news-8", "news-15"], // Related news: Rare earth exports, copper prices, supply chain disruptions
+    sourceNewsIds: ["news-2", "news-8", "news-15"], // Related news: Raw material exports, component prices, supply chain disruptions
     color: "#ea580c", // orange-600 for suggested negative/headwind
     valueDriverChanges: [
       {
@@ -2752,11 +2752,11 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
 export const mockInitiatives: Initiative[] = [
   {
     id: "init-1",
-    title: "Vietnam Production Capacity Expansion",
+    title: "all sites Production Capacity Expansion",
     description:
-      "Shift 20% of EV connector production from China to Vietnam to avoid US tariffs. Estimated timeline: 6 months. Investment required: $8M for equipment and training.",
+      "Shift 20% of PC production from China to all sites to avoid US tariffs. Estimated timeline: 6 months. Investment required: $8M for equipment and training.",
     estimatedImpact: 7.0,
-    owner: "Jennifer Wu - VP Operations",
+    owner: "Tony Bonaderon - CEO",
     status: "submitted",
     resourceRequirements: "$8M capex, 25 FTE for 6 months",
     createdDate: subDays(new Date(), 3),
@@ -2768,7 +2768,7 @@ export const mockInitiatives: Initiative[] = [
     description:
       "Allocate dedicated engineering resources to accelerate AI server program. Target: design-in confirmation by Q1 2026 and revenue start in Q2 2026.",
     estimatedImpact: 8.5,
-    owner: "Dr. Lisa Zhang - CTO",
+    owner: "Ivon Chiou - CTO",
     status: "in-progress",
     resourceRequirements: "12 engineers for 4 months, $500K prototype costs",
     createdDate: subDays(new Date(), 10),
@@ -2776,11 +2776,11 @@ export const mockInitiatives: Initiative[] = [
   },
   {
     id: "init-3",
-    title: "Copper Hedging Strategy Implementation",
+    title: "Component Hedging Strategy Implementation",
     description:
-      "Implement 12-month copper hedging program to protect against price volatility. Cover 60% of expected copper purchases with forward contracts.",
+      "Implement 12-month component hedging program to protect against price volatility. Cover 60% of expected component purchases with forward contracts.",
     estimatedImpact: 3.5,
-    owner: "Mark Thompson - CFO",
+    owner: "Jack Wang - CFO",
     status: "draft",
     resourceRequirements: "Treasury team 2 FTE, hedging margin $2M",
     createdDate: subDays(new Date(), 1),
@@ -2788,12 +2788,12 @@ export const mockInitiatives: Initiative[] = [
   },
   {
     id: "init-4",
-    title: "Alternative Rare Earth Supplier Qualification",
+    title: "Alternative Raw Material Supplier Qualification",
     description:
-      "Qualify and onboard Australian and US rare earth suppliers to diversify supply chain. Target: signed agreements and initial orders within 45 days.",
+      "Qualify and onboard Australian and US raw material suppliers to diversify supply chain. Target: signed agreements and initial orders within 45 days.",
     estimatedImpact: 3.5,
     actualImpact: undefined,
-    owner: "Jack Chen - CPO",
+    owner: "Jack Wang - CFO",
     status: "in-progress",
     resourceRequirements: "Procurement team 3 FTE, quality testing $200K",
     createdDate: subDays(new Date(), 5),
@@ -2801,11 +2801,11 @@ export const mockInitiatives: Initiative[] = [
   },
   {
     id: "init-5",
-    title: "5G Connector Capacity Expansion",
+    title: "PC Capacity Expansion",
     description:
-      "Increase 5G antenna connector production capacity by 25% to capture market growth from $200B global 5G infrastructure investment.",
+      "Increase PC production capacity by 25% to capture market growth from $200B global 5G infrastructure investment.",
     estimatedImpact: 3.2,
-    owner: "Jennifer Wu - VP Operations",
+    owner: "Tony Bonaderon - CEO",
     status: "draft",
     resourceRequirements: "$3M capex for new lines, 15 FTE",
     createdDate: subDays(new Date(), 2),
@@ -2824,7 +2824,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-1",
       description:
-        'UPPH down 4% due to unbalanced line setup after product mix change.\n\nActions:\n• Conduct rapid line rebalance and workstation redesign on Assembly Line 2.\n• Cross-train operators between Line 2 & 3 to improve utilization.\n• Introduce daily "First-Pass Yield" dashboard to monitor rework trend.\n\nType: DL – Lower productivity vs plan\nSite: Vietnam (VSIP)\nOwner: MFG Head – An Nguyen\nImpact: +3% UPPH by Dec; US$ 0.8 M saving',
+        'UPPH down 4% due to unbalanced line setup after product mix change.\n\nActions:\n• Conduct rapid line rebalance and workstation redesign on Assembly Line 2.\n• Cross-train operators between Line 2 & 3 to improve utilization.\n• Introduce daily "First-Pass Yield" dashboard to monitor rework trend.\n\nType: DL – Lower productivity vs plan\nSite: all sites\nOwner: MFG Head – Manufacturing Manager\nImpact: +3% UPPH by Dec; US$ 0.8 M saving',
       expectedImpact: 0.8,
       feasibility: "high",
       priority: "high",
@@ -2833,7 +2833,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-2",
       description:
-        "Forecast-volume spike unaligned with manpower planning.\n\nActions:\n• Implement dynamic labor deployment across 3 lines.\n• Launch pilot AI-based production planning module in Nerve Center to predict load and shift pattern.\n\nType: DL – Overtime overrun\nSite: Kunshan\nOwner: Planning Mgr – Manufacturing Manager\nImpact: Reduce OT hours ~15% by Q1 FY26; US$ 0.6 M saving",
+        "Forecast-volume spike unaligned with manpower planning.\n\nActions:\n• Implement dynamic labor deployment across 3 lines.\n• Launch pilot AI-based production planning module in Nerve Center to predict load and shift pattern.\n\nType: DL – Overtime overrun\nSite: all sites\nOwner: Planning Mgr – Manufacturing Manager\nImpact: Reduce OT hours ~15% by Q1 FY26; US$ 0.6 M saving",
       expectedImpact: 0.6,
       feasibility: "high",
       priority: "high",
@@ -2842,7 +2842,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-3",
       description:
-        "Indirect-labor reduction delayed due to labor negotiation.\n\nActions:\n• Freeze new IDL hires & backfills until Q2.\n• Accelerate admin automation (digital attendance, e-approval).\n• Re-phase IDL lay-off to deliver full impact in Q3–Q4.\n\nType: IDL – Initiative delay\nSite: Vietnam (VSIP & Binh Duong)\nOwner: HR Director – Linh Tran\nImpact: Recover US$ 1.5 M annualized saving",
+        "Indirect-labor reduction delayed due to labor negotiation.\n\nActions:\n• Freeze new IDL hires & backfills until Q2.\n• Accelerate admin automation (digital attendance, e-approval).\n• Re-phase IDL lay-off to deliver full impact in Q3–Q4.\n\nType: IDL – Initiative delay\nSite: all sites\nOwner: HR Director – HR Director\nImpact: Recover US$ 1.5 M annualized saving",
       expectedImpact: 1.5,
       feasibility: "high",
       priority: "high",
@@ -2851,7 +2851,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-4",
       description:
-        "Overlapping warehouse & QA functions between plants.\n\nActions:\n• Merge inbound QA across Plant A/B into single shared service hub.\n• Standardize logistics scheduling through Nerve Center module.\n\nType: IDL – Support duplication\nSite: Mexico – Juárez\nOwner: Ops Excellence Lead – Carlos Ruiz\nImpact: US$ 0.9 M annual saving",
+        "Overlapping warehouse & QA functions between plants.\n\nActions:\n• Merge inbound QA across Plant A/B into single shared service hub.\n• Standardize logistics scheduling through Nerve Center module.\n\nType: IDL – Support duplication\nSite: all sites\nOwner: Ops Excellence Lead – Operations Lead\nImpact: US$ 0.9 M annual saving",
       expectedImpact: 0.9,
       feasibility: "high",
       priority: "high",
@@ -2860,7 +2860,7 @@ export const mockLeakageRecoveryProposal: Proposal = {
     {
       id: "action-leakage-5",
       description:
-        'Limited productivity governance rhythm.\n\nActions:\n• Launch "Daily Performance Pulse" in Nerve Center – auto-push UPPH, absenteeism, and labor cost dashboards to BU Heads.\n• Integrate weekly variance review into site rhythm.\n\nType: DL & IDL – General leakage\nSite: All sites\nOwner: Regional COO – Jeffrey Huang\nImpact: Restore run-rate savings by March FY26',
+        'Limited productivity governance rhythm.\n\nActions:\n• Launch "Daily Performance Pulse" in Nerve Center – auto-push UPPH, absenteeism, and labor cost dashboards to BU Heads.\n• Integrate weekly variance review into site rhythm.\n\nType: DL & IDL – General leakage\nSite: All sites\nOwner: Regional COO – Regional COO\nImpact: Restore run-rate savings by March FY26',
       expectedImpact: 0,
       feasibility: "high",
       priority: "high",

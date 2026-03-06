@@ -20,8 +20,8 @@ export function getValueDriverToForecastDriverMapping(): Map<string, string[]> {
   mapping.set('idl-labor-rate', ['driver-6']); // IDL Labor Rate -> Vietnam Labor Rate
 
   // Material Cost mapping
-  mapping.set('mat-index-price', ['driver-4', 'driver-5']); // Index-Based Material Price -> Rare Earth, Copper
-  mapping.set('mat-non-index-price', ['driver-4']); // Non-Index Material -> Rare Earth
+  mapping.set('mat-index-price', ['driver-4', 'driver-5']); // Index-Based Material Price -> Raw Materials, Components
+  mapping.set('mat-non-index-price', ['driver-4']); // Non-Index Material -> Raw Materials
 
   // Volume mapping
   mapping.set('revenue-volume', ['driver-1', 'driver-2', 'driver-7']); // Revenue Volume -> EV, Data Center, 5G volumes

@@ -345,12 +345,10 @@ function ReassignOwnerModal({
   const [reason, setReason] = useState('');
 
   const mockOwners = [
-    'Jennifer Wu - VP Operations',
-    'David Park - VP Sales',
-    'Dr. Lisa Zhang - CTO',
-    'Jack Chen - CPO',
-    'Mark Thompson - CFO',
-    'Sarah Johnson - VP Quality',
+    'Tony Bonaderon - CEO',
+    'Douglass Chen - CTO',
+    'Ivon Chiou - CTO',
+    'Jack Wang - CFO',
   ];
 
   const handleSubmit = () => {

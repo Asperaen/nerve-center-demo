@@ -138,7 +138,7 @@ export default function RootCauseAnalysisSidebar({
       }
 
       if (
-        news.title.includes('Rare Earth') ||
+        news.title.includes('Supply Disruption') ||
         news.title.includes('Material')
       ) {
         analysis.affectedValueDrivers.push({
@@ -168,7 +168,7 @@ export default function RootCauseAnalysisSidebar({
             'Higher material costs reduce gross profit by $5M even if revenue stays the same',
         });
         analysis.summary +=
-          'Rare Earth Supply Disruption: Material costs may increase by 30-40%, leading to $5M COGS increase and $5M gross profit impact. ';
+          'Supply Disruption Supply Disruption: Material costs may increase by 30-40%, leading to $5M COGS increase and $5M gross profit impact. ';
       }
 
       if (news.title.includes('Copper')) {
