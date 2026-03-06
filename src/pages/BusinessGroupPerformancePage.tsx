@@ -700,8 +700,14 @@ export default function BusinessGroupPerformancePage() {
     if (isMonthRangeCustom) {
       return;
     }
-    setMonthRange(selectedTimeframe === 'ytm' ? [0, 1] : [0, 11]);
-  }, [selectedTimeframe, isMonthRangeCustom]);
+    const isHistoricalYear = selectedYear !== 2026;
+    // For historical years, always select all months
+    if (isHistoricalYear) {
+      setMonthRange([0, 11]);
+    } else {
+      setMonthRange(selectedTimeframe === 'ytm' ? [0, 1] : [0, 11]);
+    }
+  }, [selectedTimeframe, isMonthRangeCustom, selectedYear]);
 
   useEffect(() => {
     // Actual (Reconciliation) page only supports YTM, ignore URL params
@@ -1118,6 +1124,12 @@ export default function BusinessGroupPerformancePage() {
     }
     if (normalized === 'mbu') {
       return 'MBU';
+    }
+    if (normalized === 'isbg') {
+      return 'isbg';
+    }
+    if (normalized === 'aep') {
+      return 'aep';
     }
     if (normalized === 'others') {
       return 'Others';
@@ -3079,7 +3091,20 @@ export default function BusinessGroupPerformancePage() {
                             {availableYears.map((year) => (
                               <button
                                 key={year}
-                                onClick={() => { setSelectedYear(year); setIsYearDropdownOpen(false); }}
+                                onClick={() => {
+                                  const isHistorical = year !== 2026;
+                                  const newMonthRange = isHistorical ? '0-11' : '0-1';
+                                  setSelectedYear(year);
+                                  setIsYearDropdownOpen(false);
+                                  setIsMonthRangeCustom(false);
+                                  setMonthAnchor(null);
+                                  setMonthRange(isHistorical ? [0, 11] : [0, 1]);
+                                  setSearchParams((prev) => {
+                                    const next = new URLSearchParams(prev);
+                                    next.set('months', newMonthRange);
+                                    return next;
+                                  }, { replace: true });
+                                }}
                                 className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
                                   selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
                                 }`}>

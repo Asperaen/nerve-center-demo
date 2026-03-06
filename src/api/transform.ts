@@ -124,9 +124,9 @@ const aggregateMonthlyData = (
     central: { id: "central", name: "Central" },
     aebu1: { id: "aebu1", name: "AEBU1", parentId: "pcbg" },
     aebu2: { id: "aebu2", name: "AEBU2", parentId: "pcbg" },
-    aep: { id: "aep", name: "AEP", parentId: "pcbg" },
+    aep: { id: "aep", name: "AEP" },
     apbu: { id: "apbu", name: "APBU", parentId: "pcbg" },
-    isbg: { id: "isbg", name: "ISBG", parentId: "pcbg" },
+    isbg: { id: "isbg", name: "ISBG" },
     pcbgceo: { id: "pcbgceo", name: "PCBGCEO", parentId: "pcbg" },
     rd6: { id: "rd6", name: "RD6", parentId: "pcbg" },
     sdbgbu1: { id: "sdbgbu1", name: "SDBGBU1", parentId: "sdbg" },
@@ -221,13 +221,11 @@ const aggregateMonthlyData = (
     createGroup("apbu2_t89"),
   ];
 
-  // Build PCBG sub-units
+  // Build PCBG sub-units (ISBG and AEP elevated to BG level)
   const pcbgSbus = [
     createGroup("aebu1"),
     createGroup("aebu2"),
     { ...createGroup("apbu"), sbus: apbuSubs },
-    createGroup("isbg"),
-    createGroup("aep"),
     createGroup("rd6"),
     createGroup("pcbgceo"),
   ];
@@ -252,6 +250,8 @@ const aggregateMonthlyData = (
       { ...createGroup("pcbg"), sbus: pcbgSbus },
       { ...createGroup("sdbg"), sbus: sdbgSbus },
       createGroup("mbu"),
+      createGroup("isbg"),
+      createGroup("aep"),
       createGroup("central"),
     ],
   };

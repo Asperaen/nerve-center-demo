@@ -766,6 +766,12 @@ export default function ExecutiveSummaryPage({
     if (normalized === 'mbu') {
       return 'MBU';
     }
+    if (normalized === 'isbg') {
+      return 'isbg';
+    }
+    if (normalized === 'aep') {
+      return 'aep';
+    }
     if (normalized === 'others') {
       return 'Others';
     }
@@ -1408,22 +1414,36 @@ export default function ExecutiveSummaryPage({
 
   useEffect(() => {
     const isYtm = selectedTimeframeScope === 'ytm';
-    const nextRange: [number, number] =
-      isActualsView || isYtm ? [0, 1] : [0, 11];
+    const isHistoricalYear = selectedYear !== 2026;
+    // For historical years (2024, 2025), always select all months even in YTM/Actuals mode
+    // For current year (2026), use YTM logic (Jan-Feb only)
+    let nextRange: [number, number];
+    if (isHistoricalYear) {
+      // Historical years: always select all months
+      nextRange = [0, 11];
+    } else if (isActualsView || isYtm) {
+      // Current year with Actuals or YTM: Jan-Feb only
+      nextRange = [0, 1];
+    } else {
+      // Current year with Full Year: all months
+      nextRange = [0, 11];
+    }
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
     setMonthRange(nextRange);
-  }, [selectedTimeframeScope, isActualsView]);
+  }, [selectedTimeframeScope, isActualsView, selectedYear]);
 
   useEffect(() => {
     if (!isActualsView) {
       return;
     }
+    const isHistoricalYear = selectedYear !== 2026;
     setSelectedTimeframeScope('ytm');
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    setMonthRange([0, 1]);
-  }, [isActualsView]);
+    // For historical years, select all months; for current year, Jan-Feb only
+    setMonthRange(isHistoricalYear ? [0, 11] : [0, 1]);
+  }, [isActualsView, selectedYear]);
 
   useEffect(() => {
     setStoredTimeframe(selectedTimeframeScope);
@@ -2893,8 +2913,19 @@ export default function ExecutiveSummaryPage({
                                 <button
                                   key={year}
                                   onClick={() => {
+                                    const isHistorical = year !== 2026;
+                                    const newMonthRange = isHistorical ? '0-11' : (isActualsView || selectedTimeframeScope === 'ytm' ? '0-1' : '0-11');
                                     setSelectedYear(year);
                                     setIsYearDropdownOpen(false);
+                                    setIsMonthRangeCustom(false);
+                                    setMonthAnchor(null);
+                                    // Set correct months range based on year
+                                    setMonthRange(isHistorical ? [0, 11] : (isActualsView || selectedTimeframeScope === 'ytm' ? [0, 1] : [0, 11]));
+                                    setSearchParams((prev) => {
+                                      const next = new URLSearchParams(prev);
+                                      next.set('months', newMonthRange);
+                                      return next;
+                                    }, { replace: true });
                                   }}
                                   className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
                                     selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
@@ -3018,8 +3049,19 @@ export default function ExecutiveSummaryPage({
                                 <button
                                   key={year}
                                   onClick={() => {
+                                    const isHistorical = year !== 2026;
+                                    const newMonthRange = isHistorical ? '0-11' : (isActualsView || selectedTimeframeScope === 'ytm' ? '0-1' : '0-11');
                                     setSelectedYear(year);
                                     setIsYearDropdownOpen(false);
+                                    setIsMonthRangeCustom(false);
+                                    setMonthAnchor(null);
+                                    // Set correct months range based on year
+                                    setMonthRange(isHistorical ? [0, 11] : (isActualsView || selectedTimeframeScope === 'ytm' ? [0, 1] : [0, 11]));
+                                    setSearchParams((prev) => {
+                                      const next = new URLSearchParams(prev);
+                                      next.set('months', newMonthRange);
+                                      return next;
+                                    }, { replace: true });
                                   }}
                                   className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
                                     selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'

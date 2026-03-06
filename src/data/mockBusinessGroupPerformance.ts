@@ -90,6 +90,18 @@ const aiInsights: Record<string, Record<string, string>> = {
     op: "Operating profit nearing break-even, ahead of schedule. Focus on profitable growth.",
     np: "Net profit improvement reflecting operational efficiency gains in MBU.",
   },
+  isbg: {
+    rev: "ISBG revenue at $6.5B YTD driven by industrial systems and server solutions. Strong performance in enterprise segment.",
+    gp: "GP at $280M with healthy margins from enterprise solutions. Component cost optimization ongoing.",
+    op: "Operating profit at $140M YTD, exceeding budget. Manufacturing efficiency gains realized.",
+    np: "Net profit reflects strong operational performance in industrial systems business.",
+  },
+  aep: {
+    rev: "AEP revenue at $1.1B YTD with embedded products leading growth. Edge computing solutions gaining traction.",
+    gp: "GP margins healthy at $189M. Product mix optimization driving margin improvement.",
+    op: "Operating profit at $87M YTD, above target. Focus on high-value embedded solutions.",
+    np: "Net profit growth reflects successful product positioning in embedded markets.",
+  },
   others: {
     rev: "Others segment includes ISBG and corporate functions. ISBG revenue at $106M YTD.",
     gp: "GP margins healthy in ISBG. Central functions operating as cost centers.",
@@ -115,9 +127,11 @@ const aiInsights: Record<string, Record<string, string>> = {
  *
  * Hierarchy: BG -> BU -> Sub-BU -> Sub-sub-BU
  *
- * PCBG: AEBU1, AEBU2, APBU (APBU1: APBU1-ABO/T88/T99, APBU2: APBU2-C38/T12/T89), ISBG, AEP, RD6, PCBGCEO
+ * PCBG: AEBU1, AEBU2, APBU (APBU1: APBU1-ABO/T88/T99, APBU2: APBU2-C38/T12/T89), RD6, PCBGCEO
  * SDBG: SDBGBU1, SDBGBU2, SDBGBU3, SDBGBU5, SDBGBU6
  * MBU
+ * ISBG (elevated to BG level)
+ * AEP (elevated to BG level)
  * Central (Shared Expense)
  */
 export const mockBusinessGroupData: BusinessGroupData[] = [
@@ -238,6 +252,80 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       percent: 0,
       trend: generateTrend(1, 0.1, "up"),
       aiInsight: "NP improvement reflecting operational efficiency gains.",
+    },
+  },
+  // ISBG (Industrial Systems Business Group) - elevated to BG level
+  {
+    id: "isbg",
+    name: "ISBG",
+    rev: {
+      value: 6467, // ISBG revenue
+      baseline: 6357,
+      stly: 5914,
+      percent: ((6467 - 6357) / 6357) * 100,
+      trend: generateTrend(6467, 0.06, "up"),
+      aiInsight: aiInsights.isbg?.rev || "ISBG revenue driven by industrial systems growth.",
+    },
+    gp: {
+      value: 280,
+      baseline: 286,
+      stly: 266,
+      percent: ((280 - 286) / 286) * 100,
+      trend: generateTrend(280, 0.07, "flat"),
+      aiInsight: aiInsights.isbg?.gp || "GP performance steady with cost optimization.",
+    },
+    op: {
+      value: 140,
+      baseline: 114,
+      stly: 106,
+      percent: ((140 - 114) / 114) * 100,
+      trend: generateTrend(140, 0.08, "up"),
+      aiInsight: aiInsights.isbg?.op || "OP exceeding targets from operational efficiency.",
+    },
+    np: {
+      value: 87,
+      baseline: 86,
+      stly: 80,
+      percent: ((87 - 86) / 86) * 100,
+      trend: generateTrend(87, 0.09, "up"),
+      aiInsight: aiInsights.isbg?.np || "NP growth reflecting strong business performance.",
+    },
+  },
+  // AEP (Advanced Embedded Products) - elevated to BG level
+  {
+    id: "aep",
+    name: "AEP",
+    rev: {
+      value: 1131, // AEP revenue
+      baseline: 1251,
+      stly: 1024,
+      percent: ((1131 - 1251) / 1251) * 100,
+      trend: generateTrend(1131, 0.07, "up"),
+      aiInsight: aiInsights.aep?.rev || "AEP revenue growing with embedded solutions.",
+    },
+    gp: {
+      value: 189,
+      baseline: 174,
+      stly: 143,
+      percent: ((189 - 174) / 174) * 100,
+      trend: generateTrend(189, 0.08, "up"),
+      aiInsight: aiInsights.aep?.gp || "GP margin improvement from product optimization.",
+    },
+    op: {
+      value: 87,
+      baseline: 80,
+      stly: 66,
+      percent: ((87 - 80) / 80) * 100,
+      trend: generateTrend(87, 0.09, "up"),
+      aiInsight: aiInsights.aep?.op || "OP above budget with embedded solutions growth.",
+    },
+    np: {
+      value: 54,
+      baseline: 60,
+      stly: 49,
+      percent: ((54 - 60) / 60) * 100,
+      trend: generateTrend(54, 0.1, "flat"),
+      aiInsight: aiInsights.aep?.np || "NP reflecting operational improvements.",
     },
   },
 ];
@@ -568,8 +656,6 @@ const generateSubGroupData = (
       { id: "aebu1", name: "AEBU1", factor: 0.64, trend: "up" as const },
       { id: "aebu2", name: "AEBU2", factor: 0.1, trend: "up" as const },
       { id: "apbu", name: "APBU", factor: 0.22, trend: "down" as const },
-      { id: "isbg", name: "ISBG", factor: 0.017, trend: "flat" as const },
-      { id: "aep", name: "AEP", factor: 0.014, trend: "flat" as const },
       { id: "rd6", name: "RD6", factor: 0.0, trend: "flat" as const },
       { id: "pcbgceo", name: "PCBGCEO", factor: 0.005, trend: "flat" as const },
     ];
@@ -623,6 +709,12 @@ const generateSubGroupData = (
   } else if (parentBgId === "mbu") {
     // MBU has no sub-units, return empty
     return [];
+  } else if (parentBgId === "isbg") {
+    // ISBG has no sub-units, return empty
+    return [];
+  } else if (parentBgId === "aep") {
+    // AEP has no sub-units, return empty
+    return [];
   } else if (parentBgId === "central") {
     // Central has no sub-units, return empty
     return [];
@@ -631,8 +723,7 @@ const generateSubGroupData = (
     distributions = [
       { id: "aebu1", name: "AEBU1", factor: 0.84, trend: "up" as const },
       { id: "aebu2", name: "AEBU2", factor: 0.14, trend: "up" as const },
-      { id: "aep", name: "AEP", factor: 0.02, trend: "flat" as const },
-    ];
+      ];
   } else {
     // Default distribution - return empty for unknown parentBgId
     return [];

@@ -2226,64 +2226,6 @@ export const mockBudgetData: BiweeklyDashboardData = {
             },
           ],
         },
-        // ISBG
-        {
-          id: "isbg",
-          name: "ISBG",
-          revenue: {
-            label: "Revenue",
-            actual: 106288,
-            budget: 187926, // From Ambitious Target-2025 new
-            lastYear: 109574,
-          },
-          grossProfit: {
-            label: "GP",
-            actual: 15877,
-            budget: 25975, // From Ambitious Target-2025 new
-            lastYear: 11070,
-          },
-          operatingProfit: {
-            label: "OP",
-            actual: -2082,
-            budget: -12644, // From Ambitious Target-2025 new
-            lastYear: -2797,
-          },
-          netProfit: {
-            label: "NP",
-            actual: -1457,
-            budget: -8851, // OP budget * 0.7
-            lastYear: -1958,
-          },
-        },
-        // AEP
-        {
-          id: "aep",
-          name: "AEP",
-          revenue: {
-            label: "Revenue",
-            actual: 87454,
-            budget: 110790, // From Ambitious Target-2025 new
-            lastYear: 85744,
-          },
-          grossProfit: {
-            label: "GP",
-            actual: 7215,
-            budget: 7363, // From Ambitious Target-2025 new
-            lastYear: 9302,
-          },
-          operatingProfit: {
-            label: "OP",
-            actual: -1048,
-            budget: -2838, // From Ambitious Target-2025 new
-            lastYear: 3660,
-          },
-          netProfit: {
-            label: "NP",
-            actual: -733,
-            budget: -1987, // OP budget * 0.7
-            lastYear: 2562,
-          },
-        },
         // RD6
         {
           id: "rd6",
@@ -2549,7 +2491,66 @@ export const mockBudgetData: BiweeklyDashboardData = {
         lastYear: -590,
       },
     },
-    // === Central (Shared Expense) ===
+    
+    // === ISBG (Industrial Systems Business Group - elevated to BG level) ===
+    {
+      id: "isbg",
+      name: "ISBG",
+      revenue: {
+        label: "Revenue",
+        actual: 106288,
+        budget: 187926,
+        lastYear: 109574,
+      },
+      grossProfit: {
+        label: "GP",
+        actual: 15877,
+        budget: 25975,
+        lastYear: 11070,
+      },
+      operatingProfit: {
+        label: "OP",
+        actual: -2082,
+        budget: -12644,
+        lastYear: -2797,
+      },
+      netProfit: {
+        label: "NP",
+        actual: -1457,
+        budget: -8851,
+        lastYear: -1958,
+      },
+    },
+    // === AEP (Advanced Embedded Products - elevated to BG level) ===
+    {
+      id: "aep",
+      name: "AEP",
+      revenue: {
+        label: "Revenue",
+        actual: 87454,
+        budget: 110790,
+        lastYear: 85744,
+      },
+      grossProfit: {
+        label: "GP",
+        actual: 7215,
+        budget: 7363,
+        lastYear: 9302,
+      },
+      operatingProfit: {
+        label: "OP",
+        actual: -1048,
+        budget: -2838,
+        lastYear: 3660,
+      },
+      netProfit: {
+        label: "NP",
+        actual: -733,
+        budget: -1987,
+        lastYear: 2562,
+      },
+    },
+// === Central (Shared Expense) ===
     {
       id: "central",
       name: "Central",

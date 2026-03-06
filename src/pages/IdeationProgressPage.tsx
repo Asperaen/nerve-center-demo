@@ -840,8 +840,14 @@ export default function IdeationProgressPage() {
     if (isMonthRangeCustom) {
       return;
     }
-    setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
-  }, [activeTimeframe, isMonthRangeCustom]);
+    const isHistoricalYear = selectedYear !== 2026;
+    // For historical years, always select all months
+    if (isHistoricalYear) {
+      setMonthRange([0, 11]);
+    } else {
+      setMonthRange(activeTimeframe === 'ytm' ? [0, 1] : [0, 11]);
+    }
+  }, [activeTimeframe, isMonthRangeCustom, selectedYear]);
 
   const timeframeScale = useMemo(() => {
     if (isMonthRangeCustom) {
@@ -1150,7 +1156,20 @@ export default function IdeationProgressPage() {
                             {availableYears.map((year) => (
                               <button
                                 key={year}
-                                onClick={() => { setSelectedYear(year); setIsYearDropdownOpen(false); }}
+                                onClick={() => {
+                                  const isHistorical = year !== 2026;
+                                  const newMonthRange = isHistorical ? '0-11' : '0-1';
+                                  setSelectedYear(year);
+                                  setIsYearDropdownOpen(false);
+                                  setIsMonthRangeCustom(false);
+                                  setMonthAnchor(null);
+                                  setMonthRange(isHistorical ? [0, 11] : [0, 1]);
+                                  setSearchParams((prev) => {
+                                    const next = new URLSearchParams(prev);
+                                    next.set('months', newMonthRange);
+                                    return next;
+                                  }, { replace: true });
+                                }}
                                 className={`w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
                                   selectedYear === year ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'
                                 }`}>
