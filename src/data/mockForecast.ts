@@ -457,7 +457,7 @@ export const baselineIncomeStatement: IncomeStatement = {
   netProfit: 223.0,
   breakdown: {
     momentum: 2350.0, // Baseline forecast
-    pipeline: 420.0, // New opportunities (5G: 150, Data Center: 220, L4 Initiative: 50)
+    pipeline: 420.0, // New opportunities (PC: 150, PC Enterprise: 220, L4 Initiative: 50)
     risk: -381.0, // Tariffs: -120, Component: -85, Consumer Electronics: -95, Raw Material: -60, all sites Labor: -21
     opportunity: 0, // Not yet realized
   },
@@ -516,7 +516,7 @@ export const mockBusinessEvents: BusinessEvent[] = [
   },
   {
     id: "event-data-center",
-    name: "AI Data Center Acceleration",
+    name: "AI PC Enterprise Acceleration",
     impact: 220.0,
     type: "opportunity",
     implications: [
@@ -542,7 +542,7 @@ export const mockBusinessEvents: BusinessEvent[] = [
     implications: [
       "25% tariff on Chinese-made PCs for US market",
       "20% of PC volume affected",
-      "Customers may switch to competitors with non-China production",
+      "Customers may switch to competitors with alternative production",
     ],
     actionProposals: [
       {
@@ -614,7 +614,7 @@ export const mockBusinessEvents: BusinessEvent[] = [
     impact: -60.0,
     type: "risk",
     implications: [
-      "China export restrictions on raw material materials",
+      "Export restrictions on raw material materials",
       "35% cost increase for affected materials",
       "Current inventory covers only 45 days",
     ],
@@ -636,7 +636,7 @@ export const mockBusinessEvents: BusinessEvent[] = [
     ],
   },
   {
-    id: "event-vietnam-labor",
+    id: "event-regional-labor",
     name: "all sites Labor Rate Increase",
     impact: -21.0,
     type: "risk",
@@ -1041,7 +1041,7 @@ export const mockFunctionDeviationRows: FunctionDeviationRow[] = [
     label: "MVA",
     ytmBudget: -91.0,
     ytmActuals: -88.4,
-    aiInsight: "all sites factory efficiency gains offset China labor cost.",
+    aiInsight: "all sites factory efficiency gains offset regional labor cost.",
     indentLevel: 1,
   },
   {
@@ -2722,9 +2722,9 @@ export const mockSuggestedAssumptions: AppliedAssumption[] = [
   },
   {
     id: "assum-suggested-3",
-    name: "China Raw Material Export Restrictions",
+    name: "Regional Raw Material Export Restrictions",
     description:
-      "China limits raw material exports affecting connector materials. Material costs may increase by 30-40% without alternative suppliers. Estimated $5M cost increase in H2. Current inventory covers 45 days.",
+      "Regional limits on raw material exports affecting connector materials. Material costs may increase by 30-40% without alternative suppliers. Estimated $5M cost increase in H2. Current inventory covers 45 days.",
     impact: -5.0, // -5M impact (headwind)
     targetStage: "additional-risk",
     impactType: "negative",
@@ -2754,7 +2754,7 @@ export const mockInitiatives: Initiative[] = [
     id: "init-1",
     title: "all sites Production Capacity Expansion",
     description:
-      "Shift 20% of PC production from China to all sites to avoid US tariffs. Estimated timeline: 6 months. Investment required: $8M for equipment and training.",
+      "Shift 20% of PC production to alternative sites to avoid US tariffs. Estimated timeline: 6 months. Investment required: $8M for equipment and training.",
     estimatedImpact: 7.0,
     owner: "Tony Bonaderon - CEO",
     status: "submitted",
@@ -2803,7 +2803,7 @@ export const mockInitiatives: Initiative[] = [
     id: "init-5",
     title: "PC Capacity Expansion",
     description:
-      "Increase PC production capacity by 25% to capture market growth from $200B global 5G infrastructure investment.",
+      "Increase PC production capacity by 25% to capture market growth from $200B global PC infrastructure investment.",
     estimatedImpact: 3.2,
     owner: "Tony Bonaderon - CEO",
     status: "draft",

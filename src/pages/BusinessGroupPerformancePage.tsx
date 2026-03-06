@@ -1511,7 +1511,7 @@ export default function BusinessGroupPerformancePage() {
       bu: 'D/E group',
       lineItem: 'COGS - Manufacturing cost',
       costRationale: 'Market-driven',
-      item: 'Vietnam labor rate drops benefits direct labor cost',
+      item: 'Regional labor rate drops benefits direct labor cost',
       opImpact: 11.5,
       category: 'headwind-tailwind',
     },

@@ -165,7 +165,7 @@ const buildFunctionalPerformance = (
 
 const MVA_SITE_DATA: Record<string, MvaSiteBreakdown[]> = {
   // Compal PCBG - Main NB/Server business MVA data (Mn USD)
-  // Sites: Kunshan (PL 1), Vietnam (PL 2), Chongqing (PL 3)
+  // Sites: Kunshan (PL 1), Site B (PL 2), Chongqing (PL 3)
   "PCBG|AEBU1": [
     {
       site: "Overall",

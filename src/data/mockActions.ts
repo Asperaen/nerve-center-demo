@@ -167,7 +167,7 @@ export const mockActions: Action[] = [
     title: 'Reduce open customer complaint cases below 35',
     description:
       'Currently at 47 cases vs target of 35. Focus on top 3 customers and resolve their issues within 2 weeks.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'reopen',
     priority: 'high',
     dueDate: subDays(new Date(), 3),
@@ -198,7 +198,7 @@ export const mockActions: Action[] = [
     title: 'Cost of poor quality reduction program',
     description:
       'COPQ at $12.8M vs $10M target. Implement Six Sigma initiative to reduce defect rates and rework costs by $2.8M.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 60),
@@ -222,7 +222,7 @@ export const mockActions: Action[] = [
     id: 'action-16',
     title: 'Approval on all sites production expansion proposal',
     description:
-      "Review and approve Jennifer Wu's proposal for expanding production capacity in all sites. Includes $15M investment and 200 new hires.",
+      "Review and approve the operations team's proposal for expanding production capacity in all sites. Includes $15M investment and 200 new hires.",
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
@@ -246,7 +246,7 @@ export const mockActions: Action[] = [
     id: 'action-18',
     title: 'Approval on R&D budget increase proposal',
     description:
-      "Review Dr. Lisa Zhang's proposal to increase R&D budget by $5M for optical PC development. Decision needed by end of week.",
+      "Review the R&D team's proposal to increase R&D budget by $5M for optical PC development. Decision needed by end of week.",
     owner: 'CEO',
     status: 'ready-for-review',
     priority: 'high',
@@ -276,18 +276,6 @@ export const mockActions: Action[] = [
     priority: 'high',
     dueDate: addDays(new Date(), 6),
     createdDate: subDays(new Date(), 2),
-    comments: [],
-  },
-  {
-    id: 'action-21',
-    title: 'Approval on M&A target evaluation - TechConn Inc',
-    description:
-      'Review due diligence report on TechConn Inc acquisition target. $120M valuation, strategic fit assessment, and integration plan review.',
-    owner: 'CEO',
-    status: 'in-progress',
-    priority: 'high',
-    dueDate: addDays(new Date(), 10),
-    createdDate: subDays(new Date(), 5),
     comments: [],
   },
   {
@@ -428,7 +416,7 @@ export const mockActions: Action[] = [
     title: 'Develop customer satisfaction survey program',
     description:
       'Create comprehensive customer satisfaction survey to measure NPS and identify improvement areas across key accounts.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 21),
@@ -536,7 +524,7 @@ export const mockActions: Action[] = [
     title: 'Review and optimize warranty claim process',
     description:
       'Analyze warranty claim patterns and optimize process to reduce processing time and improve customer satisfaction.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 25),

@@ -541,7 +541,7 @@ export const mockCalendarEvents: Meeting[] = [
       {
         id: 'material-nerve-3',
         type: 'external-pulse',
-        itemId: 'news-5', // Global 5G Infrastructure Investment
+        itemId: 'news-5', // Global PC Infrastructure Investment
         addedAt: new Date('2025-11-19T16:40:00+08:00'),
       },
       // Internal Pulse Materials
@@ -716,7 +716,7 @@ export const mockCalendarEvents: Meeting[] = [
       },
     ],
     description:
-      'Strategic partnership discussion with partner leadership on data center solutions, supply chain collaboration, and joint go-to-market initiatives. Need to bring the Q4 partnership deck and product roadmap presentation.',
+      'Strategic partnership discussion with partner leadership on enterprise solutions, supply chain collaboration, and joint go-to-market initiatives. Need to bring the Q4 partnership deck and product roadmap presentation.',
     meetingType: 'general',
     materials: [],
     isCritical: true,

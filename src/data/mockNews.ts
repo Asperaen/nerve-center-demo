@@ -4,16 +4,16 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-11',
     category: 'Suppliers & Supply Chain',
-    title: 'Vietnam sets 7.2% minimum wage hike from next year',
+    title: 'Regional minimum wage hike announced for next year',
     summary:
-      'Vietnam 7.2% minimum wage hike (effective Jan 2026) may increase DL cost by $7.5M across Vietnam operations, impacting Must-win BU ($3M) and Never-lose BU ($4.5M).',
+      'Regional 7.2% minimum wage hike (effective Jan 2026) may increase DL cost by $7.5M across regional operations, impacting Must-win BU ($3M) and Never-lose BU ($4.5M).',
     reasoning:
       'The National Wage Council approved regional minimum wage increases ranging from 3.70M to 5.31M VND per month. Direct labor expense typically represents 10% of revenue; applying a 5% blended increase translates to ~0.75pp margin erosion on a 10% OP margin.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
     timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-    source: 'VietnamNet',
+    source: 'Industry News',
     annotations: [],
   },
   {
@@ -21,9 +21,9 @@ export const mockNews: NewsItem[] = [
     category: 'Macro & Geopolitics',
     title: 'US Announces 25% Tariff on PC Products',
     summary:
-      'New 25% US tariff on PC products (effective in 30 days) may cause $7.5M OP hit and 0.75pp margin erosion for mid-size EMS BUs with China exposure.',
+      'New 25% US tariff on PC products (effective in 30 days) may cause $7.5M OP hit and 0.75pp margin erosion for mid-size EMS BUs with regional exposure.',
     reasoning:
-      'For a mid-size EMS BU with $1B annual revenue: Direct labor expense is $100M (10% of revenue), indirect labor overhead portion is $50M, totaling $150M in labor-related costs. This follows ongoing US-China trade tensions aimed at protecting domestic manufacturing.',
+      'For a mid-size EMS BU with $1B annual revenue: Direct labor expense is $100M (10% of revenue), indirect labor overhead portion is $50M, totaling $150M in labor-related costs. This follows ongoing ongoing trade tensions aimed at protecting domestic manufacturing.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
@@ -35,11 +35,11 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-2',
     category: 'Suppliers & Supply Chain',
-    title: 'China Limits Raw Material Exports',
+    title: 'Regional Raw Material Export Restrictions',
     summary:
-      'China raw material export restrictions may increase material costs by 30-40%, driving estimated $5M cost increase in H2. Current inventory covers only 45 days.',
+      'Regional raw material export restrictions may increase material costs by 30-40%, driving estimated $5M cost increase in H2. Current inventory covers only 45 days.',
     reasoning:
-      'Raw materials account for 15% of our PC component costs. China has announced export restrictions citing national security concerns, effective in 60 days. Recommended actions: Accelerate negotiations with Australian and US material suppliers, increase safety stock to 90 days, and explore material substitution opportunities with R&D.',
+      'Raw materials account for 15% of our PC component costs. Export restrictions have been announced citing national security concerns, effective in 60 days. Recommended actions: Accelerate negotiations with Australian and US material suppliers, increase safety stock to 90 days, and explore material substitution opportunities with R&D.',
     riskOrOpportunity: 'risk',
     priority: 'high',
     urgency: 'short_term',
@@ -141,16 +141,16 @@ export const mockNews: NewsItem[] = [
   {
     id: 'news-9',
     category: 'Macro & Geopolitics',
-    title: 'Vietnam Offers Tax Incentives for Advanced Manufacturing',
+    title: 'Regional Tax Incentives for Advanced Manufacturing',
     summary:
-      'Vietnam 10-year tax holiday could save $3-4M annually on our $180M Vietnam operations. Strategic opportunity to shift production from China amid US tariffs.',
+      'Regional 10-year tax holiday could save $3-4M annually on our $180M regional operations. Strategic opportunity to shift production to optimize costs amid US tariffs.',
     reasoning:
-      'Vietnamese government announces new 10-year tax holiday for advanced manufacturing facilities, targeting electronics and PC supply chain companies. Current Vietnam operations: 450 employees. Recommended actions: Engage with Vietnam government officials to understand qualification requirements, accelerate Vietnam capacity expansion plans, and evaluate ROI for additional facility investment.',
+      'Regional government announces new 10-year tax holiday for advanced manufacturing facilities, targeting electronics and PC supply chain companies. Current regional operations: 450 employees. Recommended actions: Engage with regional government officials to understand qualification requirements, accelerate regional capacity expansion plans, and evaluate ROI for additional facility investment.',
     riskOrOpportunity: 'opportunity',
     priority: 'medium',
     urgency: 'long_term',
     timestamp: new Date(Date.now() - 96 * 60 * 60 * 1000), // 96 hours ago
-    source: 'Vietnam Investment Review',
+    source: 'Industry Investment Review',
     annotations: [],
   },
   {

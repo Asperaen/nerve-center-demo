@@ -212,7 +212,7 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     id: 'analysis-3',
     queryId: 'query-3',
     summary:
-      'Revenue variance of -$45M (-1.9%) is primarily driven by three factors: (1) Major Company A orders delayed by $12M due to production rescheduling, (2) Major OEM product launch shift reducing Q4 revenue by $8M, (3) General PC market softness in US market due to tariff uncertainty reducing orders by $18M. Partially offset by strong data center orders (+$15M) and 5G infrastructure growth in Asia (+$8M).',
+      'Revenue variance of -$45M (-1.9%) is primarily driven by three factors: (1) Major Company A orders delayed by $12M due to production rescheduling, (2) Major OEM product launch shift reducing Q4 revenue by $8M, (3) General PC market softness in US market due to tariff uncertainty reducing orders by $18M. Partially offset by strong enterprise orders (+$15M) and PC infrastructure growth in Asia (+$8M).',
     drillDownData: {
       level: 'customer',
       data: [
@@ -229,7 +229,7 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
           variancePercent: -3.3,
         },
         {
-          name: 'Data Center A',
+          name: 'Enterprise Customer A',
           value: 95.8,
           variance: 8.5,
           variancePercent: 9.7,

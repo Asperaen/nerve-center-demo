@@ -126,7 +126,7 @@ const rawExternalPulseResponse = {
       ],
       date: "2026-02-01",
       source: "SCMP - Business",
-      url: "https://www.scmp.com/news/china/military/article/3342000/pla-navy-warns-foreign-jets-jamming-missiles-near-taiwan-cctv?utm_source=rss_feed",
+      url: "https://example.com/industry-news-1",
       category: ["Macro & Geopolitics"],
       summary:
         "Chinese state media released footage of a Type 055 destroyer (Yanan) using electronic jamming near Taiwan to warn off foreign aircraft, highlighting the PLA’s increasing use of electronic warfare as part of deterrence and signalling that raises operational risks in the Taiwan Strait.",
@@ -179,9 +179,9 @@ const rawExternalPulseResponse = {
       opportunity_risk: "risk",
       scoring_confidence: "medium",
       suggested_next_steps: [
-        "Adjust short-term production and inventory plans for smartphone-facing product lines to reflect weaker China orders.",
+        "Adjust short-term production and inventory plans for smartphone-facing product lines to reflect weaker regional orders.",
         "Prioritise customers and products with more stable demand to avoid excess inventory buildup in Q1.",
-        "Engage major China-market OEMs for updated forecasts and potential timing of product launches or promotions.",
+        "Engage major regional OEMs for updated forecasts and potential timing of product launches or promotions.",
       ],
       date: "2026-01-28",
       source: "DIGITIMES - Research",
@@ -231,7 +231,7 @@ const rawExternalPulseResponse = {
     },
     {
       title:
-        "Pentagon eyes expanded role for South Korea-based US forces to help deter China",
+        "Pentagon eyes expanded role for South Korea-based US forces to help support regional stability",
       importance_label: "medium",
       urgency_label: "mid_term",
       opportunity_risk: "risk",
@@ -244,10 +244,10 @@ const rawExternalPulseResponse = {
       ],
       date: "2026-02-01",
       source: "SCMP - Business",
-      url: "https://www.scmp.com/news/china/military/article/3341991/pentagon-eyes-expanded-role-south-korea-based-us-forces-help-deter-china?utm_source=rss_feed",
+      url: "https://example.com/industry-news-2",
       category: ["Macro & Geopolitics"],
       summary:
-        "The Pentagon signalled US forces in South Korea may take on roles beyond deterring North Korea to help counter China—particularly around Taiwan—requiring adjustments to basing, logistics and planning and complicating Seoul’s diplomatic calculations while raising the risk of heightened US-China tensions.",
+        "The Pentagon signalled US forces in South Korea may take on roles beyond deterring North Korea to help counter regional tensions—particularly in strategic regions—requiring adjustments to basing, logistics and planning and complicating Seoul’s diplomatic calculations while raising the risk of heightened regional tensions.",
       is_first_seen: true,
     },
     {
@@ -301,7 +301,7 @@ const rawExternalPulseResponse = {
         "Engage automotive/robotics OEM contacts to understand expected BOM content and timing for Optimus and related programs.",
       ],
       date: "2026-02-01",
-      source: "South China Morning Post",
+      source: "Industry News",
       url: "https://www.scmp.com/tech/tech-trends/article/3341953/chinese-suppliers-robotics-initiative?utm_source=rss_feed",
       category: ["Competitors & Industry", "Customer & End-market"],
       summary:
@@ -397,7 +397,7 @@ const rawExternalPulseResponse = {
       opportunity_risk: "risk",
       scoring_confidence: "medium",
       suggested_next_steps: [
-        "Update smartphone product line forecasts and adjust short-term capacity and inventory planning for China-facing production.",
+        "Update smartphone product line forecasts and adjust short-term capacity and inventory planning for regional production.",
         "Offer customers flexible production scheduling or temporary cost reductions to help smooth inventory destocking.",
         "Prioritise support for customers launching promotions or delayed new-model introductions to align production with revised demand.",
       ],
@@ -406,7 +406,7 @@ const rawExternalPulseResponse = {
       url: "https://www.digitimes.com.tw/tech/rpt/rpt_show.asp?v=20260128-38",
       category: ["Customer & End-market"],
       summary:
-        "DIGITIMES reports China-brand smartphone shipments reached 187.6 million units in Q4 2025 (QoQ +6.0%, YoY −1.6%) with full-year 2025 shipments of 711.2 million (+2.2%), and forecasts Q1 2026 declines of 8.2% YoY for China-brand shipments and 6.5% YoY for the China market after a Q4 seasonal boost.",
+        "DIGITIMES reports regional smartphone shipments reached 187.6 million units in Q4 2025 (QoQ +6.0%, YoY −1.6%) with full-year 2025 shipments of 711.2 million (+2.2%), and forecasts Q1 2026 declines of 8.2% YoY for regional shipments and 6.5% YoY for the regional market after a Q4 seasonal boost.",
       is_first_seen: false,
     },
     {
@@ -574,9 +574,9 @@ const rawExternalPulseResponse = {
       opportunity_risk: "mixed",
       scoring_confidence: "medium",
       suggested_next_steps: [
-        "Map China-based robotics suppliers mentioned and assess any overlap with Compal’s customer opportunities or supply risks.",
+        "Map regional robotics suppliers mentioned and assess any overlap with Compal’s customer opportunities or supply risks.",
         "Discuss with automotive customers the expected sourcing footprints for robotics and next-gen vehicle components.",
-        "Review tariff and compliance implications for supplying components into China-sourced BOMs for US final assembly.",
+        "Review tariff and compliance implications for supplying components into regionally-sourced BOMs for US final assembly.",
       ],
       date: "2026-01-29",
       source: "DIGITIMES",
@@ -596,10 +596,10 @@ const rawExternalPulseResponse = {
       suggested_next_steps: [
         "Combine supplier intelligence from multiple sources to update risk maps for robotics components.",
         "Identify potential competitive or partnership opportunities with Chinese component makers serving Optimus supply chains.",
-        "Evaluate compliance and logistics risks for continued sourcing from China to support US final assembly plans.",
+        "Evaluate compliance and logistics risks for continued sourcing from regional suppliers to support US final assembly plans.",
       ],
       date: "2026-01-31",
-      source: "South China Morning Post",
+      source: "Industry News",
       url: "https://www.scmp.com/tech/tech-trends/article/3341953/chinese-suppliers-robotics-initiative?utm_source=rss_feed",
       category: ["Suppliers & Supply Chain"],
       summary: null,
@@ -612,8 +612,8 @@ const rawExternalPulseResponse = {
       opportunity_risk: "opportunity",
       scoring_confidence: "medium",
       suggested_next_steps: [
-        "Assess Vietnam market entry or distributor relationships to support localised component demand for TV assemblies.",
-        "Review logistics and tariff implications for supplying components into Vietnam versus existing production locations.",
+        "Assess regional market entry or distributor relationships to support localised component demand for TV assemblies.",
+        "Review logistics and tariff implications for supplying components into the region versus existing production locations.",
         "Engage OEM contacts to understand timing and scale of order transfers and potential new qualification requirements.",
       ],
       date: "2026-01-29",
@@ -645,22 +645,22 @@ const rawExternalPulseResponse = {
     },
     {
       title:
-        "China’s plan to internationalise yuan quietly takes a step forward as Zambia gets on board",
+        "Regional currency initiatives continue to expand globally",
       importance_label: "low",
       urgency_label: "long_term",
       opportunity_risk: "mixed",
       scoring_confidence: "medium",
       suggested_next_steps: [
         "Monitor announcements from other resource-exporting countries for similar yuan settlement arrangements as a leading indicator of wider adoption.",
-        "Assess FX exposure models and treasury procedures for increased yuan-denominated flows in China-linked transactions.",
+        "Assess FX exposure models and treasury procedures for increased yuan-denominated flows in regional transactions.",
         "Engage corporate treasury to evaluate the need for expanded RMB payment rails or hedging strategies if yuan settlement activity increases.",
       ],
       date: "2026-02-01",
       source: "SCMP - Business",
-      url: "https://www.scmp.com/news/china/diplomacy/article/3341799/chinas-plan-internationalise-yuan-quietly-takes-step-forward-zambia-gets-board?utm_source=rss_feed",
+      url: "https://example.com/industry-news-3",
       category: ["Macro & Geopolitics"],
       summary:
-        "Zambia will collect taxes and royalties from Chinese mining firms in yuan and recycle the currency back to Beijing to fund imports and service loans, a move that eases dollar shortages and quietly advances yuan internationalisation while providing a template for other resource exporters to reduce dollar dependence.",
+        "Zambia will collect taxes and royalties from regional mining firms in yuan and recycle the currency to support trade to fund imports and service loans, a move that eases dollar shortages and quietly advances currency diversification while providing a template for other resource exporters to reduce dollar dependence.",
       is_first_seen: true,
     },
   ],

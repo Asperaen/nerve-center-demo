@@ -247,16 +247,16 @@ export default function FinancePage() {
     // Add to enabled applied (checked by default)
     setEnabledAssumptionIds((prev) => new Set(prev).add(assumptionId));
 
-    // If this is the Vietnam Minimum Wage Hike assumption, create a proposal with AI-generated actions
+    // If this is the Regional Minimum Wage Hike assumption, create a proposal with AI-generated actions
     if (
       assumptionId === 'assum-suggested-1' ||
-      assumption.name === 'Vietnam Minimum Wage Hike'
+      assumption.name === 'Regional Minimum Wage Hike'
     ) {
       const proposal: Proposal = {
         id: `proposal-${assumptionId}`,
         assumptionId: assumption.id,
         description:
-          'Proposal to mitigate Vietnam minimum wage hike impact through operational efficiency and pricing adjustments',
+          'Proposal to mitigate regional minimum wage hike impact through operational efficiency and pricing adjustments',
         actions: [
           {
             id: `action-${assumptionId}-1`,
