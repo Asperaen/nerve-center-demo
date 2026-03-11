@@ -26,7 +26,7 @@ function App() {
     <CurrencyProvider>
       <BudgetProvider>
         <ActionsProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
             <Route
               path='/'
