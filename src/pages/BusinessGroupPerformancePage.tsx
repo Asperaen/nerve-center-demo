@@ -1964,120 +1964,8 @@ export default function BusinessGroupPerformancePage() {
     [opImpactRows]
   );
 
-  // Hardcoded op impact details for PCBG + AEBU1
-  const hhDeGroupOpImpactItems = useMemo(() => [
-    {
-      id: 1,
-      bu: 'D/E group',
-      lineItem: 'Revenue',
-      costRationale: 'Market-driven',
-      item: 'D customer demand volume drops due to US PC market shrink',
-      opImpact: -85.0,
-      category: 'volume-mix',
-    },
-    {
-      id: 2,
-      bu: 'D/E group',
-      lineItem: 'Revenue',
-      costRationale: 'Market-driven',
-      item: 'H customer forecast product portfolio shifts to low price, low margin product series due to market change',
-      opImpact: -81.3,
-      category: 'volume-mix',
-    },
-    {
-      id: 3,
-      bu: 'D/E group',
-      lineItem: 'COGS - Manufacturing cost',
-      costRationale: 'Self-decision',
-      item: 'Inventory write off reversal',
-      opImpact: 33.0,
-      category: 'one-off',
-    },
-    {
-      id: 4,
-      bu: 'D/E group',
-      lineItem: 'COGS - Manufacturing cost',
-      costRationale: 'Market-driven',
-      item: 'Vietnam labor rate drops benefits direct labor cost',
-      opImpact: 11.5,
-      category: 'headwind-tailwind',
-    },
-    {
-      id: 5,
-      bu: 'D/E group',
-      lineItem: 'Non-operating gain/loss',
-      costRationale: 'Market-driven',
-      item: 'Government subsidy of newly issued policy which was not baked in budget',
-      opImpact: 49.7,
-      category: 'headwind-tailwind',
-    },
-    {
-      id: 6,
-      bu: 'D/E group',
-      lineItem: 'Non-operating gain/loss',
-      costRationale: 'Market-driven',
-      item: 'Exchange rate fluctuation between USD and RMB',
-      opImpact: 15.3,
-      category: 'headwind-tailwind',
-    },
-    {
-      id: 7,
-      bu: 'D/E group',
-      lineItem: 'COGS - BOM cost',
-      costRationale: 'Market-driven',
-      item: 'Leakage of manufacturing cost saving initiative resulted by volume drop',
-      opImpact: -0.5,
-      category: 'leakage',
-    },
-    {
-      id: 8,
-      bu: 'D/E group',
-      lineItem: 'COGS - Manufacturing cost',
-      costRationale: 'Market-driven',
-      item: 'Leakage of procurement cost saving initiative resulted by volume drop',
-      opImpact: -1.3,
-      category: 'leakage',
-    },
-    {
-      id: 9,
-      bu: 'D/E group',
-      lineItem: 'Non-operating gain/loss',
-      costRationale: 'Self-decision',
-      item: 'Intergroup (Among Sub-BU) transaction profit offset (and miscellany)',
-      opImpact: -0.8,
-      category: 'other',
-    },
-    {
-      id: 10,
-      bu: 'D/E group',
-      lineItem: 'COGS - BOM cost',
-      costRationale: 'Self-decision',
-      item: 'Supplier penalty claim on material (resin) delayed delivery',
-      opImpact: 14.1,
-      category: 'one-off',
-    },
-  ], []);
-
-  // Stage to item IDs mapping for PCBG + AEBU1
-  const stageToItemIdsMap: Record<string, number[]> = {
-    'volume-mix': [1, 2],
-    'confirmed-volume-mix': [1, 2],
-    'headwinds-tailwinds': [4, 5, 6],
-    'one-off-items': [3, 10],
-    'one-off-adjustments': [9],
-    'l4-to-l5-leakage': [7, 8],
-  };
-
   const getOpImpactRowsForStage = useCallback(
     (stage: BudgetForecastStage) => {
-      // Check if we're viewing PCBG + AEBU1 for hardcoded data
-      const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
-
-      if (isPCBGAEBU1) {
-        const itemIds = stageToItemIdsMap[stage.stage] || [];
-        return hhDeGroupOpImpactItems.filter((item) => itemIds.includes(item.id));
-      }
-
       if (opImpactRows.length === 0) {
         return [];
       }
@@ -2101,7 +1989,7 @@ export default function BusinessGroupPerformancePage() {
       }
       return [];
     },
-    [opImpactRows, hhDeGroupOpImpactItems, selectedBu, selectedBuNames]
+    [opImpactRows]
   );
 
   const renderOpImpactTooltip = useCallback(
@@ -2166,99 +2054,6 @@ export default function BusinessGroupPerformancePage() {
     const l3Stage = getStage('l3-vs-target');
     const l4Stage = getStage('l4-vs-planned');
     const l5Stage = getStage('l4-to-l5-leakage');
-
-    // Check if we're viewing PCBG + AEBU1 for hardcoded waterfall data
-    const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
-
-    // Hardcoded waterfall values for PCBG + AEBU1
-    if (isPCBGAEBU1) {
-      return [
-        {
-          ...budgetStage,
-          stage: 'budget',
-          label: 'Budget',
-          value: 271.2,
-          delta: 271.2,
-          type: 'baseline',
-          description: budgetStage?.description ?? 'Budget baseline',
-          isClickable: false,
-        },
-        {
-          stage: 'confirmed-volume-mix',
-          label: 'Volume / mix change',
-          value: 104.9,
-          delta: -166.3,
-          type: 'negative',
-          description: 'Volume and mix change impact',
-          isClickable: true,
-        },
-        {
-          stage: 'headwinds-tailwinds',
-          label: 'Change in headwind / tailwind',
-          value: 181.4,
-          delta: 76.5,
-          type: 'positive',
-          description: 'Headwind / tailwind change impact',
-          isClickable: true,
-          navigationTarget: '/market-intelligence?focus=headwinds-tailwinds',
-        },
-        {
-          stage: 'one-off-items',
-          label: 'One-off items change',
-          value: 228.5,
-          delta: 47.1,
-          type: 'positive',
-          description: 'One-off items change impact',
-          isClickable: true,
-        },
-        {
-          ...l3Stage,
-          stage: 'l3-vs-target',
-          label: 'L3 vs. target',
-          value: 235.8,
-          delta: 7.3,
-          type: 'positive',
-          description: l3Stage?.description ?? 'L3 initiative performance vs target',
-        },
-        {
-          ...l4Stage,
-          stage: 'l4-vs-planned',
-          label: 'L4 vs. target',
-          value: 234.8,
-          delta: -1.0,
-          type: 'negative',
-          description: l4Stage?.description ?? 'L4 initiative performance vs target',
-        },
-        {
-          ...l5Stage,
-          stage: 'l4-to-l5-leakage',
-          label: 'L5 vs. target',
-          value: 233.0,
-          delta: -1.8,
-          type: 'negative',
-          description: l5Stage?.description ?? 'L5 initiative performance vs target',
-        },
-        {
-          stage: 'one-off-adjustments',
-          label: 'Other factors',
-          value: 232.2,
-          delta: -0.8,
-          type: 'negative',
-          description: 'Other factors impacting actuals',
-          isClickable: false,
-        },
-        {
-          ...actualStage,
-          stage: 'actuals',
-          label: 'Actual',
-          value: 232.2,
-          delta: 232.2,
-          type: 'baseline',
-          description: actualStage?.description ?? 'Actual realized value',
-          isClickable: false,
-        },
-      ] as BudgetForecastStage[];
-    }
 
     const budgetBase = Math.abs(selectionMetrics.selectedOpBaseline);
     const actualBase = Math.abs(selectionMetrics.selectedOpValue);
@@ -2387,12 +2182,6 @@ export default function BusinessGroupPerformancePage() {
   }, [opImpactTotals, selectionMetrics.selectedOpBaseline, selectedBu, selectedBuNames]);
 
   const buildScaledWaterfallStages = (): BudgetForecastStage[] => {
-    // For PCBG + AEBU1, return hardcoded stages without any scaling/adjustment
-    const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
-    if (isPCBGAEBU1) {
-      return reconciliationBaseStages;
-    }
-
     const budgetValue = selectionMetrics.selectedOpBaseline;
     const actualValue = selectionMetrics.selectedOpValue;
     const baseBudgetValue =
@@ -2765,24 +2554,9 @@ export default function BusinessGroupPerformancePage() {
         );
       });
 
-      // For PCBG + AEBU1, use the hardcoded delta value and scale rows to match
-      const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
-      const totalImpact = isPCBGAEBU1
-        ? (activeDeviationStage.delta ?? 0)
-        : rows.reduce((sum, row) => sum + row.opImpact, 0);
+      const totalImpact = rows.reduce((sum, row) => sum + row.opImpact, 0);
 
-      // Scale rows proportionally if using hardcoded values for PCBG + AEBU1
-      let adjustedRows = filteredRows;
-      if (isPCBGAEBU1 && rows.length > 0) {
-        const originalSum = rows.reduce((sum, row) => sum + row.opImpact, 0);
-        const scaleFactor = originalSum !== 0 ? totalImpact / originalSum : 1;
-        adjustedRows = filteredRows.map((row) => ({
-          ...row,
-          opImpact: roundToOne(row.opImpact * scaleFactor),
-        }));
-      }
-
-      const sortedRows = [...adjustedRows].sort(
+      const sortedRows = [...filteredRows].sort(
         (a, b) => Math.abs(b.opImpact) - Math.abs(a.opImpact)
       );
 
