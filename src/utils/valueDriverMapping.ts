@@ -16,15 +16,15 @@ export function getValueDriverToForecastDriverMapping(): Map<string, string[]> {
   mapping.set('dl-upph', ['driver-3']); // UPPH -> UPPH Manufacturing Productivity
 
   // Labor Rate mapping
-  mapping.set('dl-labor-rate', ['driver-6']); // DL Labor Rate -> Vietnam Labor Rate
-  mapping.set('idl-labor-rate', ['driver-6']); // IDL Labor Rate -> Vietnam Labor Rate
+  mapping.set('dl-labor-rate', ['driver-6']); // DL Labor Rate -> Regional Labor Rate
+  mapping.set('idl-labor-rate', ['driver-6']); // IDL Labor Rate -> Regional Labor Rate
 
   // Material Cost mapping
-  mapping.set('mat-index-price', ['driver-4', 'driver-5']); // Index-Based Material Price -> Rare Earth, Copper
-  mapping.set('mat-non-index-price', ['driver-4']); // Non-Index Material -> Rare Earth
+  mapping.set('mat-index-price', ['driver-4', 'driver-5']); // Index-Based Material Price -> Raw Materials, Components
+  mapping.set('mat-non-index-price', ['driver-4']); // Non-Index Material -> Raw Materials
 
   // Volume mapping
-  mapping.set('revenue-volume', ['driver-1', 'driver-2', 'driver-7']); // Revenue Volume -> EV, Data Center, 5G volumes
+  mapping.set('revenue-volume', ['driver-1', 'driver-2', 'driver-7']); // Revenue Volume -> PC, Enterprise, Infrastructure volumes
   mapping.set('dl-production-volume', ['driver-1', 'driver-2', 'driver-7']); // Production Volume -> same as revenue volume
 
   return mapping;

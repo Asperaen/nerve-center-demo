@@ -5,30 +5,30 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     id: 'analysis-1',
     queryId: 'query-1',
     summary:
-      'Net profit variance of -$3.7M (-2.3%) is primarily driven by the EV Business Unit, which is $8.2M below budget due to US tariff impacts and volume decline. This is partially offset by strong performance in Cloud & Data Center BU (+$4.5M above budget).',
+      'Net profit variance of -$3.7M (-2.3%) is primarily driven by the PC Business Unit, which is $8.2M below budget due to US tariff impacts and volume decline. This is partially offset by strong performance in PC & Enterprise BU (+$4.5M above budget).',
     drillDownData: {
       level: 'bu',
       data: [
         {
-          name: 'EV & Automotive',
+          name: 'PC Products',
           value: 42.3,
           variance: -8.2,
           variancePercent: -16.2,
           children: [
             {
-              name: 'High Voltage Connectors',
+              name: 'PC Components',
               value: 28.5,
               variance: -6.8,
               variancePercent: -19.3,
             },
             {
-              name: 'Battery Management',
+              name: 'System Management',
               value: 8.9,
               variance: -1.2,
               variancePercent: -11.9,
             },
             {
-              name: 'Charging Systems',
+              name: 'Power Systems',
               value: 4.9,
               variance: -0.2,
               variancePercent: -3.9,
@@ -36,13 +36,13 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
           ],
         },
         {
-          name: 'Cloud & Data Center',
+          name: 'PC & Enterprise',
           value: 52.8,
           variance: 4.5,
           variancePercent: 9.3,
           children: [
             {
-              name: 'AI Server Connectors',
+              name: 'Server Components',
               value: 32.1,
               variance: 5.2,
               variancePercent: 19.3,
@@ -62,13 +62,13 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
           ],
         },
         {
-          name: '5G & Telecom',
+          name: 'Communication',
           value: 35.2,
           variance: 0.8,
           variancePercent: 2.3,
           children: [
             {
-              name: '5G Base Stations',
+              name: 'Network Equipment',
               value: 21.3,
               variance: 1.2,
               variancePercent: 6.0,
@@ -117,11 +117,11 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     },
     waterfallData: [
       { name: 'Budget', value: 160.0, type: 'total' },
-      { name: 'EV Tariff Impact', value: -10.0, type: 'negative' },
+      { name: 'Market Impact', value: -10.0, type: 'negative' },
       { name: 'Material Cost Increase', value: -5.2, type: 'negative' },
-      { name: 'Data Center Growth', value: 8.5, type: 'positive' },
-      { name: '5G Volume Growth', value: 3.8, type: 'positive' },
-      { name: 'Apple Delay', value: -3.2, type: 'negative' },
+      { name: 'PC Growth', value: 8.5, type: 'positive' },
+      { name: 'Market Growth', value: 3.8, type: 'positive' },
+      { name: 'Customer Delay', value: -3.2, type: 'negative' },
       { name: 'L4 Initiative', value: 2.4, type: 'positive' },
       { name: 'Actual', value: 156.3, type: 'total' },
     ],
@@ -131,7 +131,7 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     id: 'analysis-2',
     queryId: 'query-2',
     summary:
-      'Procurement cost down of 3.2% vs 5.0% target is underdelivered by 1.8 percentage points. Root causes: (1) Raw material inflation (copper +15%, rare earth +35%) offsetting supplier negotiation gains of 6.8%, (2) Mix shift toward higher-cost materials for AI server connectors, (3) Supply chain disruptions limiting alternative sourcing options.',
+      'Procurement cost down of 3.2% vs 5.0% target is underdelivered by 1.8 percentage points. Root causes: (1) Raw material inflation (component +15%, raw material +35%) offsetting supplier negotiation gains of 6.8%, (2) Mix shift toward higher-cost materials for server components, (3) Supply chain disruptions limiting alternative sourcing options.',
     drillDownData: {
       level: 'company',
       data: [
@@ -142,7 +142,7 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
           variancePercent: 36.0,
           children: [
             {
-              name: 'Copper Suppliers',
+              name: 'Component Suppliers',
               value: 2.1,
               variance: 0.3,
               variancePercent: 16.7,
@@ -154,7 +154,7 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
               variancePercent: 27.8,
             },
             {
-              name: 'Rare Earth Suppliers',
+              name: 'Raw Material Suppliers',
               value: 0.8,
               variance: -0.2,
               variancePercent: -20.0,
@@ -174,13 +174,13 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
           variancePercent: -100.0,
           children: [
             {
-              name: 'Copper Price Impact',
+              name: 'Component Price Impact',
               value: -2.1,
               variance: -2.1,
               variancePercent: -100.0,
             },
             {
-              name: 'Rare Earth Impact',
+              name: 'Raw Material Impact',
               value: -1.3,
               variance: -1.3,
               variancePercent: -100.0,
@@ -198,8 +198,8 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     waterfallData: [
       { name: 'Target', value: 5.0, type: 'total' },
       { name: 'Supplier Negotiations', value: 6.8, type: 'positive' },
-      { name: 'Copper Inflation', value: -2.1, type: 'negative' },
-      { name: 'Rare Earth Inflation', value: -1.3, type: 'negative' },
+      { name: 'Component Inflation', value: -2.1, type: 'negative' },
+      { name: 'Raw Material Inflation', value: -1.3, type: 'negative' },
       { name: 'Mix Impact', value: -0.8, type: 'negative' },
       { name: 'Volume Leverage', value: 0.4, type: 'positive' },
       { name: 'Supply Chain Disruption', value: -0.6, type: 'negative' },
@@ -212,42 +212,42 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     id: 'analysis-3',
     queryId: 'query-3',
     summary:
-      'Revenue variance of -$45M (-1.9%) is primarily driven by three factors: (1) Tesla orders delayed by $12M due to their production rescheduling, (2) Apple AirPods launch shift reducing Q4 revenue by $8M, (3) General EV market softness in US market due to tariff uncertainty reducing orders by $18M. Partially offset by strong Nvidia/Amazon data center orders (+$15M) and 5G infrastructure growth in Asia (+$8M).',
+      'Revenue variance of -$45M (-1.9%) is primarily driven by three factors: (1) Major Company A orders delayed by $12M due to production rescheduling, (2) Major OEM product launch shift reducing Q4 revenue by $8M, (3) General PC market softness in US market due to tariff uncertainty reducing orders by $18M. Partially offset by strong enterprise orders (+$15M) and PC infrastructure growth in Asia (+$8M).',
     drillDownData: {
       level: 'customer',
       data: [
         {
-          name: 'Tesla',
+          name: 'Company A A',
           value: 142.5,
           variance: -12.0,
           variancePercent: -7.8,
         },
         {
-          name: 'Apple',
+          name: 'OEM A',
           value: 238.0,
           variance: -8.0,
           variancePercent: -3.3,
         },
         {
-          name: 'Nvidia',
+          name: 'Enterprise Customer A',
           value: 95.8,
           variance: 8.5,
           variancePercent: 9.7,
         },
         {
-          name: 'Amazon',
+          name: 'Cloud Provider A',
           value: 87.3,
           variance: 6.5,
           variancePercent: 8.0,
         },
         {
-          name: 'BYD',
+          name: 'Company A B',
           value: 96.2,
           variance: -5.8,
           variancePercent: -5.7,
         },
         {
-          name: 'Samsung',
+          name: 'Electronics A',
           value: 78.5,
           variance: 1.2,
           variancePercent: 1.6,
@@ -268,13 +268,13 @@ export const mockAnalysisResults: Record<string, AnalysisResult> = {
     },
     waterfallData: [
       { name: 'Budget', value: 2350.0, type: 'total' },
-      { name: 'Tesla Delay', value: -12.0, type: 'negative' },
-      { name: 'Apple Shift', value: -8.0, type: 'negative' },
-      { name: 'US EV Softness', value: -18.0, type: 'negative' },
-      { name: 'Nvidia Growth', value: 8.5, type: 'positive' },
-      { name: 'Amazon Growth', value: 6.5, type: 'positive' },
-      { name: '5G Asia Growth', value: 8.0, type: 'positive' },
-      { name: 'BYD Decline', value: -5.8, type: 'negative' },
+      { name: 'Company A Delay', value: -12.0, type: 'negative' },
+      { name: 'OEM Shift', value: -8.0, type: 'negative' },
+      { name: 'US Market Softness', value: -18.0, type: 'negative' },
+      { name: 'PC Growth', value: 8.5, type: 'positive' },
+      { name: 'Cloud Growth', value: 6.5, type: 'positive' },
+      { name: 'Asia Growth', value: 8.0, type: 'positive' },
+      { name: 'Company A B Decline', value: -5.8, type: 'negative' },
       { name: 'Other', value: -24.2, type: 'negative' },
       { name: 'Actual', value: 2305.0, type: 'total' },
     ],
@@ -288,5 +288,5 @@ export const examplePrompts = [
   'Show me revenue variance by customer',
   'What is driving the gross profit variance?',
   'Analyze the UPPH performance by facility',
-  'Break down the EV business unit performance by product line',
+  'Break down the PC business unit performance by product line',
 ];

@@ -93,7 +93,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L2',
     phaseLabel: 'L2(Assess)',
     weeklyStatus: 'progressing-smoothly',
-    owner: 'Jennifer Wu',
+    owner: 'Tony Bonaderon',
     responsibleWorkflow: 'Pipeline - Operations',
     l4LatestEstimatedDate: subDays(new Date(), 5), // Overdue
     recurringNetBenefit: 250.0,
@@ -105,7 +105,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L3',
     phaseLabel: 'L3(Plan)',
     weeklyStatus: 'progressing-smoothly',
-    owner: 'Jack Chen',
+    owner: 'Jack Wang',
     responsibleWorkflow: 'Pipeline - Management',
     l4LatestEstimatedDate: addDays(new Date(), 5), // Due in 7 days
     recurringNetBenefit: 180.0,
@@ -117,7 +117,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L1',
     phaseLabel: 'L1(Identify)',
     weeklyStatus: 'leadership-attention',
-    owner: 'Mark Thompson',
+    owner: 'Jack Wang',
     responsibleWorkflow: 'Pipeline - Operations',
     l4LatestEstimatedDate: addDays(new Date(), 3), // Due in 7 days
     recurringNetBenefit: 95.0,
@@ -129,7 +129,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L4',
     phaseLabel: 'L4(Implement)',
     weeklyStatus: 'progressing-smoothly',
-    owner: 'David Park',
+    owner: 'Douglass Chen',
     responsibleWorkflow: 'Pipeline - Management',
     l4LatestEstimatedDate: addDays(new Date(), 20), // Due in 30 days
     recurringNetBenefit: 320.0,
@@ -170,7 +170,7 @@ export const mockMilestones: Milestone[] = [
     id: 'milestone-5',
     name: 'Pilot Program Launch',
     endDate: addDays(new Date(), 15), // Due in 30 days
-    owner: 'Jennifer Wu',
+    owner: 'Tony Bonaderon',
     initiativeId: '20001',
   },
 ];

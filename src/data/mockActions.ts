@@ -4,10 +4,10 @@ import { addDays, subDays } from 'date-fns';
 export const mockActions: Action[] = [
   {
     id: 'action-1',
-    title: 'Investigate Vietnam production shift for US-bound EV connectors',
+    title: 'Investigate all sites production shift for US-bound PC',
     description:
-      'Assess feasibility of shifting 20% of EV connector production from China to Vietnam to avoid 25% US tariff. Analyze capacity, cost impact, timeline, and customer acceptance.',
-    owner: 'Jennifer Wu - VP Operations',
+      'Assess feasibility of shifting 20% of PC production from supplier region to all sites to avoid 25% US tariff. Analyze capacity, cost impact, timeline, and customer acceptance.',
+    owner: 'Tony Bonaderon - CEO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 7),
@@ -23,10 +23,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-2',
-    title: 'Secure alternative rare earth material suppliers',
+    title: 'Secure alternative raw material material suppliers',
     description:
-      'Accelerate negotiations with Australian and US-based rare earth suppliers. Target: signed agreements within 45 days to mitigate China export restrictions.',
-    owner: 'Jack Chen - CPO',
+      'Accelerate negotiations with Australian and US-based raw material suppliers. Target: signed agreements within 45 days to mitigate supplier region export restrictions.',
+    owner: 'Jack Wang - CFO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 14),
@@ -42,10 +42,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-3',
-    title: 'Strategic account review with Tesla procurement',
+    title: 'Strategic account review with major PC customer',
     description:
-      'Schedule and prepare for strategic account meeting with Tesla to discuss capacity expansion opportunities. Tesla plans to double EV production by 2026.',
-    owner: 'David Park - VP Sales',
+      'Schedule and prepare for strategic account meeting with major PC customer to discuss capacity expansion opportunities. Customer plans to double PC production by 2026.',
+    owner: 'Douglass Chen - CTO',
     status: 'todo',
     priority: 'high',
     dueDate: addDays(new Date(), 10),
@@ -54,10 +54,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-4',
-    title: 'Accelerate optical connector roadmap',
+    title: 'Accelerate PC product roadmap',
     description:
-      'Respond to TE Connectivity acquisition of optical startup. Review and accelerate our optical connector development timeline by 6 months.',
-    owner: 'Dr. Lisa Zhang - CTO',
+      'Respond to competitor acquisition of PC startup. Review and accelerate our PC product development timeline by 6 months.',
+    owner: 'Ivon Chiou - CTO',
     status: 'ready-for-review',
     priority: 'medium',
     dueDate: addDays(new Date(), 21),
@@ -66,10 +66,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-5',
-    title: 'Increase 5G antenna connector production capacity',
+    title: 'Increase PC component production capacity',
     description:
-      'With global 5G infrastructure investment at $200B, increase production capacity by 25% to capture market growth. Currently at 85% utilization.',
-    owner: 'Jennifer Wu - VP Operations',
+      'With global PC infrastructure investment at $200B, increase production capacity by 25% to capture market growth. Currently at 85% utilization.',
+    owner: 'Tony Bonaderon - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
@@ -78,10 +78,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-6',
-    title: 'Adjust Q1 2026 production plan for Apple AirPods delay',
+    title: 'Adjust Q1 2026 production plan for consumer electronics delay',
     description:
-      "Revise production schedule following Apple's AirPods Pro launch delay. Reallocate capacity to other TWS customers to maintain utilization.",
-    owner: 'Jennifer Wu - VP Operations',
+      "Revise production schedule following major customer's product launch delay. Reallocate capacity to other customers to maintain utilization.",
+    owner: 'Tony Bonaderon - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 7),
@@ -90,10 +90,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-7',
-    title: 'Accelerate Nvidia GB300 program engagement',
+    title: 'Accelerate AI server program engagement',
     description:
-      "Following Amphenol's strong data center results, accelerate our engagement with Nvidia GB300 server program. Target: design-in confirmation by Q1 2026.",
-    owner: 'David Park - VP Sales',
+      "Following competitor's strong PC market results, accelerate our engagement with major AI server program. Target: design-in confirmation by Q1 2026.",
+    owner: 'Douglass Chen - CTO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 14),
@@ -101,7 +101,7 @@ export const mockActions: Action[] = [
     comments: [
       {
         id: 'comment-7-1',
-        text: 'This is our top priority for AI data center business. Allocate additional engineering resources from R&D team to support this program.',
+        text: 'This is our top priority for AI PC market business. Allocate additional engineering resources from R&D team to support this program.',
         createdBy: 'CEO',
         createdAt: subDays(new Date(), 1),
       },
@@ -112,7 +112,7 @@ export const mockActions: Action[] = [
     title: 'Review copper hedging strategy',
     description:
       'With copper prices up 15%, review hedging positions with CFO. Evaluate options for additional hedging or customer price adjustments.',
-    owner: 'Mark Thompson - CFO',
+    owner: 'Jack Wang - CFO',
     status: 'ready-for-review',
     priority: 'medium',
     dueDate: addDays(new Date(), 5),
@@ -121,10 +121,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-9',
-    title: 'Qualify for Vietnam tax incentive program',
+    title: 'Qualify for all sites tax incentive program',
     description:
-      'Engage with Vietnamese government to understand requirements for 10-year tax holiday. Potential $3-4M annual savings.',
-    owner: 'Jennifer Wu - VP Operations',
+      'Engage with all sitesese government to understand requirements for 10-year tax holiday. Potential $3-4M annual savings.',
+    owner: 'Tony Bonaderon - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
@@ -133,10 +133,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-10',
-    title: 'Schedule BYD Europe expansion discussion',
+    title: 'Schedule PC customer Europe expansion discussion',
     description:
-      'Meet with BYD Europe procurement team regarding their Hungary plant. Explore opportunity for local connector supply partnership.',
-    owner: 'David Park - VP Sales',
+      'Meet with PC customer Europe procurement team regarding their Hungary plant. Explore opportunity for local supply partnership.',
+    owner: 'Douglass Chen - CTO',
     status: 'completed',
     priority: 'low',
     dueDate: addDays(new Date(), 45),
@@ -148,7 +148,7 @@ export const mockActions: Action[] = [
     title: 'Root cause analysis on UPPH underperformance',
     description:
       'UPPH at 2.3 vs budget of 2.6. Conduct detailed analysis of production line bottlenecks. L4 manufacturing initiative should improve to 2.6 in 3 days.',
-    owner: 'Jennifer Wu - VP Operations',
+    owner: 'Tony Bonaderon - CEO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 3),
@@ -166,8 +166,8 @@ export const mockActions: Action[] = [
     id: 'action-12',
     title: 'Reduce open customer complaint cases below 35',
     description:
-      'Currently at 47 cases vs target of 35. Focus on top 3 customers (Tesla, Apple, Amazon) and resolve their issues within 2 weeks.',
-    owner: 'Sarah Johnson - VP Quality',
+      'Currently at 47 cases vs target of 35. Focus on top 3 customers and resolve their issues within 2 weeks.',
+    owner: 'Ivon Chiou - CTO',
     status: 'reopen',
     priority: 'high',
     dueDate: subDays(new Date(), 3),
@@ -186,7 +186,7 @@ export const mockActions: Action[] = [
     title: 'Procurement cost down improvement initiative',
     description:
       'Procurement cost down at 3.2% vs 5.0% target. Develop action plan to close 1.8% gap through supplier negotiations and material substitution.',
-    owner: 'Jack Chen - CPO',
+    owner: 'Jack Wang - CFO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 14),
@@ -198,7 +198,7 @@ export const mockActions: Action[] = [
     title: 'Cost of poor quality reduction program',
     description:
       'COPQ at $12.8M vs $10M target. Implement Six Sigma initiative to reduce defect rates and rework costs by $2.8M.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 60),
@@ -210,7 +210,7 @@ export const mockActions: Action[] = [
     title: 'Q4 revenue gap closure plan',
     description:
       'Revenue at $2,305M vs $2,350M budget. Develop specific actions to close $45M gap including customer order acceleration and new wins.',
-    owner: 'David Park - VP Sales',
+    owner: 'Douglass Chen - CTO',
     status: 'todo',
     priority: 'high',
     dueDate: addDays(new Date(), 5),
@@ -220,9 +220,9 @@ export const mockActions: Action[] = [
   // CEO Actions
   {
     id: 'action-16',
-    title: 'Approval on Vietnam production expansion proposal',
+    title: 'Approval on all sites production expansion proposal',
     description:
-      "Review and approve Jennifer Wu's proposal for expanding production capacity in Vietnam. Includes $15M investment and 200 new hires.",
+      "Review and approve the operations team's proposal for expanding production capacity in all sites. Includes $15M investment and 200 new hires.",
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
@@ -232,9 +232,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-17',
-    title: 'Follow up with Jack - CEO of Vortext',
+    title: 'Follow up with PC customer CEO',
     description:
-      'Follow up on strategic partnership discussion with Vortext regarding joint development of next-gen optical connectors for data centers.',
+      'Follow up on strategic partnership discussion with PC customer regarding joint development of next-gen solutions for PC markets.',
     owner: 'CEO',
     status: 'todo',
     priority: 'high',
@@ -246,7 +246,7 @@ export const mockActions: Action[] = [
     id: 'action-18',
     title: 'Approval on R&D budget increase proposal',
     description:
-      "Review Dr. Lisa Zhang's proposal to increase R&D budget by $5M for optical connector development. Decision needed by end of week.",
+      "Review the R&D team's proposal to increase R&D budget by $5M for optical PC development. Decision needed by end of week.",
     owner: 'CEO',
     status: 'ready-for-review',
     priority: 'high',
@@ -268,26 +268,14 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-20',
-    title: 'Follow up with Tesla CEO on strategic partnership',
+    title: 'Follow up with major PC customer on strategic partnership',
     description:
-      'Follow up on high-level strategic partnership discussion with Tesla CEO regarding long-term supply agreements and joint innovation initiatives.',
+      'Follow up on high-level strategic partnership discussion with major PC customer regarding long-term supply agreements and joint innovation initiatives.',
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 6),
     createdDate: subDays(new Date(), 2),
-    comments: [],
-  },
-  {
-    id: 'action-21',
-    title: 'Approval on M&A target evaluation - TechConn Inc',
-    description:
-      'Review due diligence report on TechConn Inc acquisition target. $120M valuation, strategic fit assessment, and integration plan review.',
-    owner: 'CEO',
-    status: 'in-progress',
-    priority: 'high',
-    dueDate: addDays(new Date(), 10),
-    createdDate: subDays(new Date(), 5),
     comments: [],
   },
   {
@@ -304,9 +292,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-23',
-    title: 'Follow up with Apple VP of Supply Chain',
+    title: 'Follow up with major OEM VP of Supply Chain',
     description:
-      'Follow up on AirPods delay impact discussion and explore opportunities for increased connector supply for upcoming product launches.',
+      'Follow up on product delay impact discussion and explore opportunities for increased supply for upcoming product launches.',
     owner: 'CEO',
     status: 'todo',
     priority: 'medium',
@@ -318,7 +306,7 @@ export const mockActions: Action[] = [
     id: 'action-24',
     title: 'Approval on new factory site selection proposal',
     description:
-      'Review site selection analysis for new manufacturing facility. Three locations under consideration: Mexico, Vietnam, and Eastern Europe.',
+      'Review site selection analysis for new manufacturing facility. Three locations under consideration: all sites, all sites, and Eastern Europe.',
     owner: 'CEO',
     status: 'ready-for-review',
     priority: 'high',
@@ -328,9 +316,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-25',
-    title: 'Follow up with Nvidia CEO on data center partnership',
+    title: 'Follow up with PC market partner on partnership',
     description:
-      'Follow up on strategic discussion regarding deeper partnership in AI data center connector solutions and potential joint R&D initiatives.',
+      'Follow up on strategic discussion regarding deeper partnership in AI PC market solutions and potential joint R&D initiatives.',
     owner: 'CEO',
     status: 'in-progress',
     priority: 'high',
@@ -352,9 +340,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-27',
-    title: 'Follow up with Samsung Electronics CEO',
+    title: 'Follow up with major electronics partner',
     description:
-      'Follow up on strategic partnership discussion for 5G infrastructure connectors and explore opportunities in consumer electronics segment.',
+      'Follow up on strategic partnership discussion for PC infrastructure and explore opportunities in consumer electronics segment.',
     owner: 'CEO',
     status: 'completed',
     priority: 'medium',
@@ -376,9 +364,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-29',
-    title: 'Follow up with Qualcomm CTO on 5G collaboration',
+    title: 'Follow up with PC customer on PC collaboration',
     description:
-      'Follow up on technical collaboration discussion for next-generation 5G antenna connector solutions and joint development opportunities.',
+      'Follow up on technical collaboration discussion for next-generation PC solutions and joint development opportunities.',
     owner: 'CEO',
     status: 'todo',
     priority: 'medium',
@@ -388,9 +376,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-30',
-    title: 'Approval on strategic alliance with Amphenol',
+    title: 'Approval on strategic alliance with industry partner',
     description:
-      'Review strategic alliance proposal with Amphenol for cross-licensing agreements and joint market development in high-speed data connectors.',
+      'Review strategic alliance proposal with industry partner for cross-licensing agreements and joint market development in high-speed solutions.',
     owner: 'CEO',
     status: 'ready-for-review',
     priority: 'high',
@@ -400,9 +388,9 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-31',
-    title: 'Follow up with Microsoft Azure team on cloud infrastructure',
+    title: 'Follow up with enterprise team on PC solution',
     description:
-      'Follow up on discussion regarding connector solutions for Microsoft Azure data centers and explore partnership opportunities.',
+      'Follow up on discussion regarding solutions for cloud partner PC markets and explore partnership opportunities.',
     owner: 'CEO',
     status: 'reopen',
     priority: 'medium',
@@ -428,7 +416,7 @@ export const mockActions: Action[] = [
     title: 'Develop customer satisfaction survey program',
     description:
       'Create comprehensive customer satisfaction survey to measure NPS and identify improvement areas across key accounts.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 21),
@@ -440,7 +428,7 @@ export const mockActions: Action[] = [
     title: 'Implement supplier quality audit program',
     description:
       'Establish quarterly supplier quality audit program to ensure consistent material quality and reduce incoming inspection costs.',
-    owner: 'Jack Chen - CPO',
+    owner: 'Jack Wang - CFO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 28),
@@ -451,8 +439,8 @@ export const mockActions: Action[] = [
     id: 'action-35',
     title: 'Launch new product development process',
     description:
-      'Implement stage-gate product development process to improve time-to-market and resource allocation for new connector products.',
-    owner: 'Dr. Lisa Zhang - CTO',
+      'Implement stage-gate product development process to improve time-to-market and resource allocation for new PC products.',
+    owner: 'Ivon Chiou - CTO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 20),
@@ -464,7 +452,7 @@ export const mockActions: Action[] = [
     title: 'Optimize inventory management system',
     description:
       'Upgrade inventory management system to reduce carrying costs and improve demand forecasting accuracy. Target: 15% inventory reduction.',
-    owner: 'Jennifer Wu - VP Operations',
+    owner: 'Tony Bonaderon - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 35),
@@ -475,8 +463,8 @@ export const mockActions: Action[] = [
     id: 'action-37',
     title: 'Expand sales team in European market',
     description:
-      'Hire 5 new sales representatives to expand coverage in European market, focusing on automotive and industrial segments.',
-    owner: 'David Park - VP Sales',
+      'Hire 5 new sales representatives to expand coverage in European market, focusing on PC and industrial segments.',
+    owner: 'Douglass Chen - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 42),
@@ -488,7 +476,7 @@ export const mockActions: Action[] = [
     title: 'Develop predictive maintenance program',
     description:
       'Implement AI-based predictive maintenance program for manufacturing equipment to reduce downtime and maintenance costs.',
-    owner: 'Jennifer Wu - VP Operations',
+    owner: 'Tony Bonaderon - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 60),
@@ -500,7 +488,7 @@ export const mockActions: Action[] = [
     title: 'Establish strategic partnership with university research labs',
     description:
       'Form partnerships with top engineering universities for joint R&D projects and talent pipeline development.',
-    owner: 'Dr. Lisa Zhang - CTO',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'low',
     dueDate: addDays(new Date(), 45),
@@ -512,7 +500,7 @@ export const mockActions: Action[] = [
     title: 'Implement customer portal for order tracking',
     description:
       'Develop and launch customer portal allowing real-time order tracking, delivery status, and technical documentation access.',
-    owner: 'David Park - VP Sales',
+    owner: 'Douglass Chen - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 50),
@@ -521,10 +509,10 @@ export const mockActions: Action[] = [
   },
   {
     id: 'action-41',
-    title: 'Conduct market research on emerging connector technologies',
+    title: 'Conduct market research on emerging PC technologies',
     description:
-      'Research emerging connector technologies including USB-C alternatives, wireless charging connectors, and high-speed data transmission solutions.',
-    owner: 'Dr. Lisa Zhang - CTO',
+      'Research emerging PC technologies including USB-C alternatives, wireless charging PCs, and high-speed data transmission solutions.',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'low',
     dueDate: addDays(new Date(), 40),
@@ -536,7 +524,7 @@ export const mockActions: Action[] = [
     title: 'Review and optimize warranty claim process',
     description:
       'Analyze warranty claim patterns and optimize process to reduce processing time and improve customer satisfaction.',
-    owner: 'Sarah Johnson - VP Quality',
+    owner: 'Ivon Chiou - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 25),
@@ -548,7 +536,7 @@ export const mockActions: Action[] = [
     title: 'Develop supplier diversity program',
     description:
       'Establish supplier diversity program to increase procurement from minority-owned and women-owned businesses.',
-    owner: 'Jack Chen - CPO',
+    owner: 'Jack Wang - CFO',
     status: 'todo',
     priority: 'low',
     dueDate: addDays(new Date(), 55),
@@ -560,7 +548,7 @@ export const mockActions: Action[] = [
     title: 'Implement lean manufacturing principles',
     description:
       'Train production teams on lean manufacturing principles and implement 5S methodology across all manufacturing facilities.',
-    owner: 'Jennifer Wu - VP Operations',
+    owner: 'Tony Bonaderon - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 70),
@@ -572,7 +560,7 @@ export const mockActions: Action[] = [
     title: 'Establish customer advisory board',
     description:
       'Form customer advisory board with top 10 customers to gather feedback on product roadmap and strategic direction.',
-    owner: 'David Park - VP Sales',
+    owner: 'Douglass Chen - CTO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),

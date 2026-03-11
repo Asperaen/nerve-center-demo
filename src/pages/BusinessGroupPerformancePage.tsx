@@ -524,6 +524,12 @@ export default function BusinessGroupPerformancePage() {
   const [currentLayer, setCurrentLayer] = useState<NavigationLayer>(1);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [selectedCOGSTab] = useState<'sites' | 'products'>('sites');
+  const [isAIRegenerating, setIsAIRegenerating] = useState(false);
+  const [streamedSummary, setStreamedSummary] = useState('');
+  const [streamedDrivers, setStreamedDrivers] = useState<string[]>([]);
+  const [streamedActions, setStreamedActions] = useState<string[]>([]);
+  const [currentStreamPhase, setCurrentStreamPhase] = useState<'summary' | 'drivers' | 'actions'>('summary');
+  const [currentStreamIndex, setCurrentStreamIndex] = useState(0);
   const isBudgetMode = selectedTimeframe === 'budget';
   const isPercentView = financialView === 'margin';
   const timeframeScale = useMemo(
@@ -1764,6 +1770,92 @@ export default function BusinessGroupPerformancePage() {
       actions,
     };
   }, [tableData, selectionMetrics, sectionTitle, isBudgetMode, selectedGroupIds, currencyLabel]);
+
+  const handleAIRegenerate = useCallback(() => {
+    if (isAIRegenerating || !keyCallOut) return;
+    setIsAIRegenerating(true);
+    setStreamedSummary('');
+    setStreamedDrivers([]);
+    setStreamedActions([]);
+    setCurrentStreamPhase('summary');
+    setCurrentStreamIndex(0);
+    const summary = keyCallOut.summary;
+    const drivers = keyCallOut.drivers;
+    const actions = keyCallOut.actions;
+    let phase: 'summary' | 'drivers' | 'actions' = 'summary';
+    let summaryCharIndex = 0;
+    let driverIndex = 0;
+    let driverCharIndex = 0;
+    let currentDriver = '';
+    let actionIndex = 0;
+    let actionCharIndex = 0;
+    let currentAction = '';
+    const streamInterval = setInterval(() => {
+      if (phase === 'summary') {
+        if (summaryCharIndex < summary.length) {
+          setStreamedSummary(prev => prev + summary[summaryCharIndex]);
+          summaryCharIndex++;
+        } else {
+          phase = 'drivers';
+          setCurrentStreamPhase('drivers');
+          setCurrentStreamIndex(0);
+        }
+      } else if (phase === 'drivers') {
+        if (driverIndex < drivers.length) {
+          const targetDriver = drivers[driverIndex];
+          if (driverCharIndex < targetDriver.length) {
+            currentDriver += targetDriver[driverCharIndex];
+            setStreamedDrivers(prev => {
+              const newDrivers = [...prev];
+              newDrivers[driverIndex] = currentDriver;
+              return newDrivers;
+            });
+            driverCharIndex++;
+          } else {
+            driverIndex++;
+            driverCharIndex = 0;
+            currentDriver = '';
+            setCurrentStreamIndex(driverIndex);
+            if (driverIndex >= drivers.length) {
+              phase = 'actions';
+              setCurrentStreamPhase('actions');
+              setCurrentStreamIndex(0);
+            }
+          }
+        } else {
+          phase = 'actions';
+          setCurrentStreamPhase('actions');
+          setCurrentStreamIndex(0);
+        }
+      } else if (phase === 'actions') {
+        if (actionIndex < actions.length) {
+          const targetAction = actions[actionIndex];
+          if (actionCharIndex < targetAction.length) {
+            currentAction += targetAction[actionCharIndex];
+            setStreamedActions(prev => {
+              const newActions = [...prev];
+              newActions[actionIndex] = currentAction;
+              return newActions;
+            });
+            actionCharIndex++;
+          } else {
+            actionIndex++;
+            actionCharIndex = 0;
+            currentAction = '';
+            setCurrentStreamIndex(actionIndex);
+            if (actionIndex >= actions.length) {
+              clearInterval(streamInterval);
+              setIsAIRegenerating(false);
+            }
+          }
+        } else {
+          clearInterval(streamInterval);
+          setIsAIRegenerating(false);
+        }
+      }
+    }, 12);
+    return () => clearInterval(streamInterval);
+  }, [isAIRegenerating, keyCallOut]);
 
   const selectedBuLabel = useMemo(() => {
     if (selectedGroupIds.size === 0) {
@@ -3688,16 +3780,21 @@ export default function BusinessGroupPerformancePage() {
 
       {/* Key Call Out Section */}
       <div className='max-w-[1920px] mx-auto px-8 pt-6'>
-        <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+        <div className={`bg-white rounded-xl border shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300 ${isAIRegenerating ? 'border-purple-300 ring-2 ring-purple-100' : 'border-gray-200'}`}>
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
-            <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+            <button onClick={handleAIRegenerate} disabled={isAIRegenerating} className={`px-4 py-1.5 text-sm font-bold rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${isAIRegenerating ? 'bg-purple-100 text-purple-600 animate-pulse' : 'bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-purple-300/50 hover:scale-105 hover:shadow-xl hover:from-purple-600 hover:to-indigo-700'}`}>
               <span className='text-sm'>✨</span>
-              <span>AI</span>
-            </span>
+              <span>{isAIRegenerating ? 'Generating...' : 'AI'}</span>
+            </button>
           </div>
           <div className='space-y-4'>
-            <p className='text-sm text-gray-700'>{keyCallOut.summary}</p>
+            <p className='text-sm text-gray-700'>
+              {isAIRegenerating ? streamedSummary : keyCallOut.summary}
+              {isAIRegenerating && currentStreamPhase === 'summary' && (
+                <span className='inline-block w-0.5 h-4 bg-purple-500 animate-pulse ml-0.5 align-middle' />
+              )}
+            </p>
             <div>
               <p className='text-sm font-semibold text-gray-900 mb-2'>
                 Key drivers for P&amp;L {keyCallOut.isGain ? 'gain' : 'loss'}
@@ -3707,7 +3804,10 @@ export default function BusinessGroupPerformancePage() {
                   <li
                     key={index}
                     className='text-sm'>
-                    {point}
+                    {isAIRegenerating ? (streamedDrivers[index] ?? '') : point}
+                    {isAIRegenerating && currentStreamPhase === 'drivers' && index === currentStreamIndex && (
+                      <span className='inline-block w-0.5 h-4 bg-purple-500 animate-pulse ml-0.5 align-middle' />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -3721,7 +3821,10 @@ export default function BusinessGroupPerformancePage() {
                   <li
                     key={index}
                     className='text-sm'>
-                    {point}
+                    {isAIRegenerating ? (streamedActions[index] ?? '') : point}
+                    {isAIRegenerating && currentStreamPhase === 'actions' && index === currentStreamIndex && (
+                      <span className='inline-block w-0.5 h-4 bg-purple-500 animate-pulse ml-0.5 align-middle' />
+                    )}
                   </li>
                 ))}
               </ul>

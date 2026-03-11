@@ -82,10 +82,9 @@ export default function ActionTrackerPage() {
         </div>
         <p className='text-gray-600 mb-4'>
           {urgentActions.length} urgent high-priority actions requiring
-          immediate attention, including Vietnam production shift for EV
-          connectors, securing alternative rare earth suppliers, and
-          accelerating Nvidia GB300 program engagement to capture data center
-          growth.
+          immediate attention, including production planning optimization,
+          strategic account reviews, and accelerating AI server program
+          engagement to capture PC market growth.
         </p>
         <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6'>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>

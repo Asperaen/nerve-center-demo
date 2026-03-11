@@ -1,6 +1,6 @@
 import { CogIcon } from '@heroicons/react/16/solid';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HeaderFilters from '../components/HeaderFilters';
 import { type TimeframeOption, type TimeframeOptionItem } from '../components/TimeframePicker';
@@ -330,6 +330,10 @@ export default function IdeationProgressPage() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
     new Set()
   );
+  const [isAIRegenerating, setIsAIRegenerating] = useState(false);
+  const [streamedBullets, setStreamedBullets] = useState<string[]>([]);
+  const [streamedAnalysis, setStreamedAnalysis] = useState('');
+  const [currentStreamIndex, setCurrentStreamIndex] = useState(0);
 
   const selectedGroupInfo = useMemo(() => {
     if (selectedBu === 'all') {
@@ -1002,6 +1006,53 @@ export default function IdeationProgressPage() {
     };
   }, [scaledPlanRows, formatMnValue, currencyLabel, isDeGroupSelected]);
 
+  const handleAIRegenerate = useCallback(() => {
+    if (isAIRegenerating || !keyCallOut) return;
+    setIsAIRegenerating(true);
+    setStreamedBullets([]);
+    setStreamedAnalysis('');
+    setCurrentStreamIndex(0);
+    const allBullets = keyCallOut.bulletPoints;
+    const analysis = keyCallOut.rootCauseAnalysis || '';
+    let bulletIndex = 0;
+    let charIndex = 0;
+    let currentBullet = '';
+    let isStreamingAnalysis = false;
+    let analysisCharIndex = 0;
+    const streamInterval = setInterval(() => {
+      if (!isStreamingAnalysis && bulletIndex < allBullets.length) {
+        const targetBullet = allBullets[bulletIndex];
+        if (charIndex < targetBullet.length) {
+          currentBullet += targetBullet[charIndex];
+          setStreamedBullets(prev => {
+            const newBullets = [...prev];
+            newBullets[bulletIndex] = currentBullet;
+            return newBullets;
+          });
+          charIndex++;
+        } else {
+          bulletIndex++;
+          charIndex = 0;
+          currentBullet = '';
+          setCurrentStreamIndex(bulletIndex);
+        }
+      } else if (bulletIndex >= allBullets.length && analysis) {
+        isStreamingAnalysis = true;
+        if (analysisCharIndex < analysis.length) {
+          setStreamedAnalysis(prev => prev + analysis[analysisCharIndex]);
+          analysisCharIndex++;
+        } else {
+          clearInterval(streamInterval);
+          setIsAIRegenerating(false);
+        }
+      } else {
+        clearInterval(streamInterval);
+        setIsAIRegenerating(false);
+      }
+    }, 15);
+    return () => clearInterval(streamInterval);
+  }, [isAIRegenerating, keyCallOut]);
+
   useEffect(() => {
     setStoredTimeframe(activeTimeframe);
   }, [activeTimeframe]);
@@ -1301,26 +1352,32 @@ export default function IdeationProgressPage() {
         )}
         {keyCallOut && (
           <div className='mb-6'>
-            <div className='bg-white rounded-xl border border-gray-200 shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300'>
+            <div className={`bg-white rounded-xl border shadow-lg shadow-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300 ${isAIRegenerating ? 'border-purple-300 ring-2 ring-purple-100' : 'border-gray-200'}`}>
               <div className='flex items-center justify-between mb-4'>
                 <h2 className='text-2xl font-bold text-gray-900'>Key Call Out</h2>
-                <span className='px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5'>
+                <button onClick={handleAIRegenerate} disabled={isAIRegenerating} className={`px-3 py-1 text-xs font-bold bg-gradient-to-r from-purple-200 via-indigo-200 to-purple-300 text-purple-800 rounded-full border-2 border-purple-400 shadow-md shadow-purple-200/50 flex items-center gap-1.5 transition-all hover:scale-105 hover:shadow-lg hover:from-purple-300 hover:to-indigo-400 cursor-pointer ${isAIRegenerating ? 'animate-pulse' : ''}`}>
                   <span className='text-sm'>✨</span>
-                  <span>AI</span>
-                </span>
+                  <span>{isAIRegenerating ? 'Generating...' : 'AI'}</span>
+                </button>
               </div>
               <div className='space-y-3'>
                 <ul className='list-disc list-inside space-y-2 text-sm text-gray-700'>
                   {keyCallOut.bulletPoints.map((point, index) => (
                     <li key={index} className='text-sm'>
-                      {point}
+                      {isAIRegenerating ? (streamedBullets[index] ?? '') : point}
+                      {isAIRegenerating && index === currentStreamIndex && (
+                        <span className='inline-block w-0.5 h-4 bg-purple-500 animate-pulse ml-0.5 align-middle' />
+                      )}
                     </li>
                   ))}
                 </ul>
-                {keyCallOut.rootCauseAnalysis && (
+                {(isAIRegenerating ? streamedAnalysis : keyCallOut.rootCauseAnalysis) && (
                   <div className='mt-4 pt-4 border-t border-gray-200'>
                     <p className='text-sm text-gray-700 leading-relaxed'>
-                      {keyCallOut.rootCauseAnalysis}
+                      {isAIRegenerating ? streamedAnalysis : keyCallOut.rootCauseAnalysis}
+                      {isAIRegenerating && (
+                        <span className='inline-block w-0.5 h-4 bg-purple-500 animate-pulse ml-0.5 align-middle' />
+                      )}
                     </p>
                   </div>
                 )}

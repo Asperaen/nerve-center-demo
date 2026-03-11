@@ -10,14 +10,14 @@ export const mockRootCauses: RootCause[] = [
   },
   {
     id: 'rc-2',
-    title: 'Material Cost Surge from Rare Earth Supply Disruption',
+    title: 'Material Cost Surge from Supply Disruption',
     impact: -5.0,
     tags: ['COGS', 'Material'],
     waveTicketNumber: 'nc-102',
   },
   {
     id: 'rc-3',
-    title: 'Volume Decline from US Tariff Impact on EV Connectors',
+    title: 'Volume Decline from US Tariff Impact on PC Components',
     impact: -10.0,
     tags: ['Revenue', 'Volume'],
     waveTicketNumber: 'nc-103',

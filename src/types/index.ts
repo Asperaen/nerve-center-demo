@@ -796,3 +796,50 @@ export interface FactoryInitiative {
 export interface FactoryInitiativesMap {
   [factoryName: string]: FactoryInitiative[];
 }
+
+// Biweekly Dashboard Types
+export interface BiweeklyFinancialMetric {
+  label: string;
+  actual: number;
+  budget: number;
+  lastYear: number;
+}
+
+export interface BiweeklyBusinessGroup {
+  id: string;
+  name: string;
+  revenue: BiweeklyFinancialMetric;
+  grossProfit: BiweeklyFinancialMetric;
+  operatingProfit: BiweeklyFinancialMetric;
+  netProfit: BiweeklyFinancialMetric;
+  sbus?: BiweeklyBusinessGroup[];
+}
+
+export interface BiweeklyDashboardData {
+  summary: {
+    revenue: BiweeklyFinancialMetric;
+    gp: BiweeklyFinancialMetric;
+    op: BiweeklyFinancialMetric;
+    np: BiweeklyFinancialMetric;
+  };
+  groups: BiweeklyBusinessGroup[];
+}
+
+// From External Pulse Component
+export interface NewsItemExternal {
+  id: string;
+  title: string;
+  date?: string;
+  url?: string;
+  category?: string[];
+  risk?: string[];
+  content?: string;
+  summary?: string;
+  source?: string;
+  keywords?: string[];
+  reasons?: string[];
+  importance_score?: number;
+  importance_label?: string;
+  urgency_score?: number;
+  urgency_label?: string;
+}
