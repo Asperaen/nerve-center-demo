@@ -58,8 +58,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'topline-sub-1',
-    label: 'Sub-VS1A',
-    sponsor: 'Mr. A',
+    label: 'AEBU1',
+    sponsor: 'Gary W.',
     total: 10.0,
     l1: 6.0,
     l2: 6.0,
@@ -74,8 +74,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'topline-sub-2',
-    label: 'Sub-VS2B',
-    sponsor: 'Mr. B',
+    label: 'AEBU2',
+    sponsor: 'Bourne C.',
     total: 20.0,
     l1: 3.0,
     l2: 3.0,
@@ -90,8 +90,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'topline-sub-3',
-    label: 'Sub-VS3C',
-    sponsor: 'Mr. C',
+    label: 'APBU',
+    sponsor: 'Douglass C.',
     total: 5.0,
     l1: 3.0,
     l2: 3.0,
@@ -121,8 +121,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'mfg-sub-1',
-    label: 'Sub-VS2A',
-    sponsor: 'Mr. D',
+    label: 'A31 - CDP',
+    sponsor: 'Ivon C. + Alex C.',
     total: 20.0,
     l1: 10.0,
     l2: 10.2,
@@ -137,8 +137,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'mfg-sub-2',
-    label: 'Sub-VS2B',
-    sponsor: 'Mr. E',
+    label: 'A31 - VN',
+    sponsor: 'Ivon C. + Alex C.',
     total: 15.0,
     l1: 7.0,
     l2: 6.4,
@@ -153,8 +153,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'mfg-sub-3',
-    label: 'Sub-VS2C',
-    sponsor: 'Mr. F',
+    label: 'A31 - Brazil',
+    sponsor: 'Ivon C. + Alex C.',
     total: 5.0,
     l1: 2.0,
     l2: 2.0,
@@ -184,8 +184,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-1',
-    label: 'Account A',
-    sponsor: 'Mr. G',
+    label: 'Direct (exc. DQA): AEBU1',
+    sponsor: 'Kevin S. + Steve H',
     total: 2.0,
     l1: 2.0,
     l2: 2.0,
@@ -200,8 +200,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-2',
-    label: 'Account B',
-    sponsor: 'Mr. H',
+    label: 'Direct (exc. DQA): AEBU2',
+    sponsor: 'Ivon C.',
     total: 3.0,
     l1: 1.5,
     l2: 1.6,
@@ -216,8 +216,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-3',
-    label: 'Account C',
-    sponsor: 'Mr. I',
+    label: 'Direct (exc. DQA): APBU',
+    sponsor: 'Douglass C.',
     total: 2.0,
     l1: 1.8,
     l2: 1.9,
@@ -232,8 +232,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'rd-sub-4',
-    label: 'Account D',
-    sponsor: 'R&D lead',
+    label: 'Direct (exc. DQA): ISBG',
+    sponsor: 'Alan C.',
     total: 1.0,
     l1: 0.8,
     l2: 0.7,
@@ -248,8 +248,8 @@ const PLAN_TABLE_ROWS: PlanRow[] = [
   },
   {
     id: 'procurement',
-    label: 'Procurement/BOM',
-    sponsor: 'Mr. K',
+    label: 'Direct PCBG (PC BUs)',
+    sponsor: 'Bourne C.',
     total: 60.0,
     l1: 62.0,
     l2: 62.0,
@@ -914,12 +914,12 @@ export default function IdeationProgressPage() {
     });
 
     if (isDeGroupInSelection) {
-      const accountDRowIndex = rows.findIndex((r) => r.label === 'Account D');
+      const accountDRowIndex = rows.findIndex((r) => r.label === 'Direct (exc. DQA): ISBG');
       if (accountDRowIndex >= 0) {
         rows = rows.slice();
         rows[accountDRowIndex] = {
           ...rows[accountDRowIndex],
-          sponsor: 'Mr. I',
+          sponsor: 'Alan C.',
           total: 1.0,
           l1: 0.4,
           l2: 0.7,

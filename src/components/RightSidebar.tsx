@@ -124,6 +124,7 @@ export default function RightSidebar({
             {realTimePulseTabs.map((tab) => {
               const Icon = tab.icon;
               const active = isActive(tab.path);
+              const isHome = tab.id === 'executive-summary';
               return (
                 <Link
                   key={tab.id}
@@ -133,11 +134,19 @@ export default function RightSidebar({
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}>
-                  <Icon
-                    className={`w-6 h-6 flex-shrink-0 ${
-                      active ? 'text-blue-600' : 'text-gray-600'
-                    }`}
-                  />
+                  {isHome ? (
+                    <img
+                      src={`${import.meta.env.BASE_URL}compal-logo.svg`}
+                      alt='Compal'
+                      className='w-6 h-6 flex-shrink-0'
+                    />
+                  ) : (
+                    <Icon
+                      className={`w-6 h-6 flex-shrink-0 ${
+                        active ? 'text-blue-600' : 'text-gray-600'
+                      }`}
+                    />
+                  )}
                   {!isCollapsed && (
                     <span className='ml-3 font-medium text-sm'>
                       {tab.label}

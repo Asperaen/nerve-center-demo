@@ -11132,46 +11132,34 @@ const buildInitiativesForBu = (
     const meetsTarget =
         bg === 'PCBG' &&
         bu.toLowerCase().includes('d/e');
-    const sponsorPool = [
-        'Mr. A',
-        'Ms. B',
-        'Mr. C',
-        'Ms. D',
-        'Mr. E',
-        'Ms. F',
-        'Mr. G',
-        'Ms. H',
-        'Mr. I',
-        'Ms. J',
-    ];
+    const sponsorByVs: Record<string, string> = {
+        'AEBU1': 'Gary W.',
+        'AEBU2': 'Bourne C.',
+        'APBU': 'Douglass C.',
+        'ISBG (exc. US)': 'Alan C.',
+        'SDBGBU1': 'ChristyF C.',
+        'SDBGBU2': 'Jason T.',
+        'SDBGBU5': 'David M.',
+        'A31 - CDP': 'Ivon C. + Alex C.',
+        'A31 - VN': 'Ivon C. + Alex C.',
+        'A31 - Brazil': 'Ivon C. + Alex C.',
+        'A32 - KSP2': 'Leo C.',
+        'A32 - VN': 'Leo C.',
+        'Direct (exc. DQA): AEBU1': 'Kevin S. + Steve H',
+        'Direct (exc. DQA): AEBU2': 'Ivon C.',
+        'Direct (exc. DQA): APBU': 'Douglass C.',
+        'Direct (exc. DQA): ISBG': 'Alan C.',
+    };
 
     return baseRows.map((row) => {
-        if (
-            bg === 'PCBG' &&
-            bu.toLowerCase().includes('d/e') &&
-            row.vs === 'Account D'
-        ) {
-            return {
-                ...row,
-                target: 1.0,
-                l1ImpactYtm: 0.4,
-                l2ImpactYtm: 0.7,
-                l3ImpactYtm: 0.9,
-                sponsor: 'Mr. I',
-            };
-        }
         const target = scaleInitiativeValue(row.target, multiplier);
         const l1Base = scaleInitiativeValue(row.l1ImpactYtm, multiplier);
         const l2Base = scaleInitiativeValue(row.l2ImpactYtm, multiplier);
         const l3Base = scaleInitiativeValue(row.l3ImpactYtm, multiplier);
         const sponsor =
             row.sponsor ??
-            sponsorPool[
-                Math.floor(
-                    buildInitiativeSeed(`${bg}-${bu}-${row.vs}-sponsor`) *
-                        sponsorPool.length
-                )
-            ];
+            sponsorByVs[row.vs] ??
+            sponsorByVs[row.parentVs ?? ''];
         if (!meetsTarget) {
             return {
                 ...row,
