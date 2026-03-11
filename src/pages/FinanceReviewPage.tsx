@@ -132,12 +132,12 @@ export default function FinanceReviewPage() {
       return false;
     }
     const normalized = normalizeLabel(buParam);
-    return normalized === 'degroup' || buParam.toLowerCase().includes('d/e');
+    return normalized === 'aebu1' || buParam.toLowerCase().includes('d/e');
   }, [searchParams]);
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
-      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      const callouts = KEY_CALLOUTS_BY_BG.PCBG?.['AEBU1'];
       if (callouts?.actualReconciliation?.length) {
         return {
           bulletPoints: callouts.actualReconciliation,

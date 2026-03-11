@@ -1015,7 +1015,7 @@ export const mockFunctionDeviationRows: FunctionDeviationRow[] = [
     label: 'Topline',
     ytmBudget: 220.0,
     ytmActuals: 245.0,
-    aiInsight: 'Higher volume across HH and FII segments.',
+    aiInsight: 'Higher volume across PCBG and ISBG segments.',
     indentLevel: 1,
   },
   {
@@ -2478,13 +2478,13 @@ export const mockMVABreakdownKeyCallOut: KeyCallOut = {
 export const mockAppliedAssumptions: AppliedAssumption[] = [
   {
     id: 'assum-applied-1',
-    name: 'Labor Rate Decrease in Chihuahua, Mexico',
-    description: 'Excess labor availability in the local market reducing wage pressure and improving hiring leverage',
-    impact: 40.0, // +40M impact (tailwind)
+    name: 'Labor rate increase in VN',
+    description: 'Rising labor costs in Vietnam manufacturing facilities increasing wage pressure',
+    impact: -40.0, // -40M impact (headwind, flipped to negative)
     targetStage: 'early-signals',
-    impactType: 'positive',
+    impactType: 'negative',
     isApplied: true,
-    color: '#10b981', // emerald-500 for positive/tailwind
+    color: '#ef4444', // red-500 for negative/headwind
     sourceNewsIds: ['news-7', 'news-5', 'news-12'], // Related news: Amphenol growth, 5G Infrastructure, AI demand
     valueDriverChanges: [
       {
@@ -2538,8 +2538,8 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
   },
   {
     id: 'assum-applied-2',
-    name: 'Steel Price Surge',
-    description: 'Steel price increase impacting material costs',
+    name: 'Memory Price Surge',
+    description: 'Memory price increase impacting material costs',
     impact: -5.0, // -5M impact (headwind)
     targetStage: 'early-signals',
     impactType: 'negative',
@@ -2598,8 +2598,8 @@ export const mockAppliedAssumptions: AppliedAssumption[] = [
   },
   {
     id: 'assum-applied-3',
-    name: 'Resin Price Surge',
-    description: 'Resin price increase impacting material costs',
+    name: 'IC Price Surge',
+    description: 'IC price increase impacting material costs',
     impact: -5.0, // -5M impact (headwind)
     targetStage: 'early-signals',
     impactType: 'negative',

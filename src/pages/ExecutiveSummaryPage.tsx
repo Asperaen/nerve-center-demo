@@ -61,7 +61,7 @@ const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   const normalized = key.replace(/\s*&\s*/g, ' ').replace(/\s+/g, '-');
   if (normalized === 'other-subsidiary-intergroup-adjustments') {
-    return 'other-subsidiary-intergroup';
+    return 'mbu';
   }
   return key === 'other' ? 'others' : key;
 };
@@ -681,7 +681,7 @@ export default function ExecutiveSummaryPage({
     }
     const normalized =
       selectedUnits[0].name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-    return normalizeGroupId(selectedGroup.group) === 'hh' && normalized === 'degroup';
+    return normalizeGroupId(selectedGroup.group) === 'pcbg' && normalized === 'aebu1';
   }, [isBudgetView, selectedBu, selectedGroup, selectedUnits]);
 
   const showBuSelection = isBudgetView && selectedBu !== 'all' && selectedGroup;
@@ -751,23 +751,23 @@ export default function ExecutiveSummaryPage({
 
   const resolvePnlGroupKey = useCallback((groupName: string) => {
     const normalized = normalizeGroupId(groupName);
-    if (normalized === 'hh') {
-      return 'HH (Parent)';
+    if (normalized === 'pcbg') {
+      return 'PCBG';
     }
-    if (normalized === 'fit') {
-      return 'FIT';
+    if (normalized === 'sdbg') {
+      return 'SDBG';
     }
-    if (normalized === 'fii') {
-      return 'FII';
+    if (normalized === 'isbg') {
+      return 'ISBG';
     }
-    if (normalized === 'fih') {
-      return 'FIH';
+    if (normalized === 'aep') {
+      return 'AEP';
     }
     if (normalized === 'others') {
       return 'Others';
     }
-    if (normalized === 'other-subsidiary-intergroup') {
-      return 'Other subsidiary & Intergroup adjustments';
+    if (normalized === 'mbu') {
+      return 'MBU';
     }
     return null;
   }, []);
@@ -2112,7 +2112,7 @@ export default function ExecutiveSummaryPage({
       return null;
     }
     if (isDeGroupSelected) {
-      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      const callouts = KEY_CALLOUTS_BY_BG.PCBG?.['AEBU1'];
       if (callouts?.budget?.length) {
         return {
           bulletPoints: callouts.budget,

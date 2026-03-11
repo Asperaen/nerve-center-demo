@@ -22,7 +22,7 @@ import {
   INITIATIVE_IMPLEMENTATION_DATA,
   INITIATIVE_IMPLEMENTATION_ROW_DEFS,
   KEY_CALLOUTS_BY_BG,
-  HH_DE_GROUP_EXECUTION_ROWS,
+  PCBG_AEBU1_EXECUTION_ROWS,
 } from '../data/mockBgData';
 import { getMainBusinessGroupOptions } from '../data/mockBusinessGroupPerformance';
 import {
@@ -502,8 +502,8 @@ export default function ActualInitiativeImplementationPage() {
       }
     }
     
-    // Default to D group when HH is selected and no BU parameter is provided
-    if (groupId.toLowerCase() === 'hh' && !unitsParam) {
+    // Default to AEBU1 when PCBG is selected and no BU parameter is provided
+    if (groupId.toLowerCase() === 'pcbg' && !unitsParam) {
       const dGroupUnit = selectedGroupInfo.group.businessUnits.find(
         (unit) => {
           const normalized = normalizeLabel(unit.name);
@@ -625,10 +625,10 @@ export default function ActualInitiativeImplementationPage() {
       return false;
     }
     const groupId = normalizeGroupId(selectedGroupInfo.group.group);
-    if (groupId !== 'hh') {
+    if (groupId !== 'pcbg') {
       return false;
     }
-    const deGroupId = getUnitId(groupId, 'D/E Group');
+    const deGroupId = getUnitId(groupId, 'AEBU1');
     return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
   }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
 
@@ -636,12 +636,12 @@ export default function ActualInitiativeImplementationPage() {
     const scale = timeframeScale;
     const round = (value: number) => Math.round(value * 10) / 10;
     const meetsTargetOverride =
-      selectedGroupInfo?.group.group === 'HH (Parent)' &&
+      selectedGroupInfo?.group.group === 'PCBG' &&
       selectedGroupInfo?.unit?.name?.toLowerCase().includes('d/e');
 
-    // Use hardcoded data for HH D/E Group (already YTM values, no scaling needed)
+    // Use hardcoded data for PCBG AEBU1 (already YTM values, no scaling needed)
     if (isDeGroupSelected) {
-      return HH_DE_GROUP_EXECUTION_ROWS;
+      return PCBG_AEBU1_EXECUTION_ROWS;
     }
 
     return buildExecutionRows(selectedInitiatives, Boolean(meetsTargetOverride)).map((row) => ({
@@ -655,7 +655,7 @@ export default function ActualInitiativeImplementationPage() {
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
-      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      const callouts = KEY_CALLOUTS_BY_BG.PCBG?.['AEBU1'];
       if (callouts?.actualImplementation?.length) {
         return {
           bulletPoints: callouts.actualImplementation,
@@ -1134,7 +1134,7 @@ export default function ActualInitiativeImplementationPage() {
                         ? impactVsTargetLegend[1].cellClass
                         : impactVsTargetLegend[0].cellClass;
 
-                    // For hardcoded HH D/E Group data, use the values from the row directly
+                    // For hardcoded PCBG AEBU1 data, use the values from the row directly
                     const lateInitiativeRows = isDeGroupSelected
                       ? []
                       : row.isTotal

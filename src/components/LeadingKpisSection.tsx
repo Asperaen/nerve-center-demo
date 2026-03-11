@@ -45,34 +45,34 @@ function sortKpisByStatus<T extends { status?: string }>(kpis: T[]): T[] {
 }
 
 const BU_REVENUE_ROWS = [
-  { scope: "Cable", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Audio", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Conn", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Cable", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Audio", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Conn", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Cable", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Audio", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Conn", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Cable", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Audio", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Conn", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Cable", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Audio", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Conn", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Cable", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Audio", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Conn", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Cable", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Audio", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
-  { scope: "Conn", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU2", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU3", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU1", group: "Quality", label: "COPQ", value: "TBD", unit: "K USD", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU2", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU3", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU1", group: "Quality", label: "Customer complaints", value: "TBD", unit: "# of cases", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU2", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU3", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU1", group: "Topline", label: "破冰階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU2", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU3", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU1", group: "Topline", label: "Pre-RFQ階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU2", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU3", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU1", group: "Topline", label: "RFQ+開發階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU2", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU3", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU1", group: "Topline", label: "送樣階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU2", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU3", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
+  { scope: "SDBGBU1", group: "Topline", label: "量產階段營收占比", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "LY actuals as of today (2024 FY)" },
 ];
 const BU_COGS_ROWS = [
-  { scope: "Cable", group: "Manufacturing", label: "UPPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Audio", group: "Manufacturing", label: "UPPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Cable", group: "Manufacturing", label: "UPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Conn", group: "Manufacturing", label: "OEE1", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
-  { scope: "Conn", group: "Manufacturing", label: "OEE2", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU2", group: "Manufacturing", label: "UPPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU3", group: "Manufacturing", label: "UPPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU2", group: "Manufacturing", label: "UPH", value: "TBD", unit: "Unit", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU1", group: "Manufacturing", label: "OEE1", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
+  { scope: "SDBGBU1", group: "Manufacturing", label: "OEE2", value: "TBD", unit: "%", version: "Actuals as of today", benchmarkVersion: "Avg. of last month" },
 ];
 const SITE_COGS_ROWS = [
   { scope: "CN - HA", group: "Manufacturing", label: "Labor rate", version: "Latest Quarter", value: "TBD", unit: "USD", benchmarkVersion: "Budget", benchmarkValue: "TBD" },
@@ -84,8 +84,8 @@ const SITE_COGS_ROWS = [
 export function LeadingKpisSection() {
   const { liveInsightOn } = useLiveInsight();
   const [isBuSectionExpanded, setIsBuSectionExpanded] = useState(false);
-  const [isFitSectionExpanded, setIsFitSectionExpanded] = useState(true);
-  const [selectedBu, setSelectedBu] = useState<string>("Cable");
+  const [isSdbgSectionExpanded, setIsFitSectionExpanded] = useState(true);
+  const [selectedBu, setSelectedBu] = useState<string>("SDBGBU2");
   const [isSiteSectionExpanded, setIsSiteSectionExpanded] = useState(false);
   const [selectedSite, setSelectedSite] = useState<string>("CN - HA");
 
@@ -339,11 +339,11 @@ export function LeadingKpisSection() {
         </div>
       )}
       <div className="space-y-6">
-        <button onClick={() => setIsFitSectionExpanded(!isFitSectionExpanded)} className="flex items-center gap-2 text-left">
-          {isFitSectionExpanded ? <ChevronDownIcon className="w-5 h-5 text-gray-600" /> : <ChevronRightIcon className="w-5 h-5 text-gray-600" />}
-          <h3 className="text-lg font-semibold text-gray-800">FIT</h3>
+        <button onClick={() => setIsFitSectionExpanded(!isSdbgSectionExpanded)} className="flex items-center gap-2 text-left">
+          {isSdbgSectionExpanded ? <ChevronDownIcon className="w-5 h-5 text-gray-600" /> : <ChevronRightIcon className="w-5 h-5 text-gray-600" />}
+          <h3 className="text-lg font-semibold text-gray-800">SDBG</h3>
         </button>
-        {isFitSectionExpanded && (
+        {isSdbgSectionExpanded && (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-2">
               <div className="hidden lg:block" />
@@ -400,7 +400,7 @@ export function LeadingKpisSection() {
         {isBuSectionExpanded && (
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
-              {["Cable", "Audio", "Conn"].map((bu) => (
+              {["SDBGBU2", "SDBGBU3", "SDBGBU1"].map((bu) => (
                 <button key={bu} onClick={() => setSelectedBu(bu)} className={`px-4 py-2 text-sm rounded-md transition-all ${selectedBu === bu ? "bg-primary-600 text-white font-semibold" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>{bu}</button>
               ))}
             </div>

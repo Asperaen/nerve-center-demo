@@ -157,8 +157,8 @@ export const generateDeviationDataset = (
   seedKey: string
 ): DeviationDataset[] => {
   const normalizedSeed = seedKey.toLowerCase();
-  const isHhDeGroup =
-    normalizedSeed.includes('hh') &&
+  const isPcbgAebu1 =
+    normalizedSeed.includes('pcbg') &&
     (normalizedSeed.includes('d/e') ||
       normalizedSeed.includes('d-e') ||
       normalizedSeed.includes('de'));
@@ -297,19 +297,19 @@ export const generateDeviationDataset = (
     };
   });
 
-  const baselineScale = isHhDeGroup ? 1.1 : 0.7;
+  const baselineScale = isPcbgAebu1 ? 1.1 : 0.7;
   const actualSpendValues = distributeTotal(
     actualLineValueForSelectedBUs,
     categories.length
   );
   const baselineSpendValues = distributeTotal(
-    (isHhDeGroup ? actualLineValueForSelectedBUs : budgetLineValueForSelectedBUs) *
+    (isPcbgAebu1 ? actualLineValueForSelectedBUs : budgetLineValueForSelectedBUs) *
       baselineScale,
     categories.length
   );
 
-  // For HH D/E Group, distribute the exact budget value across categories to preserve P&L breakdown totals
-  const targetSpendValues = isHhDeGroup
+  // For PCBG AEBU1, distribute the exact budget value across categories to preserve P&L breakdown totals
+  const targetSpendValues = isPcbgAebu1
     ? distributeTotal(budgetLineValueForSelectedBUs, categories.length)
     : [];
 
@@ -318,10 +318,10 @@ export const generateDeviationDataset = (
     const rawBaselineSpend = baselineSpendValues[index];
     const clampToActual = (value: number) =>
       Math.min(Math.max(value, actualSpend * 0.7), actualSpend * 1.3);
-    const baselineSpend = isHhDeGroup
+    const baselineSpend = isPcbgAebu1
       ? rawBaselineSpend
       : roundToOne(clampToActual(rawBaselineSpend));
-    const targetSpend = isHhDeGroup
+    const targetSpend = isPcbgAebu1
       ? roundToOne(targetSpendValues[index])  // Use distributed budget value to preserve totals
       : roundToOne(
           clampToActual(baselineSpend * randomBetween(0.8, 1.1))
@@ -330,7 +330,7 @@ export const generateDeviationDataset = (
     const minBar = Math.abs(actualSpend) * 0.05;
     const maxAbs = Math.abs(actualSpend) * 0.3;
     const [volumeChange, fxImpact, l3GapVsTarget, l4GapVsTarget, l5GapVsTarget] =
-      isHhDeGroup
+      isPcbgAebu1
         ? distributeDeltaForHhDe(delta, minBar, maxAbs)
         : clampAndRebalance(distributeDelta(delta), delta, maxAbs, 1);
     const reconciledActual = roundToOne(
@@ -603,16 +603,16 @@ export default function BusinessUnitPerformanceByFunctionPage() {
     };
   }, [functionParam, scaledFunctionRow, selectedBus]);
 
-  // Get function-specific insights - check for D/E Group specific callouts first
+  // Get function-specific insights - check for AEBU1 specific callouts first
   const getInsightsForFunction = useMemo(() => {
     return (functionType: 'procurement' | 'manufacturing' | 'rnd'): string[] => {
-      // Check if D/E Group is selected (either as a single selection or part of multiple)
+      // Check if AEBU1 is selected (either as a single selection or part of multiple)
       const isDEGroupSelected = selectedBus.some(
         (bu) => bu.toLowerCase().includes('d/e group') || bu.toLowerCase().includes('de group')
       );
 
       if (isDEGroupSelected) {
-        const deGroupCallouts = KEY_CALLOUTS_BY_BG['HH']?.['D/E Group']?.functionalPerformance?.[functionType];
+        const deGroupCallouts = KEY_CALLOUTS_BY_BG['PCBG']?.['AEBU1']?.functionalPerformance?.[functionType];
         if (deGroupCallouts && deGroupCallouts.length > 0) {
           return deGroupCallouts;
         }

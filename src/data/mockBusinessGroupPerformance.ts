@@ -19,7 +19,7 @@ export interface BusinessGroupMetricWithTrend extends BusinessGroupMetric {
 
 export interface BusinessGroupData {
   id: string;
-  name: string; // "HH", "FII", etc.
+  name: string; // "PCBG", "ISBG", etc.
   rev: BusinessGroupMetricWithTrend;
   gp: BusinessGroupMetricWithTrend;
   op: BusinessGroupMetricWithTrend;
@@ -48,44 +48,38 @@ const generateTrend = (
 
 // AI insights for each business group and metric
 const aiInsights: Record<string, Record<string, string>> = {
-  hh: {
-    rev: 'HH revenue shows strong Q4 performance driven by premium product launches. Holiday season demand exceeded forecasts by 8%.',
+  pcbg: {
+    rev: 'PCBG revenue shows strong Q4 performance driven by premium product launches. Holiday season demand exceeded forecasts by 8%.',
     gp: 'Gross profit margin improved due to supply chain optimization and favorable commodity pricing in Q3-Q4.',
     op: 'Operating profit benefiting from automation investments made in H1. Labor cost efficiency up 12% YoY.',
     np: 'Net profit growth reflects successful cost management and lower interest expenses from debt refinancing.',
   },
-  fii: {
-    rev: 'FII revenue remained flat as market maturation offset new customer acquisitions. Focus shifting to value-added services.',
+  isbg: {
+    rev: 'ISBG revenue remained flat as market maturation offset new customer acquisitions. Focus shifting to value-added services.',
     gp: 'Stable GP despite competitive pricing pressure. Product mix optimization maintaining margins.',
     op: 'Operating costs well-controlled. Restructuring completed in Q2 now showing efficiency gains.',
     np: 'Net profit stable with improved working capital management offsetting revenue pressure.',
   },
-  fih: {
-    rev: 'FIH revenue growth driven by EV connector demand surge (+45% YoY) and data center expansion projects.',
+  aep: {
+    rev: 'AEP revenue growth driven by EV connector demand surge (+45% YoY) and data center expansion projects.',
     gp: 'GP expanding with higher-margin EV and server products now representing 38% of portfolio.',
     op: 'Operating leverage improving as Vietnam facility reaches 85% utilization. Scale benefits emerging.',
     np: 'Strong NP growth reflecting operational excellence and favorable product mix shift.',
   },
-  fit: {
-    rev: 'FIT revenue up on 5G infrastructure deployments and smart device component wins. Nvidia partnership ramping.',
+  sdbg: {
+    rev: 'SDBG revenue up on 5G infrastructure deployments and smart device component wins.',
     gp: 'GP improvement from proprietary component designs and reduced reliance on third-party IP.',
     op: 'R&D investments in AI accelerator components expected to drive future OP growth. Current phase is investment.',
     np: 'NP growth healthy despite increased R&D spend. Tax incentives in key markets contributing.',
   },
-  others: {
-    rev: 'Others segment showing strong growth from emerging market expansion and new B2B service offerings.',
-    gp: 'GP benefiting from diversification strategy and higher-margin specialty products.',
-    op: 'OP growth accelerating as startup costs for new ventures normalize. Break-even achieved in 3 of 5 new units.',
-    np: 'NP growth outpacing revenue due to operational maturity in previously loss-making units.',
-  },
-  other_subsidiary_intergroup: {
-    rev: 'Other subsidiary & intergroup segment showing strong growth from emerging market expansion and new B2B service offerings.',
+  mbu: {
+    rev: 'MBU segment showing strong growth from emerging market expansion and new B2B service offerings.',
     gp: 'GP benefiting from diversification strategy and higher-margin specialty products.',
     op: 'OP growth accelerating as startup costs for new ventures normalize. Break-even achieved in 3 of 5 new units.',
     np: 'NP growth outpacing revenue due to operational maturity in previously loss-making units.',
   },
   overall: {
-    rev: 'Consolidated revenue growth of 3.2% reflects balanced portfolio performance. EV and data center segments leading.',
+    rev: 'Consolidated revenue growth of 3.2% reflects balanced portfolio performance across all business groups.',
     gp: 'Overall GP healthy with margin expansion from product mix optimization across all business units.',
     op: 'OP benefiting from shared services consolidation and cross-BU synergy initiatives launched in Q1.',
     np: 'NP growth demonstrates effective cost management and strategic focus on high-margin opportunities.',
@@ -94,15 +88,15 @@ const aiInsights: Record<string, Record<string, string>> = {
 
 export const mockBusinessGroupData: BusinessGroupData[] = [
   {
-    id: 'hh',
-    name: 'HH (Parent)',
+    id: 'pcbg',
+    name: 'PCBG',
     rev: {
       value: 1349,
       baseline: 1547,
       stly: 1203,
       percent: ((1349 - 1547) / 1547) * 100,
       trend: generateTrend(10.0, 0.09, 'up'),
-      aiInsight: aiInsights.fit.rev,
+      aiInsight: aiInsights.pcbg.rev,
     },
     gp: {
       value: 276,
@@ -110,7 +104,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 215,
       percent: ((276 - 344) / 344) * 100,
       trend: generateTrend(10.0, 0.07, 'up'),
-      aiInsight: aiInsights.fit.gp,
+      aiInsight: aiInsights.pcbg.gp,
     },
     op: {
       value: 55,
@@ -118,7 +112,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 38,
       percent: ((55 - 133) / 133) * 100,
       trend: generateTrend(10.0, 0.1, 'up'),
-      aiInsight: aiInsights.fit.op,
+      aiInsight: aiInsights.pcbg.op,
     },
     np: {
       value: 47,
@@ -126,19 +120,19 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 53,
       percent: ((47 - 83) / 83) * 100,
       trend: generateTrend(10.0, 0.11, 'up'),
-      aiInsight: aiInsights.fit.np,
+      aiInsight: aiInsights.pcbg.np,
     },
   },
   {
-    id: 'fii',
-    name: 'FII',
+    id: 'isbg',
+    name: 'ISBG',
     rev: {
       value: 129,
       baseline: 120.3,
       stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.05, 'flat'),
-      aiInsight: aiInsights.fii.rev,
+      aiInsight: aiInsights.isbg.rev,
     },
     gp: {
       value: 129,
@@ -146,7 +140,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.04, 'flat'),
-      aiInsight: aiInsights.fii.gp,
+      aiInsight: aiInsights.isbg.gp,
     },
     op: {
       value: 129,
@@ -154,7 +148,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.06, 'flat'),
-      aiInsight: aiInsights.fii.op,
+      aiInsight: aiInsights.isbg.op,
     },
     np: {
       value: 129,
@@ -162,19 +156,19 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 129,
       percent: 0.0,
       trend: generateTrend(12.9, 0.07, 'flat'),
-      aiInsight: aiInsights.fii.np,
+      aiInsight: aiInsights.isbg.np,
     },
   },
   {
-    id: 'fih',
-    name: 'FIH',
+    id: 'aep',
+    name: 'AEP',
     rev: {
       value: 183,
       baseline: 120.3,
       stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.07, 'up'),
-      aiInsight: aiInsights.fih.rev,
+      aiInsight: aiInsights.aep.rev,
     },
     gp: {
       value: 183,
@@ -182,7 +176,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 17.8,
       percent: 2.8,
       trend: generateTrend(18.0, 0.06, 'up'),
-      aiInsight: aiInsights.fih.gp,
+      aiInsight: aiInsights.aep.gp,
     },
     op: {
       value: 183,
@@ -190,7 +184,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.08, 'up'),
-      aiInsight: aiInsights.fih.op,
+      aiInsight: aiInsights.aep.op,
     },
     np: {
       value: 183,
@@ -198,19 +192,19 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 178,
       percent: 2.8,
       trend: generateTrend(18.0, 0.09, 'up'),
-      aiInsight: aiInsights.fih.np,
+      aiInsight: aiInsights.aep.np,
     },
   },
   {
-    id: 'fit',
-    name: 'FIT',
+    id: 'sdbg',
+    name: 'SDBG',
     rev: {
       value: 1349,
       baseline: 1547,
       stly: 1203,
       percent: ((1349 - 1547) / 1547) * 100,
       trend: generateTrend(10.0, 0.09, 'up'),
-      aiInsight: aiInsights.fit.rev,
+      aiInsight: aiInsights.sdbg.rev,
     },
     gp: {
       value: 276,
@@ -218,7 +212,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 215,
       percent: ((276 - 344) / 344) * 100,
       trend: generateTrend(10.0, 0.07, 'up'),
-      aiInsight: aiInsights.fit.gp,
+      aiInsight: aiInsights.sdbg.gp,
     },
     op: {
       value: 55,
@@ -226,7 +220,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 38,
       percent: ((55 - 133) / 133) * 100,
       trend: generateTrend(10.0, 0.1, 'up'),
-      aiInsight: aiInsights.fit.op,
+      aiInsight: aiInsights.sdbg.op,
     },
     np: {
       value: 47,
@@ -234,19 +228,19 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 53,
       percent: ((47 - 83) / 83) * 100,
       trend: generateTrend(10.0, 0.11, 'up'),
-      aiInsight: aiInsights.fit.np,
+      aiInsight: aiInsights.sdbg.np,
     },
   },
   {
-    id: 'other-subsidiary-intergroup',
-    name: 'Other subsidiary & Intergroup adjustments',
+    id: 'mbu',
+    name: 'MBU',
     rev: {
       value: 139,
       baseline: 120.3,
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.1, 'up'),
-      aiInsight: aiInsights.other_subsidiary_intergroup.rev,
+      aiInsight: aiInsights.mbu.rev,
     },
     gp: {
       value: 139,
@@ -254,7 +248,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.08, 'up'),
-      aiInsight: aiInsights.other_subsidiary_intergroup.gp,
+      aiInsight: aiInsights.mbu.gp,
     },
     op: {
       value: 139,
@@ -262,7 +256,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.12, 'up'),
-      aiInsight: aiInsights.other_subsidiary_intergroup.op,
+      aiInsight: aiInsights.mbu.op,
     },
     np: {
       value: 139,
@@ -270,7 +264,7 @@ export const mockBusinessGroupData: BusinessGroupData[] = [
       stly: 132,
       percent: 5.3,
       trend: generateTrend(13.5, 0.14, 'up'),
-      aiInsight: aiInsights.other_subsidiary_intergroup.np,
+      aiInsight: aiInsights.mbu.np,
     },
   },
 ];
@@ -279,12 +273,11 @@ const ytmScaleByGroup: Record<
   string,
   { value: number; baseline: number; stly: number }
 > = {
-  hh: { value: 0.72, baseline: 0.74, stly: 0.71 },
-  fii: { value: 0.76, baseline: 0.75, stly: 0.74 },
-  fih: { value: 0.78, baseline: 0.77, stly: 0.76 },
-  fit: { value: 0.73, baseline: 0.75, stly: 0.72 },
-  others: { value: 0.7, baseline: 0.71, stly: 0.69 },
-  'other-subsidiary-intergroup': { value: 0.7, baseline: 0.71, stly: 0.69 },
+  pcbg: { value: 0.72, baseline: 0.74, stly: 0.71 },
+  isbg: { value: 0.76, baseline: 0.75, stly: 0.74 },
+  aep: { value: 0.78, baseline: 0.77, stly: 0.76 },
+  sdbg: { value: 0.73, baseline: 0.75, stly: 0.72 },
+  mbu: { value: 0.7, baseline: 0.71, stly: 0.69 },
 };
 
 const roundTo = (value: number, digits: number = 1) => {

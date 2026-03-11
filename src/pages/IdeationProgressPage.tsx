@@ -868,10 +868,10 @@ export default function IdeationProgressPage() {
       return false;
     }
     const groupId = normalizeGroupId(selectedGroupInfo.group.group);
-    if (groupId !== 'hh') {
+    if (groupId !== 'pcbg') {
       return false;
     }
-    const deGroupId = getUnitId(groupId, 'D/E Group');
+    const deGroupId = getUnitId(groupId, 'AEBU1');
     return selectedGroupIds.size === 1 && selectedGroupIds.has(deGroupId);
   }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
 
@@ -880,10 +880,10 @@ export default function IdeationProgressPage() {
       return false;
     }
     const groupId = normalizeGroupId(selectedGroupInfo.group.group);
-    if (groupId !== 'hh') {
+    if (groupId !== 'pcbg') {
       return false;
     }
-    const deGroupId = getUnitId(groupId, 'D/E Group');
+    const deGroupId = getUnitId(groupId, 'AEBU1');
     return selectedGroupIds.has(deGroupId);
   }, [selectedBu, selectedGroupIds, selectedGroupInfo]);
 
@@ -970,7 +970,7 @@ export default function IdeationProgressPage() {
 
   const keyCallOut = useMemo(() => {
     if (isDeGroupSelected) {
-      const callouts = KEY_CALLOUTS_BY_BG.HH?.['D/E Group'];
+      const callouts = KEY_CALLOUTS_BY_BG.PCBG?.['AEBU1'];
       if (callouts?.initiative?.length) {
         return {
           bulletPoints: callouts.initiative,
@@ -1058,8 +1058,8 @@ export default function IdeationProgressPage() {
       }
     }
     
-    // Default to D group when HH is selected and no BU parameter is provided
-    if (groupId.toLowerCase() === 'hh' && !buParam) {
+    // Default to AEBU1 when PCBG is selected and no BU parameter is provided
+    if (groupId.toLowerCase() === 'pcbg' && !buParam) {
       const dGroupUnit = selectedGroupInfo.group.businessUnits.find(
         (unit) => {
           const normalized = normalizeLabel(unit.name);

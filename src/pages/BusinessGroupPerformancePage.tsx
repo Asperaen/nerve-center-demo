@@ -49,7 +49,7 @@ const normalizeGroupId = (groupName: string) => {
   const key = groupName.trim().toLowerCase().replace(/\s*\(parent\)\s*$/i, '');
   const normalized = key.replace(/\s*&\s*/g, ' ').replace(/\s+/g, '-');
   if (normalized === 'other-subsidiary-intergroup-adjustments') {
-    return 'other-subsidiary-intergroup';
+    return 'mbu';
   }
   return key === 'other' ? 'others' : key;
 };
@@ -1029,7 +1029,7 @@ export default function BusinessGroupPerformancePage() {
     setSelectedGroupIds(new Set(ids));
   }, [searchParams, selectedBu, selectedGroupIds.size, businessGroups]);
 
-  // When page has Select BG = single BG (e.g. HH Parent) but no selection in URL, default to all BUs and that BG checkbox (overall + BG id + all BU ids)
+  // When page has Select BG = single BG (e.g. PCBG) but no selection in URL, default to all BUs and that BG checkbox (overall + BG id + all BU ids)
   useEffect(() => {
     if (selectedBu === 'all') return;
     const selectedParam = searchParams.get('selected');
@@ -1578,23 +1578,23 @@ export default function BusinessGroupPerformancePage() {
 
   const resolvePnlGroupKey = useCallback((groupName: string) => {
     const normalized = normalizeGroupId(groupName);
-    if (normalized === 'hh') {
-      return 'HH (Parent)';
+    if (normalized === 'pcbg') {
+      return 'PCBG';
     }
-    if (normalized === 'fit') {
-      return 'FIT';
+    if (normalized === 'sdbg') {
+      return 'SDBG';
     }
-    if (normalized === 'fii') {
-      return 'FII';
+    if (normalized === 'isbg') {
+      return 'ISBG';
     }
-    if (normalized === 'fih') {
-      return 'FIH';
+    if (normalized === 'aep') {
+      return 'AEP';
     }
     if (normalized === 'others') {
       return 'Others';
     }
-    if (normalized === 'other-subsidiary-intergroup') {
-      return 'Other subsidiary & Intergroup adjustments';
+    if (normalized === 'mbu') {
+      return 'MBU';
     }
     return null;
   }, []);
@@ -1711,8 +1711,8 @@ export default function BusinessGroupPerformancePage() {
       ? overallRow?.name
       : undefined;
 
-    // Custom content for D/E Group
-    if (selectedBuName === 'D/E Group') {
+    // Custom content for AEBU1
+    if (selectedBuName === 'AEBU1') {
       return {
         summary: `Actual NP reached USD 232M, trailing budget by negative USD 39M (–14.2%), indicating a volume / mix gap versus plan.`,
         isGain: false,
@@ -1872,7 +1872,7 @@ export default function BusinessGroupPerformancePage() {
     [opImpactRows]
   );
 
-  // Hardcoded op impact details for HH + D/E Group
+  // Hardcoded op impact details for PCBG + AEBU1
   const hhDeGroupOpImpactItems = useMemo(() => [
     {
       id: 1,
@@ -1966,7 +1966,7 @@ export default function BusinessGroupPerformancePage() {
     },
   ], []);
 
-  // Stage to item IDs mapping for HH + D/E Group
+  // Stage to item IDs mapping for PCBG + AEBU1
   const stageToItemIdsMap: Record<string, number[]> = {
     'volume-mix': [1, 2],
     'confirmed-volume-mix': [1, 2],
@@ -1978,10 +1978,10 @@ export default function BusinessGroupPerformancePage() {
 
   const getOpImpactRowsForStage = useCallback(
     (stage: BudgetForecastStage) => {
-      // Check if we're viewing HH + D/E Group for hardcoded data
-      const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+      // Check if we're viewing PCBG + AEBU1 for hardcoded data
+      const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
 
-      if (isHHDEGroup) {
+      if (isPCBGAEBU1) {
         const itemIds = stageToItemIdsMap[stage.stage] || [];
         return hhDeGroupOpImpactItems.filter((item) => itemIds.includes(item.id));
       }
@@ -2075,11 +2075,11 @@ export default function BusinessGroupPerformancePage() {
     const l4Stage = getStage('l4-vs-planned');
     const l5Stage = getStage('l4-to-l5-leakage');
 
-    // Check if we're viewing HH + D/E Group for hardcoded waterfall data
-    const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
+    // Check if we're viewing PCBG + AEBU1 for hardcoded waterfall data
+    const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
 
-    // Hardcoded waterfall values for HH + D/E Group
-    if (isHHDEGroup) {
+    // Hardcoded waterfall values for PCBG + AEBU1
+    if (isPCBGAEBU1) {
       return [
         {
           ...budgetStage,
@@ -2295,9 +2295,9 @@ export default function BusinessGroupPerformancePage() {
   }, [opImpactTotals, selectionMetrics.selectedOpBaseline, selectedBu, selectedBuNames]);
 
   const buildScaledWaterfallStages = (): BudgetForecastStage[] => {
-    // For HH + D/E Group, return hardcoded stages without any scaling/adjustment
-    const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
-    if (isHHDEGroup) {
+    // For PCBG + AEBU1, return hardcoded stages without any scaling/adjustment
+    const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
+    if (isPCBGAEBU1) {
       return reconciliationBaseStages;
     }
 
@@ -2615,13 +2615,13 @@ export default function BusinessGroupPerformancePage() {
               values: ['-', 7, 2, 7, 6, 0, 1],
             },
             {
-              group: 'Conn total',
+              group: 'SDBGBU1 total',
               owner: '',
               values: [39, 8, 39, 49, 22, 2, 3],
               isTotal: true,
             },
             {
-              group: 'Cable',
+              group: 'SDBGBU2',
               owner: 'TSC',
               values: [17, 3, 4, 4, 1, 0, 0],
             },
@@ -2636,7 +2636,7 @@ export default function BusinessGroupPerformancePage() {
               values: ['-', 27, 12, 12, 1, 0, 1],
             },
             {
-              group: 'Cable total',
+              group: 'SDBGBU2 total',
               owner: '',
               values: [17, 31, 26, 18, 2, 0, 1],
               isTotal: true,
@@ -2673,15 +2673,15 @@ export default function BusinessGroupPerformancePage() {
         );
       });
 
-      // For HH + D/E Group, use the hardcoded delta value and scale rows to match
-      const isHHDEGroup = selectedBu === 'hh' && selectedBuNames.includes('D/E Group');
-      const totalImpact = isHHDEGroup
+      // For PCBG + AEBU1, use the hardcoded delta value and scale rows to match
+      const isPCBGAEBU1 = selectedBu === 'pcbg' && selectedBuNames.includes('AEBU1');
+      const totalImpact = isPCBGAEBU1
         ? (activeDeviationStage.delta ?? 0)
         : rows.reduce((sum, row) => sum + row.opImpact, 0);
 
-      // Scale rows proportionally if using hardcoded values for HH + D/E Group
+      // Scale rows proportionally if using hardcoded values for PCBG + AEBU1
       let adjustedRows = filteredRows;
-      if (isHHDEGroup && rows.length > 0) {
+      if (isPCBGAEBU1 && rows.length > 0) {
         const originalSum = rows.reduce((sum, row) => sum + row.opImpact, 0);
         const scaleFactor = originalSum !== 0 ? totalImpact / originalSum : 1;
         adjustedRows = filteredRows.map((row) => ({

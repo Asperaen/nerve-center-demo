@@ -183,7 +183,7 @@ function buDisplayName(buKey: string): string {
   return match ? match[1].trim() : s;
 }
 
-/** Collect unique BUs in order: gp first, then op, then income. Deduplicate by normalized display name so "Cable" and "Cable +123 Mn" count as one BU. */
+/** Collect unique BUs in order: gp first, then op, then income. Deduplicate by normalized display name so "SDBGBU2" and "Cable +123 Mn" count as one BU. */
 function collectBuOrder(
   gpByBu: Map<string, string>,
   opByBu: Map<string, string[]>,
@@ -215,7 +215,7 @@ function collectBuOrder(
   return order;
 }
 
-/** Get value from map by key or by normalized display-name match (so "Cable" matches "Cable +123 Mn (+180%)"). */
+/** Get value from map by key or by normalized display-name match (so "SDBGBU2" matches "Cable +123 Mn (+180%)"). */
 function getByBuKey<T>(map: Map<string, T>, buKey: string): T | undefined {
   const v = map.get(buKey);
   if (v !== undefined) return v;
