@@ -345,7 +345,7 @@ function ReassignOwnerModal({
   const [reason, setReason] = useState('');
 
   const mockOwners = [
-    'Tony Bonaderon - CEO',
+    'Tony Bonadero - CEO',
     'Douglass Chen - CTO',
     'Ivon Chiou - CTO',
     'Jack Wang - CFO',

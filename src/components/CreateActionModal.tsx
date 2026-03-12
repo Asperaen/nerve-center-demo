@@ -9,7 +9,7 @@ interface CreateActionModalProps {
 }
 
 const mockOwners = [
-  'Tony Bonaderon - CEO',
+  'Tony Bonadero - CEO',
   'Douglass Chen - CTO',
   'Ivon Chiou - CTO',
   'Jack Wang - CFO',

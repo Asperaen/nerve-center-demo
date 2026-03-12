@@ -143,7 +143,7 @@ export const mockAssumptions: BusinessAssumption[] = [
     value: 8,
     unit: '%',
     source: 'actuals',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     lastUpdated: subDays(new Date(), 5),
     approvalStatus: 'approved',
     approver: 'Jack Wang - CFO',
@@ -151,13 +151,13 @@ export const mockAssumptions: BusinessAssumption[] = [
       {
         date: subMonths(new Date(), 6),
         value: 6,
-        changedBy: 'Tony Bonaderon',
+        changedBy: 'Tony Bonadero',
         reason: 'Annual adjustment',
       },
       {
         date: subDays(new Date(), 5),
         value: 8,
-        changedBy: 'Tony Bonaderon',
+        changedBy: 'Tony Bonadero',
         reason: 'Increased competition for skilled labor',
       },
     ],
@@ -216,7 +216,7 @@ export const mockAssumptions: BusinessAssumption[] = [
     value: 13,
     unit: '% increase',
     source: 'initiatives',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     lastUpdated: subDays(new Date(), 3),
     approvalStatus: 'approved',
     approver: 'CEO',
@@ -224,13 +224,13 @@ export const mockAssumptions: BusinessAssumption[] = [
       {
         date: subDays(new Date(), 30),
         value: 15,
-        changedBy: 'Tony Bonaderon',
+        changedBy: 'Tony Bonadero',
         reason: 'Initial business case',
       },
       {
         date: subDays(new Date(), 3),
         value: 13,
-        changedBy: 'Tony Bonaderon',
+        changedBy: 'Tony Bonadero',
         reason: 'Adjusted based on pilot results',
       },
     ],
@@ -319,7 +319,7 @@ export const mockConflicts: Conflict[] = [
     affectedAssumptions: ['assum-1', 'assum-7'],
     suggestedResolution:
       'Clarify: Is Company A growth offset by other customer declines due to tariffs? Or should Company A growth assumption be reduced to account for tariff impact?',
-    stakeholders: ['Douglass Chen - CTO', 'Tony Bonaderon - CEO'],
+    stakeholders: ['Douglass Chen - CTO', 'Tony Bonadero - CEO'],
     status: 'open',
   },
   {
@@ -343,7 +343,7 @@ export const mockConflicts: Conflict[] = [
     affectedAssumptions: ['assum-9'],
     suggestedResolution:
       "Recategorize UPPH assumption to productivity category and ensure it's not double-counted in labor rate calculations.",
-    stakeholders: ['Tony Bonaderon - CEO', 'Jack Wang - CFO'],
+    stakeholders: ['Tony Bonadero - CEO', 'Jack Wang - CFO'],
     status: 'open',
   },
   {

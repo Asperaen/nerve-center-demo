@@ -30,7 +30,7 @@ export const mockNews: NewsItem[] = [
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     source: 'Reuters',
     annotations: [],
-    analyzingBy: 'Tony Bonaderon - CEO',
+    analyzingBy: 'Tony Bonadero - CEO',
   },
   {
     id: 'news-2',

@@ -93,7 +93,7 @@ export const mockExecutiveInitiatives: ExecutiveInitiative[] = [
     phase: 'L2',
     phaseLabel: 'L2(Assess)',
     weeklyStatus: 'progressing-smoothly',
-    owner: 'Tony Bonaderon',
+    owner: 'Tony Bonadero',
     responsibleWorkflow: 'Pipeline - Operations',
     l4LatestEstimatedDate: subDays(new Date(), 5), // Overdue
     recurringNetBenefit: 250.0,
@@ -170,7 +170,7 @@ export const mockMilestones: Milestone[] = [
     id: 'milestone-5',
     name: 'Pilot Program Launch',
     endDate: addDays(new Date(), 15), // Due in 30 days
-    owner: 'Tony Bonaderon',
+    owner: 'Tony Bonadero',
     initiativeId: '20001',
   },
 ];

@@ -7,7 +7,7 @@ export const mockActions: Action[] = [
     title: 'Investigate all sites production shift for US-bound PC',
     description:
       'Assess feasibility of shifting 20% of PC production from supplier region to all sites to avoid 25% US tariff. Analyze capacity, cost impact, timeline, and customer acceptance.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 7),
@@ -69,7 +69,7 @@ export const mockActions: Action[] = [
     title: 'Increase PC component production capacity',
     description:
       'With global PC infrastructure investment at $200B, increase production capacity by 25% to capture market growth. Currently at 85% utilization.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
@@ -81,7 +81,7 @@ export const mockActions: Action[] = [
     title: 'Adjust Q1 2026 production plan for consumer electronics delay',
     description:
       "Revise production schedule following major customer's product launch delay. Reallocate capacity to other customers to maintain utilization.",
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 7),
@@ -124,7 +124,7 @@ export const mockActions: Action[] = [
     title: 'Qualify for all sites tax incentive program',
     description:
       'Engage with all sitesese government to understand requirements for 10-year tax holiday. Potential $3-4M annual savings.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 30),
@@ -148,7 +148,7 @@ export const mockActions: Action[] = [
     title: 'Root cause analysis on UPPH underperformance',
     description:
       'UPPH at 2.3 vs budget of 2.6. Conduct detailed analysis of production line bottlenecks. L4 manufacturing initiative should improve to 2.6 in 3 days.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'in-progress',
     priority: 'high',
     dueDate: addDays(new Date(), 3),
@@ -452,7 +452,7 @@ export const mockActions: Action[] = [
     title: 'Optimize inventory management system',
     description:
       'Upgrade inventory management system to reduce carrying costs and improve demand forecasting accuracy. Target: 15% inventory reduction.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'todo',
     priority: 'medium',
     dueDate: addDays(new Date(), 35),
@@ -476,7 +476,7 @@ export const mockActions: Action[] = [
     title: 'Develop predictive maintenance program',
     description:
       'Implement AI-based predictive maintenance program for manufacturing equipment to reduce downtime and maintenance costs.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 60),
@@ -548,7 +548,7 @@ export const mockActions: Action[] = [
     title: 'Implement lean manufacturing principles',
     description:
       'Train production teams on lean manufacturing principles and implement 5S methodology across all manufacturing facilities.',
-    owner: 'Tony Bonaderon - CEO',
+    owner: 'Tony Bonadero - CEO',
     status: 'in-progress',
     priority: 'medium',
     dueDate: addDays(new Date(), 70),

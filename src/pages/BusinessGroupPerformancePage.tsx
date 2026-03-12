@@ -2294,6 +2294,41 @@ export default function BusinessGroupPerformancePage() {
       }
     }
 
+    // Ensure no intermediate running total goes below zero.
+    // If it does, reduce the largest negative stage and compensate by
+    // reducing the largest positive stage by the same amount.
+    const orderedKeys = adjustableStages.map((s) => s.stage);
+    let simRunning = roundToOne(budgetValue);
+    let minRunning = simRunning;
+    for (const key of orderedKeys) {
+      simRunning = roundToOne(simRunning + (adjustedMap.get(key) ?? 0));
+      if (simRunning < minRunning) minRunning = simRunning;
+    }
+    if (minRunning < 0) {
+      const deficit = roundToOne(-minRunning);
+      let largestNegKey = '';
+      let largestNegAbs = 0;
+      let largestPosKey = '';
+      let largestPosAbs = 0;
+      for (const key of orderedKeys) {
+        const d = adjustedMap.get(key) ?? 0;
+        if (d < 0 && Math.abs(d) > largestNegAbs) {
+          largestNegAbs = Math.abs(d);
+          largestNegKey = key;
+        }
+        if (d > 0 && Math.abs(d) > largestPosAbs) {
+          largestPosAbs = Math.abs(d);
+          largestPosKey = key;
+        }
+      }
+      if (largestNegKey && largestPosKey) {
+        const curNeg = adjustedMap.get(largestNegKey)!;
+        const curPos = adjustedMap.get(largestPosKey)!;
+        adjustedMap.set(largestNegKey, roundToOne(curNeg + deficit));
+        adjustedMap.set(largestPosKey, roundToOne(curPos - deficit));
+      }
+    }
+
     runningValue = roundToOne(budgetValue);
     return baseStages.map((stage) => {
       if (stage.type === 'baseline' || stage.stage === 'budget') {
