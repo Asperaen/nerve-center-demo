@@ -6,10 +6,13 @@ import {
   EnvelopeIcon,
   BriefcaseIcon,
   CalendarIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function UserProfile() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50'>
@@ -51,7 +54,7 @@ export default function UserProfile() {
                     Email
                   </p>
                   <p className='text-gray-900 mt-2 font-medium'>
-                    ceo@nerve.com
+                    ceo@compal.com
                   </p>
                 </div>
               </div>
@@ -116,6 +119,12 @@ export default function UserProfile() {
                 </button>
                 <button className='px-6 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400 transition-all duration-200 font-semibold shadow-sm hover:shadow-md'>
                   Change Password
+                </button>
+                <button
+                  onClick={logout}
+                  className='px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 border-2 border-red-200 hover:border-red-400 transition-all duration-200 font-semibold shadow-sm hover:shadow-md inline-flex items-center gap-2'>
+                  <ArrowRightOnRectangleIcon className='w-5 h-5' />
+                  Log out
                 </button>
               </div>
             </div>
