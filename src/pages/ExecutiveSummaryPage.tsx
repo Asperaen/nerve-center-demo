@@ -218,7 +218,8 @@ const buildGroupRow = (
   lastYearMode: 'full-year' | 'ytm',
   idOverride?: string,
   nameOverride?: string,
-  actualValueScale?: number
+  actualValueScale?: number,
+  actualMode: 'full-year' | 'ytm' = 'ytm'
 ): BusinessGroupData => {
   const totals = units.reduce(
     (acc, unit) => {
@@ -302,6 +303,8 @@ const buildGroupRow = (
         : totals.revenueBudget
       : valueMode === 'forecast'
       ? totals.forecastRevenue
+      : actualMode === 'full-year'
+      ? totals.revenue
       : totals.ytmRevenueActual ?? totals.revenue
   ) * valueScale;
   const grossProfit = toMillions(
@@ -311,6 +314,8 @@ const buildGroupRow = (
         : totals.grossProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastGrossProfit
+      : actualMode === 'full-year'
+      ? totals.grossProfit
       : totals.ytmGrossProfitActual ?? totals.grossProfit
   ) * valueScale;
   const operatingProfit = toMillions(
@@ -320,6 +325,8 @@ const buildGroupRow = (
         : totals.operatingProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastOperatingProfit
+      : actualMode === 'full-year'
+      ? totals.operatingProfit
       : totals.ytmOperatingProfitActual ?? totals.operatingProfit
   ) * valueScale;
   const netProfit = toMillions(
@@ -329,6 +336,8 @@ const buildGroupRow = (
         : totals.netProfitBudget
       : valueMode === 'forecast'
       ? totals.forecastNetProfit
+      : actualMode === 'full-year'
+      ? totals.netProfit
       : totals.ytmNetProfitActual ?? totals.netProfit
   ) * valueScale;
   const revenueBudget = toMillions(
@@ -413,7 +422,8 @@ const buildUnitRow = (
   valueMode: 'actual' | 'budget' | 'forecast',
   budgetMode: 'full-year' | 'ytm',
   lastYearMode: 'full-year' | 'ytm',
-  actualValueScale?: number
+  actualValueScale?: number,
+  actualMode: 'full-year' | 'ytm' = 'ytm'
 ): BusinessGroupData => {
   const unitId = `${groupId}-${unit.name
     .toLowerCase()
@@ -433,6 +443,8 @@ const buildUnitRow = (
         : unit.revenueBudget
       : valueMode === 'forecast'
       ? unit.forecastRevenue
+      : actualMode === 'full-year'
+      ? unit.revenue
       : unit.ytmRevenueActual ?? unit.revenue
   ) * valueScale;
   const grossProfit = toMillions(
@@ -442,6 +454,8 @@ const buildUnitRow = (
         : unit.grossProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastGrossProfit
+      : actualMode === 'full-year'
+      ? unit.grossProfit
       : unit.ytmGrossProfitActual ?? unit.grossProfit
   ) * valueScale;
   const operatingProfit = toMillions(
@@ -451,6 +465,8 @@ const buildUnitRow = (
         : unit.operatingProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastOperatingProfit
+      : actualMode === 'full-year'
+      ? unit.operatingProfit
       : unit.ytmOperatingProfitActual ?? unit.operatingProfit
   ) * valueScale;
   const netProfit = toMillions(
@@ -460,6 +476,8 @@ const buildUnitRow = (
         : unit.netProfitBudget
       : valueMode === 'forecast'
       ? unit.forecastNetProfit
+      : actualMode === 'full-year'
+      ? unit.netProfit
       : unit.ytmNetProfitActual ?? unit.netProfit
   ) * valueScale;
   const revenueBudget = toMillions(
@@ -827,7 +845,7 @@ export default function ExecutiveSummaryPage({
   const showPnlUnitColumn = groupedPnlRows.size > 1;
 
   const pnlHierarchy = [
-    { label: 'Revenue', children: ['Passthrough', 'Controllable'] },
+    { label: 'Net Revenue', children: ['Revenue', 'One-time income', 'Other income'] },
     {
       label: 'COGS',
       children: [
@@ -838,9 +856,9 @@ export default function ExecutiveSummaryPage({
     { label: 'R&D', children: ['FTE', 'Non-FTE'] },
     { label: 'SG&A' },
     { label: 'Share expenses' },
-    { label: 'Operating profit' },
+    { label: 'Operating profit before sharing' },
     { label: '(Line items between OP and net)' },
-    { label: 'Net profit' },
+    { label: 'Operating profit after sharing' },
   ] as const;
 
   const renderPnlRows = useCallback(
@@ -929,7 +947,7 @@ export default function ExecutiveSummaryPage({
         const rowMatch = getNextRow(node.label);
         const items: React.ReactNode[] = [];
         if (rowMatch) {
-          const isBoldRow = node.label === 'Operating profit' || node.label === 'Net profit';
+          const isBoldRow = node.label === 'Operating profit before sharing' || node.label === 'Operating profit after sharing';
           items.push(renderValueRow(rowMatch.row, rowMatch.index, level, isBoldRow));
         } else if (node.children && node.children.length > 0) {
           items.push(renderLabelRow(node.label, level));
@@ -1385,11 +1403,15 @@ export default function ExecutiveSummaryPage({
     setSelectedTimeframeScope(timeframe);
     setIsMonthRangeCustom(false);
     setMonthAnchor(null);
-    if (isActualsView || timeframe === 'ytm') {
+    if (timeframe === 'ytm') {
       setMonthRange([0, YTM_END_MONTH_INDEX]);
       return;
     }
-    setMonthRange(timeframe === 'full-year' ? [0, 11] : [0, YTM_END_MONTH_INDEX]);
+    if (isActualsView) {
+      setMonthRange([0, 11]);
+      return;
+    }
+    setMonthRange([0, 11]);
   };
 
   const handleMonthClick = (monthIndex: number) => {
@@ -1738,25 +1760,28 @@ export default function ExecutiveSummaryPage({
       : selectedVersion === 'forecast'
       ? 'forecast'
       : 'actual';
-    // For actual: use month range clamped to YTM so table responds to month selection
+    const actualMode: 'full-year' | 'ytm' =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
+    const isActualFullYear = valueMode === 'actual' && actualMode === 'full-year';
     const clampedStart =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? Math.max(0, Math.min(monthRange[0], YTM_END_MONTH_INDEX))
         : monthRange[0];
     const clampedEnd =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? Math.min(monthRange[1], YTM_END_MONTH_INDEX)
         : monthRange[1];
     const selectedMonthCount = Math.max(0, clampedEnd - clampedStart) + 1;
     const effectiveMonthCount =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? selectedMonthCount
         : monthRange[1] - monthRange[0] + 1;
-    const monthCount = effectiveMonthCount;
+    const monthCount = isActualFullYear ? 12 : effectiveMonthCount;
     const fullYearScale = monthCount / 12;
     const ytmScale = monthCount / 2;
-    const actualValueScale =
-      valueMode === 'actual'
+    const actualValueScale = isActualFullYear
+      ? undefined
+      : valueMode === 'actual'
         ? selectedMonthCount / (YTM_END_MONTH_INDEX + 1)
         : undefined;
     const budgetMode =
@@ -1775,7 +1800,8 @@ export default function ExecutiveSummaryPage({
           lastYearMode,
           undefined,
           undefined,
-          actualValueScale
+          actualValueScale,
+          actualMode
         )
       );
       const overallRow = buildGroupRow(
@@ -1788,7 +1814,8 @@ export default function ExecutiveSummaryPage({
         lastYearMode,
         'overall',
         'Consolidated Financial',
-        actualValueScale
+        actualValueScale,
+        actualMode
       );
       return [...groupRows, overallRow];
     }
@@ -1809,7 +1836,8 @@ export default function ExecutiveSummaryPage({
         valueMode,
         budgetMode,
         lastYearMode,
-        actualValueScale
+        actualValueScale,
+        actualMode
       )
     );
     const overallRow = buildGroupRow(
@@ -1822,7 +1850,8 @@ export default function ExecutiveSummaryPage({
       lastYearMode,
       `${groupId}-overall`,
       `${selectedGroup.group} overall`,
-      actualValueScale
+      actualValueScale,
+      actualMode
     );
     return [...unitRows, overallRow];
   }, [
@@ -2310,24 +2339,28 @@ export default function ExecutiveSummaryPage({
       : selectedVersion === 'forecast'
       ? 'forecast'
       : 'actual';
+    const actualMode: 'full-year' | 'ytm' =
+      selectedTimeframeScope === 'ytm' ? 'ytm' : 'full-year';
+    const isActualFullYear = valueMode === 'actual' && actualMode === 'full-year';
     const clampedStart =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? Math.max(0, Math.min(monthRange[0], YTM_END_MONTH_INDEX))
         : monthRange[0];
     const clampedEnd =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? Math.min(monthRange[1], YTM_END_MONTH_INDEX)
         : monthRange[1];
     const selectedMonthCount = Math.max(0, clampedEnd - clampedStart) + 1;
     const effectiveMonthCount =
-      valueMode === 'actual'
+      valueMode === 'actual' && !isActualFullYear
         ? selectedMonthCount
         : monthRange[1] - monthRange[0] + 1;
-    const monthCount = effectiveMonthCount;
+    const monthCount = isActualFullYear ? 12 : effectiveMonthCount;
     const fullYearScale = monthCount / 12;
     const ytmScale = monthCount / 2;
-    const actualValueScale =
-      valueMode === 'actual'
+    const actualValueScale = isActualFullYear
+      ? undefined
+      : valueMode === 'actual'
         ? selectedMonthCount / (YTM_END_MONTH_INDEX + 1)
         : undefined;
     const budgetMode =
@@ -2350,7 +2383,8 @@ export default function ExecutiveSummaryPage({
         valueMode,
         budgetMode,
         lastYearMode,
-        actualValueScale
+        actualValueScale,
+        actualMode
       )
     );
   };

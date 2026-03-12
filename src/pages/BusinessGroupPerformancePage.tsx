@@ -2952,7 +2952,7 @@ export default function BusinessGroupPerformancePage() {
   };
 
   const pnlHierarchy = [
-    { label: 'Revenue', children: ['Passthrough', 'Controllable'] },
+    { label: 'Net Revenue', children: ['Revenue', 'One-time income', 'Other income'] },
     {
       label: 'COGS',
       children: [
@@ -2963,9 +2963,9 @@ export default function BusinessGroupPerformancePage() {
     { label: 'R&D', children: ['FTE', 'Non-FTE'] },
     { label: 'SG&A' },
     { label: 'Share expenses' },
-    { label: 'Operating profit' },
+    { label: 'Operating profit before sharing' },
     { label: '(Line items between OP and net)' },
-    { label: 'Net profit' },
+    { label: 'Operating profit after sharing' },
   ] as const;
 
   const pnlFullYearScale = useMemo(() => {
@@ -2999,10 +2999,9 @@ export default function BusinessGroupPerformancePage() {
         const functionId =
           pnlFunctionByLineItem[normalizePnlLineItem(row.lineItem)];
         const normalizedParent = parentLabel?.trim().toLowerCase();
-        const isRevenueControllable =
-          normalizedParent === 'revenue' &&
-          normalizePnlLineItem(row.lineItem) === 'controllable';
-        const showDrilldown = Boolean(functionId) && !isRevenueControllable;
+        const isNetRevenueChild =
+          normalizedParent === 'net revenue';
+        const showDrilldown = Boolean(functionId) && !isNetRevenueChild;
         const isTopLevel = level === 0;
         const isBoldLineItem =
           ['SG&A', 'Share expenses', 'R&D', 'Revenue'].includes(row.lineItem) ||

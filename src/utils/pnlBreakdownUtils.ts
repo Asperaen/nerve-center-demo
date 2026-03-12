@@ -1,9 +1,7 @@
 import type { PnlBreakdownRow } from '../data/mockBgData';
 
 /**
- * Derives Revenue Passthrough from Buy-Sell + AVAP per unit.
- * For each unit, the row with lineItem === 'Passthrough' gets its numeric fields
- * set to the sum of that unit's Buy-Sell and AVAP rows (under BOM).
+ * Derives the "Revenue" row (child of "Net Revenue") as 97% of "Net Revenue" per unit.
  */
 export function derivePnlPassthrough(rows: PnlBreakdownRow[]): PnlBreakdownRow[] {
   const byUnit = new Map<string, PnlBreakdownRow[]>();
@@ -14,24 +12,28 @@ export function derivePnlPassthrough(rows: PnlBreakdownRow[]): PnlBreakdownRow[]
     byUnit.get(row.unit)!.push(row);
   }
 
-  const result = rows.map((row) => {
-    if (row.lineItem !== 'Passthrough') {
+  const numericKeys = [
+    'fullYearBudget',
+    'ytmBudget',
+    'lastYearYtm',
+    'ytmActual',
+    'fullYearForecast',
+    'lastYearFullYear',
+  ] as const;
+
+  return rows.map((row) => {
+    if (row.lineItem !== 'Revenue') {
       return { ...row };
     }
     const unitRows = byUnit.get(row.unit) ?? [];
-    const buySell = unitRows.find((r) => r.lineItem === 'Buy-Sell');
-    const avap = unitRows.find((r) => r.lineItem === 'AVAP');
-    if (buySell == null || avap == null) {
+    const netRevenue = unitRows.find((r) => r.lineItem === 'Net Revenue');
+    if (!netRevenue) {
       return { ...row };
     }
-    return {
-      ...row,
-      fullYearBudget: buySell.fullYearBudget + avap.fullYearBudget,
-      ytmBudget: buySell.ytmBudget + avap.ytmBudget,
-      lastYearFullYear: buySell.lastYearFullYear + avap.lastYearFullYear,
-      lastYearYtm: buySell.lastYearYtm + avap.lastYearYtm,
-    };
+    const derived = { ...row };
+    for (const key of numericKeys) {
+      derived[key] = Math.round(netRevenue[key] * 0.97);
+    }
+    return derived;
   });
-
-  return result;
 }
