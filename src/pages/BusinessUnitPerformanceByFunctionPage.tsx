@@ -1377,8 +1377,8 @@ export default function BusinessUnitPerformanceByFunctionPage() {
       {
         id: 'target-mva',
         label: 'Target MVA',
-        value: 2542,
-        delta: 2542,
+        value: 130,
+        delta: 130,
         type: 'baseline',
         referenceValue: Number(targetValue.toFixed(1)),
       },
